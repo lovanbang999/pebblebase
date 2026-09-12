@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pebble
+      POSTGRES_PASSWORD: pebble
+      POSTGRES_DB: pebble_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./testdata/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pebble -d pebble_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
