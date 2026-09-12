@@ -214,6 +214,15 @@ function PebblebaseStudio() {
     }
   };
 
+  const handleNavigateToRelatedTable = (targetTable: string, targetColumn: string, value: any) => {
+    setUserSelectedTable(targetTable);
+    setPage(0);
+    setSortBy('');
+    setSortDesc(false);
+    setFilters([{ column: targetColumn, operator: 'eq', value: String(value) }]);
+    setBannerError(null);
+  };
+
   const handleDeleteRowDirectly = async (row: Record<string, any>) => {
     if (!confirm('Delete this record permanently?')) return;
     const where = getWhereCondition(row);
@@ -377,6 +386,7 @@ function PebblebaseStudio() {
               setIsRowModalOpen(true);
             }}
             onDeleteRow={handleDeleteRowDirectly}
+            onNavigateRelation={handleNavigateToRelatedTable}
           />
         )}
       </main>

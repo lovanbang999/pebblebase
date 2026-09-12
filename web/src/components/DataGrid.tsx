@@ -1,4 +1,4 @@
-import { useMemo, useState, type FC, type FormEvent } from 'react';
+import { useMemo, useState, useEffect, useRef, type FC, type FormEvent } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -20,8 +20,12 @@ import {
   Edit2,
   Trash2,
   Table as TableIcon,
+  ArrowUpRight,
+  Search,
+  Inbox,
 } from 'lucide-react';
 import type { TableSchema, FilterOption } from '../lib/types';
+import { EmptyState } from './EmptyState';
 
 interface DataGridProps {
   table: TableSchema;
@@ -41,6 +45,7 @@ interface DataGridProps {
   onAddRow: () => void;
   onEditRow: (row: Record<string, any>) => void;
   onDeleteRow: (row: Record<string, any>) => void;
+  onNavigateRelation?: (targetTable: string, targetColumn: string, value: any) => void;
 }
 
 export const DataGrid: FC<DataGridProps> = ({
@@ -61,12 +66,49 @@ export const DataGrid: FC<DataGridProps> = ({
   onAddRow,
   onEditRow,
   onDeleteRow,
+  onNavigateRelation,
 }) => {
-  // New Filter state
+  // Filter Builder state
   const [filterCol, setFilterCol] = useState(table.columns[0]?.name || '');
   const [filterOp, setFilterOp] = useState<'eq' | 'neq' | 'gt' | 'lt' | 'contains'>('eq');
   const [filterVal, setFilterVal] = useState('');
   const [showFilterBuilder, setShowFilterBuilder] = useState(false);
+
+  // Quick Search state with 300ms debounce
+  const [quickSearch, setQuickSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const quickSearchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(quickSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [quickSearch]);
+
+  // Global shortcut: '/' focuses quick search, 'Escape' clears it
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === '/' &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA'
+      ) {
+        e.preventDefault();
+        quickSearchInputRef.current?.focus();
+      } else if (e.key === 'Escape' && document.activeElement === quickSearchInputRef.current) {
+        setQuickSearch('');
+        quickSearchInputRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Update filterCol when table changes
+  useEffect(() => {
+    setFilterCol(table.columns[0]?.name || '');
+  }, [table]);
 
   // Discover extra fields from rows that were not in sampled table.columns
   const extraColumns = useMemo(() => {
@@ -82,6 +124,17 @@ export const DataGrid: FC<DataGridProps> = ({
     return Array.from(extras).sort();
   }, [table.columns, rows]);
 
+  // Client-side quick search filtering across all properties
+  const displayedRows = useMemo(() => {
+    if (!debouncedSearch.trim()) return rows;
+    const term = debouncedSearch.toLowerCase();
+    return rows.filter((r) =>
+      Object.values(r).some((v) =>
+        v !== null && v !== undefined && String(v).toLowerCase().includes(term)
+      )
+    );
+  }, [rows, debouncedSearch]);
+
   // TanStack Table columns
   const columns = useMemo<ColumnDef<Record<string, any>>[]>(() => {
     const cols: ColumnDef<Record<string, any>>[] = [
@@ -90,13 +143,14 @@ export const DataGrid: FC<DataGridProps> = ({
         header: '#',
         size: 50,
         cell: (info) => (
-          <span className="text-zinc-400 font-mono text-[11px]">
+          <span className="text-zinc-500 font-mono text-[11px] select-none">
             {page * pageSize + info.row.index + 1}
           </span>
         ),
       },
     ];
 
+    // Standard schema columns
     table.columns.forEach((col) => {
       cols.push({
         id: col.name,
@@ -153,9 +207,14 @@ export const DataGrid: FC<DataGridProps> = ({
         },
         cell: (info) => {
           const val = info.getValue();
+
+          // Graceful handling of missing / null fields
           if (val === undefined) {
             return (
-              <span className="text-zinc-600 italic text-[11px] font-mono select-none" title="Field not set on this document">
+              <span
+                className="text-zinc-600 italic text-[11px] font-mono select-none"
+                title="Field not set on this record"
+              >
                 —
               </span>
             );
@@ -163,6 +222,29 @@ export const DataGrid: FC<DataGridProps> = ({
           if (val === null) {
             return <span className="text-zinc-500 italic text-[11px] font-mono">NULL</span>;
           }
+
+          // Signature Prisma Studio Click-to-Navigate Foreign Key
+          if (col.is_foreign_key && onNavigateRelation) {
+            const rel = table.relations?.find((r) => r.from_column === col.name);
+            if (rel) {
+              return (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigateRelation(rel.to_table, rel.to_column, val);
+                  }}
+                  className="inline-flex items-center gap-1 font-mono text-xs text-sky-400 hover:text-sky-300 hover:underline group/fk text-left px-1.5 py-0.5 rounded bg-sky-950/20 hover:bg-sky-950/50 border border-sky-800/30 transition-colors"
+                  title={`Navigate to ${rel.to_table} where ${rel.to_column} = ${val}`}
+                >
+                  <span className="font-semibold">{String(val)}</span>
+                  <ArrowUpRight className="w-3 h-3 opacity-70 group-hover/fk:opacity-100 group-hover/fk:translate-x-0.5 group-hover/fk:-translate-y-0.5 transition-all shrink-0" />
+                </button>
+              );
+            }
+          }
+
+          // Booleans
           if (typeof val === 'boolean') {
             return (
               <span
@@ -176,13 +258,28 @@ export const DataGrid: FC<DataGridProps> = ({
               </span>
             );
           }
+
+          // Objects / Arrays / BSON
           if (typeof val === 'object') {
             return (
-              <span className="font-mono text-xs text-amber-300/90 truncate block max-w-xs" title={JSON.stringify(val)}>
+              <span
+                className="font-mono text-xs text-amber-300/90 truncate block max-w-xs cursor-help"
+                title={JSON.stringify(val, null, 2)}
+              >
                 {JSON.stringify(val)}
               </span>
             );
           }
+
+          // Primary key highlight
+          if (col.is_primary_key) {
+            return (
+              <span className="font-mono text-xs font-semibold text-zinc-100 truncate block">
+                {String(val)}
+              </span>
+            );
+          }
+
           return (
             <span className="font-mono text-xs text-zinc-300 truncate block">
               {String(val)}
@@ -192,7 +289,7 @@ export const DataGrid: FC<DataGridProps> = ({
       });
     });
 
-    // Dynamic extra columns found in documents
+    // Dynamic extra columns found in schemaless documents
     extraColumns.forEach((extraColName) => {
       cols.push({
         id: `_extra_${extraColName}`,
@@ -240,7 +337,10 @@ export const DataGrid: FC<DataGridProps> = ({
           const val = info.getValue();
           if (val === undefined) {
             return (
-              <span className="text-zinc-600 italic text-[11px] font-mono select-none" title="Field not set on this document">
+              <span
+                className="text-zinc-600 italic text-[11px] font-mono select-none"
+                title="Field not set on this record"
+              >
                 —
               </span>
             );
@@ -263,7 +363,10 @@ export const DataGrid: FC<DataGridProps> = ({
           }
           if (typeof val === 'object') {
             return (
-              <span className="font-mono text-xs text-amber-300/90 truncate block max-w-xs" title={JSON.stringify(val)}>
+              <span
+                className="font-mono text-xs text-amber-300/90 truncate block max-w-xs cursor-help"
+                title={JSON.stringify(val, null, 2)}
+              >
                 {JSON.stringify(val)}
               </span>
             );
@@ -286,16 +389,22 @@ export const DataGrid: FC<DataGridProps> = ({
         <div className="flex items-center justify-end gap-1 opacity-60 hover:opacity-100 transition-opacity">
           <button
             type="button"
-            title="Edit row"
-            onClick={() => onEditRow(info.row.original)}
+            title="Edit record"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditRow(info.row.original);
+            }}
             className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
           >
             <Edit2 className="w-3 h-3" />
           </button>
           <button
             type="button"
-            title="Delete row"
-            onClick={() => onDeleteRow(info.row.original)}
+            title="Delete record"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteRow(info.row.original);
+            }}
             className="p-1 rounded text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition-colors"
           >
             <Trash2 className="w-3 h-3" />
@@ -305,10 +414,10 @@ export const DataGrid: FC<DataGridProps> = ({
     });
 
     return cols;
-  }, [table, extraColumns, sortBy, sortDesc, onSortChange, page, pageSize, onEditRow, onDeleteRow]);
+  }, [table, extraColumns, sortBy, sortDesc, onSortChange, page, pageSize, onEditRow, onDeleteRow, onNavigateRelation]);
 
   const reactTable = useReactTable({
-    data: rows,
+    data: displayedRows,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
@@ -340,11 +449,39 @@ export const DataGrid: FC<DataGridProps> = ({
             <h2 className="font-mono text-sm font-semibold text-zinc-100">{table.name}</h2>
           </div>
           <span className="text-xs text-zinc-400 font-mono">
-            {totalCount.toLocaleString()} {totalCount === 1 ? 'row' : 'rows'}
+            {totalCount.toLocaleString()} {totalCount === 1 ? 'record' : 'records'}
           </span>
+          {displayedRows.length !== rows.length && (
+            <span className="text-[11px] text-amber-400/90 font-mono bg-amber-950/40 border border-amber-800/40 px-1.5 py-0.2 rounded">
+              Showing {displayedRows.length} matches
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Quick Search Input */}
+          <div className="relative flex items-center">
+            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 pointer-events-none" />
+            <input
+              ref={quickSearchInputRef}
+              type="text"
+              value={quickSearch}
+              onChange={(e) => setQuickSearch(e.target.value)}
+              placeholder="Search view... (/)"
+              className="pl-8 pr-7 py-1 bg-zinc-900 border border-zinc-800 rounded text-xs text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-emerald-500 font-mono w-44 focus:w-60 transition-all shadow-inner"
+            />
+            {quickSearch && (
+              <button
+                type="button"
+                onClick={() => setQuickSearch('')}
+                className="absolute right-2 text-zinc-500 hover:text-zinc-300"
+                title="Clear search (Esc)"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
           {/* Filter toggle */}
           <button
             type="button"
@@ -476,45 +613,88 @@ export const DataGrid: FC<DataGridProps> = ({
       )}
 
       {/* Grid Container */}
-      <div className="flex-1 overflow-auto relative">
-        {isLoading && (
-          <div className="absolute inset-0 bg-zinc-950/60 backdrop-blur-2xs flex items-center justify-center z-20">
-            <div className="flex items-center gap-2 text-xs text-zinc-300 font-mono bg-zinc-900 px-3 py-2 rounded border border-zinc-800 shadow-xl">
-              <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" />
-              Fetching rows...
+      <div className="flex-1 overflow-auto relative flex flex-col">
+        {isLoading ? (
+          /* Loading Skeletons */
+          <div className="flex-1 overflow-hidden p-4 space-y-2 animate-in fade-in duration-200">
+            <div className="border border-zinc-800 rounded-lg overflow-hidden bg-zinc-900/20">
+              <div className="h-10 border-b border-zinc-800 bg-zinc-900/60 px-4 flex items-center gap-4">
+                <div className="h-3 w-6 rounded bg-zinc-800 animate-pulse" />
+                {table.columns.slice(0, 5).map((c) => (
+                  <div key={c.name} className="h-3.5 w-28 rounded bg-zinc-800/80 animate-pulse" />
+                ))}
+              </div>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((rowIdx) => (
+                <div
+                  key={rowIdx}
+                  className="h-10 border-b border-zinc-800/40 px-4 flex items-center gap-4"
+                >
+                  <div className="h-3 w-6 rounded bg-zinc-800/80 animate-pulse" />
+                  <div className="h-3 w-28 rounded bg-zinc-800/60 animate-pulse" />
+                  <div className="h-3 w-40 rounded bg-zinc-800/60 animate-pulse" />
+                  <div className="h-3 w-20 rounded bg-zinc-800/60 animate-pulse" />
+                  <div className="h-3 w-32 rounded bg-zinc-800/60 animate-pulse" />
+                </div>
+              ))}
             </div>
           </div>
-        )}
-
-        <table className="w-full border-collapse text-left border-b border-zinc-800">
-          <thead className="sticky top-0 z-10 bg-zinc-900 border-b border-zinc-800">
-            {reactTable.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    style={{ width: header.getSize() }}
-                    className="px-3 py-2 text-xs font-medium text-zinc-400 border-r border-zinc-800/80 last:border-r-0 whitespace-nowrap"
-                  >
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-
-          <tbody className="divide-y divide-zinc-800/50">
-            {rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="py-16 text-center text-xs text-zinc-400 font-mono"
-                >
-                  {isLoading ? 'Loading records...' : 'No records found in this table'}
-                </td>
-              </tr>
+        ) : displayedRows.length === 0 ? (
+          /* Empty States */
+          <div className="flex-1 flex items-center justify-center p-8">
+            {quickSearch ? (
+              <EmptyState
+                icon={Search}
+                title="No search results"
+                description={`No records matching "${quickSearch}" in current view.`}
+                action={{
+                  label: 'Clear search',
+                  onClick: () => setQuickSearch(''),
+                }}
+              />
+            ) : filters.length > 0 ? (
+              <EmptyState
+                icon={FilterIcon}
+                title="No matching records"
+                description="No records match the active filter criteria."
+                action={{
+                  label: 'Clear all filters',
+                  onClick: () => onFiltersChange([]),
+                }}
+              />
             ) : (
-              reactTable.getRowModel().rows.map((row) => (
+              <EmptyState
+                icon={Inbox}
+                title="Table is empty"
+                description={`No records have been inserted into "${table.name}" yet.`}
+                action={{
+                  label: 'Insert first record',
+                  onClick: onAddRow,
+                  icon: Plus,
+                }}
+              />
+            )}
+          </div>
+        ) : (
+          /* Data Table */
+          <table className="w-full border-collapse text-left border-b border-zinc-800">
+            <thead className="sticky top-0 z-10 bg-zinc-900 border-b border-zinc-800">
+              {reactTable.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      style={{ width: header.getSize() }}
+                      className="px-3 py-2 text-xs font-medium text-zinc-400 border-r border-zinc-800/80 last:border-r-0 whitespace-nowrap"
+                    >
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+
+            <tbody className="divide-y divide-zinc-800/50">
+              {reactTable.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
                   className="hover:bg-zinc-900/60 transition-colors group cursor-pointer"
@@ -529,10 +709,10 @@ export const DataGrid: FC<DataGridProps> = ({
                     </td>
                   ))}
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       {/* Pagination Footer */}
@@ -540,7 +720,7 @@ export const DataGrid: FC<DataGridProps> = ({
         <div className="flex items-center gap-3">
           <span>
             {totalCount === 0
-              ? '0 rows'
+              ? '0 records'
               : `Showing ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} of ${totalCount}`}
           </span>
           <div className="flex items-center gap-1.5 ml-2">
