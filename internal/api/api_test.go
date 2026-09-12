@@ -10,6 +10,7 @@ import (
 	"os"
 	"testing"
 
+	mongoadapter "pebblebase/internal/adapter/mongodb"
 	mysqladapter "pebblebase/internal/adapter/mysql"
 	pgadapter "pebblebase/internal/adapter/postgres"
 	"pebblebase/internal/api"
@@ -514,3 +515,184 @@ func TestEndToEndCRUD_MySQL(t *testing.T) {
 		t.Fatalf("delete connection failed: status %d: %s", recDelConn.Code, recDelConn.Body.String())
 	}
 }
+
+func testMongoURI(t *testing.T) string {
+	t.Helper()
+	uri := os.Getenv("TEST_MONGODB_URI")
+	if uri == "" {
+		uri = "mongodb://pebble:pebble@localhost:27017/pebble_test?authSource=admin"
+	}
+	ctx := context.Background()
+	a, err := mongoadapter.New(ctx, uri)
+	if err != nil {
+		t.Skipf("MongoDB not reachable (%v) — skipping integration test", err)
+	}
+	a.Close()
+	return uri
+}
+
+func TestEndToEndCRUD_MongoDB(t *testing.T) {
+	_ = testMongoURI(t)
+	mux, _ := setupTestServer(t)
+
+	// 1. Test connection endpoint first
+	testConnPayload := map[string]any{
+		"name":     "MongoDB Local",
+		"type":     "mongodb",
+		"mode":     "form",
+		"host":     "localhost",
+		"port":     "27017",
+		"user":     "pebble",
+		"password": "pebble",
+		"db_name":  "pebble_test",
+	}
+	bTest, _ := json.Marshal(testConnPayload)
+	reqTest := httptest.NewRequest(http.MethodPost, "/api/connections/test", bytes.NewReader(bTest))
+	recTest := httptest.NewRecorder()
+	mux.ServeHTTP(recTest, reqTest)
+	if recTest.Code != http.StatusOK {
+		t.Fatalf("test connection failed: status %d: %s", recTest.Code, recTest.Body.String())
+	}
+
+	// 2. Create connection
+	createPayload := map[string]any{
+		"name":          "MongoDB Local",
+		"type":          "mongodb",
+		"mode":          "form",
+		"host":          "localhost",
+		"port":          "27017",
+		"user":          "pebble",
+		"password":      "pebble",
+		"db_name":       "pebble_test",
+		"save_password": true,
+	}
+	bCreate, _ := json.Marshal(createPayload)
+	reqCreate := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(bCreate))
+	recCreate := httptest.NewRecorder()
+	mux.ServeHTTP(recCreate, reqCreate)
+	if recCreate.Code != http.StatusCreated {
+		t.Fatalf("create connection failed: status %d: %s", recCreate.Code, recCreate.Body.String())
+	}
+
+	var connResp struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(recCreate.Body.Bytes(), &connResp); err != nil {
+		t.Fatalf("unmarshal conn: %v", err)
+	}
+	connID := connResp.ID
+
+	// 3. Introspect tables
+	reqTables := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables", connID), nil)
+	recTables := httptest.NewRecorder()
+	mux.ServeHTTP(recTables, reqTables)
+	if recTables.Code != http.StatusOK {
+		t.Fatalf("list tables failed: status %d: %s", recTables.Code, recTables.Body.String())
+	}
+
+	var tables []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(recTables.Body.Bytes(), &tables); err != nil {
+		t.Fatalf("unmarshal tables: %v", err)
+	}
+	foundProducts := false
+	for _, tbl := range tables {
+		if tbl.Name == "products" {
+			foundProducts = true
+			break
+		}
+	}
+	if !foundProducts {
+		t.Fatalf("expected 'products' collection in tables, got %v", tables)
+	}
+
+	// 4. Query rows from products
+	reqRows := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/products/rows?limit=10", connID), nil)
+	recRows := httptest.NewRecorder()
+	mux.ServeHTTP(recRows, reqRows)
+	if recRows.Code != http.StatusOK {
+		t.Fatalf("query rows failed: status %d: %s", recRows.Code, recRows.Body.String())
+	}
+
+	var queryResult struct {
+		Rows       []map[string]any `json:"rows"`
+		TotalCount int              `json:"total_count"`
+	}
+	if err := json.Unmarshal(recRows.Body.Bytes(), &queryResult); err != nil {
+		t.Fatalf("unmarshal rows: %v", err)
+	}
+	if queryResult.TotalCount < 4 || len(queryResult.Rows) < 4 {
+		t.Fatalf("expected at least 4 products, got count=%d, rows=%d", queryResult.TotalCount, len(queryResult.Rows))
+	}
+
+	// 5. Insert row into products
+	testName := "MongoDB E2E Gadget"
+	insertPayload := map[string]any{
+		"values": map[string]any{
+			"name":        testName,
+			"price":       199.99,
+			"in_stock":    true,
+			"extra_specs": map[string]any{"version": 2, "waterproof": true},
+		},
+	}
+	bInsert, _ := json.Marshal(insertPayload)
+	reqInsert := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/tables/products/rows", connID), bytes.NewReader(bInsert))
+	recInsert := httptest.NewRecorder()
+	mux.ServeHTTP(recInsert, reqInsert)
+	if recInsert.Code != http.StatusCreated {
+		t.Fatalf("insert row failed: status %d: %s", recInsert.Code, recInsert.Body.String())
+	}
+
+	// 6. Query for the inserted product to retrieve its generated _id
+	reqFind := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/products/rows?filter=name:eq:%s", connID, "MongoDB+E2E+Gadget"), nil)
+	recFind := httptest.NewRecorder()
+	mux.ServeHTTP(recFind, reqFind)
+	if recFind.Code != http.StatusOK {
+		t.Fatalf("find inserted row failed: status %d: %s", recFind.Code, recFind.Body.String())
+	}
+	var findResult struct {
+		Rows []map[string]any `json:"rows"`
+	}
+	if err := json.Unmarshal(recFind.Body.Bytes(), &findResult); err != nil || len(findResult.Rows) != 1 {
+		t.Fatalf("find inserted row failed: rows=%v err=%v", findResult.Rows, err)
+	}
+	insertedID, ok := findResult.Rows[0]["_id"].(string)
+	if !ok || len(insertedID) != 24 {
+		t.Fatalf("expected 24-character hex _id, got %v", findResult.Rows[0]["_id"])
+	}
+
+	// 7. Update row by _id
+	updatePayload := map[string]any{
+		"where":  map[string]any{"_id": insertedID},
+		"values": map[string]any{"price": 179.99, "color": "metallic silver"},
+	}
+	bUpdate, _ := json.Marshal(updatePayload)
+	reqUpdate := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/connections/%s/tables/products/rows", connID), bytes.NewReader(bUpdate))
+	recUpdate := httptest.NewRecorder()
+	mux.ServeHTTP(recUpdate, reqUpdate)
+	if recUpdate.Code != http.StatusNoContent {
+		t.Fatalf("update row failed: status %d: %s", recUpdate.Code, recUpdate.Body.String())
+	}
+
+	// 8. Delete row by _id
+	deletePayload := map[string]any{
+		"where": map[string]any{"_id": insertedID},
+	}
+	bDelete, _ := json.Marshal(deletePayload)
+	reqDelete := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/connections/%s/tables/products/rows", connID), bytes.NewReader(bDelete))
+	recDelete := httptest.NewRecorder()
+	mux.ServeHTTP(recDelete, reqDelete)
+	if recDelete.Code != http.StatusNoContent {
+		t.Fatalf("delete row failed: status %d: %s", recDelete.Code, recDelete.Body.String())
+	}
+
+	// 9. Cleanup connection
+	reqDelConn := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/connections/%s", connID), nil)
+	recDelConn := httptest.NewRecorder()
+	mux.ServeHTTP(recDelConn, reqDelConn)
+	if recDelConn.Code != http.StatusNoContent {
+		t.Fatalf("delete connection failed: status %d: %s", recDelConn.Code, recDelConn.Body.String())
+	}
+}
+

@@ -94,6 +94,7 @@ func (c ConnectionInput) mongoDSN() (string, error) {
 	}
 	if c.User != "" || c.Password != "" {
 		u.User = url.UserPassword(c.User, c.Password)
+		u.RawQuery = url.Values{"authSource": {"admin"}}.Encode()
 	}
 	return u.String(), nil
 }

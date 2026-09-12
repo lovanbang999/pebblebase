@@ -1,5 +1,5 @@
-import { useState, type FC, type FormEvent } from 'react';
-import { X, Save, Trash2, Key, AlertCircle, Loader2 } from 'lucide-react';
+import { useState, useMemo, type FC, type FormEvent } from 'react';
+import { X, Save, Trash2, Key, AlertCircle, Loader2, Plus } from 'lucide-react';
 import type { TableSchema, ColumnSchema } from '../lib/types';
 
 interface RowModalProps {
@@ -34,10 +34,38 @@ export const RowModal: FC<RowModalProps> = ({
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Dynamic field creation state
+  const [showAddField, setShowAddField] = useState(false);
+  const [newFieldName, setNewFieldName] = useState('');
+  const [newFieldValue, setNewFieldValue] = useState('');
+
+  const schemaColSet = useMemo(() => new Set(table.columns.map((c) => c.name)), [table.columns]);
+
+  const dynamicFieldKeys = useMemo(() => {
+    return Object.keys(formData).filter((k) => !schemaColSet.has(k) && !k.startsWith('_pb_'));
+  }, [formData, schemaColSet]);
+
   if (!isOpen) return null;
 
   const handleChange = (col: ColumnSchema, val: string) => {
     setFormData((prev) => ({ ...prev, [col.name]: val }));
+  };
+
+  const handleAddDynamicField = () => {
+    const trimmed = newFieldName.trim();
+    if (!trimmed) return;
+    setFormData((prev) => ({ ...prev, [trimmed]: newFieldValue }));
+    setNewFieldName('');
+    setNewFieldValue('');
+    setShowAddField(false);
+  };
+
+  const handleRemoveDynamicField = (key: string) => {
+    setFormData((prev) => {
+      const copy = { ...prev };
+      delete copy[key];
+      return copy;
+    });
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -47,6 +75,8 @@ export const RowModal: FC<RowModalProps> = ({
 
     try {
       const parsedValues: Record<string, any> = {};
+
+      // Parse standard schema columns
       table.columns.forEach((col) => {
         const raw = formData[col.name];
         if (raw === undefined || raw === '') {
@@ -84,10 +114,25 @@ export const RowModal: FC<RowModalProps> = ({
         }
       });
 
+      // Parse extra dynamic document properties
+      dynamicFieldKeys.forEach((key) => {
+        const raw = formData[key];
+        if (raw === undefined || raw === '') return;
+        if (typeof raw === 'string') {
+          try {
+            parsedValues[key] = JSON.parse(raw);
+          } catch {
+            parsedValues[key] = raw;
+          }
+        } else {
+          parsedValues[key] = raw;
+        }
+      });
+
       await onSave(parsedValues);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to save row');
+      setError(err.message || 'Failed to save record');
     } finally {
       setSaving(false);
     }
@@ -95,7 +140,7 @@ export const RowModal: FC<RowModalProps> = ({
 
   const handleDelete = async () => {
     if (!onDelete) return;
-    if (!confirm('Are you sure you want to delete this row? This action cannot be undone.')) {
+    if (!confirm('Are you sure you want to delete this record? This action cannot be undone.')) {
       return;
     }
     setDeleting(true);
@@ -104,7 +149,7 @@ export const RowModal: FC<RowModalProps> = ({
       await onDelete();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to delete row');
+      setError(err.message || 'Failed to delete record');
     } finally {
       setDeleting(false);
     }
@@ -123,7 +168,7 @@ export const RowModal: FC<RowModalProps> = ({
               </span>
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5 font-mono">
-              {isEditing ? 'Update columns for this row' : 'Provide values for table columns'}
+              {isEditing ? 'Update columns for this record' : 'Provide values for record properties'}
             </p>
           </div>
           <button
@@ -199,7 +244,9 @@ export const RowModal: FC<RowModalProps> = ({
                     onChange={(e) => handleChange(col, e.target.value)}
                     placeholder={
                       isPk && !isEditing
-                        ? '(Auto-generated or enter manually)'
+                        ? col.name === '_id'
+                          ? '(auto-generated ObjectId if blank)'
+                          : '(auto-generated or enter manually)'
                         : col.default_value
                         ? `Default: ${col.default_value}`
                         : col.nullable
@@ -213,6 +260,107 @@ export const RowModal: FC<RowModalProps> = ({
             );
           })}
 
+          {/* Dynamic Document Fields */}
+          {dynamicFieldKeys.length > 0 && (
+            <div className="pt-3 border-t border-zinc-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-mono font-semibold text-amber-300">
+                  Dynamic Fields ({dynamicFieldKeys.length})
+                </span>
+                <span className="text-[10px] text-zinc-500 font-mono">Schemaless document properties</span>
+              </div>
+              {dynamicFieldKeys.map((key) => {
+                const currentVal = formData[key] ?? '';
+                return (
+                  <div key={key} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-mono font-medium text-amber-200/90 flex items-center gap-1.5">
+                        {key}
+                        <span className="text-[9px] font-mono text-amber-400 font-normal px-1 py-0.2 rounded bg-amber-950/40 border border-amber-800/30">
+                          dynamic
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDynamicField(key)}
+                        className="text-zinc-500 hover:text-rose-400 p-0.5 rounded transition-colors"
+                        title="Remove field"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={typeof currentVal === 'object' ? JSON.stringify(currentVal) : String(currentVal)}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, [key]: e.target.value }))}
+                      className="w-full px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded text-xs text-zinc-100 font-mono focus:outline-hidden focus:border-emerald-500"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Add Dynamic Field inline */}
+          <div className="pt-2 border-t border-zinc-800/60">
+            {showAddField ? (
+              <div className="p-3 rounded border border-zinc-800 bg-zinc-900/40 space-y-2 text-xs font-mono">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-zinc-200">Add Field to Document</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddField(false)}
+                    className="text-zinc-500 hover:text-zinc-300"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Field name (e.g. sku)"
+                    value={newFieldName}
+                    onChange={(e) => setNewFieldName(e.target.value)}
+                    className="px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-100 text-xs font-mono focus:outline-hidden focus:border-emerald-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Value (or JSON)"
+                    value={newFieldValue}
+                    onChange={(e) => setNewFieldValue(e.target.value)}
+                    className="px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-100 text-xs font-mono focus:outline-hidden focus:border-emerald-500"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddField(false)}
+                    className="px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!newFieldName.trim()}
+                    onClick={handleAddDynamicField}
+                    className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium disabled:opacity-50"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAddField(true)}
+                className="text-xs font-mono text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 py-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add dynamic field to document
+              </button>
+            )}
+          </div>
+
           {/* Footer Actions */}
           <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
             {isEditing && onDelete ? (
@@ -220,44 +368,39 @@ export const RowModal: FC<RowModalProps> = ({
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting || saving}
-                className="px-3 py-1.5 rounded text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 border border-rose-900/40 flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                className="px-3 py-1.5 rounded text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 border border-rose-900/40 flex items-center gap-1.5 transition-colors disabled:opacity-50"
               >
                 {deleting ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <Trash2 className="w-3.5 h-3.5" />
                 )}
-                Delete Row
+                Delete
               </button>
             ) : (
-              <div></div>
+              <div />
             )}
 
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                disabled={saving || deleting}
-                className="px-3.5 py-1.5 rounded text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+                disabled={saving}
+                className="px-3 py-1.5 rounded text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border border-zinc-800 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={saving || deleting}
-                className="px-4 py-1.5 rounded text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition-colors disabled:opacity-50 font-semibold"
+                disabled={saving}
+                className="px-4 py-1.5 rounded text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition-colors font-semibold shadow-xs disabled:opacity-50"
               >
                 {saving ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Saving...
-                  </>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    {isEditing ? 'Save Changes' : 'Insert Record'}
-                  </>
+                  <Save className="w-3.5 h-3.5" />
                 )}
+                {isEditing ? 'Save Changes' : 'Insert Record'}
               </button>
             </div>
           </div>

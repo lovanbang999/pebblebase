@@ -31,3 +31,19 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  mongodb:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: pebble
+      MONGO_INITDB_ROOT_PASSWORD: pebble
+      MONGO_INITDB_DATABASE: pebble_test
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./testdata/seed-mongo.js:/docker-entrypoint-initdb.d/seed.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
