@@ -68,6 +68,20 @@ export const DataGrid: FC<DataGridProps> = ({
   const [filterVal, setFilterVal] = useState('');
   const [showFilterBuilder, setShowFilterBuilder] = useState(false);
 
+  // Discover extra fields from rows that were not in sampled table.columns
+  const extraColumns = useMemo(() => {
+    const schemaColNames = new Set(table.columns.map((c) => c.name));
+    const extras = new Set<string>();
+    rows.forEach((r) => {
+      Object.keys(r).forEach((k) => {
+        if (!schemaColNames.has(k) && !k.startsWith('_pb_')) {
+          extras.add(k);
+        }
+      });
+    });
+    return Array.from(extras).sort();
+  }, [table.columns, rows]);
+
   // TanStack Table columns
   const columns = useMemo<ColumnDef<Record<string, any>>[]>(() => {
     const cols: ColumnDef<Record<string, any>>[] = [
@@ -139,8 +153,15 @@ export const DataGrid: FC<DataGridProps> = ({
         },
         cell: (info) => {
           const val = info.getValue();
-          if (val === null || val === undefined) {
-            return <span className="text-zinc-400 italic text-[11px] font-mono">NULL</span>;
+          if (val === undefined) {
+            return (
+              <span className="text-zinc-600 italic text-[11px] font-mono select-none" title="Field not set on this document">
+                —
+              </span>
+            );
+          }
+          if (val === null) {
+            return <span className="text-zinc-500 italic text-[11px] font-mono">NULL</span>;
           }
           if (typeof val === 'boolean') {
             return (
@@ -157,7 +178,92 @@ export const DataGrid: FC<DataGridProps> = ({
           }
           if (typeof val === 'object') {
             return (
-              <span className="font-mono text-xs text-amber-300/90 truncate block max-w-xs">
+              <span className="font-mono text-xs text-amber-300/90 truncate block max-w-xs" title={JSON.stringify(val)}>
+                {JSON.stringify(val)}
+              </span>
+            );
+          }
+          return (
+            <span className="font-mono text-xs text-zinc-300 truncate block">
+              {String(val)}
+            </span>
+          );
+        },
+      });
+    });
+
+    // Dynamic extra columns found in documents
+    extraColumns.forEach((extraColName) => {
+      cols.push({
+        id: `_extra_${extraColName}`,
+        accessorKey: extraColName,
+        header: () => {
+          const isSorted = sortBy === extraColName;
+          return (
+            <div
+              className="flex items-center justify-between gap-1.5 cursor-pointer select-none group py-1"
+              onClick={() => {
+                if (sortBy === extraColName) {
+                  if (sortDesc) {
+                    onSortChange('', false);
+                  } else {
+                    onSortChange(extraColName, true);
+                  }
+                } else {
+                  onSortChange(extraColName, false);
+                }
+              }}
+            >
+              <div className="flex items-center gap-1.5 truncate">
+                <span className="font-mono text-xs font-semibold text-amber-200/90 truncate">
+                  {extraColName}
+                </span>
+                <span className="text-[9px] font-mono text-amber-400/90 font-normal px-1 py-0.2 rounded bg-amber-950/50 border border-amber-800/40">
+                  dynamic
+                </span>
+              </div>
+              <div className="text-zinc-400 group-hover:text-zinc-200">
+                {isSorted ? (
+                  sortDesc ? (
+                    <ArrowDown className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <ArrowUp className="w-3 h-3 text-emerald-400" />
+                  )
+                ) : (
+                  <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
+              </div>
+            </div>
+          );
+        },
+        cell: (info) => {
+          const val = info.getValue();
+          if (val === undefined) {
+            return (
+              <span className="text-zinc-600 italic text-[11px] font-mono select-none" title="Field not set on this document">
+                —
+              </span>
+            );
+          }
+          if (val === null) {
+            return <span className="text-zinc-500 italic text-[11px] font-mono">NULL</span>;
+          }
+          if (typeof val === 'boolean') {
+            return (
+              <span
+                className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${
+                  val
+                    ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
+                    : 'bg-zinc-800 text-zinc-400'
+                }`}
+              >
+                {String(val)}
+              </span>
+            );
+          }
+          if (typeof val === 'object') {
+            return (
+              <span className="font-mono text-xs text-amber-300/90 truncate block max-w-xs" title={JSON.stringify(val)}>
                 {JSON.stringify(val)}
               </span>
             );
@@ -199,7 +305,7 @@ export const DataGrid: FC<DataGridProps> = ({
     });
 
     return cols;
-  }, [table, sortBy, sortDesc, onSortChange, page, pageSize, onEditRow, onDeleteRow]);
+  }, [table, extraColumns, sortBy, sortDesc, onSortChange, page, pageSize, onEditRow, onDeleteRow]);
 
   const reactTable = useReactTable({
     data: rows,
@@ -295,6 +401,11 @@ export const DataGrid: FC<DataGridProps> = ({
                 {table.columns.map((c) => (
                   <option key={c.name} value={c.name}>
                     {c.name}
+                  </option>
+                ))}
+                {extraColumns.map((extra) => (
+                  <option key={extra} value={extra}>
+                    {extra} (dynamic)
                   </option>
                 ))}
               </select>
