@@ -20,20 +20,26 @@ COPY go.mod go.sum* ./
 RUN go mod download
 
 COPY . .
-# Copy compiled frontend assets before building Go (needed for go:embed in Phase 6)
+# Copy compiled frontend assets before building Go (embedded via go:embed)
 COPY --from=frontend-builder /app/web/dist ./web/dist
+
+# Prepare /data directory owned by nonroot (uid 65532) for SQLite/JSON storage
+RUN mkdir -p /data && chown -R 65532:65532 /data
 
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o pebblebase ./cmd/server
 
 # =============================================================================
 # Stage 3: Minimal runtime image
-# NOTE: Phase 0 uses distroless/static for simplicity.
-#       Phase 6 will switch to scratch after embed is wired up.
+# Distroless static non-root (includes CA certificates for cloud DB connections)
 # =============================================================================
 FROM gcr.io/distroless/static-debian12:nonroot
 
+COPY --from=go-builder --chown=65532:65532 /data /data
 COPY --from=go-builder /app/pebblebase /pebblebase
 
+USER nonroot:nonroot
+VOLUME ["/data"]
+ENV DATA_DIR=/data
 EXPOSE 8080
 
 ENTRYPOINT ["/pebblebase"]
