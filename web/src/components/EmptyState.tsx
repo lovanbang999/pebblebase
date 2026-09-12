@@ -24,14 +24,14 @@ export const EmptyState: FC<EmptyStateProps> = ({
 }) => {
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto my-auto animate-in fade-in duration-200">
-      <div className="w-12 h-12 rounded-xl bg-zinc-900/80 border border-zinc-800/80 flex items-center justify-center mb-3 shadow-inner shadow-black/40">
-        <Icon className="w-6 h-6 text-zinc-400" />
+      <div className="w-12 h-12 rounded-xl bg-zinc-100 border border-zinc-200 dark:bg-zinc-900/80 dark:border-zinc-800/80 flex items-center justify-center mb-3 shadow-xs dark:shadow-inner dark:shadow-black/40">
+        <Icon className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
       </div>
 
-      <h3 className="text-sm font-semibold text-zinc-100 font-mono tracking-tight">{title}</h3>
+      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 font-mono tracking-tight">{title}</h3>
 
       {description && (
-        <p className="text-xs text-zinc-400 mt-1 font-mono leading-relaxed">{description}</p>
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 font-mono leading-relaxed">{description}</p>
       )}
 
       {(action || secondaryAction) && (
@@ -40,7 +40,7 @@ export const EmptyState: FC<EmptyStateProps> = ({
             <button
               type="button"
               onClick={secondaryAction.onClick}
-              className="px-3 py-1.5 rounded text-xs font-mono font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 border border-zinc-800 transition-colors"
+              className="px-3 py-1.5 rounded text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 transition-colors"
             >
               {secondaryAction.label}
             </button>
