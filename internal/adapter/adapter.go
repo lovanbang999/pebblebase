@@ -51,8 +51,8 @@ type Filter struct {
 // QueryResult holds the rows returned by a Query call along with the total
 // unfiltered count, which the frontend uses for pagination.
 type QueryResult struct {
-	Rows       []map[string]any
-	TotalCount int
+	Rows       []map[string]any `json:"rows"`
+	TotalCount int              `json:"total_count"`
 }
 
 // MutationOp describes an insert, update, or delete operation.
