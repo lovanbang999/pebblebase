@@ -142,3 +142,46 @@ func (s *Server) pingConnection(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
+
+// testConnection handles POST /api/connections/test.
+// Tests the connection with given parameters without persisting it.
+func (s *Server) testConnection(w http.ResponseWriter, r *http.Request) {
+	var req createConnectionRequest
+	if err := decodeBody(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	input := connection.ConnectionInput{
+		Type:         req.Type,
+		Mode:         req.Mode,
+		Host:         req.Host,
+		Port:         req.Port,
+		User:         req.User,
+		Password:     req.Password,
+		DBName:       req.DBName,
+		RawURL:       req.RawURL,
+		SavePassword: req.SavePassword,
+	}
+
+	dsn, err := input.ToDSN()
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	a, err := openAdapter(r.Context(), req.Type, dsn)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "cannot connect to database: "+err.Error())
+		return
+	}
+	defer a.Close()
+
+	if err := a.Ping(r.Context()); err != nil {
+		writeError(w, http.StatusBadGateway, "ping failed: "+err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+

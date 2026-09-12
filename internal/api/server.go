@@ -34,6 +34,7 @@ func NewServer(store *storage.Store, enc *storage.Encryptor) *Server {
 // RegisterRoutes registers all /api/* routes on mux.
 func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	// Connection management
+	mux.HandleFunc("POST /api/connections/test", s.testConnection)
 	mux.HandleFunc("POST /api/connections", s.createConnection)
 	mux.HandleFunc("GET /api/connections", s.listConnections)
 	mux.HandleFunc("DELETE /api/connections/{id}", s.deleteConnection)
