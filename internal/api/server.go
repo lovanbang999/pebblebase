@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"pebblebase/internal/adapter"
+	mysqladapter "pebblebase/internal/adapter/mysql"
 	pgadapter "pebblebase/internal/adapter/postgres"
 	"pebblebase/internal/storage"
 )
@@ -116,6 +117,8 @@ func openAdapter(ctx context.Context, dbType, dsn string) (adapter.Adapter, erro
 	switch dbType {
 	case "postgres":
 		return pgadapter.New(ctx, dsn)
+	case "mysql":
+		return mysqladapter.New(ctx, dsn)
 	default:
 		return nil, fmt.Errorf("unsupported database type: %q", dbType)
 	}
