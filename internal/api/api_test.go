@@ -10,6 +10,7 @@ import (
 	"os"
 	"testing"
 
+	mysqladapter "pebblebase/internal/adapter/mysql"
 	pgadapter "pebblebase/internal/adapter/postgres"
 	"pebblebase/internal/api"
 	"pebblebase/internal/storage"
@@ -45,6 +46,21 @@ func setupTestServer(t *testing.T) (*http.ServeMux, *storage.Store) {
 	srv.RegisterRoutes(mux)
 
 	return mux, store
+}
+
+func testMySQLDSN(t *testing.T) string {
+	t.Helper()
+	dsn := os.Getenv("PEBBLEBASE_TEST_MYSQL_DSN")
+	if dsn == "" {
+		dsn = "pebble:pebble@tcp(localhost:3306)/pebble_test?parseTime=true"
+	}
+	ctx := context.Background()
+	a, err := mysqladapter.New(ctx, dsn)
+	if err != nil {
+		t.Skipf("MySQL DB not reachable (%v) — skipping integration test", err)
+	}
+	a.Close()
+	return dsn
 }
 
 func testPostgresDSN(t *testing.T) string {
@@ -357,6 +373,140 @@ func TestEndToEndCRUD_Postgres(t *testing.T) {
 	}
 
 	// 9. Delete connection
+	reqDelConn := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/connections/%s", connID), nil)
+	recDelConn := httptest.NewRecorder()
+	mux.ServeHTTP(recDelConn, reqDelConn)
+	if recDelConn.Code != http.StatusNoContent {
+		t.Fatalf("delete connection failed: status %d: %s", recDelConn.Code, recDelConn.Body.String())
+	}
+}
+
+func TestEndToEndCRUD_MySQL(t *testing.T) {
+	_ = testMySQLDSN(t)
+	mux, _ := setupTestServer(t)
+
+	// 1. Test connection endpoint first
+	testConnPayload := map[string]any{
+		"name":     "MySQL Local",
+		"type":     "mysql",
+		"mode":     "form",
+		"host":     "localhost",
+		"port":     "3306",
+		"user":     "pebble",
+		"password": "pebble",
+		"db_name":  "pebble_test",
+	}
+	bTest, _ := json.Marshal(testConnPayload)
+	reqTest := httptest.NewRequest(http.MethodPost, "/api/connections/test", bytes.NewReader(bTest))
+	recTest := httptest.NewRecorder()
+	mux.ServeHTTP(recTest, reqTest)
+	if recTest.Code != http.StatusOK {
+		t.Fatalf("test connection failed: status %d: %s", recTest.Code, recTest.Body.String())
+	}
+
+	// 2. Create connection
+	createPayload := map[string]any{
+		"name":          "MySQL Local",
+		"type":          "mysql",
+		"mode":          "form",
+		"host":          "localhost",
+		"port":          "3306",
+		"user":          "pebble",
+		"password":      "pebble",
+		"db_name":       "pebble_test",
+		"save_password": true,
+	}
+	bCreate, _ := json.Marshal(createPayload)
+	reqCreate := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(bCreate))
+	recCreate := httptest.NewRecorder()
+	mux.ServeHTTP(recCreate, reqCreate)
+	if recCreate.Code != http.StatusCreated {
+		t.Fatalf("create connection failed: status %d: %s", recCreate.Code, recCreate.Body.String())
+	}
+
+	var connResp struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(recCreate.Body.Bytes(), &connResp); err != nil {
+		t.Fatalf("unmarshal conn: %v", err)
+	}
+	connID := connResp.ID
+
+	// 3. Introspect tables
+	reqTables := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables", connID), nil)
+	recTables := httptest.NewRecorder()
+	mux.ServeHTTP(recTables, reqTables)
+	if recTables.Code != http.StatusOK {
+		t.Fatalf("list tables failed: status %d: %s", recTables.Code, recTables.Body.String())
+	}
+
+	var tables []struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(recTables.Body.Bytes(), &tables); err != nil {
+		t.Fatalf("unmarshal tables: %v", err)
+	}
+	foundUsers := false
+	for _, tbl := range tables {
+		if tbl.Name == "users" {
+			foundUsers = true
+			break
+		}
+	}
+	if !foundUsers {
+		t.Fatalf("expected 'users' table in MySQL tables: %v", tables)
+	}
+
+	// 4. Query rows
+	reqRows := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/users/rows?limit=2&sort_by=id&sort_desc=false", connID), nil)
+	recRows := httptest.NewRecorder()
+	mux.ServeHTTP(recRows, reqRows)
+	if recRows.Code != http.StatusOK {
+		t.Fatalf("query rows failed: status %d: %s", recRows.Code, recRows.Body.String())
+	}
+
+	// 5. Insert, update, delete row
+	testEmail := "mysql_api_test@example.com"
+	insertPayload := map[string]any{
+		"values": map[string]any{
+			"name":  "MySQL API Test",
+			"email": testEmail,
+		},
+	}
+	bInsert, _ := json.Marshal(insertPayload)
+	reqInsert := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/tables/users/rows", connID), bytes.NewReader(bInsert))
+	recInsert := httptest.NewRecorder()
+	mux.ServeHTTP(recInsert, reqInsert)
+	if recInsert.Code != http.StatusCreated {
+		t.Fatalf("insert row failed: status %d: %s", recInsert.Code, recInsert.Body.String())
+	}
+
+	// Update row
+	updatePayload := map[string]any{
+		"where":  map[string]any{"email": testEmail},
+		"values": map[string]any{"name": "MySQL API Test Updated"},
+	}
+	bUpdate, _ := json.Marshal(updatePayload)
+	reqUpdate := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/connections/%s/tables/users/rows", connID), bytes.NewReader(bUpdate))
+	recUpdate := httptest.NewRecorder()
+	mux.ServeHTTP(recUpdate, reqUpdate)
+	if recUpdate.Code != http.StatusNoContent {
+		t.Fatalf("update row failed: status %d: %s", recUpdate.Code, recUpdate.Body.String())
+	}
+
+	// Delete row
+	deletePayload := map[string]any{
+		"where": map[string]any{"email": testEmail},
+	}
+	bDelete, _ := json.Marshal(deletePayload)
+	reqDelete := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/connections/%s/tables/users/rows", connID), bytes.NewReader(bDelete))
+	recDelete := httptest.NewRecorder()
+	mux.ServeHTTP(recDelete, reqDelete)
+	if recDelete.Code != http.StatusNoContent {
+		t.Fatalf("delete row failed: status %d: %s", recDelete.Code, recDelete.Body.String())
+	}
+
+	// Cleanup connection
 	reqDelConn := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/connections/%s", connID), nil)
 	recDelConn := httptest.NewRecorder()
 	mux.ServeHTTP(recDelConn, reqDelConn)
