@@ -56,6 +56,22 @@ function PebblebaseStudio() {
   const [isRowModalOpen, setIsRowModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, any> | null>(null);
 
+  // Theme state ('dark' | 'light')
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('pb_theme') as 'dark' | 'light') || 'dark';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('pb_theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
   // Data grid state
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
@@ -234,9 +250,11 @@ function PebblebaseStudio() {
   };
 
   return (
-    <div className="flex h-screen w-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden">
+    <div className="flex h-screen w-screen bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans overflow-hidden transition-colors">
       {/* Left Sidebar */}
       <Sidebar
+        theme={theme}
+        onToggleTheme={toggleTheme}
         connections={connections}
         selectedConnection={activeConnection}
         onSelectConnection={(conn: Connection) => {
@@ -254,12 +272,12 @@ function PebblebaseStudio() {
       />
 
       {/* Main Content Pane */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-950">
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-50/50 dark:bg-zinc-950">
         {/* Error notification banner */}
         {(bannerError || tablesError || rowsError) && (
-          <div className="px-4 py-2 bg-rose-950/80 border-b border-rose-800 text-rose-200 text-xs flex items-center justify-between font-mono">
+          <div className="px-4 py-2 bg-rose-50 border-b border-rose-200 text-rose-800 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-200 text-xs flex items-center justify-between font-mono">
             <div className="flex items-center gap-2 truncate">
-              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
               <span className="truncate">
                 {bannerError ||
                   (tablesError as Error)?.message ||
@@ -279,15 +297,15 @@ function PebblebaseStudio() {
         {/* Dynamic Main Views */}
         {connections.length === 0 && !isLoadingConnections ? (
           /* Empty State: No connections at all */
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-zinc-950 select-none">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6 shadow-2xl">
-              <Database className="w-8 h-8 text-emerald-400" />
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-zinc-950 select-none">
+            <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 flex items-center justify-center mb-6 shadow-xl dark:shadow-2xl">
+              <Database className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             </div>
 
-            <h1 className="text-xl font-bold tracking-tight text-zinc-100 mb-2 font-mono">
+            <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2 font-mono">
               Welcome to Pebblebase
             </h1>
-            <p className="text-sm text-zinc-400 max-w-md mb-8 leading-relaxed">
+            <p className="text-sm text-zinc-600 dark:text-zinc-400 max-w-md mb-8 leading-relaxed">
               Connect to your local or remote database to explore schemas, query records,
               and execute mutations directly from a single binary.
             </p>
@@ -295,34 +313,34 @@ function PebblebaseStudio() {
             <button
               type="button"
               onClick={() => setIsConnModalOpen(true)}
-              className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-950 font-semibold"
+              className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950"
             >
               <Plus className="w-4 h-4" />
               Add First Connection
             </button>
 
             {/* Feature Badges */}
-            <div className="grid grid-cols-3 gap-6 max-w-xl mt-16 pt-8 border-t border-zinc-900 text-left">
-              <div className="p-3 rounded bg-zinc-900/40 border border-zinc-900">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 mb-1.5" />
-                <h4 className="text-xs font-semibold text-zinc-200">AES-256 Storage</h4>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
+            <div className="grid grid-cols-3 gap-6 max-w-xl mt-16 pt-8 border-t border-zinc-200 dark:border-zinc-900 text-left">
+              <div className="p-3 rounded bg-zinc-50 border border-zinc-200/80 dark:bg-zinc-900/40 dark:border-zinc-900">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mb-1.5" />
+                <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">AES-256 Storage</h4>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                   Passwords encrypted at rest with hardware GCM key.
                 </p>
               </div>
 
-              <div className="p-3 rounded bg-zinc-900/40 border border-zinc-900">
-                <Terminal className="w-4 h-4 text-sky-400 mb-1.5" />
-                <h4 className="text-xs font-semibold text-zinc-200">DataGrip UX</h4>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
+              <div className="p-3 rounded bg-zinc-50 border border-zinc-200/80 dark:bg-zinc-900/40 dark:border-zinc-900">
+                <Terminal className="w-4 h-4 text-sky-600 dark:text-sky-400 mb-1.5" />
+                <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">DataGrip UX</h4>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                   Switch between structured forms and raw DSN URLs.
                 </p>
               </div>
 
-              <div className="p-3 rounded bg-zinc-900/40 border border-zinc-900">
-                <Zap className="w-4 h-4 text-amber-400 mb-1.5" />
-                <h4 className="text-xs font-semibold text-zinc-200">TanStack Virtual</h4>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
+              <div className="p-3 rounded bg-zinc-50 border border-zinc-200/80 dark:bg-zinc-900/40 dark:border-zinc-900">
+                <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400 mb-1.5" />
+                <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">TanStack Virtual</h4>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5">
                   High-speed data grid with zero client memory leaks.
                 </p>
               </div>
@@ -330,12 +348,12 @@ function PebblebaseStudio() {
           </div>
         ) : !activeTable || !activeTableSchema ? (
           /* Empty State: Connection active but no table selected */
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-zinc-950">
-            <Layers className="w-12 h-12 text-zinc-800 mb-4" />
-            <h3 className="text-base font-semibold text-zinc-200 font-mono mb-1">
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-zinc-50/50 dark:bg-zinc-950">
+            <Layers className="w-12 h-12 text-zinc-300 dark:text-zinc-800 mb-4" />
+            <h3 className="text-base font-semibold text-zinc-800 dark:text-zinc-200 font-mono mb-1">
               {activeConnection?.name}
             </h3>
-            <p className="text-xs text-zinc-400 mb-4 font-mono">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 font-mono">
               {tables.length > 0
                 ? 'Select a table from the sidebar to inspect records'
                 : 'No tables discovered in public schema'}
@@ -344,7 +362,7 @@ function PebblebaseStudio() {
               <button
                 type="button"
                 onClick={() => refetchTables()}
-                className="px-3.5 py-1.5 rounded text-xs bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800"
+                className="px-3.5 py-1.5 rounded text-xs bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800"
               >
                 Re-introspect Database
               </button>

@@ -1,10 +1,17 @@
-import { useMemo, useState, useEffect, useRef, type FC, type FormEvent } from 'react';
+import {
+  useMemo,
+  useState,
+  useEffect,
+  useRef,
+  type FC,
+  type FormEvent,
+} from "react";
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   type ColumnDef,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -23,9 +30,9 @@ import {
   ArrowUpRight,
   Search,
   Inbox,
-} from 'lucide-react';
-import type { TableSchema, FilterOption } from '../lib/types';
-import { EmptyState } from './EmptyState';
+} from "lucide-react";
+import type { TableSchema, FilterOption } from "../lib/types";
+import { EmptyState } from "./EmptyState";
 
 interface DataGridProps {
   table: TableSchema;
@@ -45,7 +52,11 @@ interface DataGridProps {
   onAddRow: () => void;
   onEditRow: (row: Record<string, any>) => void;
   onDeleteRow: (row: Record<string, any>) => void;
-  onNavigateRelation?: (targetTable: string, targetColumn: string, value: any) => void;
+  onNavigateRelation?: (
+    targetTable: string,
+    targetColumn: string,
+    value: any,
+  ) => void;
 }
 
 export const DataGrid: FC<DataGridProps> = ({
@@ -69,14 +80,16 @@ export const DataGrid: FC<DataGridProps> = ({
   onNavigateRelation,
 }) => {
   // Filter Builder state
-  const [filterCol, setFilterCol] = useState(table.columns[0]?.name || '');
-  const [filterOp, setFilterOp] = useState<'eq' | 'neq' | 'gt' | 'lt' | 'contains'>('eq');
-  const [filterVal, setFilterVal] = useState('');
+  const [filterCol, setFilterCol] = useState(table.columns[0]?.name || "");
+  const [filterOp, setFilterOp] = useState<
+    "eq" | "neq" | "gt" | "lt" | "contains"
+  >("eq");
+  const [filterVal, setFilterVal] = useState("");
   const [showFilterBuilder, setShowFilterBuilder] = useState(false);
 
   // Quick Search state with 300ms debounce
-  const [quickSearch, setQuickSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [quickSearch, setQuickSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const quickSearchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -90,24 +103,27 @@ export const DataGrid: FC<DataGridProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
-        e.key === '/' &&
-        document.activeElement?.tagName !== 'INPUT' &&
-        document.activeElement?.tagName !== 'TEXTAREA'
+        e.key === "/" &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA"
       ) {
         e.preventDefault();
         quickSearchInputRef.current?.focus();
-      } else if (e.key === 'Escape' && document.activeElement === quickSearchInputRef.current) {
-        setQuickSearch('');
+      } else if (
+        e.key === "Escape" &&
+        document.activeElement === quickSearchInputRef.current
+      ) {
+        setQuickSearch("");
         quickSearchInputRef.current?.blur();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Update filterCol when table changes
   useEffect(() => {
-    setFilterCol(table.columns[0]?.name || '');
+    setFilterCol(table.columns[0]?.name || "");
   }, [table]);
 
   // Discover extra fields from rows that were not in sampled table.columns
@@ -116,7 +132,7 @@ export const DataGrid: FC<DataGridProps> = ({
     const extras = new Set<string>();
     rows.forEach((r) => {
       Object.keys(r).forEach((k) => {
-        if (!schemaColNames.has(k) && !k.startsWith('_pb_')) {
+        if (!schemaColNames.has(k) && !k.startsWith("_pb_")) {
           extras.add(k);
         }
       });
@@ -129,9 +145,12 @@ export const DataGrid: FC<DataGridProps> = ({
     if (!debouncedSearch.trim()) return rows;
     const term = debouncedSearch.toLowerCase();
     return rows.filter((r) =>
-      Object.values(r).some((v) =>
-        v !== null && v !== undefined && String(v).toLowerCase().includes(term)
-      )
+      Object.values(r).some(
+        (v) =>
+          v !== null &&
+          v !== undefined &&
+          String(v).toLowerCase().includes(term),
+      ),
     );
   }, [rows, debouncedSearch]);
 
@@ -139,8 +158,8 @@ export const DataGrid: FC<DataGridProps> = ({
   const columns = useMemo<ColumnDef<Record<string, any>>[]>(() => {
     const cols: ColumnDef<Record<string, any>>[] = [
       {
-        id: '_row_index',
-        header: '#',
+        id: "_row_index",
+        header: "#",
         size: 50,
         cell: (info) => (
           <span className="text-zinc-500 font-mono text-[11px] select-none">
@@ -163,7 +182,7 @@ export const DataGrid: FC<DataGridProps> = ({
               onClick={() => {
                 if (sortBy === col.name) {
                   if (sortDesc) {
-                    onSortChange('', false);
+                    onSortChange("", false);
                   } else {
                     onSortChange(col.name, true);
                   }
@@ -220,12 +239,18 @@ export const DataGrid: FC<DataGridProps> = ({
             );
           }
           if (val === null) {
-            return <span className="text-zinc-500 italic text-[11px] font-mono">NULL</span>;
+            return (
+              <span className="text-zinc-500 italic text-[11px] font-mono">
+                NULL
+              </span>
+            );
           }
 
           // Signature Prisma Studio Click-to-Navigate Foreign Key
           if (col.is_foreign_key && onNavigateRelation) {
-            const rel = table.relations?.find((r) => r.from_column === col.name);
+            const rel = table.relations?.find(
+              (r) => r.from_column === col.name,
+            );
             if (rel) {
               return (
                 <button
@@ -234,7 +259,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     e.stopPropagation();
                     onNavigateRelation(rel.to_table, rel.to_column, val);
                   }}
-                  className="inline-flex items-center gap-1 font-mono text-xs text-sky-400 hover:text-sky-300 hover:underline group/fk text-left px-1.5 py-0.5 rounded bg-sky-950/20 hover:bg-sky-950/50 border border-sky-800/30 transition-colors"
+                  className="inline-flex items-center gap-1 font-mono text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline group/fk text-left px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/20 hover:bg-sky-100 dark:hover:bg-sky-950/50 border border-sky-200 dark:border-sky-800/30 transition-colors"
                   title={`Navigate to ${rel.to_table} where ${rel.to_column} = ${val}`}
                 >
                   <span className="font-semibold">{String(val)}</span>
@@ -245,13 +270,13 @@ export const DataGrid: FC<DataGridProps> = ({
           }
 
           // Booleans
-          if (typeof val === 'boolean') {
+          if (typeof val === "boolean") {
             return (
               <span
                 className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${
                   val
-                    ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
-                    : 'bg-zinc-800 text-zinc-400'
+                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-transparent"
                 }`}
               >
                 {String(val)}
@@ -260,10 +285,10 @@ export const DataGrid: FC<DataGridProps> = ({
           }
 
           // Objects / Arrays / BSON
-          if (typeof val === 'object') {
+          if (typeof val === "object") {
             return (
               <span
-                className="font-mono text-xs text-amber-300/90 truncate block max-w-xs cursor-help"
+                className="font-mono text-xs text-amber-700 dark:text-amber-300/90 truncate block max-w-xs cursor-help"
                 title={JSON.stringify(val, null, 2)}
               >
                 {JSON.stringify(val)}
@@ -274,14 +299,17 @@ export const DataGrid: FC<DataGridProps> = ({
           // Primary key highlight
           if (col.is_primary_key) {
             return (
-              <span className="font-mono text-xs font-semibold text-zinc-100 truncate block">
-                {String(val)}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <Key className="w-3 h-3 text-amber-500 dark:text-amber-400/80 shrink-0" />
+                <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                  {String(val)}
+                </span>
+              </div>
             );
           }
 
           return (
-            <span className="font-mono text-xs text-zinc-300 truncate block">
+            <span className="font-mono text-xs text-zinc-800 dark:text-zinc-300 truncate block">
               {String(val)}
             </span>
           );
@@ -302,7 +330,7 @@ export const DataGrid: FC<DataGridProps> = ({
               onClick={() => {
                 if (sortBy === extraColName) {
                   if (sortDesc) {
-                    onSortChange('', false);
+                    onSortChange("", false);
                   } else {
                     onSortChange(extraColName, true);
                   }
@@ -346,25 +374,29 @@ export const DataGrid: FC<DataGridProps> = ({
             );
           }
           if (val === null) {
-            return <span className="text-zinc-500 italic text-[11px] font-mono">NULL</span>;
+            return (
+              <span className="text-zinc-500 italic text-[11px] font-mono">
+                NULL
+              </span>
+            );
           }
-          if (typeof val === 'boolean') {
+          if (typeof val === "boolean") {
             return (
               <span
                 className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-medium ${
                   val
-                    ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/60'
-                    : 'bg-zinc-800 text-zinc-400'
+                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-transparent"
                 }`}
               >
                 {String(val)}
               </span>
             );
           }
-          if (typeof val === 'object') {
+          if (typeof val === "object") {
             return (
               <span
-                className="font-mono text-xs text-amber-300/90 truncate block max-w-xs cursor-help"
+                className="font-mono text-xs text-amber-700 dark:text-amber-300/90 truncate block max-w-xs cursor-help"
                 title={JSON.stringify(val, null, 2)}
               >
                 {JSON.stringify(val)}
@@ -372,7 +404,7 @@ export const DataGrid: FC<DataGridProps> = ({
             );
           }
           return (
-            <span className="font-mono text-xs text-zinc-300 truncate block">
+            <span className="font-mono text-xs text-zinc-800 dark:text-zinc-300 truncate block">
               {String(val)}
             </span>
           );
@@ -382,11 +414,11 @@ export const DataGrid: FC<DataGridProps> = ({
 
     // Row Actions column
     cols.push({
-      id: '_actions',
-      header: '',
+      id: "_actions",
+      header: "",
       size: 70,
       cell: (info) => (
-        <div className="flex items-center justify-end gap-1 opacity-60 hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-end gap-1 opacity-70 hover:opacity-100 transition-opacity">
           <button
             type="button"
             title="Edit record"
@@ -394,28 +426,42 @@ export const DataGrid: FC<DataGridProps> = ({
               e.stopPropagation();
               onEditRow(info.row.original);
             }}
-            className="p-1 rounded text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
+            className="p-1 rounded text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <Edit2 className="w-3 h-3" />
+            <Edit2 className="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
             title="Delete record"
             onClick={(e) => {
               e.stopPropagation();
-              onDeleteRow(info.row.original);
+              if (confirm("Delete this record permanently?")) {
+                onDeleteRow(info.row.original);
+              }
             }}
-            className="p-1 rounded text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition-colors"
+            className="p-1 rounded text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       ),
     });
 
     return cols;
-  }, [table, extraColumns, sortBy, sortDesc, onSortChange, page, pageSize, onEditRow, onDeleteRow, onNavigateRelation]);
+  }, [
+    table,
+    extraColumns,
+    sortBy,
+    sortDesc,
+    onSortChange,
+    page,
+    pageSize,
+    onEditRow,
+    onDeleteRow,
+    onNavigateRelation,
+  ]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
   const reactTable = useReactTable({
     data: displayedRows,
     columns,
@@ -429,8 +475,11 @@ export const DataGrid: FC<DataGridProps> = ({
   const handleAddFilter = (e: FormEvent) => {
     e.preventDefault();
     if (!filterCol || !filterVal) return;
-    onFiltersChange([...filters, { column: filterCol, operator: filterOp, value: filterVal }]);
-    setFilterVal('');
+    onFiltersChange([
+      ...filters,
+      { column: filterCol, operator: filterOp, value: filterVal },
+    ]);
+    setFilterVal("");
   };
 
   const handleRemoveFilter = (index: number) => {
@@ -440,19 +489,22 @@ export const DataGrid: FC<DataGridProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-zinc-950 overflow-hidden">
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-zinc-950 overflow-hidden transition-colors">
       {/* Top Action Bar */}
-      <div className="p-3 border-b border-zinc-800 flex items-center justify-between gap-3 bg-zinc-900/30">
+      <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 bg-white dark:bg-zinc-900/30">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <TableIcon className="w-4 h-4 text-emerald-400" />
-            <h2 className="font-mono text-sm font-semibold text-zinc-100">{table.name}</h2>
+            <TableIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              {table.name}
+            </h2>
           </div>
-          <span className="text-xs text-zinc-400 font-mono">
-            {totalCount.toLocaleString()} {totalCount === 1 ? 'record' : 'records'}
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+            {totalCount.toLocaleString()}{" "}
+            {totalCount === 1 ? "record" : "records"}
           </span>
           {displayedRows.length !== rows.length && (
-            <span className="text-[11px] text-amber-400/90 font-mono bg-amber-950/40 border border-amber-800/40 px-1.5 py-0.2 rounded">
+            <span className="text-[11px] text-amber-700 dark:text-amber-400/90 font-mono bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/40 px-1.5 py-0.2 rounded">
               Showing {displayedRows.length} matches
             </span>
           )}
@@ -461,20 +513,20 @@ export const DataGrid: FC<DataGridProps> = ({
         <div className="flex items-center gap-2">
           {/* Quick Search Input */}
           <div className="relative flex items-center">
-            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-2.5 pointer-events-none" />
+            <Search className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 absolute left-2.5 pointer-events-none" />
             <input
               ref={quickSearchInputRef}
               type="text"
               value={quickSearch}
               onChange={(e) => setQuickSearch(e.target.value)}
               placeholder="Search view... (/)"
-              className="pl-8 pr-7 py-1 bg-zinc-900 border border-zinc-800 rounded text-xs text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-emerald-500 font-mono w-44 focus:w-60 transition-all shadow-inner"
+              className="pl-8 pr-7 py-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-zinc-200 placeholder:opacity-50 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono w-52 transition-all shadow-inner"
             />
             {quickSearch && (
               <button
                 type="button"
-                onClick={() => setQuickSearch('')}
-                className="absolute right-2 text-zinc-500 hover:text-zinc-300"
+                onClick={() => setQuickSearch("")}
+                className="absolute right-2 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                 title="Clear search (Esc)"
               >
                 <X className="w-3 h-3" />
@@ -488,14 +540,14 @@ export const DataGrid: FC<DataGridProps> = ({
             onClick={() => setShowFilterBuilder(!showFilterBuilder)}
             className={`px-2.5 py-1.5 rounded text-xs font-mono font-medium border flex items-center gap-1.5 transition-colors ${
               filters.length > 0 || showFilterBuilder
-                ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-300'
-                : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:bg-zinc-800'
+                ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-300"
+                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             }`}
           >
             <FilterIcon className="w-3.5 h-3.5" />
             Filter
             {filters.length > 0 && (
-              <span className="w-4 h-4 rounded-full bg-emerald-500 text-zinc-950 text-[10px] font-bold flex items-center justify-center">
+              <span className="w-4 h-4 rounded-full bg-emerald-500 text-white dark:text-zinc-950 text-[10px] font-bold flex items-center justify-center">
                 {filters.length}
               </span>
             )}
@@ -507,16 +559,18 @@ export const DataGrid: FC<DataGridProps> = ({
             onClick={onRefresh}
             disabled={isLoading}
             title="Reload table data"
-            className="p-1.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors disabled:opacity-40"
+            className="p-1.5 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`}
+            />
           </button>
 
           {/* Add Row CTA */}
           <button
             type="button"
             onClick={onAddRow}
-            className="px-3 py-1.5 rounded text-xs font-medium bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition-colors font-semibold shadow-xs"
+            className="px-3 py-1.5 rounded text-xs bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition-colors font-semibold shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Row
@@ -526,14 +580,17 @@ export const DataGrid: FC<DataGridProps> = ({
 
       {/* Filter Builder & Active Filter Chips */}
       {(showFilterBuilder || filters.length > 0) && (
-        <div className="p-3 border-b border-zinc-800/80 bg-zinc-900/40 space-y-2">
+        <div className="p-3 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/40 space-y-2">
           {showFilterBuilder && (
-            <form onSubmit={handleAddFilter} className="flex items-center gap-2 flex-wrap text-xs font-mono">
-              <span className="text-zinc-400">WHERE</span>
+            <form
+              onSubmit={handleAddFilter}
+              className="flex items-center gap-2 flex-wrap text-xs font-mono"
+            >
+              <span className="text-zinc-500 dark:text-zinc-400">WHERE</span>
               <select
                 value={filterCol}
                 onChange={(e) => setFilterCol(e.target.value)}
-                className="px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-200 focus:outline-hidden focus:border-emerald-500"
+                className="px-2.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-zinc-900 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
               >
                 {table.columns.map((c) => (
                   <option key={c.name} value={c.name}>
@@ -550,7 +607,7 @@ export const DataGrid: FC<DataGridProps> = ({
               <select
                 value={filterOp}
                 onChange={(e) => setFilterOp(e.target.value as any)}
-                className="px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-200 focus:outline-hidden focus:border-emerald-500"
+                className="px-2.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-zinc-900 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
               >
                 <option value="eq">=</option>
                 <option value="neq">≠</option>
@@ -564,13 +621,13 @@ export const DataGrid: FC<DataGridProps> = ({
                 value={filterVal}
                 onChange={(e) => setFilterVal(e.target.value)}
                 placeholder="Value..."
-                className="px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded text-zinc-100 placeholder-zinc-400 focus:outline-hidden focus:border-emerald-500 w-44"
+                className="px-2.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-zinc-900 dark:text-zinc-100 placeholder:opacity-50 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 w-44"
               />
 
               <button
                 type="submit"
                 disabled={!filterVal}
-                className="px-3 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-medium disabled:opacity-40"
+                className="px-3 py-1 rounded bg-zinc-900 dark:bg-zinc-800 hover:bg-zinc-800 dark:hover:bg-zinc-700 text-white dark:text-zinc-200 font-medium disabled:opacity-40 transition-colors"
               >
                 Apply
               </button>
@@ -580,21 +637,21 @@ export const DataGrid: FC<DataGridProps> = ({
           {/* Active chips */}
           {filters.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <span className="text-[11px] text-zinc-400 uppercase font-mono tracking-wider mr-1">
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-mono tracking-wider mr-1">
                 Active:
               </span>
               {filters.map((f, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/40 border border-emerald-800/60 text-emerald-300 text-xs font-mono"
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-xs font-mono"
                 >
-                  <span className="font-semibold">{f.column}</span>
-                  <span className="text-zinc-400">{f.operator}</span>
-                  <span className="text-zinc-200 font-medium">{f.value}</span>
+                  <span className="font-semibold text-emerald-900 dark:text-emerald-200">{f.column}</span>
+                  <span className="text-emerald-600 dark:text-zinc-400">{f.operator}</span>
+                  <span className="text-emerald-800 dark:text-zinc-200 font-medium">{f.value}</span>
                   <button
                     type="button"
                     onClick={() => handleRemoveFilter(i)}
-                    className="hover:text-rose-400 ml-0.5"
+                    className="hover:text-rose-500 ml-0.5"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -603,7 +660,7 @@ export const DataGrid: FC<DataGridProps> = ({
               <button
                 type="button"
                 onClick={() => onFiltersChange([])}
-                className="text-[11px] text-zinc-400 hover:text-zinc-200 ml-2 underline"
+                className="text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 ml-2 underline"
               >
                 Clear all
               </button>
@@ -617,23 +674,26 @@ export const DataGrid: FC<DataGridProps> = ({
         {isLoading ? (
           /* Loading Skeletons */
           <div className="flex-1 overflow-hidden p-4 space-y-2 animate-in fade-in duration-200">
-            <div className="border border-zinc-800 rounded-lg overflow-hidden bg-zinc-900/20">
-              <div className="h-10 border-b border-zinc-800 bg-zinc-900/60 px-4 flex items-center gap-4">
-                <div className="h-3 w-6 rounded bg-zinc-800 animate-pulse" />
+            <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50/50 dark:bg-zinc-900/20">
+              <div className="h-10 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 px-4 flex items-center gap-4">
+                <div className="h-3 w-6 rounded bg-zinc-300 dark:bg-zinc-800 animate-pulse" />
                 {table.columns.slice(0, 5).map((c) => (
-                  <div key={c.name} className="h-3.5 w-28 rounded bg-zinc-800/80 animate-pulse" />
+                  <div
+                    key={c.name}
+                    className="h-3.5 w-28 rounded bg-zinc-300/80 dark:bg-zinc-800/80 animate-pulse"
+                  />
                 ))}
               </div>
               {[1, 2, 3, 4, 5, 6, 7, 8].map((rowIdx) => (
                 <div
                   key={rowIdx}
-                  className="h-10 border-b border-zinc-800/40 px-4 flex items-center gap-4"
+                  className="h-10 border-b border-zinc-200/60 dark:border-zinc-800/40 px-4 flex items-center gap-4"
                 >
-                  <div className="h-3 w-6 rounded bg-zinc-800/80 animate-pulse" />
-                  <div className="h-3 w-28 rounded bg-zinc-800/60 animate-pulse" />
-                  <div className="h-3 w-40 rounded bg-zinc-800/60 animate-pulse" />
-                  <div className="h-3 w-20 rounded bg-zinc-800/60 animate-pulse" />
-                  <div className="h-3 w-32 rounded bg-zinc-800/60 animate-pulse" />
+                  <div className="h-3 w-6 rounded bg-zinc-300/80 dark:bg-zinc-800/80 animate-pulse" />
+                  <div className="h-3 w-28 rounded bg-zinc-200/80 dark:bg-zinc-800/60 animate-pulse" />
+                  <div className="h-3 w-40 rounded bg-zinc-200/80 dark:bg-zinc-800/60 animate-pulse" />
+                  <div className="h-3 w-20 rounded bg-zinc-200/80 dark:bg-zinc-800/60 animate-pulse" />
+                  <div className="h-3 w-32 rounded bg-zinc-200/80 dark:bg-zinc-800/60 animate-pulse" />
                 </div>
               ))}
             </div>
@@ -647,8 +707,8 @@ export const DataGrid: FC<DataGridProps> = ({
                 title="No search results"
                 description={`No records matching "${quickSearch}" in current view.`}
                 action={{
-                  label: 'Clear search',
-                  onClick: () => setQuickSearch(''),
+                  label: "Clear search",
+                  onClick: () => setQuickSearch(""),
                 }}
               />
             ) : filters.length > 0 ? (
@@ -657,7 +717,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 title="No matching records"
                 description="No records match the active filter criteria."
                 action={{
-                  label: 'Clear all filters',
+                  label: "Clear all filters",
                   onClick: () => onFiltersChange([]),
                 }}
               />
@@ -667,7 +727,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 title="Table is empty"
                 description={`No records have been inserted into "${table.name}" yet.`}
                 action={{
-                  label: 'Insert first record',
+                  label: "Insert first record",
                   onClick: onAddRow,
                   icon: Plus,
                 }}
@@ -676,36 +736,42 @@ export const DataGrid: FC<DataGridProps> = ({
           </div>
         ) : (
           /* Data Table */
-          <table className="w-full border-collapse text-left border-b border-zinc-800">
-            <thead className="sticky top-0 z-10 bg-zinc-900 border-b border-zinc-800">
+          <table className="w-full border-collapse text-left border-b border-zinc-200 dark:border-zinc-800">
+            <thead className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
               {reactTable.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
                       style={{ width: header.getSize() }}
-                      className="px-3 py-2 text-xs font-medium text-zinc-400 border-r border-zinc-800/80 last:border-r-0 whitespace-nowrap"
+                      className="px-3 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 not-last:border-r border-zinc-200 dark:border-zinc-800/80 whitespace-nowrap"
                     >
-                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
                     </th>
                   ))}
                 </tr>
               ))}
             </thead>
 
-            <tbody className="divide-y divide-zinc-800/50">
+            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800/50">
               {reactTable.getRowModel().rows.map((row) => (
                 <tr
                   key={row.id}
-                  className="hover:bg-zinc-900/60 transition-colors group cursor-pointer"
+                  className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group cursor-pointer"
                   onClick={() => onEditRow(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td
                       key={cell.id}
-                      className="px-3 py-2 text-xs border-r border-zinc-800/40 last:border-r-0 whitespace-nowrap max-w-sm truncate"
+                      className="px-3 py-2 text-xs not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap max-w-sm truncate text-zinc-800 dark:text-zinc-200"
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -716,19 +782,19 @@ export const DataGrid: FC<DataGridProps> = ({
       </div>
 
       {/* Pagination Footer */}
-      <div className="h-11 px-4 border-t border-zinc-800 bg-zinc-900/40 flex items-center justify-between text-xs font-mono text-zinc-400">
+      <div className="h-11 px-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 flex items-center justify-between text-xs font-mono text-zinc-500 dark:text-zinc-400">
         <div className="flex items-center gap-3">
           <span>
             {totalCount === 0
-              ? '0 records'
+              ? "0 records"
               : `Showing ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} of ${totalCount}`}
           </span>
           <div className="flex items-center gap-1.5 ml-2">
-            <span className="text-[11px] text-zinc-400">Per page:</span>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Per page:</span>
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="bg-zinc-900 border border-zinc-800 rounded px-1.5 py-0.5 text-zinc-300 text-xs focus:outline-hidden focus:border-emerald-500"
+              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded px-1.5 py-0.5 text-zinc-800 dark:text-zinc-300 text-xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
             >
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -738,7 +804,7 @@ export const DataGrid: FC<DataGridProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-zinc-400">
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
             Page {page + 1} of {totalPages}
           </span>
           <div className="flex items-center gap-1">
@@ -746,7 +812,7 @@ export const DataGrid: FC<DataGridProps> = ({
               type="button"
               disabled={page <= 0}
               onClick={() => onPageChange(page - 1)}
-              className="p-1 rounded bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 disabled:opacity-40 transition-colors"
+              className="p-1 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition-colors"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -754,7 +820,7 @@ export const DataGrid: FC<DataGridProps> = ({
               type="button"
               disabled={page + 1 >= totalPages}
               onClick={() => onPageChange(page + 1)}
-              className="p-1 rounded bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 disabled:opacity-40 transition-colors"
+              className="p-1 rounded bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 transition-colors"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
