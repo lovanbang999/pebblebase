@@ -1,3 +1,20 @@
 // Package pebblebase embeds the compiled frontend assets into the Go binary.
-// The actual embed directive is activated in Phase 6 once the web/dist directory exists.
 package pebblebase
+
+import (
+	"embed"
+	"fmt"
+	"io/fs"
+)
+
+//go:embed web/dist/*
+var distFS embed.FS
+
+// FrontendFS returns an fs.FS rooted at the compiled web assets (stripping "web/dist").
+func FrontendFS() (fs.FS, error) {
+	sub, err := fs.Sub(distFS, "web/dist")
+	if err != nil {
+		return nil, fmt.Errorf("embed: sub fs: %w", err)
+	}
+	return sub, nil
+}
