@@ -202,13 +202,26 @@ export const Sidebar: FC<SidebarProps> = ({
               <p className="text-[11px] text-zinc-400 mt-1">Connect to introspect database</p>
             </div>
           ) : isLoadingTables ? (
-            <div className="py-8 px-3 text-center text-xs text-zinc-400 flex flex-col items-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin text-emerald-500" />
-              Introspecting tables...
+            <div className="p-1 space-y-1 animate-in fade-in duration-150">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between px-2.5 py-2 rounded bg-zinc-900/50 animate-pulse border border-zinc-900"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 rounded bg-zinc-800" />
+                    <div
+                      className="h-3 rounded bg-zinc-800"
+                      style={{ width: `${65 + (i % 4) * 20}px` }}
+                    />
+                  </div>
+                  <div className="h-3 w-4 rounded bg-zinc-800/80" />
+                </div>
+              ))}
             </div>
           ) : filteredTables.length === 0 ? (
-            <div className="py-8 px-3 text-center text-xs text-zinc-400 font-mono">
-              {tables.length === 0 ? 'No user tables found' : 'No matching tables'}
+            <div className="py-8 px-3 text-center text-xs text-zinc-500 font-mono">
+              {tables.length === 0 ? 'No user tables found' : `No tables matching "${tableSearch}"`}
             </div>
           ) : (
             filteredTables.map((tbl) => {
