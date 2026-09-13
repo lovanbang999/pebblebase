@@ -15,6 +15,18 @@ import {
   Moon,
 } from 'lucide-react';
 import type { Connection, TableSchema } from '../lib/types';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { cn } from 'cn';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface SidebarProps {
   theme: 'dark' | 'light';
@@ -46,7 +58,6 @@ export const Sidebar: FC<SidebarProps> = ({
   onRefreshTables,
 }) => {
   const [tableSearch, setTableSearch] = useState('');
-  const [showConnMenu, setShowConnMenu] = useState(false);
 
   const filteredTables = tables.filter((t) =>
     t.name.toLowerCase().includes(tableSearch.toLowerCase())
@@ -67,28 +78,30 @@ export const Sidebar: FC<SidebarProps> = ({
 
         <div className="flex items-center gap-1.5">
           {/* Theme Toggle Sun / Moon */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon-sm"
             onClick={onToggleTheme}
             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
-            className="p-1.5 rounded bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors"
           >
             {theme === 'dark' ? (
               <Sun className="w-3.5 h-3.5 text-amber-400" />
             ) : (
               <Moon className="w-3.5 h-3.5 text-indigo-600" />
             )}
-          </button>
+          </Button>
 
           {/* New Connection CTA */}
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon-sm"
             onClick={onOpenNewConnection}
             title="New Connection"
-            className="p-1.5 rounded bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200/70 dark:hover:bg-zinc-800 transition-colors"
           >
             <Plus className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -107,11 +120,12 @@ export const Sidebar: FC<SidebarProps> = ({
         </div>
 
         {selectedConnection ? (
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowConnMenu(!showConnMenu)}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded text-left text-xs transition-colors"
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "w-full justify-between h-8 px-2.5 bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 text-left text-xs font-normal cursor-pointer"
+              )}
             >
               <div className="flex items-center gap-2 truncate">
                 <HardDrive className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -120,78 +134,68 @@ export const Sidebar: FC<SidebarProps> = ({
                 </span>
               </div>
               <ChevronDown className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 shrink-0" />
-            </button>
+            </DropdownMenuTrigger>
 
-            {showConnMenu && (
-              <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded shadow-xl py-1 animate-in fade-in zoom-in-95 duration-100">
-                <div className="max-h-48 overflow-y-auto">
-                  {connections.map((c) => (
-                    <div
-                      key={c.id}
-                      className={`flex items-center justify-between px-2.5 py-1.5 text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800/80 cursor-pointer ${
-                        c.id === selectedConnection.id
-                          ? 'bg-zinc-100/70 dark:bg-zinc-800/50 text-emerald-700 dark:text-emerald-300'
-                          : 'text-zinc-700 dark:text-zinc-300'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onSelectConnection(c);
-                          setShowConnMenu(false);
-                        }}
-                        className="flex-1 text-left flex items-center gap-1.5 truncate"
-                      >
-                        {c.id === selectedConnection.id && (
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        )}
-                        <span className="truncate">{c.name}</span>
-                        <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
-                          ({c.db_name})
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        title="Delete connection"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (confirm(`Remove connection "${c.name}"?`)) {
-                            onDeleteConnection(c.id);
-                          }
-                        }}
-                        className="text-zinc-400 hover:text-rose-500 p-1 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-1 border-t border-zinc-100 dark:border-zinc-800">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowConnMenu(false);
-                      onOpenNewConnection();
-                    }}
-                    className="w-full px-2.5 py-1.5 text-xs text-left text-emerald-600 dark:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1.5 font-medium"
+            <DropdownMenuContent className="w-56" align="start">
+              <div className="max-h-48 overflow-y-auto">
+                {connections.map((c) => (
+                  <DropdownMenuItem
+                    key={c.id}
+                    onClick={() => onSelectConnection(c)}
+                    className={`flex items-center justify-between text-xs cursor-pointer ${
+                      c.id === selectedConnection.id
+                        ? 'text-emerald-700 dark:text-emerald-300 font-medium'
+                        : 'text-zinc-700 dark:text-zinc-300'
+                    }`}
                   >
-                    <Plus className="w-3.5 h-3.5" />
-                    New Connection...
-                  </button>
-                </div>
+                    <div className="flex items-center gap-1.5 truncate flex-1">
+                      {c.id === selectedConnection.id && (
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      )}
+                      <span className="truncate">{c.name}</span>
+                      <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+                        ({c.db_name})
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      title="Delete connection"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Remove connection "${c.name}"?`)) {
+                          onDeleteConnection(c.id);
+                        }
+                      }}
+                      className="text-zinc-400 hover:text-rose-500 h-5 w-5 ml-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuItem>
+                ))}
               </div>
-            )}
-          </div>
+
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={onOpenNewConnection}
+                className="text-xs text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                New Connection...
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onOpenNewConnection}
-            className="w-full py-2 px-3 border border-dashed border-zinc-300 dark:border-zinc-700 hover:border-emerald-500 rounded text-xs text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center gap-1.5 transition-colors font-medium"
+            className="w-full h-8 border-dashed border-zinc-300 dark:border-zinc-700 hover:border-emerald-500 text-xs text-zinc-600 dark:text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium justify-center"
           >
             <Plus className="w-3.5 h-3.5" />
             Connect Database
-          </button>
+          </Button>
         )}
       </div>
 
@@ -199,24 +203,26 @@ export const Sidebar: FC<SidebarProps> = ({
       <div className="flex-1 flex flex-col min-h-0">
         <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2">
           <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2 top-2" />
-            <input
+            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-2 top-2 pointer-events-none" />
+            <Input
               type="text"
               placeholder="Filter tables..."
               value={tableSearch}
               onChange={(e) => setTableSearch(e.target.value)}
-              className="w-full pl-7 pr-2 py-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-zinc-200 placeholder:opacity-50 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 font-mono"
+              className="pl-7 pr-2 h-7 text-xs font-mono"
             />
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={onRefreshTables}
             disabled={isLoadingTables || !selectedConnection}
             title="Refresh tables"
-            className="p-1 rounded text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors disabled:opacity-40"
+            className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoadingTables ? 'animate-spin' : ''}`} />
-          </button>
+          </Button>
         </div>
 
         {/* Tables list */}
@@ -232,16 +238,16 @@ export const Sidebar: FC<SidebarProps> = ({
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between px-2.5 py-2 rounded bg-zinc-100/60 dark:bg-zinc-900/50 animate-pulse border border-zinc-200/60 dark:border-zinc-900"
+                  className="flex items-center justify-between px-2.5 py-2 rounded bg-zinc-100/60 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-900"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-3.5 h-3.5 rounded bg-zinc-300 dark:bg-zinc-800" />
-                    <div
-                      className="h-3 rounded bg-zinc-300 dark:bg-zinc-800"
+                    <Skeleton className="w-3.5 h-3.5 rounded" />
+                    <Skeleton
+                      className="h-3 rounded"
                       style={{ width: `${65 + (i % 4) * 20}px` }}
                     />
                   </div>
-                  <div className="h-3 w-4 rounded bg-zinc-300/80 dark:bg-zinc-800/80" />
+                  <Skeleton className="h-3 w-4 rounded" />
                 </div>
               ))}
             </div>
@@ -288,15 +294,12 @@ export const Sidebar: FC<SidebarProps> = ({
                         <Layers className="w-2.5 h-2.5 text-sky-500 dark:text-sky-400/80" />
                       </span>
                     )}
-                    <span
-                      className={`text-[10px] px-1 rounded font-mono ${
-                        isSelected
-                          ? 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300'
-                          : 'bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400'
-                      }`}
+                    <Badge
+                      variant={isSelected ? "default" : "secondary"}
+                      className="text-[10px] px-1 h-4 font-mono font-normal"
                     >
                       {tbl.columns.length}
-                    </span>
+                    </Badge>
                   </div>
                 </button>
               );

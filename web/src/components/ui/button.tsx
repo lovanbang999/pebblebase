@@ -1,3 +1,4 @@
+/* oxlint-disable react/only-export-components */
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
@@ -54,5 +55,4 @@ function Button({
   )
 }
 
-// eslint-disable-next-line react-refresh/only-export-components, react/only-export-components
 export { Button, buttonVariants }

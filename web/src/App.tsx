@@ -34,6 +34,9 @@ import { ConnectionModal } from './components/ConnectionModal';
 import { Sidebar } from './components/Sidebar';
 import { DataGrid } from './components/DataGrid';
 import { RowModal } from './components/RowModal';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -275,23 +278,25 @@ function PebblebaseStudio() {
       <main className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-50/50 dark:bg-zinc-950">
         {/* Error notification banner */}
         {(bannerError || tablesError || rowsError) && (
-          <div className="px-4 py-2 bg-rose-50 border-b border-rose-200 text-rose-800 dark:bg-rose-950/80 dark:border-rose-800 dark:text-rose-200 text-xs flex items-center justify-between font-mono">
+          <Alert variant="destructive" className="rounded-none border-x-0 border-t-0 text-xs flex items-center justify-between font-mono py-2 px-4">
             <div className="flex items-center gap-2 truncate">
-              <AlertCircle className="w-4 h-4 text-rose-500 dark:text-rose-400 shrink-0" />
-              <span className="truncate">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <AlertDescription className="truncate text-xs font-mono">
                 {bannerError ||
                   (tablesError as Error)?.message ||
                   (rowsError as Error)?.message}
-              </span>
+              </AlertDescription>
             </div>
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="sm"
               onClick={() => setBannerError(null)}
-              className="text-rose-400 hover:text-rose-100 text-xs underline ml-4"
+              className="text-xs text-rose-400 hover:text-rose-100 p-0 h-auto underline ml-4 shrink-0"
             >
               Dismiss
-            </button>
-          </div>
+            </Button>
+          </Alert>
         )}
 
         {/* Dynamic Main Views */}
@@ -310,14 +315,15 @@ function PebblebaseStudio() {
               and execute mutations directly from a single binary.
             </p>
 
-            <button
+            <Button
               type="button"
+              size="lg"
               onClick={() => setIsConnModalOpen(true)}
               className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950"
             >
               <Plus className="w-4 h-4" />
               Add First Connection
-            </button>
+            </Button>
 
             {/* Feature Badges */}
             <div className="grid grid-cols-3 gap-6 max-w-xl mt-16 pt-8 border-t border-zinc-200 dark:border-zinc-900 text-left">
@@ -359,13 +365,15 @@ function PebblebaseStudio() {
                 : 'No tables discovered in public schema'}
             </p>
             {tables.length === 0 && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => refetchTables()}
-                className="px-3.5 py-1.5 rounded text-xs bg-white border border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white dark:hover:bg-zinc-800"
+                className="text-xs"
               >
                 Re-introspect Database
-              </button>
+              </Button>
             )}
           </div>
         ) : (
@@ -445,7 +453,9 @@ function PebblebaseStudio() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <PebblebaseStudio />
+      <TooltipProvider>
+        <PebblebaseStudio />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
