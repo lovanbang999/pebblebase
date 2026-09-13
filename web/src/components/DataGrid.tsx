@@ -34,6 +34,8 @@ import {
 import type { TableSchema, FilterOption } from "../lib/types";
 import { EmptyState } from "./EmptyState";
 import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -510,8 +512,10 @@ export const DataGrid: FC<DataGridProps> = ({
   return (
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-zinc-950 overflow-hidden transition-colors">
       {/* Top Action Bar */}
-      <div className="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 bg-white dark:bg-zinc-900/30">
-        <div className="flex items-center gap-3">
+      <div className="h-11 px-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 bg-white dark:bg-zinc-900/30">
+        <div className="flex items-center gap-2.5">
+          <SidebarTrigger className="-ml-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer shrink-0" />
+          <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800" />
           <div className="flex items-center gap-2">
             <TableIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <h2 className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
