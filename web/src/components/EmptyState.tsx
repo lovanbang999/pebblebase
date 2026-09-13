@@ -1,4 +1,5 @@
 import type { FC, ElementType } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface EmptyStateProps {
   icon: ElementType;
@@ -37,24 +38,27 @@ export const EmptyState: FC<EmptyStateProps> = ({
       {(action || secondaryAction) && (
         <div className="flex items-center gap-2 mt-4">
           {secondaryAction && (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={secondaryAction.onClick}
-              className="px-3 py-1.5 rounded text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 transition-colors"
+              className="text-xs font-mono"
             >
               {secondaryAction.label}
-            </button>
+            </Button>
           )}
 
           {action && (
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={action.onClick}
-              className="px-3 py-1.5 rounded text-xs font-mono font-medium bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 transition-colors shadow-xs"
+              className="text-xs font-mono bg-emerald-600 hover:bg-emerald-500 text-white"
             >
               {action.icon && <action.icon className="w-3.5 h-3.5" />}
               {action.label}
-            </button>
+            </Button>
           )}
         </div>
       )}
