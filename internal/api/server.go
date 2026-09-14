@@ -51,6 +51,9 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/connections/{id}/tables/{table}/rows", s.insertRow)
 	mux.HandleFunc("PATCH /api/connections/{id}/tables/{table}/rows", s.updateRow)
 	mux.HandleFunc("DELETE /api/connections/{id}/tables/{table}/rows", s.deleteRow)
+
+	// Ad-hoc raw SQL and Mongo query execution
+	mux.HandleFunc("POST /api/connections/{id}/query", s.executeRawQuery)
 }
 
 // --------------------------------------------------------------------------

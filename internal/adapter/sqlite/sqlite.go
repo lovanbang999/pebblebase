@@ -105,3 +105,8 @@ func (a *SQLiteAdapter) Query(ctx context.Context, table string, opts adapter.Qu
 func (a *SQLiteAdapter) Mutate(ctx context.Context, table string, op adapter.MutationOp) error {
 	return mutate(ctx, a.db, table, op)
 }
+
+// ExecuteRaw runs an arbitrary SQL statement and returns the columns, rows, latency, and rows affected.
+func (a *SQLiteAdapter) ExecuteRaw(ctx context.Context, query string) (adapter.RawQueryResult, error) {
+	return executeRaw(ctx, a.db, query)
+}

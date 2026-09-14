@@ -8,6 +8,8 @@ package adapter
 
 import (
 	"context"
+	"math"
+	"time"
 
 	"pebblebase/internal/schema"
 )
@@ -25,11 +27,37 @@ type Adapter interface {
 	// Mutate performs an insert, update, or delete operation on the given table.
 	Mutate(ctx context.Context, table string, op MutationOp) error
 
+	// ExecuteRaw runs an arbitrary SQL statement or MongoDB command/query.
+	ExecuteRaw(ctx context.Context, query string) (RawQueryResult, error)
+
 	// Ping verifies that the underlying connection is alive.
 	Ping(ctx context.Context) error
 
 	// Close releases all resources held by the adapter.
 	Close() error
+}
+
+// RawQueryResult holds the result of executing an arbitrary query.
+type RawQueryResult struct {
+	Columns         []string         `json:"columns"`
+	Rows            []map[string]any `json:"rows"`
+	ExecutionTimeMs float64          `json:"execution_time_ms"`
+	RowsAffected    int64            `json:"rows_affected"`
+	IsMutation      bool             `json:"is_mutation"`
+}
+
+// ElapsedMs calculates execution latency in milliseconds with 2-decimal precision.
+func ElapsedMs(start time.Time) float64 {
+	elapsed := float64(time.Since(start).Microseconds()) / 1000.0
+	if elapsed < 0.01 {
+		return 0.01
+	}
+	return math.Round(elapsed*100) / 100
+}
+
+// RawRunner is implemented by adapters capable of executing arbitrary raw queries.
+type RawRunner interface {
+	ExecuteRaw(ctx context.Context, query string) (RawQueryResult, error)
 }
 
 // QueryOptions controls filtering, sorting, and pagination for Query calls.

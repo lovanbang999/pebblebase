@@ -74,3 +74,23 @@ export interface QueryResult {
   rows: Record<string, any>[];
   total_count: number;
 }
+
+export interface RawQueryResult {
+  columns: string[];
+  rows: Record<string, any>[];
+  execution_time_ms: number;
+  round_trip_ms?: number;
+  rows_affected: number;
+  is_mutation: boolean;
+}
+
+export interface QueryHistoryItem {
+  id: string;
+  query: string;
+  timestamp: number;
+  execution_time_ms?: number;
+  round_trip_ms?: number;
+  is_mutation?: boolean;
+  row_count?: number;
+  error?: string;
+}

@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Connection } from './lib/types';
 import { ConnectionModal } from './components/ConnectionModal';
 import { Sidebar } from './components/Sidebar';
 import { DataGrid } from './components/DataGrid';
+import { QueryConsole } from './components/QueryConsole';
 import { RowModal } from './components/RowModal';
 import { ErrorBanner } from './components/ErrorBanner';
 import { WelcomeScreen } from './components/WelcomeScreen';
@@ -71,6 +73,39 @@ function PebblebaseStudio() {
     getWhereCondition,
   } = usePebblebaseStudio();
 
+  const [mainView, setMainView] = useState<'table' | 'console'>('table');
+  const [consoleInitialQuery, setConsoleInitialQuery] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === 'q' || e.key === 'Q')) {
+        e.preventDefault();
+        setMainView((prev) => (prev === 'console' ? 'table' : 'console'));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleOpenQueryConsole = (customQuery?: string) => {
+    if (customQuery) {
+      setConsoleInitialQuery(customQuery);
+    } else if (activeTable) {
+      const isMongo = activeConnection?.type === 'mongodb';
+      const isMysql = activeConnection?.type === 'mysql';
+      setConsoleInitialQuery(
+        isMongo
+          ? `db.${activeTable}.find({}).limit(50)`
+          : isMysql
+          ? `SELECT * FROM \`${activeTable}\` LIMIT 50;`
+          : `SELECT * FROM "${activeTable}" LIMIT 50;`
+      );
+    } else {
+      setConsoleInitialQuery(undefined);
+    }
+    setMainView('console');
+  };
+
   return (
     <SidebarProvider defaultOpen={true} className="h-screen w-screen overflow-hidden bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors">
       {/* Left Sidebar */}
@@ -83,6 +118,7 @@ function PebblebaseStudio() {
           setUserSelectedConnectionId(conn.id);
           setUserSelectedTable(null);
           setBannerError(null);
+          setConsoleInitialQuery(undefined);
         }}
         onDeleteConnection={handleDeleteConnection}
         onCloneConnection={(conn: Connection) => {
@@ -95,9 +131,14 @@ function PebblebaseStudio() {
         }}
         tables={tables}
         selectedTable={activeTable}
-        onSelectTable={handleSelectTable}
+        onSelectTable={(tableName) => {
+          handleSelectTable(tableName);
+          setMainView('table');
+        }}
         isLoadingTables={isLoadingTables}
         onRefreshTables={() => refetchTables()}
+        activeView={mainView}
+        onOpenQueryConsole={() => handleOpenQueryConsole()}
       />
 
       {/* Main Content Pane */}
@@ -111,6 +152,17 @@ function PebblebaseStudio() {
             onOpenNewConnection={() => {
               setCloningConnection(null);
               setIsConnModalOpen(true);
+            }}
+          />
+        ) : mainView === 'console' && activeConnection ? (
+          <QueryConsole
+            key={`console-${activeConnection.id}`}
+            connection={activeConnection}
+            tables={tables}
+            initialQuery={consoleInitialQuery}
+            onNavigateToTable={(tName) => {
+              handleSelectTable(tName);
+              setMainView('table');
             }}
           />
         ) : !activeTable || !activeTableSchema ? (
@@ -146,6 +198,7 @@ function PebblebaseStudio() {
             }}
             onRefresh={() => refetchRows()}
             isReadOnly={Boolean(activeConnection?.read_only)}
+            onOpenQueryConsole={() => handleOpenQueryConsole()}
             onAddRow={() => {
               if (activeConnection?.read_only) return;
               setEditingRow(null);

@@ -31,6 +31,7 @@ import {
   Search,
   Inbox,
   ShieldAlert,
+  Terminal,
 } from "lucide-react";
 import type { TableSchema, FilterOption } from "../lib/types";
 import { useTranslation } from "react-i18next";
@@ -82,6 +83,7 @@ interface DataGridProps {
     value: any,
   ) => void;
   isReadOnly?: boolean;
+  onOpenQueryConsole?: () => void;
 }
 
 export const DataGrid: FC<DataGridProps> = ({
@@ -104,6 +106,7 @@ export const DataGrid: FC<DataGridProps> = ({
   onDeleteRow,
   onNavigateRelation,
   isReadOnly = false,
+  onOpenQueryConsole,
 }) => {
   const { t } = useTranslation();
   // Filter Builder state
@@ -628,6 +631,21 @@ export const DataGrid: FC<DataGridProps> = ({
               className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
             />
           </Button>
+
+          {/* Open in SQL / Query Console */}
+          {onOpenQueryConsole && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onOpenQueryConsole}
+              title={t('datagrid.openQueryConsole')}
+              className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+            >
+              <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>{t('datagrid.openQueryConsole')}</span>
+            </Button>
+          )}
 
           {/* Add Row CTA */}
           <Button
