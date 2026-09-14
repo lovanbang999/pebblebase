@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"pebblebase/internal/audit"
+	"pebblebase/internal/auth"
 )
 
 type executeQueryRequest struct {
@@ -37,9 +40,9 @@ func (s *Server) executeRawQuery(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Guard against mutating queries when connection is Read-Only
-	if rec.ReadOnly && isMutatingQuery(rec.Type, trimmedQuery) {
-		writeError(w, http.StatusForbidden, "connection is in read-only mode; mutating queries are forbidden")
+	// Guard against mutating queries when connection is Read-Only or caller is Viewer
+	if (rec.ReadOnly || (s.authEnabled && auth.IsViewer(r))) && isMutatingQuery(rec.Type, trimmedQuery) {
+		writeError(w, http.StatusForbidden, "read-only mode: mutating queries are forbidden")
 		return
 	}
 
@@ -58,6 +61,8 @@ func (s *Server) executeRawQuery(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	s.logAudit(r, audit.ActionQueryExecute, rec.Name, trimmedQuery)
 
 	writeJSON(w, http.StatusOK, result)
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Connection } from './lib/types';
 import { ConnectionModal } from './components/ConnectionModal';
@@ -11,10 +11,15 @@ import { ErrorBanner } from './components/ErrorBanner';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { EmptyTableScreen } from './components/EmptyTableScreen';
 import { DeleteRowDialog } from './components/DeleteRowDialog';
+import { LoginScreen } from './components/LoginScreen';
+import { DefaultPasswordBanner } from './components/DefaultPasswordBanner';
+import { AdminPanel } from './components/AdminPanel';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { usePebblebaseStudio } from './hooks/usePebblebaseStudio';
 import { useTabs } from './hooks/useTabs';
+import { useAuthStore } from './lib/auth';
+import { fetchMe } from './lib/api';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,6 +31,18 @@ const queryClient = new QueryClient({
 });
 
 function PebblebaseStudio() {
+  const [
+    isAdminPanelOpen,
+    setIsAdminPanelOpen,
+  ] = useState(false);
+  // Shared admin panel tab — 'password' when triggered from user menu
+  const [
+    adminPanelDefaultTab,
+    setAdminPanelDefaultTab,
+  ] = useState<'users' | 'password'>('users');
+
+  const isDefaultPassword = useAuthStore((s) => s.isDefaultPassword);
+
   const {
     theme,
     toggleTheme,
@@ -173,10 +190,28 @@ function PebblebaseStudio() {
         onRefreshTables={() => refetchTables()}
         activeView={activeTab?.type === 'query' ? 'console' : 'table'}
         onOpenQueryConsole={() => openQueryTab()}
+        onOpenAdminPanel={() => {
+          setAdminPanelDefaultTab('users');
+          setIsAdminPanelOpen(true);
+        }}
+        onOpenChangePassword={() => {
+          setAdminPanelDefaultTab('password');
+          setIsAdminPanelOpen(true);
+        }}
       />
 
       {/* Main Content Pane */}
       <SidebarInset className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-50/50 dark:bg-zinc-950">
+        {/* Default password warning banner */}
+        {isDefaultPassword && (
+          <DefaultPasswordBanner
+            onChangePassword={() => {
+              setAdminPanelDefaultTab('password');
+              setIsAdminPanelOpen(true);
+            }}
+          />
+        )}
+
         {/* Chrome/DataGrip Style Tab Bar */}
         {activeConnection && connections.length > 0 && (
           <TabBar
@@ -321,15 +356,61 @@ function PebblebaseStudio() {
         onClose={() => setRowToDelete(null)}
         onConfirm={handleConfirmDeleteRow}
       />
+      {/* Admin Panel Modal */}
+      <AdminPanel
+        isOpen={isAdminPanelOpen}
+        onClose={() => setIsAdminPanelOpen(false)}
+        defaultTab={adminPanelDefaultTab}
+      />
     </SidebarProvider>
   );
+}
+
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const token = useAuthStore((s) => s.token);
+  const isInitialized = useAuthStore((s) => s.isInitialized);
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const setInitialized = useAuthStore((s) => s.setInitialized);
+
+  useEffect(() => {
+    if (!token) {
+      setInitialized();
+      return;
+    }
+    // Validate the persisted token against the backend.
+    fetchMe()
+      .then((res) => {
+        setAuth(res.user, token, res.is_default_password);
+      })
+      .catch(() => {
+        clearAuth();
+      });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!isInitialized) {
+    // Minimal loading state while we validate the token.
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!token) {
+    return <LoginScreen />;
+  }
+
+  return <>{children}</>;
 }
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <PebblebaseStudio />
+        <AuthGuard>
+          <PebblebaseStudio />
+        </AuthGuard>
       </TooltipProvider>
     </QueryClientProvider>
   );

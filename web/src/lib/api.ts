@@ -6,11 +6,17 @@ import type {
   QueryResult,
   RawQueryResult,
   TableDDLResponse,
+  AuditEntry,
 } from './types';
+import { getAuthHeaders, useAuthStore } from './auth';
 
 const BASE_URL = '/api';
 
 async function handleResponse<T>(res: Response): Promise<T> {
+  if (res.status === 401) {
+    useAuthStore.getState().clearAuth();
+    throw new Error('Session expired. Please log in again.');
+  }
   if (!res.ok) {
     let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
     try {
@@ -30,14 +36,16 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export async function fetchConnections(): Promise<Connection[]> {
-  const res = await fetch(`${BASE_URL}/connections`);
+  const res = await fetch(`${BASE_URL}/connections`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse<Connection[]>(res);
 }
 
 export async function testConnection(input: ConnectionInput): Promise<{ status: string }> {
   const res = await fetch(`${BASE_URL}/connections/test`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(input),
   });
   return handleResponse<{ status: string }>(res);
@@ -46,7 +54,7 @@ export async function testConnection(input: ConnectionInput): Promise<{ status: 
 export async function createConnection(input: ConnectionInput): Promise<Connection> {
   const res = await fetch(`${BASE_URL}/connections`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
     body: JSON.stringify(input),
   });
   return handleResponse<Connection>(res);
@@ -55,6 +63,7 @@ export async function createConnection(input: ConnectionInput): Promise<Connecti
 export async function deleteConnection(id: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/connections/${encodeURIComponent(id)}`, {
     method: 'DELETE',
+    headers: getAuthHeaders(),
   });
   await handleResponse<void>(res);
 }
@@ -62,12 +71,15 @@ export async function deleteConnection(id: string): Promise<void> {
 export async function pingConnection(id: string): Promise<{ status: string }> {
   const res = await fetch(`${BASE_URL}/connections/${encodeURIComponent(id)}/ping`, {
     method: 'POST',
+    headers: getAuthHeaders(),
   });
   return handleResponse<{ status: string }>(res);
 }
 
 export async function fetchTables(connId: string): Promise<TableSchema[]> {
-  const res = await fetch(`${BASE_URL}/connections/${encodeURIComponent(connId)}/tables`);
+  const res = await fetch(`${BASE_URL}/connections/${encodeURIComponent(connId)}/tables`, {
+    headers: getAuthHeaders(),
+  });
   return handleResponse<TableSchema[]>(res);
 }
 
@@ -92,7 +104,7 @@ export async function fetchRows(
 
   const queryStr = searchParams.toString();
   const url = `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/rows${queryStr ? `?${queryStr}` : ''}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: getAuthHeaders() });
   return handleResponse<QueryResult>(res);
 }
 
@@ -105,7 +117,7 @@ export async function insertRow(
     `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/rows`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({ values }),
     }
   );
@@ -122,7 +134,7 @@ export async function updateRow(
     `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/rows`,
     {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({ where, values }),
     }
   );
@@ -138,7 +150,7 @@ export async function deleteRow(
     `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/rows`,
     {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({ where }),
     }
   );
@@ -153,7 +165,7 @@ export async function executeRawQuery(
     `${BASE_URL}/connections/${encodeURIComponent(connId)}/query`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: JSON.stringify({ query }),
     }
   );
@@ -207,9 +219,90 @@ export async function fetchTableDDL(
   table: string
 ): Promise<TableDDLResponse> {
   const res = await fetch(
-    `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/ddl`
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/ddl`,
+    { headers: getAuthHeaders() }
   );
   return handleResponse<TableDDLResponse>(res);
 }
 
+// ---------------------------------------------------------------------------
+// Auth API
+// ---------------------------------------------------------------------------
 
+export async function apiLogin(
+  username: string,
+  password: string
+): Promise<{ token: string; user: import('./auth').AuthUser; is_default_password: boolean }> {
+  const res = await fetch(`${BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  return handleResponse(res);
+}
+
+export async function apiLogout(): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/logout`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  await handleResponse<void>(res);
+}
+
+export async function fetchMe(): Promise<{
+  user: import('./auth').AuthUser;
+  is_default_password: boolean;
+}> {
+  const res = await fetch(`${BASE_URL}/auth/me`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+}
+
+export async function fetchUsers(): Promise<{ users: import('./auth').AuthUser[] }> {
+  const res = await fetch(`${BASE_URL}/auth/users`, { headers: getAuthHeaders() });
+  return handleResponse(res);
+}
+
+export async function createUser(
+  username: string,
+  password: string,
+  role: import('./auth').AuthRole
+): Promise<import('./auth').AuthUser> {
+  const res = await fetch(`${BASE_URL}/auth/users`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ username, password, role }),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteUser(id: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/users/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  await handleResponse<void>(res);
+}
+
+export async function changePassword(
+  userId: string,
+  oldPassword: string,
+  newPassword: string
+): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/users/${encodeURIComponent(userId)}/password`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+  });
+  await handleResponse<void>(res);
+}
+
+export async function fetchAuditLogs(
+  limit = 50,
+  offset = 0
+): Promise<{ entries: AuditEntry[]; total_count: number }> {
+  const res = await fetch(
+    `${BASE_URL}/audit/logs?limit=${limit}&offset=${offset}`,
+    { headers: getAuthHeaders() }
+  );
+  return handleResponse(res);
+}

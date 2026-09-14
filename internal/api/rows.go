@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"pebblebase/internal/adapter"
+	"pebblebase/internal/audit"
 )
 
 // queryRows handles GET /api/connections/{id}/tables/{table}/rows.
@@ -60,6 +61,9 @@ func (s *Server) insertRow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	table := r.PathValue("table")
 
+	if s.viewerBlocked(w, r) {
+		return
+	}
 	if s.checkReadOnly(w, id) {
 		return
 	}
@@ -87,6 +91,7 @@ func (s *Server) insertRow(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "insert: "+err.Error())
 		return
 	}
+	s.logAudit(r, audit.ActionRowMutate, table, "insert")
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -96,6 +101,9 @@ func (s *Server) updateRow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	table := r.PathValue("table")
 
+	if s.viewerBlocked(w, r) {
+		return
+	}
 	if s.checkReadOnly(w, id) {
 		return
 	}
@@ -128,6 +136,7 @@ func (s *Server) updateRow(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "update: "+err.Error())
 		return
 	}
+	s.logAudit(r, audit.ActionRowMutate, table, "update")
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -137,6 +146,9 @@ func (s *Server) deleteRow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	table := r.PathValue("table")
 
+	if s.viewerBlocked(w, r) {
+		return
+	}
 	if s.checkReadOnly(w, id) {
 		return
 	}
@@ -164,6 +176,7 @@ func (s *Server) deleteRow(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "delete: "+err.Error())
 		return
 	}
+	s.logAudit(r, audit.ActionRowMutate, table, "delete")
 	w.WriteHeader(http.StatusNoContent)
 }
 

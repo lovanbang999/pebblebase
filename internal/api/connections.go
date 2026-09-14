@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"pebblebase/internal/audit"
 	"pebblebase/internal/connection"
 	"pebblebase/internal/storage"
 )
@@ -66,6 +67,10 @@ type createConnectionRequest struct {
 // It builds the DSN, verifies connectivity, encrypts the password if requested,
 // and persists the connection record.
 func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
+	if s.viewerBlocked(w, r) {
+		return
+	}
+
 	var req createConnectionRequest
 	if err := decodeBody(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -120,6 +125,8 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 	// Cache the open adapter so subsequent requests reuse the live connection.
 	s.cache.set(rec.ID, a)
 
+	s.logAudit(r, audit.ActionConnectionCreate, rec.Name, rec.Type)
+
 	writeJSON(w, http.StatusCreated, toConnectionResponse(rec))
 }
 
@@ -140,6 +147,10 @@ func (s *Server) listConnections(w http.ResponseWriter, r *http.Request) {
 
 // deleteConnection handles DELETE /api/connections/{id}.
 func (s *Server) deleteConnection(w http.ResponseWriter, r *http.Request) {
+	if s.viewerBlocked(w, r) {
+		return
+	}
+
 	id := r.PathValue("id")
 
 	s.cache.delete(id) // close adapter if open
