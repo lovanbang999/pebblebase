@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Search,
   ChevronDown,
+  ChevronsUpDown,
   HardDrive,
   Key,
   Layers,
@@ -18,9 +19,15 @@ import {
   Copy,
   ShieldAlert,
   Terminal,
+  LogOut,
+  Shield,
+  KeyRound,
+  Eye,
 } from "lucide-react";
 import type { Connection, DatabaseType, TableSchema } from "../lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "../lib/platform";
+import { useAuthStore } from "../lib/auth";
+import { apiLogout } from "../lib/api";
 import packageJson from "../../package.json";
 import { Button } from "@/components/ui/button";
 import { cn } from "cn";
@@ -31,6 +38,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -79,6 +87,8 @@ interface SidebarProps {
   onRefreshTables: () => void;
   activeView?: "table" | "console";
   onOpenQueryConsole?: () => void;
+  onOpenAdminPanel?: () => void;
+  onOpenChangePassword?: () => void;
 }
 
 const ENGINE_CONFIG: { type: DatabaseType; label: string; badge: string }[] = [
@@ -103,8 +113,7 @@ const ENGINE_CONFIG: { type: DatabaseType; label: string; badge: string }[] = [
   {
     type: "sqlite",
     label: "SQLite",
-    badge:
-      "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
+    badge: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
   },
 ];
 
@@ -161,12 +170,26 @@ export const Sidebar: FC<SidebarProps> = ({
   onRefreshTables,
   activeView = "table",
   onOpenQueryConsole,
+  onOpenAdminPanel,
+  onOpenChangePassword,
 }) => {
   const { t } = useTranslation();
   const [tableSearch, setTableSearch] = useState("");
   const [deletingConnection, setDeletingConnection] =
     useState<Connection | null>(null);
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+
+  const user = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
+  async function handleSignOut() {
+    try {
+      await apiLogout();
+    } catch {
+      /* ignore */
+    }
+    clearAuth();
+  }
 
   const isDeleteConfirmed = Boolean(
     deletingConnection &&
@@ -209,7 +232,9 @@ export const Sidebar: FC<SidebarProps> = ({
                   </Button>
                 }
               />
-              <TooltipContent side="bottom">{t('sidebar.newConnection')}</TooltipContent>
+              <TooltipContent side="bottom">
+                {t("sidebar.newConnection")}
+              </TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -225,7 +250,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     tooltip={
                       selectedConnection
                         ? `${selectedConnection.name} (${selectedConnection.db_name}) • [${(selectedConnection.environment || "local").toUpperCase()}]`
-                        : t('sidebar.selectConnection')
+                        : t("sidebar.selectConnection")
                     }
                     className="w-full data-[state=open]:bg-sidebar-accent cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                   >
@@ -279,7 +304,7 @@ export const Sidebar: FC<SidebarProps> = ({
                       <span className="text-xs font-semibold truncate text-zinc-900 dark:text-zinc-100">
                         {selectedConnection
                           ? selectedConnection.name
-                          : t('sidebar.selectConnection')}
+                          : t("sidebar.selectConnection")}
                       </span>
                     </div>
                     <ChevronDown className="ml-auto size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden shrink-0" />
@@ -296,7 +321,7 @@ export const Sidebar: FC<SidebarProps> = ({
                   <div className="flex items-center gap-1.5">
                     <Database className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
-                      {t('sidebar.connectionsHeader')}
+                      {t("sidebar.connectionsHeader")}
                     </span>
                     <Badge
                       variant="secondary"
@@ -306,7 +331,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Badge>
                   </div>
                   <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
-                    {t('sidebar.groupedByEngine')}
+                    {t("sidebar.groupedByEngine")}
                   </span>
                 </div>
 
@@ -391,7 +416,7 @@ export const Sidebar: FC<SidebarProps> = ({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  title={t('sidebar.duplicateTooltip')}
+                                  title={t("sidebar.duplicateTooltip")}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onCloneConnection(c);
@@ -405,7 +430,7 @@ export const Sidebar: FC<SidebarProps> = ({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  title={t('sidebar.deleteConnTooltip')}
+                                  title={t("sidebar.deleteConnTooltip")}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -432,7 +457,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     className="text-xs text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer flex items-center justify-center gap-1.5 py-1.5 rounded-md hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 transition-colors"
                   >
                     <Plus className="size-3.5" />
-                    {t('sidebar.newConnectionEllipsis')}
+                    {t("sidebar.newConnectionEllipsis")}
                   </DropdownMenuItem>
                 </div>
               </DropdownMenuContent>
@@ -456,7 +481,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 "w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
                 activeView === "console"
                   ? "bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100",
               )}
             >
               <div className="flex items-center gap-2 truncate">
@@ -505,7 +530,9 @@ export const Sidebar: FC<SidebarProps> = ({
                   </Button>
                 }
               />
-              <TooltipContent side="right">{t('sidebar.refreshTablesTooltip')}</TooltipContent>
+              <TooltipContent side="right">
+                {t("sidebar.refreshTablesTooltip")}
+              </TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -524,10 +551,10 @@ export const Sidebar: FC<SidebarProps> = ({
               <div className="py-8 px-2 text-center group-data-[collapsible=icon]:hidden">
                 <Database className="size-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-2" />
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
-                  {t('sidebar.noActiveConn')}
+                  {t("sidebar.noActiveConn")}
                 </p>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-500 mt-1">
-                  {t('sidebar.connectToIntrospect')}
+                  {t("sidebar.connectToIntrospect")}
                 </p>
               </div>
             ) : isLoadingTables ? (
@@ -551,8 +578,8 @@ export const Sidebar: FC<SidebarProps> = ({
             ) : filteredTables.length === 0 ? (
               <div className="py-8 px-2 text-center text-xs text-zinc-500 font-mono group-data-[collapsible=icon]:hidden">
                 {tables.length === 0
-                  ? t('sidebar.noUserTablesFound')
-                  : t('sidebar.noTablesMatching', { term: tableSearch })}
+                  ? t("sidebar.noUserTablesFound")
+                  : t("sidebar.noTablesMatching", { term: tableSearch })}
               </div>
             ) : (
               <SidebarMenu>
@@ -567,7 +594,9 @@ export const Sidebar: FC<SidebarProps> = ({
                     <SidebarMenuItem key={tbl.name}>
                       <SidebarMenuButton
                         isActive={isSelected}
-                        onClick={(e) => onSelectTable(tbl.name, e.ctrlKey || e.metaKey)}
+                        onClick={(e) =>
+                          onSelectTable(tbl.name, e.ctrlKey || e.metaKey)
+                        }
                         tooltip={`${tbl.name} (${colCount} cols)`}
                         className={cn(
                           "font-mono text-xs cursor-pointer h-7 px-2 transition-colors",
@@ -590,12 +619,12 @@ export const Sidebar: FC<SidebarProps> = ({
 
                         <div className="ml-auto flex items-center gap-1 shrink-0 group-data-[collapsible=icon]:hidden">
                           {hasPk && (
-                            <span title={t('sidebar.primaryKeyTooltip')}>
+                            <span title={t("sidebar.primaryKeyTooltip")}>
                               <Key className="size-2.5 text-amber-500 dark:text-amber-400/80" />
                             </span>
                           )}
                           {hasFk && (
-                            <span title={t('sidebar.foreignRelationsTooltip')}>
+                            <span title={t("sidebar.foreignRelationsTooltip")}>
                               <Layers className="size-2.5 text-sky-500 dark:text-sky-400/80" />
                             </span>
                           )}
@@ -622,9 +651,155 @@ export const Sidebar: FC<SidebarProps> = ({
       </SidebarContent>
 
       {/* Footer & Collapsed Shortcuts */}
-      <SidebarFooter className="border-t border-sidebar-border p-0 h-11 px-3 flex flex-col justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:px-1">
-        {/* In collapsed icon mode: quick language, theme and new conn stacked vertically */}
-        <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center justify-center gap-1.5 w-full">
+      <SidebarFooter className="border-t border-sidebar-border p-0 flex flex-col gap-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:p-2">
+        {/* User menu — shown when authenticated */}
+        {user && (
+          <div className="p-2 pb-1.5 w-full">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <button className="group relative flex items-center gap-2.5 w-full p-1.5 rounded-xl border border-zinc-200/50 dark:border-zinc-800/60 bg-zinc-50/60 dark:bg-zinc-900/40 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 hover:border-zinc-300 dark:hover:border-zinc-700/80 transition-all duration-200 shadow-2xs cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-1">
+                    {/* Avatar with gradient & online dot */}
+                    <div className="relative size-8 rounded-lg bg-linear-to-br from-indigo-500/20 via-indigo-600/15 to-violet-500/25 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-xs group-hover:border-indigo-500/50 transition-colors">
+                      <span className="text-xs font-semibold text-indigo-400 dark:text-indigo-300 font-mono uppercase tracking-tight">
+                        {user.username.slice(0, 2)}
+                      </span>
+                      <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-950" />
+                    </div>
+
+                    {/* User Info */}
+                    <div className="flex-1 min-w-0 text-left group-data-[collapsible=icon]:hidden">
+                      <div className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 truncate group-hover:text-zinc-950 dark:group-hover:text-white transition-colors">
+                        {user.username}
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {user.role === "admin" ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-indigo-600 dark:text-indigo-400">
+                            <Shield className="size-2.5 shrink-0" />
+                            {t("auth.role.admin")}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                            <Eye className="size-2.5 shrink-0" />
+                            {t("auth.role.viewer")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Chevrons */}
+                    <ChevronsUpDown className="size-3.5 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 shrink-0 ml-auto transition-colors group-data-[collapsible=icon]:hidden" />
+                  </button>
+                }
+              />
+              <DropdownMenuContent
+                align="end"
+                side="top"
+                sideOffset={8}
+                className="w-56 p-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 rounded-xl shadow-xl backdrop-blur-md"
+              >
+                {/* Account Header */}
+                <div className="flex items-center gap-2.5 px-2.5 py-2 mb-1 rounded-lg bg-zinc-50 dark:bg-zinc-950/60 border border-zinc-200/60 dark:border-zinc-800/60">
+                  <div className="size-7 rounded-md bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-bold text-indigo-400 uppercase font-mono">
+                      {user.username.slice(0, 2)}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-zinc-800 dark:text-zinc-100 truncate">
+                      {user.username}
+                    </div>
+                    <div className="text-[10px] text-zinc-500 dark:text-zinc-400 flex items-center gap-1">
+                      {user.role === "admin" ? (
+                        <span className="text-indigo-500 dark:text-indigo-400 flex items-center gap-0.5 font-medium">
+                          <Shield className="size-2.5" /> {t("auth.role.admin")}
+                        </span>
+                      ) : (
+                        <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-0.5">
+                          <Eye className="size-2.5" /> {t("auth.role.viewer")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <DropdownMenuItem
+                  onClick={onOpenChangePassword}
+                  className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 rounded-md cursor-pointer transition-colors"
+                >
+                  <KeyRound className="size-3.5 text-zinc-400" />
+                  {t("auth.changePassword")}
+                </DropdownMenuItem>
+
+                {user.role === "admin" && (
+                  <DropdownMenuItem
+                    onClick={onOpenAdminPanel}
+                    className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 rounded-md cursor-pointer transition-colors"
+                  >
+                    <Shield className="size-3.5 text-indigo-400" />
+                    <span className="flex-1">{t("auth.adminPanel")}</span>
+                  </DropdownMenuItem>
+                )}
+
+                <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800 my-1" />
+
+                <DropdownMenuItem
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 px-2.5 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-500/10 rounded-md cursor-pointer transition-colors"
+                >
+                  <LogOut className="size-3.5" />
+                  {t("auth.logout")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+
+        {/* Version + Language + Theme bar */}
+        <div className="h-9 px-3 flex items-center justify-between border-t border-sidebar-border bg-zinc-50/40 dark:bg-zinc-950/30 group-data-[collapsible=icon]:hidden">
+          <div className="flex items-center gap-1.5 flex-1 truncate">
+            <span className="font-semibold text-[11px] text-zinc-600 dark:text-zinc-400 font-mono tracking-tight">
+              Pebblebase
+            </span>
+            <Badge
+              variant="outline"
+              className="font-mono text-[9px] px-1 py-0 h-4 border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900/60 text-zinc-500 font-normal"
+            >
+              v{packageJson.version}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <LanguageSwitcher />
+            <span className="h-3 w-px bg-zinc-200 dark:bg-zinc-800 shrink-0 self-center mx-0.5" />
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={onToggleTheme}
+                    className="size-6 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors"
+                  >
+                    {theme === "dark" ? (
+                      <Sun className="size-3.5 text-amber-400" />
+                    ) : (
+                      <Moon className="size-3.5 text-indigo-600" />
+                    )}
+                  </Button>
+                }
+              />
+              <TooltipContent side="top">
+                {theme === "dark"
+                  ? t("common.themeLight")
+                  : t("common.themeDark")}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
+        {/* Collapsed icon mode: vertical stack */}
+        <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center justify-center gap-1.5 w-full py-1">
           <LanguageSwitcher compact />
           <Tooltip>
             <TooltipTrigger
@@ -650,63 +825,6 @@ export const Sidebar: FC<SidebarProps> = ({
                 : t("common.themeDark")}
             </TooltipContent>
           </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={onOpenNewConnection}
-                  className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                >
-                  <Plus className="size-3.5" />
-                </Button>
-              }
-            />
-            <TooltipContent side="right">{t('sidebar.newConnection')}</TooltipContent>
-          </Tooltip>
-        </div>
-
-        {/* In expanded mode: clean brand label + language & theme toggles on the right */}
-        <div className="group-data-[collapsible=icon]:hidden text-[11px] text-zinc-500 dark:text-zinc-400 font-mono flex items-center justify-between w-full">
-          <div className="flex items-center gap-1.5 truncate">
-            <span className="font-semibold text-zinc-700 dark:text-zinc-300">
-              Pebblebase
-            </span>
-            <span className="text-[10px] text-zinc-400 font-normal">
-              v{packageJson.version}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <LanguageSwitcher />
-            <span className="h-3.5 w-px bg-zinc-200 dark:bg-zinc-800 shrink-0 self-center" />
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={onToggleTheme}
-                    className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                  >
-                    {theme === "dark" ? (
-                      <Sun className="size-3.5 text-amber-400" />
-                    ) : (
-                      <Moon className="size-3.5 text-indigo-600" />
-                    )}
-                  </Button>
-                }
-              />
-              <TooltipContent side="top">
-                {theme === "dark"
-                  ? t("common.themeLight")
-                  : t("common.themeDark")}
-              </TooltipContent>
-            </Tooltip>
-          </div>
         </div>
       </SidebarFooter>
 
@@ -729,22 +847,26 @@ export const Sidebar: FC<SidebarProps> = ({
               <Trash2 className="size-5" />
             </AlertDialogMedia>
             <AlertDialogTitle className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              {t('sidebar.removeConnTitle')}
+              {t("sidebar.removeConnTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              {t('sidebar.removeConnDesc', { name: deletingConnection?.name })}
+              {t("sidebar.removeConnDesc", { name: deletingConnection?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           {/* Sensitive confirmation input */}
           <div className="space-y-2 py-1">
             <label className="text-xs text-zinc-600 dark:text-zinc-400 font-medium block">
-              {t('sidebar.removeConnConfirmHelp', { name: deletingConnection?.name })}
+              {t("sidebar.removeConnConfirmHelp", {
+                name: deletingConnection?.name,
+              })}
             </label>
             <Input
               value={deleteConfirmationInput}
               onChange={(e) => setDeleteConfirmationInput(e.target.value)}
-              placeholder={t('sidebar.typeToConfirmPlaceholder', { name: deletingConnection?.name || "" })}
+              placeholder={t("sidebar.typeToConfirmPlaceholder", {
+                name: deletingConnection?.name || "",
+              })}
               className="h-9 text-xs font-mono bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 focus-visible:ring-rose-500/30 focus-visible:border-rose-500/50"
               autoFocus
               onKeyDown={(e) => {
@@ -768,7 +890,7 @@ export const Sidebar: FC<SidebarProps> = ({
               }}
               className="text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800 cursor-pointer"
             >
-              {t('rowModal.cancel')}
+              {t("rowModal.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={!isDeleteConfirmed}
@@ -786,7 +908,7 @@ export const Sidebar: FC<SidebarProps> = ({
                   : "bg-rose-600/30 dark:bg-rose-600/20 text-white/40 dark:text-white/30 cursor-not-allowed pointer-events-none border border-transparent shadow-none",
               )}
             >
-              {t('sidebar.deleteConnButton')}
+              {t("sidebar.deleteConnButton")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

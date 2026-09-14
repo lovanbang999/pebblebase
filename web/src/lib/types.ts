@@ -133,3 +133,22 @@ export interface TableDDLResponse {
   ddl: string;
   indexes: TableIndexInfo[];
 }
+
+export type AuditAction =
+  | 'login'
+  | 'query_execute'
+  | 'row_mutate'
+  | 'schema_change'
+  | 'connection_create';
+
+export interface AuditEntry {
+  id: string;
+  user_id: string;
+  username: string;
+  action: AuditAction;
+  resource: string;
+  detail: string;
+  ip: string;
+  created_at: string;
+}
+

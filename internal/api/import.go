@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"pebblebase/internal/adapter"
+	"pebblebase/internal/audit"
 	"pebblebase/internal/schema"
 )
 
@@ -21,6 +22,10 @@ import (
 func (s *Server) importTable(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	table := r.PathValue("table")
+
+	if s.viewerBlocked(w, r) {
+		return
+	}
 
 	// Read-only safety guard: reject any import on read-only connections
 	if s.checkReadOnly(w, id) {
@@ -197,6 +202,8 @@ func (s *Server) importTable(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "bulk insert failed: "+err.Error())
 		return
 	}
+
+	s.logAudit(r, audit.ActionSchemaChange, table, fmt.Sprintf("imported %d rows", inserted))
 
 	writeJSON(w, http.StatusOK, map[string]any{
 		"inserted_count": inserted,
