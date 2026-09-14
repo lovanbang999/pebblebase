@@ -16,6 +16,7 @@ import {
   Copy,
 } from 'lucide-react';
 import type { Connection, DatabaseType, TableSchema } from '../lib/types';
+import packageJson from '../../package.json';
 import { Button } from '@/components/ui/button';
 import { cn } from 'cn';
 import { Input } from '@/components/ui/input';
@@ -84,6 +85,33 @@ const ENV_DOTS: Record<string, string> = {
   development: 'bg-amber-500 ring-amber-500/20',
   staging: 'bg-orange-500 ring-orange-500/20',
   production: 'bg-rose-500 ring-rose-500/20',
+};
+
+const ENV_STYLES: Record<string, { bg: string; text: string; dot: string; border: string }> = {
+  local: {
+    bg: 'bg-emerald-500/10 dark:bg-emerald-500/15',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    dot: 'bg-emerald-500',
+    border: 'border-emerald-500/25',
+  },
+  development: {
+    bg: 'bg-sky-500/10 dark:bg-sky-500/15',
+    text: 'text-sky-700 dark:text-sky-400',
+    dot: 'bg-sky-500',
+    border: 'border-sky-500/25',
+  },
+  staging: {
+    bg: 'bg-amber-500/10 dark:bg-amber-500/15',
+    text: 'text-amber-700 dark:text-amber-400',
+    dot: 'bg-amber-500',
+    border: 'border-amber-500/25',
+  },
+  production: {
+    bg: 'bg-rose-500/10 dark:bg-rose-500/15',
+    text: 'text-rose-700 dark:text-rose-400',
+    dot: 'bg-rose-500',
+    border: 'border-rose-500/25',
+  },
 };
 
 export const Sidebar: FC<SidebarProps> = ({
@@ -191,19 +219,28 @@ export const Sidebar: FC<SidebarProps> = ({
                     <div className="size-7 rounded bg-zinc-100 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shrink-0">
                       <HardDrive className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <div className="flex flex-col gap-0.5 leading-none truncate flex-1 text-left group-data-[collapsible=icon]:hidden">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono uppercase text-muted-foreground">Active DB</span>
-                        {selectedConnection && (
-                          <div className="flex items-center gap-1 text-[9px] font-mono font-medium">
-                            <span className={cn("size-1.5 rounded-full ring-2", ENV_DOTS[selectedConnection.environment || 'local'] || 'bg-emerald-500')} />
-                            <span className="uppercase text-muted-foreground">
-                              {selectedConnection.environment || 'local'}
+                    <div className="flex flex-col gap-1 leading-none truncate flex-1 text-left group-data-[collapsible=icon]:hidden">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">Active DB</span>
+                        {selectedConnection && (() => {
+                          const envKey = selectedConnection.environment || 'local';
+                          const style = ENV_STYLES[envKey] || ENV_STYLES.local;
+                          return (
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-full border text-[9px] font-mono font-semibold uppercase leading-none select-none shrink-0",
+                                style.bg,
+                                style.text,
+                                style.border
+                              )}
+                            >
+                              <span className={cn("size-1.5 rounded-full shrink-0", style.dot)} />
+                              <span className="inline-block translate-y-px leading-none">{envKey}</span>
                             </span>
-                          </div>
-                        )}
+                          );
+                        })()}
                       </div>
-                      <span className="text-xs font-medium truncate text-foreground">
+                      <span className="text-xs font-semibold truncate text-zinc-900 dark:text-zinc-100">
                         {selectedConnection ? selectedConnection.name : "Select Connection"}
                       </span>
                     </div>
@@ -472,9 +509,9 @@ export const Sidebar: FC<SidebarProps> = ({
       </SidebarContent>
 
       {/* Footer & Collapsed Shortcuts */}
-      <SidebarFooter className="border-t border-sidebar-border p-2">
-        {/* In collapsed icon mode: quick theme, new conn and expand triggers */}
-        <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center gap-1.5">
+      <SidebarFooter className="border-t border-sidebar-border p-0 h-11 px-3 flex flex-col justify-center group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:px-1">
+        {/* In collapsed icon mode: quick theme and new conn stacked vertically */}
+        <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center justify-center gap-1.5 w-full">
           <Tooltip>
             <TooltipTrigger
               render={
@@ -516,10 +553,10 @@ export const Sidebar: FC<SidebarProps> = ({
           </Tooltip>
         </div>
 
-        {/* In expanded mode: version specs */}
-        <div className="group-data-[collapsible=icon]:hidden text-[11px] text-zinc-500 dark:text-zinc-400 font-mono flex items-center justify-between">
-          <span>Go 1.22 + React 19</span>
-          <span>v0.1</span>
+        {/* In expanded mode: version specs aligned with DataGrid pagination footer (h-11) */}
+        <div className="group-data-[collapsible=icon]:hidden text-[11px] text-zinc-500 dark:text-zinc-400 font-mono flex items-center justify-between w-full">
+          <span>Pebblebase Studio</span>
+          <span>v{packageJson.version}</span>
         </div>
       </SidebarFooter>
 
