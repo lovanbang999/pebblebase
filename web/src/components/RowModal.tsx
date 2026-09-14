@@ -163,7 +163,7 @@ export const RowModal: FC<RowModalProps> = ({
       await onSave(parsedValues);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to save record');
+      setError(err.message || t('rowModal.failedToSave'));
     } finally {
       setSaving(false);
     }
@@ -178,7 +178,7 @@ export const RowModal: FC<RowModalProps> = ({
       await onDelete();
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to delete record');
+      setError(err.message || t('rowModal.failedToDelete'));
     } finally {
       setDeleting(false);
     }
@@ -196,7 +196,7 @@ export const RowModal: FC<RowModalProps> = ({
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-            {isEditing ? 'Update columns for this record' : 'Provide values for record properties'}
+            {isEditing ? t('rowModal.descEdit') : t('rowModal.descAdd')}
           </DialogDescription>
         </DialogHeader>
 
@@ -228,7 +228,7 @@ export const RowModal: FC<RowModalProps> = ({
                     <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0 h-4 font-normal">
                       {col.type}
                     </Badge>
-                    {col.nullable && <span className="text-zinc-400 dark:text-zinc-500 italic">nullable</span>}
+                    {col.nullable && <span className="text-zinc-400 dark:text-zinc-500 italic">{t('rowModal.nullable')}</span>}
                     {isFk && (
                       <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0 h-4 text-sky-600 dark:text-sky-400">
                         FK
@@ -279,8 +279,8 @@ export const RowModal: FC<RowModalProps> = ({
                     placeholder={
                       isPk && !isEditing
                         ? col.name === '_id'
-                          ? '(auto-generated ObjectId if blank)'
-                          : '(auto-generated or enter manually)'
+                          ? t('rowModal.autoObjectId')
+                          : t('rowModal.autoManualPk')
                         : col.default_value
                         ? `Default: ${col.default_value}`
                         : col.nullable
@@ -299,9 +299,9 @@ export const RowModal: FC<RowModalProps> = ({
             <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-semibold text-amber-600 dark:text-amber-300">
-                  Dynamic Fields ({dynamicFieldKeys.length})
+                  {t('rowModal.dynamicFieldsTitle', { count: dynamicFieldKeys.length })}
                 </span>
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">Schemaless document properties</span>
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">{t('rowModal.dynamicFieldsHelp')}</span>
               </div>
               {dynamicFieldKeys.map((key) => {
                 const currentVal = formData[key] ?? '';
@@ -320,7 +320,7 @@ export const RowModal: FC<RowModalProps> = ({
                         size="icon-xs"
                         onClick={() => handleRemoveDynamicField(key)}
                         className="text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 h-5 w-5"
-                        title="Remove field"
+                        title={t('rowModal.removeFieldTooltip')}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -342,7 +342,7 @@ export const RowModal: FC<RowModalProps> = ({
             {showAddField ? (
               <div className="p-3 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 space-y-2 text-xs font-mono">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">Add Field to Document</span>
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">{t('rowModal.addFieldTitle')}</span>
                   <Button
                     type="button"
                     variant="ghost"
@@ -356,14 +356,14 @@ export const RowModal: FC<RowModalProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   <Input
                     type="text"
-                    placeholder="Field name (e.g. sku)"
+                    placeholder={t('rowModal.placeholderFieldName')}
                     value={newFieldName}
                     onChange={(e) => setNewFieldName(e.target.value)}
                     className="h-7 text-xs font-mono"
                   />
                   <Input
                     type="text"
-                    placeholder="Value (or JSON)"
+                    placeholder={t('rowModal.placeholderFieldValue')}
                     value={newFieldValue}
                     onChange={(e) => setNewFieldValue(e.target.value)}
                     className="h-7 text-xs font-mono"
@@ -399,7 +399,7 @@ export const RowModal: FC<RowModalProps> = ({
                 className="text-xs font-mono text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 flex items-center gap-1.5 p-0 h-auto"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Add dynamic field to document
+                {t('rowModal.addDynamicField')}
               </Button>
             )}
           </div>
@@ -420,7 +420,7 @@ export const RowModal: FC<RowModalProps> = ({
                 ) : (
                   <Trash2 className="w-3.5 h-3.5" />
                 )}
-                Delete
+                {t('rowModal.deleteRecord')}
               </Button>
             ) : (
               <div />
@@ -435,7 +435,7 @@ export const RowModal: FC<RowModalProps> = ({
                 disabled={saving}
                 className="text-xs"
               >
-                Cancel
+                {t('rowModal.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -448,7 +448,7 @@ export const RowModal: FC<RowModalProps> = ({
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                {isEditing ? 'Save Changes' : 'Insert Record'}
+                {isEditing ? t('rowModal.saveChanges') : t('rowModal.insertRecord')}
               </Button>
             </div>
           </div>
@@ -466,10 +466,10 @@ export const RowModal: FC<RowModalProps> = ({
               <Trash2 className="size-5" />
             </AlertDialogMedia>
             <AlertDialogTitle className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Delete Record
+              {t('app.deleteRecordTitle')}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              Are you sure you want to delete this record permanently from <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">"{table.name}"</span>? This action cannot be undone.
+              {t('app.deleteRecordConfirm', { table: table.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -478,13 +478,13 @@ export const RowModal: FC<RowModalProps> = ({
               onClick={() => setIsConfirmDeleteOpen(false)}
               className="text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800 cursor-pointer"
             >
-              Cancel
+              {t('rowModal.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-rose-600 hover:bg-rose-500 dark:bg-rose-600 dark:hover:bg-rose-500 text-white text-xs font-semibold shadow-xs cursor-pointer"
             >
-              Delete Record
+              {t('app.deleteRecordTitle')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

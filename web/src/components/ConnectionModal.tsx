@@ -90,7 +90,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   const [environment, setEnvironment] = useState<EnvironmentType>(cloneData?.environment || "local");
 
   // Form fields
-  const [name, setName] = useState(cloneData ? `${cloneData.name} (Copy)` : "Local Postgres");
+  const [name, setName] = useState(cloneData ? `${cloneData.name} (${t('connection.copySuffix')})` : "Local Postgres");
   const [isNameCustom, setIsNameCustom] = useState(Boolean(cloneData));
   const [host, setHost] = useState(cloneData?.host || "localhost");
   const [port, setPort] = useState(
@@ -171,13 +171,13 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       const elapsed = Math.round(performance.now() - start);
       setTestResult({
         ok: true,
-        message: `Connection successful (${elapsed}ms)`,
+        message: t('connection.connectionSuccess', { elapsed }),
         latency: elapsed,
       });
     } catch (err: any) {
       setTestResult({
         ok: false,
-        message: err.message || "Connection test failed",
+        message: err.message || t('connection.connectionFailed'),
       });
     } finally {
       setTesting(false);
@@ -192,7 +192,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       await onSubmit(getPayload());
       onClose();
     } catch (err: any) {
-      setSubmitError(err.message || "Failed to save connection");
+      setSubmitError(err.message || t('connection.saveFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -209,18 +209,18 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {cloneData ? `Clone Connection Profile` : `New Database Connection`}
+                {cloneData ? t('connection.titleClone') : t('connection.titleNew')}
               </DialogTitle>
               {cloneData && (
                 <Badge variant="outline" className="text-[10px] uppercase font-mono px-1.5 py-0 h-4 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15">
-                  Duplicating
+                  {t('connection.badgeDuplicating')}
                 </Badge>
               )}
             </div>
             <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
               {cloneData
-                ? `Duplicating credentials from "${cloneData.name}". Configure separate database or environment.`
-                : `Connect to an engine driver and organize multiple databases per host.`}
+                ? t('connection.descClone', { name: cloneData.name })
+                : t('connection.descNew')}
             </DialogDescription>
           </div>
         </DialogHeader>
@@ -236,7 +236,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 {t('connection.driver')}
               </label>
               <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
-                Select protocol driver
+                {t('connection.selectDriverHelp')}
               </span>
             </div>
             <div className="grid grid-cols-3 gap-2.5">
@@ -295,10 +295,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">
-                Environment Tier
+                {t('connection.envTier')}
               </label>
               <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                Helps distinguish environments
+                {t('connection.envTierHelp')}
               </span>
             </div>
             <div className="grid grid-cols-4 gap-2">
@@ -327,7 +327,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                Connection Display Name
+                {t('connection.displayName')}
               </label>
               {isNameCustom && (
                 <button
@@ -338,7 +338,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   }}
                   className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer font-mono"
                 >
-                  Reset auto-name
+                  {t('connection.resetAutoName')}
                 </button>
               )}
             </div>
@@ -367,7 +367,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               }`}
             >
               <Server className="size-3.5 shrink-0" />
-              <span>Form Parameters</span>
+              <span>{t('connection.formParameters')}</span>
             </button>
             <button
               type="button"
@@ -379,7 +379,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               }`}
             >
               <Terminal className="size-3.5 shrink-0" />
-              <span>Connection URL</span>
+              <span>{t('connection.connectionUrl')}</span>
             </button>
           </div>
 
@@ -388,7 +388,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2">
                     <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      Host / Address
+                      {t('connection.hostAddress')}
                     </label>
                     <Input
                       type="text"
@@ -401,7 +401,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   </div>
                   <div>
                     <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      Port
+                      {t('connection.port')}
                     </label>
                     <Input
                       type="text"
@@ -417,10 +417,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-xs text-zinc-600 dark:text-zinc-400">
-                      Database Name
+                      {t('connection.database')}
                     </label>
                     <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
-                      Target schema / catalog
+                      {t('connection.targetSchema')}
                     </span>
                   </div>
                   <Input
@@ -436,7 +436,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      User
+                      {t('connection.user')}
                     </label>
                     <Input
                       type="text"
@@ -448,7 +448,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   </div>
                   <div>
                     <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      Password
+                      {t('connection.password')}
                     </label>
                     <Input
                       type="password"
@@ -463,7 +463,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             ) : (
               <div>
                 <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                  Raw Connection URL
+                  {t('connection.rawUrl')}
                 </label>
                 <Textarea
                   value={rawURL}
@@ -495,10 +495,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               className="text-xs text-zinc-700 dark:text-zinc-300 flex flex-col cursor-pointer"
             >
               <span className="font-medium flex items-center gap-1">
-                <Lock className="w-3 h-3 text-zinc-500 dark:text-zinc-400" /> Save password securely
+                <Lock className="w-3 h-3 text-zinc-500 dark:text-zinc-400" /> {t('connection.savePasswordSecurely')}
               </span>
               <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                Stored on host encrypted with AES-256-GCM. Uncheck to prompt on every server launch.
+                {t('connection.savePasswordDesc')}
               </span>
             </label>
           </div>
