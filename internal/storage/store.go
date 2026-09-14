@@ -19,11 +19,12 @@ import (
 type Record struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
-	Type         string    `json:"type"` // postgres | mysql | mongodb
+	Type         string    `json:"type"` // postgres | mysql | mongodb | sqlite
 	Host         string    `json:"host"`
 	Port         string    `json:"port"`
 	User         string    `json:"user"`
 	DBName       string    `json:"db_name"`
+	Filepath     string    `json:"filepath,omitempty"`
 	SavePassword bool      `json:"save_password"`
 	Environment  string    `json:"environment,omitempty"`
 	EncryptedDSN string    `json:"encrypted_dsn,omitempty"`
@@ -52,10 +53,14 @@ func NewStore(dataDir string, enc *Encryptor) (*Store, error) {
 
 // Save encrypts the DSN (when savePassword is true) and persists the record.
 // Returns the new record with its generated ID.
-func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePassword bool, environment ...string) (Record, error) {
+func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePassword bool, extra ...string) (Record, error) {
 	env := "local"
-	if len(environment) > 0 && environment[0] != "" {
-		env = environment[0]
+	if len(extra) > 0 && extra[0] != "" {
+		env = extra[0]
+	}
+	var filepath string
+	if len(extra) > 1 {
+		filepath = extra[1]
 	}
 
 	rec := Record{
@@ -66,6 +71,7 @@ func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePas
 		Port:         port,
 		User:         user,
 		DBName:       dbName,
+		Filepath:     filepath,
 		Environment:  env,
 		SavePassword: savePassword,
 		CreatedAt:    time.Now().UTC(),

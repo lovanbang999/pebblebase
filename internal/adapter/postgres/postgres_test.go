@@ -90,14 +90,30 @@ func TestIntrospect_ColumnTypes(t *testing.T) {
 		{"created_at", "datetime", false},
 	}
 
-	var usersTable *struct{ cols map[string]struct{ typ string; pk bool } }
+	var usersTable *struct {
+		cols map[string]struct {
+			typ string
+			pk  bool
+		}
+	}
 	for _, tbl := range tables {
 		if tbl.Name == "users" {
-			m := make(map[string]struct{ typ string; pk bool })
+			m := make(map[string]struct {
+				typ string
+				pk  bool
+			})
 			for _, c := range tbl.Columns {
-				m[c.Name] = struct{ typ string; pk bool }{c.Type, c.IsPrimaryKey}
+				m[c.Name] = struct {
+					typ string
+					pk  bool
+				}{c.Type, c.IsPrimaryKey}
 			}
-			usersTable = &struct{ cols map[string]struct{ typ string; pk bool } }{m}
+			usersTable = &struct {
+				cols map[string]struct {
+					typ string
+					pk  bool
+				}
+			}{m}
 			break
 		}
 	}
@@ -162,7 +178,7 @@ func TestQuery_Pagination(t *testing.T) {
 		name       string
 		limit      int
 		offset     int
-		wantRows   int // max rows in result
+		wantRows   int  // max rows in result
 		wantGtZero bool // TotalCount > 0
 	}{
 		{"first page", 2, 0, 2, true},

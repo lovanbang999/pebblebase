@@ -3,11 +3,13 @@ package api_test
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 
 	mongoadapter "pebblebase/internal/adapter/mongodb"
@@ -15,6 +17,8 @@ import (
 	pgadapter "pebblebase/internal/adapter/postgres"
 	"pebblebase/internal/api"
 	"pebblebase/internal/storage"
+
+	_ "modernc.org/sqlite"
 )
 
 func setupTestServer(t *testing.T) (*http.ServeMux, *storage.Store) {
@@ -338,7 +342,7 @@ func TestEndToEndCRUD_Postgres(t *testing.T) {
 
 	// 7. Update row
 	updatePayload := map[string]any{
-		"where": map[string]any{"email": testEmail},
+		"where":  map[string]any{"email": testEmail},
 		"values": map[string]any{"name": "Integration Test Updated"},
 	}
 	bUpdate, _ := json.Marshal(updatePayload)
@@ -696,3 +700,119 @@ func TestEndToEndCRUD_MongoDB(t *testing.T) {
 	}
 }
 
+func TestConnection_SQLite_EndToEnd(t *testing.T) {
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "app_test.db")
+
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("create test sqlite db: %v", err)
+	}
+	defer db.Close()
+
+	initSQL := `
+	CREATE TABLE categories (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL
+	);
+	CREATE TABLE items (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		category_id INTEGER,
+		title TEXT NOT NULL,
+		FOREIGN KEY (category_id) REFERENCES categories(id)
+	);
+	INSERT INTO categories (name) VALUES ('Electronics'), ('Books');
+	`
+	if _, err := db.Exec(initSQL); err != nil {
+		t.Fatalf("init test sqlite tables: %v", err)
+	}
+
+	mux, _ := setupTestServer(t)
+
+	// 1. Create SQLite connection via API
+	payload := map[string]any{
+		"name":     "Local App DB",
+		"type":     "sqlite",
+		"mode":     "form",
+		"filepath": dbPath,
+	}
+	b, _ := json.Marshal(payload)
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(b))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201 Created, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var connRes map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &connRes); err != nil {
+		t.Fatalf("unmarshal conn response: %v", err)
+	}
+
+	connID := connRes["id"].(string)
+	if connID == "" {
+		t.Fatal("expected non-empty connection id")
+	}
+	if connRes["filepath"] != dbPath {
+		t.Errorf("expected filepath %q, got %v", dbPath, connRes["filepath"])
+	}
+
+	// 2. Introspect tables
+	reqTables := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables", connID), nil)
+	recTables := httptest.NewRecorder()
+	mux.ServeHTTP(recTables, reqTables)
+
+	if recTables.Code != http.StatusOK {
+		t.Fatalf("introspect tables failed: status %d: %s", recTables.Code, recTables.Body.String())
+	}
+
+	var tables []map[string]any
+	if err := json.Unmarshal(recTables.Body.Bytes(), &tables); err != nil {
+		t.Fatalf("unmarshal tables: %v", err)
+	}
+	if len(tables) < 2 {
+		t.Fatalf("expected at least 2 tables, got %d", len(tables))
+	}
+
+	// 3. Query categories rows
+	reqRows := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/categories/rows", connID), nil)
+	recRows := httptest.NewRecorder()
+	mux.ServeHTTP(recRows, reqRows)
+
+	if recRows.Code != http.StatusOK {
+		t.Fatalf("query rows failed: status %d: %s", recRows.Code, recRows.Body.String())
+	}
+
+	var queryRes map[string]any
+	if err := json.Unmarshal(recRows.Body.Bytes(), &queryRes); err != nil {
+		t.Fatalf("unmarshal rows: %v", err)
+	}
+	totalCount := int(queryRes["total_count"].(float64))
+	if totalCount != 2 {
+		t.Errorf("expected total_count=2, got %d", totalCount)
+	}
+
+	// 4. Insert row into categories
+	insertPayload := map[string]any{
+		"values": map[string]any{
+			"name": "Gardening",
+		},
+	}
+	bInsert, _ := json.Marshal(insertPayload)
+	reqInsert := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/tables/categories/rows", connID), bytes.NewReader(bInsert))
+	recInsert := httptest.NewRecorder()
+	mux.ServeHTTP(recInsert, reqInsert)
+
+	if recInsert.Code != http.StatusCreated {
+		t.Fatalf("insert row failed: status %d: %s", recInsert.Code, recInsert.Body.String())
+	}
+
+	// 5. Cleanup
+	reqDel := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/connections/%s", connID), nil)
+	recDel := httptest.NewRecorder()
+	mux.ServeHTTP(recDel, reqDel)
+	if recDel.Code != http.StatusNoContent {
+		t.Fatalf("delete connection failed: status %d: %s", recDel.Code, recDel.Body.String())
+	}
+}

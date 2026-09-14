@@ -97,11 +97,11 @@ func fetchColumns(ctx context.Context, db *sql.DB, table string, fkCols map[stri
 	var cols []schema.Column
 	for rows.Next() {
 		var (
-			name         string
-			rawType      string
-			isNullable   string
-			defaultVal   *string
-			columnKey    string
+			name       string
+			rawType    string
+			isNullable string
+			defaultVal *string
+			columnKey  string
 		)
 		if err := rows.Scan(&name, &rawType, &isNullable, &defaultVal, &columnKey); err != nil {
 			return nil, fmt.Errorf("mysql: scan column for %q: %w", table, err)

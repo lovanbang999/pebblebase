@@ -14,6 +14,7 @@ import (
 	mongoadapter "pebblebase/internal/adapter/mongodb"
 	mysqladapter "pebblebase/internal/adapter/mysql"
 	pgadapter "pebblebase/internal/adapter/postgres"
+	sqliteadapter "pebblebase/internal/adapter/sqlite"
 	"pebblebase/internal/storage"
 )
 
@@ -122,6 +123,8 @@ func openAdapter(ctx context.Context, dbType, dsn string) (adapter.Adapter, erro
 		return mysqladapter.New(ctx, dsn)
 	case "mongodb":
 		return mongoadapter.New(ctx, dsn)
+	case "sqlite":
+		return sqliteadapter.New(ctx, dsn)
 	default:
 		return nil, fmt.Errorf("unsupported database type: %q", dbType)
 	}

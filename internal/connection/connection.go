@@ -10,9 +10,10 @@ import (
 // ConnectionInput is the raw user input from the UI — either form fields or a raw URL.
 // It is the single entry point before any DSN is constructed.
 type ConnectionInput struct {
-	Type                               string // "postgres" | "mysql" | "mongodb"
+	Type                               string // "postgres" | "mysql" | "mongodb" | "sqlite"
 	Mode                               string // "form" | "url"
 	Host, Port, User, Password, DBName string // used when Mode == "form"
+	Filepath                           string // used when Type == "sqlite" in form mode
 	RawURL                             string // used when Mode == "url", overrides form fields
 	SavePassword                       bool   // "Save password" checkbox per-connection
 }
@@ -37,6 +38,8 @@ func (c ConnectionInput) ToDSN() (string, error) {
 		return c.mysqlDSN()
 	case "mongodb":
 		return c.mongoDSN()
+	case "sqlite":
+		return c.sqliteDSN()
 	default:
 		return "", fmt.Errorf("connection: unsupported database type %q", c.Type)
 	}
@@ -97,6 +100,18 @@ func (c ConnectionInput) mongoDSN() (string, error) {
 		u.RawQuery = url.Values{"authSource": {"admin"}}.Encode()
 	}
 	return u.String(), nil
+}
+
+// sqliteDSN builds a SQLite connection string / file path.
+func (c ConnectionInput) sqliteDSN() (string, error) {
+	fp := strings.TrimSpace(c.Filepath)
+	if fp == "" {
+		fp = strings.TrimSpace(c.DBName)
+	}
+	if fp == "" {
+		return "", fmt.Errorf("connection: file path is required for sqlite connections")
+	}
+	return fp, nil
 }
 
 // requireFields returns an error if any of the named fields are empty.

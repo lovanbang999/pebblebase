@@ -17,6 +17,7 @@ type connectionResponse struct {
 	Port         string    `json:"port"`
 	User         string    `json:"user"`
 	DBName       string    `json:"db_name"`
+	Filepath     string    `json:"filepath,omitempty"`
 	Environment  string    `json:"environment"`
 	SavePassword bool      `json:"save_password"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -35,6 +36,7 @@ func toConnectionResponse(r storage.Record) connectionResponse {
 		Port:         r.Port,
 		User:         r.User,
 		DBName:       r.DBName,
+		Filepath:     r.Filepath,
 		Environment:  env,
 		SavePassword: r.SavePassword,
 		CreatedAt:    r.CreatedAt,
@@ -44,13 +46,14 @@ func toConnectionResponse(r storage.Record) connectionResponse {
 // createConnectionRequest is the JSON body for POST /api/connections.
 type createConnectionRequest struct {
 	Name         string `json:"name"`
-	Type         string `json:"type"` // postgres | mysql | mongodb
+	Type         string `json:"type"` // postgres | mysql | mongodb | sqlite
 	Mode         string `json:"mode"` // form | url
 	Host         string `json:"host"`
 	Port         string `json:"port"`
 	User         string `json:"user"`
 	Password     string `json:"password"`
 	DBName       string `json:"db_name"`
+	Filepath     string `json:"filepath,omitempty"`
 	Environment  string `json:"environment,omitempty"`
 	RawURL       string `json:"raw_url"`
 	SavePassword bool   `json:"save_password"`
@@ -66,6 +69,10 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Type == "sqlite" {
+		req.SavePassword = true
+	}
+
 	input := connection.ConnectionInput{
 		Type:         req.Type,
 		Mode:         req.Mode,
@@ -74,6 +81,7 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		User:         req.User,
 		Password:     req.Password,
 		DBName:       req.DBName,
+		Filepath:     req.Filepath,
 		RawURL:       req.RawURL,
 		SavePassword: req.SavePassword,
 	}
@@ -91,7 +99,7 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rec, err := s.store.Save(req.Name, req.Type, req.Host, req.Port, req.User, req.DBName, dsn, req.SavePassword, req.Environment)
+	rec, err := s.store.Save(req.Name, req.Type, req.Host, req.Port, req.User, req.DBName, dsn, req.SavePassword, req.Environment, req.Filepath)
 	if err != nil {
 		a.Close()
 		writeError(w, http.StatusInternalServerError, "save connection: "+err.Error())
@@ -167,6 +175,7 @@ func (s *Server) testConnection(w http.ResponseWriter, r *http.Request) {
 		User:         req.User,
 		Password:     req.Password,
 		DBName:       req.DBName,
+		Filepath:     req.Filepath,
 		RawURL:       req.RawURL,
 		SavePassword: req.SavePassword,
 	}
@@ -191,4 +200,3 @@ func (s *Server) testConnection(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
-
