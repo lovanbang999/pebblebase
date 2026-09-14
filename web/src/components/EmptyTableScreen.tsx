@@ -22,7 +22,7 @@ export const EmptyTableScreen: FC<EmptyTableScreenProps> = ({
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-50/50 dark:bg-zinc-950">
       <div className="h-11 px-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2.5 bg-white dark:bg-zinc-900/30">
         <SidebarTrigger className="-ml-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer" />
-        <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800" />
+        <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800 self-center" />
         <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400 font-medium">
           {connectionName}
         </span>
