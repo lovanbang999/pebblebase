@@ -17,8 +17,10 @@ import {
   Moon,
   Copy,
   ShieldAlert,
+  Terminal,
 } from "lucide-react";
 import type { Connection, DatabaseType, TableSchema } from "../lib/types";
+import { SHORTCUTS, getShortcutTooltip } from "../lib/platform";
 import packageJson from "../../package.json";
 import { Button } from "@/components/ui/button";
 import { cn } from "cn";
@@ -75,6 +77,8 @@ interface SidebarProps {
   onSelectTable: (tableName: string) => void;
   isLoadingTables: boolean;
   onRefreshTables: () => void;
+  activeView?: "table" | "console";
+  onOpenQueryConsole?: () => void;
 }
 
 const ENGINE_CONFIG: { type: DatabaseType; label: string; badge: string }[] = [
@@ -155,6 +159,8 @@ export const Sidebar: FC<SidebarProps> = ({
   onSelectTable,
   isLoadingTables,
   onRefreshTables,
+  activeView = "table",
+  onOpenQueryConsole,
 }) => {
   const { t } = useTranslation();
   const [tableSearch, setTableSearch] = useState("");
@@ -437,6 +443,35 @@ export const Sidebar: FC<SidebarProps> = ({
 
       {/* Tables Explorer Content */}
       <SidebarContent className="gap-0">
+        {/* Query Console Quick Action */}
+        {selectedConnection && onOpenQueryConsole && (
+          <div className="p-2 pb-1 border-b border-sidebar-border">
+            <Button
+              type="button"
+              variant={activeView === "console" ? "secondary" : "ghost"}
+              size="sm"
+              onClick={onOpenQueryConsole}
+              title={getShortcutTooltip("queryConsole")}
+              className={cn(
+                "w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                activeView === "console"
+                  ? "bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              )}
+            >
+              <div className="flex items-center gap-2 truncate">
+                <Terminal className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="truncate group-data-[collapsible=icon]:hidden">
+                  {t("sidebar.queryConsole")}
+                </span>
+              </div>
+              <kbd className="text-[9px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 leading-none group-data-[collapsible=icon]:hidden">
+                {SHORTCUTS.queryConsole}
+              </kbd>
+            </Button>
+          </div>
+        )}
+
         {/* Table Filter Input (Hidden when collapsed) */}
         <div className="p-2 border-b border-sidebar-border group-data-[collapsible=icon]:hidden">
           <div className="flex items-center gap-1.5">

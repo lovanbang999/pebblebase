@@ -277,3 +277,53 @@ func TestSQLiteAdapter_CRUD_And_Query(t *testing.T) {
 		t.Errorf("expected total_count=2 after delete, got %d", afterDeleteRes.TotalCount)
 	}
 }
+
+func TestSQLiteAdapter_ExecuteRaw(t *testing.T) {
+	ctx := context.Background()
+	dbPath := setupTestDB(t)
+
+	a, err := sqlite.New(ctx, dbPath)
+	if err != nil {
+		t.Fatalf("sqlite.New() error: %v", err)
+	}
+	defer a.Close()
+
+	// 1. Insert author via raw SQL
+	insertRes, err := a.ExecuteRaw(ctx, "INSERT INTO authors (name, email) VALUES ('John Doe', 'john@example.com')")
+	if err != nil {
+		t.Fatalf("ExecuteRaw INSERT error: %v", err)
+	}
+	if !insertRes.IsMutation || insertRes.RowsAffected != 1 {
+		t.Errorf("expected mutation with 1 row affected, got is_mutation=%v, rows_affected=%d", insertRes.IsMutation, insertRes.RowsAffected)
+	}
+
+	// 2. Insert post via raw SQL
+	_, err = a.ExecuteRaw(ctx, "INSERT INTO posts (author_id, title, content) VALUES (1, 'Hello World', 'First content')")
+	if err != nil {
+		t.Fatalf("ExecuteRaw INSERT post error: %v", err)
+	}
+
+	// 3. Query with JOIN
+	joinRes, err := a.ExecuteRaw(ctx, "SELECT a.name, p.title, p.content FROM posts p JOIN authors a ON p.author_id = a.id")
+	if err != nil {
+		t.Fatalf("ExecuteRaw SELECT JOIN error: %v", err)
+	}
+	if joinRes.IsMutation {
+		t.Errorf("expected IsMutation=false for SELECT, got true")
+	}
+	if len(joinRes.Columns) != 3 {
+		t.Errorf("expected 3 columns, got %d (%v)", len(joinRes.Columns), joinRes.Columns)
+	}
+	if len(joinRes.Rows) != 1 {
+		t.Fatalf("expected 1 row, got %d", len(joinRes.Rows))
+	}
+	if joinRes.Rows[0]["name"] != "John Doe" || joinRes.Rows[0]["title"] != "Hello World" {
+		t.Errorf("unexpected row content: %v", joinRes.Rows[0])
+	}
+
+	// 4. Test Syntax Error
+	_, err = a.ExecuteRaw(ctx, "SELEC * FORM invalid_syntax")
+	if err == nil {
+		t.Errorf("expected error for syntax mistake, got nil")
+	}
+}

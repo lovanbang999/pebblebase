@@ -184,3 +184,63 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: oklch(1 0 0 / 0.35);
 }
+
+/* CodeMirror Autocomplete Popup Styling */
+.cm-tooltip.cm-tooltip-autocomplete {
+  background: #ffffff !important;
+  border: 1px solid oklch(0.922 0 0) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-size: 11px !important;
+  padding: 4px !important;
+  z-index: 9999 !important;
+}
+
+.dark .cm-tooltip.cm-tooltip-autocomplete {
+  background: #18181b !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4) !important;
+}
+
+.cm-tooltip.cm-tooltip-autocomplete > ul {
+  max-height: 220px !important;
+  scrollbar-width: thin !important;
+}
+
+.cm-tooltip.cm-tooltip-autocomplete > ul > li {
+  padding: 4px 8px !important;
+  border-radius: 5px !important;
+  line-height: 1.4 !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: #27272a !important;
+}
+
+.dark .cm-tooltip.cm-tooltip-autocomplete > ul > li {
+  color: #e4e4e7 !important;
+}
+
+.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+
+.dark .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background: rgba(16, 185, 129, 0.22) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+.cm-completionDetail {
+  font-style: normal !important;
+  opacity: 0.65 !important;
+  font-size: 10px !important;
+  margin-left: auto !important;
+}
+
+.cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionDetail {
+  opacity: 0.95 !important;
+}

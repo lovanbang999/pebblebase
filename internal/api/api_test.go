@@ -913,3 +913,176 @@ func TestConnection_ReadOnly_MutationsBlocked(t *testing.T) {
 		t.Errorf("expected DELETE /rows to return 403 Forbidden, got %d: %s", recDelete.Code, recDelete.Body.String())
 	}
 }
+
+func TestConnection_RawQuery_SQLite(t *testing.T) {
+	mux, _ := setupTestServer(t)
+
+	// 1. Create a SQLite file with sample tables
+	dbFile := filepath.Join(t.TempDir(), "query_test.db")
+	db, err := sql.Open("sqlite", dbFile)
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	_, err = db.Exec(`
+		CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER);
+		CREATE TABLE orders (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, amount REAL);
+		INSERT INTO users (name, age) VALUES ('Alice', 30), ('Bob', 25);
+		INSERT INTO orders (user_id, amount) VALUES (1, 99.50), (1, 150.00), (2, 45.20);
+	`)
+	db.Close()
+	if err != nil {
+		t.Fatalf("seed sqlite: %v", err)
+	}
+
+	// 2. Register connection
+	body, _ := json.Marshal(map[string]any{
+		"name":          "SQLite Query Test",
+		"type":          "sqlite",
+		"filepath":      dbFile,
+		"save_password": true,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201 Created, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var connResp struct {
+		ID string `json:"id"`
+	}
+	_ = json.NewDecoder(rec.Body).Decode(&connResp)
+	connID := connResp.ID
+
+	// 3. Run SELECT with JOIN
+	queryBody, _ := json.Marshal(map[string]any{
+		"query": "SELECT u.name, o.amount FROM users u JOIN orders o ON u.id = o.user_id WHERE u.name = 'Alice' ORDER BY o.amount ASC",
+	})
+	qReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/query", connID), bytes.NewReader(queryBody))
+	qRec := httptest.NewRecorder()
+	mux.ServeHTTP(qRec, qReq)
+
+	if qRec.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %d: %s", qRec.Code, qRec.Body.String())
+	}
+
+	var res struct {
+		Columns         []string         `json:"columns"`
+		Rows            []map[string]any `json:"rows"`
+		ExecutionTimeMs float64          `json:"execution_time_ms"`
+		RowsAffected    int64            `json:"rows_affected"`
+		IsMutation      bool             `json:"is_mutation"`
+	}
+	if err := json.NewDecoder(qRec.Body).Decode(&res); err != nil {
+		t.Fatalf("decode query response: %v", err)
+	}
+
+	if len(res.Columns) != 2 || res.Columns[0] != "name" || res.Columns[1] != "amount" {
+		t.Errorf("unexpected columns: %v", res.Columns)
+	}
+	if len(res.Rows) != 2 {
+		t.Fatalf("expected 2 rows, got %d", len(res.Rows))
+	}
+	if res.Rows[0]["name"] != "Alice" {
+		t.Errorf("expected Alice, got %v", res.Rows[0]["name"])
+	}
+
+	// 4. Run Mutation via Raw SQL (INSERT)
+	insertBody, _ := json.Marshal(map[string]any{
+		"query": "INSERT INTO users (name, age) VALUES ('Charlie', 22)",
+	})
+	iReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/query", connID), bytes.NewReader(insertBody))
+	iRec := httptest.NewRecorder()
+	mux.ServeHTTP(iRec, iReq)
+
+	if iRec.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK on raw INSERT, got %d: %s", iRec.Code, iRec.Body.String())
+	}
+	var insertRes struct {
+		IsMutation   bool  `json:"is_mutation"`
+		RowsAffected int64 `json:"rows_affected"`
+	}
+	_ = json.NewDecoder(iRec.Body).Decode(&insertRes)
+	if !insertRes.IsMutation || insertRes.RowsAffected != 1 {
+		t.Errorf("expected mutation with 1 row affected, got %v", insertRes)
+	}
+
+	// 5. Test Syntax Error returns 400
+	badBody, _ := json.Marshal(map[string]any{
+		"query": "SELEC * FORM invalid_syntax",
+	})
+	bReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/query", connID), bytes.NewReader(badBody))
+	bRec := httptest.NewRecorder()
+	mux.ServeHTTP(bRec, bReq)
+
+	if bRec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400 Bad Request for invalid syntax, got %d: %s", bRec.Code, bRec.Body.String())
+	}
+}
+
+func TestConnection_RawQuery_ReadOnly_Blocked(t *testing.T) {
+	mux, _ := setupTestServer(t)
+
+	dbFile := filepath.Join(t.TempDir(), "readonly_query.db")
+	db, err := sql.Open("sqlite", dbFile)
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	_, _ = db.Exec("CREATE TABLE records (id INTEGER PRIMARY KEY, title TEXT); INSERT INTO records VALUES (1, 'Safe');")
+	db.Close()
+
+	// Register connection with read_only = true
+	body, _ := json.Marshal(map[string]any{
+		"name":          "ReadOnly DB",
+		"type":          "sqlite",
+		"filepath":      dbFile,
+		"read_only":     true,
+		"save_password": true,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	var connResp struct {
+		ID string `json:"id"`
+	}
+	_ = json.NewDecoder(rec.Body).Decode(&connResp)
+	connID := connResp.ID
+
+	// SELECT query must be allowed (200 OK)
+	qBody, _ := json.Marshal(map[string]any{
+		"query": "SELECT * FROM records",
+	})
+	qReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/query", connID), bytes.NewReader(qBody))
+	qRec := httptest.NewRecorder()
+	mux.ServeHTTP(qRec, qReq)
+
+	if qRec.Code != http.StatusOK {
+		t.Errorf("expected 200 OK for SELECT in read-only mode, got %d: %s", qRec.Code, qRec.Body.String())
+	}
+
+	// DROP TABLE mutation must be blocked (403 Forbidden)
+	dropBody, _ := json.Marshal(map[string]any{
+		"query": "DROP TABLE records",
+	})
+	dReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/query", connID), bytes.NewReader(dropBody))
+	dRec := httptest.NewRecorder()
+	mux.ServeHTTP(dRec, dReq)
+
+	if dRec.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden for DROP TABLE in read-only mode, got %d: %s", dRec.Code, dRec.Body.String())
+	}
+
+	// DELETE mutation must be blocked (403 Forbidden)
+	delBody, _ := json.Marshal(map[string]any{
+		"query": "DELETE FROM records WHERE id = 1",
+	})
+	delReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/query", connID), bytes.NewReader(delBody))
+	delRec := httptest.NewRecorder()
+	mux.ServeHTTP(delRec, delReq)
+
+	if delRec.Code != http.StatusForbidden {
+		t.Errorf("expected 403 Forbidden for DELETE in read-only mode, got %d: %s", delRec.Code, delRec.Body.String())
+	}
+}

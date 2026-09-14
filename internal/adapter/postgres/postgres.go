@@ -59,3 +59,8 @@ func (a *PostgresAdapter) Query(ctx context.Context, table string, opts adapter.
 func (a *PostgresAdapter) Mutate(ctx context.Context, table string, op adapter.MutationOp) error {
 	return mutate(ctx, a.pool, table, op)
 }
+
+// ExecuteRaw runs an arbitrary SQL statement and returns the columns, rows, latency, and rows affected.
+func (a *PostgresAdapter) ExecuteRaw(ctx context.Context, query string) (adapter.RawQueryResult, error) {
+	return executeRaw(ctx, a.pool, query)
+}

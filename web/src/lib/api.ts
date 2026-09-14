@@ -4,6 +4,7 @@ import type {
   RowQueryParams,
   TableSchema,
   QueryResult,
+  RawQueryResult,
 } from './types';
 
 const BASE_URL = '/api';
@@ -141,4 +142,19 @@ export async function deleteRow(
     }
   );
   await handleResponse<void>(res);
+}
+
+export async function executeRawQuery(
+  connId: string,
+  query: string
+): Promise<RawQueryResult> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/query`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    }
+  );
+  return handleResponse<RawQueryResult>(res);
 }
