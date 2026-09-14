@@ -145,15 +145,21 @@ function PebblebaseStudio() {
               setPage(0);
             }}
             onRefresh={() => refetchRows()}
+            isReadOnly={Boolean(activeConnection?.read_only)}
             onAddRow={() => {
+              if (activeConnection?.read_only) return;
               setEditingRow(null);
               setIsRowModalOpen(true);
             }}
             onEditRow={(row) => {
+              if (activeConnection?.read_only) return;
               setEditingRow(row);
               setIsRowModalOpen(true);
             }}
-            onDeleteRow={handleDeleteRowDirectly}
+            onDeleteRow={(row) => {
+              if (activeConnection?.read_only) return;
+              handleDeleteRowDirectly(row);
+            }}
             onNavigateRelation={handleNavigateToRelatedTable}
           />
         )}

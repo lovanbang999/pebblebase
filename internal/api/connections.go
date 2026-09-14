@@ -18,6 +18,7 @@ type connectionResponse struct {
 	User         string    `json:"user"`
 	DBName       string    `json:"db_name"`
 	Filepath     string    `json:"filepath,omitempty"`
+	ReadOnly     bool      `json:"read_only"`
 	Environment  string    `json:"environment"`
 	SavePassword bool      `json:"save_password"`
 	CreatedAt    time.Time `json:"created_at"`
@@ -37,6 +38,7 @@ func toConnectionResponse(r storage.Record) connectionResponse {
 		User:         r.User,
 		DBName:       r.DBName,
 		Filepath:     r.Filepath,
+		ReadOnly:     r.ReadOnly,
 		Environment:  env,
 		SavePassword: r.SavePassword,
 		CreatedAt:    r.CreatedAt,
@@ -54,6 +56,7 @@ type createConnectionRequest struct {
 	Password     string `json:"password"`
 	DBName       string `json:"db_name"`
 	Filepath     string `json:"filepath,omitempty"`
+	ReadOnly     bool   `json:"read_only"`
 	Environment  string `json:"environment,omitempty"`
 	RawURL       string `json:"raw_url"`
 	SavePassword bool   `json:"save_password"`
@@ -84,6 +87,7 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		Filepath:     req.Filepath,
 		RawURL:       req.RawURL,
 		SavePassword: req.SavePassword,
+		ReadOnly:     req.ReadOnly,
 	}
 
 	dsn, err := input.ToDSN()
@@ -99,7 +103,14 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rec, err := s.store.Save(req.Name, req.Type, req.Host, req.Port, req.User, req.DBName, dsn, req.SavePassword, req.Environment, req.Filepath)
+	rec, err := s.store.Save(
+		req.Name, req.Type, req.Host, req.Port, req.User, req.DBName, dsn, req.SavePassword,
+		storage.SaveParams{
+			Environment: req.Environment,
+			Filepath:    req.Filepath,
+			ReadOnly:    req.ReadOnly,
+		},
+	)
 	if err != nil {
 		a.Close()
 		writeError(w, http.StatusInternalServerError, "save connection: "+err.Error())
@@ -178,6 +189,7 @@ func (s *Server) testConnection(w http.ResponseWriter, r *http.Request) {
 		Filepath:     req.Filepath,
 		RawURL:       req.RawURL,
 		SavePassword: req.SavePassword,
+		ReadOnly:     req.ReadOnly,
 	}
 
 	dsn, err := input.ToDSN()

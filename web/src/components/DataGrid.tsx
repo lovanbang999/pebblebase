@@ -30,6 +30,7 @@ import {
   ArrowUpRight,
   Search,
   Inbox,
+  ShieldAlert,
 } from "lucide-react";
 import type { TableSchema, FilterOption } from "../lib/types";
 import { useTranslation } from "react-i18next";
@@ -80,6 +81,7 @@ interface DataGridProps {
     targetColumn: string,
     value: any,
   ) => void;
+  isReadOnly?: boolean;
 }
 
 export const DataGrid: FC<DataGridProps> = ({
@@ -101,6 +103,7 @@ export const DataGrid: FC<DataGridProps> = ({
   onEditRow,
   onDeleteRow,
   onNavigateRelation,
+  isReadOnly = false,
 }) => {
   const { t } = useTranslation();
   // Filter Builder state
@@ -449,12 +452,18 @@ export const DataGrid: FC<DataGridProps> = ({
             type="button"
             variant="ghost"
             size="icon-xs"
-            title={t('datagrid.editRecordTooltip')}
+            disabled={isReadOnly}
+            title={isReadOnly ? t('datagrid.readOnlyTooltip') : t('datagrid.editRecordTooltip')}
             onClick={(e) => {
               e.stopPropagation();
-              onEditRow(info.row.original);
+              if (!isReadOnly) onEditRow(info.row.original);
             }}
-            className="text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 h-6 w-6"
+            className={cn(
+              "h-6 w-6",
+              isReadOnly
+                ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed opacity-50"
+                : "text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+            )}
           >
             <Edit2 className="w-3.5 h-3.5" />
           </Button>
@@ -462,12 +471,18 @@ export const DataGrid: FC<DataGridProps> = ({
             type="button"
             variant="ghost"
             size="icon-xs"
-            title={t('datagrid.deleteRecordTooltip')}
+            disabled={isReadOnly}
+            title={isReadOnly ? t('datagrid.readOnlyTooltip') : t('datagrid.deleteRecordTooltip')}
             onClick={(e) => {
               e.stopPropagation();
-              onDeleteRow(info.row.original);
+              if (!isReadOnly) onDeleteRow(info.row.original);
             }}
-            className="text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 h-6 w-6"
+            className={cn(
+              "h-6 w-6",
+              isReadOnly
+                ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed opacity-50"
+                : "text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400"
+            )}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
@@ -487,6 +502,8 @@ export const DataGrid: FC<DataGridProps> = ({
     onEditRow,
     onDeleteRow,
     onNavigateRelation,
+    isReadOnly,
+    t,
   ]);
 
   // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
@@ -533,6 +550,16 @@ export const DataGrid: FC<DataGridProps> = ({
             {totalCount.toLocaleString()}{" "}
             {totalCount === 1 ? "record" : "records"}
           </span>
+          {isReadOnly && (
+            <Badge
+              variant="outline"
+              className="text-[11px] font-mono px-2 py-0.5 border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 gap-1 select-none font-medium"
+              title={t('datagrid.readOnlyBanner')}
+            >
+              <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span>{t('connection.readOnlyBadge')}</span>
+            </Badge>
+          )}
           {displayedRows.length !== rows.length && (
             <Badge variant="outline" className="text-[11px] text-amber-700 dark:text-amber-400/90 font-mono bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40 px-1.5 py-0 h-auto font-normal">
               {t('datagrid.showingMatches', { count: displayedRows.length })}
@@ -595,7 +622,7 @@ export const DataGrid: FC<DataGridProps> = ({
             onClick={onRefresh}
             disabled={isLoading}
             title={t('datagrid.reloadTableTooltip')}
-            className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
+            className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white"
           >
             <RefreshCw
               className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
@@ -607,13 +634,33 @@ export const DataGrid: FC<DataGridProps> = ({
             type="button"
             size="sm"
             onClick={onAddRow}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold gap-1.5 shadow-xs"
+            disabled={isReadOnly}
+            title={isReadOnly ? t('datagrid.readOnlyTooltip') : t('datagrid.addRow')}
+            className={cn(
+              "text-xs font-semibold gap-1.5 shadow-xs transition-colors",
+              isReadOnly
+                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700 cursor-not-allowed opacity-60"
+                : "bg-emerald-600 hover:bg-emerald-500 text-white"
+            )}
           >
             <Plus className="w-3.5 h-3.5" />
             {t('datagrid.addRow')}
           </Button>
         </div>
       </div>
+
+      {/* Read-Only Safety Banner */}
+      {isReadOnly && (
+        <div className="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/30 flex items-center justify-between text-xs font-mono text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="font-medium">{t('datagrid.readOnlyBanner')}</span>
+          </div>
+          <Badge variant="outline" className="text-[10px] uppercase font-bold border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/20">
+            {t('connection.readOnlyBadge')}
+          </Badge>
+        </div>
+      )}
 
       {/* Filter Builder & Active Filter Chips */}
       {(showFilterBuilder || filters.length > 0) && (
@@ -777,11 +824,15 @@ export const DataGrid: FC<DataGridProps> = ({
                 icon={Inbox}
                 title={t('datagrid.tableIsEmptyTitle')}
                 description={t('datagrid.tableIsEmptyDesc', { table: table.name })}
-                action={{
-                  label: t('datagrid.insertFirstRecord'),
-                  onClick: onAddRow,
-                  icon: Plus,
-                }}
+                action={
+                  isReadOnly
+                    ? undefined
+                    : {
+                        label: t('datagrid.insertFirstRecord'),
+                        onClick: onAddRow,
+                        icon: Plus,
+                      }
+                }
               />
             )}
           </div>
@@ -811,8 +862,11 @@ export const DataGrid: FC<DataGridProps> = ({
               {reactTable.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group cursor-pointer"
-                  onClick={() => onEditRow(row.original)}
+                  className={cn(
+                    "hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group",
+                    !isReadOnly && "cursor-pointer"
+                  )}
+                  onClick={() => !isReadOnly && onEditRow(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

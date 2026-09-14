@@ -816,3 +816,100 @@ func TestConnection_SQLite_EndToEnd(t *testing.T) {
 		t.Fatalf("delete connection failed: status %d: %s", recDel.Code, recDel.Body.String())
 	}
 }
+
+func TestConnection_ReadOnly_MutationsBlocked(t *testing.T) {
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "readonly_test.db")
+
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("create test sqlite db: %v", err)
+	}
+	defer db.Close()
+
+	initSQL := `
+	CREATE TABLE items (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL
+	);
+	INSERT INTO items (name) VALUES ('Protected Item');
+	`
+	if _, err := db.Exec(initSQL); err != nil {
+		t.Fatalf("init test tables: %v", err)
+	}
+
+	mux, _ := setupTestServer(t)
+
+	// 1. Create connection with read_only: true
+	payload := map[string]any{
+		"name":      "Production Read-Only DB",
+		"type":      "sqlite",
+		"mode":      "form",
+		"filepath":  dbPath,
+		"read_only": true,
+	}
+	b, _ := json.Marshal(payload)
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(b))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201 Created, got %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var connRes map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &connRes); err != nil {
+		t.Fatalf("unmarshal conn response: %v", err)
+	}
+	if connRes["read_only"] != true {
+		t.Errorf("expected read_only: true, got %v", connRes["read_only"])
+	}
+
+	connID := connRes["id"].(string)
+
+	// 2. Querying rows should succeed (GET is permitted)
+	reqGet := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/items/rows", connID), nil)
+	recGet := httptest.NewRecorder()
+	mux.ServeHTTP(recGet, reqGet)
+
+	if recGet.Code != http.StatusOK {
+		t.Fatalf("GET /rows failed on read-only connection: status %d: %s", recGet.Code, recGet.Body.String())
+	}
+
+	// 3. POST (insert) must return 403 Forbidden
+	insertBody, _ := json.Marshal(map[string]any{
+		"values": map[string]any{"name": "Should Fail"},
+	})
+	reqPost := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/connections/%s/tables/items/rows", connID), bytes.NewReader(insertBody))
+	recPost := httptest.NewRecorder()
+	mux.ServeHTTP(recPost, reqPost)
+
+	if recPost.Code != http.StatusForbidden {
+		t.Errorf("expected POST /rows to return 403 Forbidden, got %d: %s", recPost.Code, recPost.Body.String())
+	}
+
+	// 4. PATCH (update) must return 403 Forbidden
+	updateBody, _ := json.Marshal(map[string]any{
+		"where":  map[string]any{"id": 1},
+		"values": map[string]any{"name": "Hacked Name"},
+	})
+	reqPatch := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/connections/%s/tables/items/rows", connID), bytes.NewReader(updateBody))
+	recPatch := httptest.NewRecorder()
+	mux.ServeHTTP(recPatch, reqPatch)
+
+	if recPatch.Code != http.StatusForbidden {
+		t.Errorf("expected PATCH /rows to return 403 Forbidden, got %d: %s", recPatch.Code, recPatch.Body.String())
+	}
+
+	// 5. DELETE must return 403 Forbidden
+	deleteBody, _ := json.Marshal(map[string]any{
+		"where": map[string]any{"id": 1},
+	})
+	reqDelete := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/connections/%s/tables/items/rows", connID), bytes.NewReader(deleteBody))
+	recDelete := httptest.NewRecorder()
+	mux.ServeHTTP(recDelete, reqDelete)
+
+	if recDelete.Code != http.StatusForbidden {
+		t.Errorf("expected DELETE /rows to return 403 Forbidden, got %d: %s", recDelete.Code, recDelete.Body.String())
+	}
+}
