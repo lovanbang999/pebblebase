@@ -1,4 +1,5 @@
 import { useState, useMemo, type FC, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Save, Trash2, Key, AlertCircle, Loader2, Plus } from 'lucide-react';
 import type { TableSchema, ColumnSchema } from '../lib/types';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ export const RowModal: FC<RowModalProps> = ({
   onSave,
   onDelete,
 }) => {
+  const { t } = useTranslation();
   const isEditing = Boolean(initialRow);
   const [formData, setFormData] = useState<Record<string, any>>(() => {
     if (initialRow) return { ...initialRow };
@@ -188,7 +190,7 @@ export const RowModal: FC<RowModalProps> = ({
         {/* Header */}
         <DialogHeader className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 space-y-1">
           <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>{isEditing ? 'Edit Record' : 'Insert Record'}</span>
+            <span>{isEditing ? t('rowModal.titleEdit') : t('rowModal.titleAdd')}</span>
             <Badge variant="secondary" className="font-mono text-xs text-emerald-600 dark:text-emerald-400">
               {table.name}
             </Badge>

@@ -11,6 +11,7 @@ import {
   Copy,
 } from "lucide-react";
 import type { DatabaseType, EnvironmentType, Connection, ConnectionInput } from "../lib/types";
+import { useTranslation } from "react-i18next";
 import { testConnection } from "../lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +84,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   onSubmit,
   cloneData,
 }) => {
+  const { t } = useTranslation();
   const [dbType, setDbType] = useState<DatabaseType>(cloneData?.type || "postgres");
   const [mode, setMode] = useState<"form" | "url">("form");
   const [environment, setEnvironment] = useState<EnvironmentType>(cloneData?.environment || "local");
@@ -231,7 +233,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">
-                Database Engine Driver
+                {t('connection.driver')}
               </label>
               <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
                 Select protocol driver
@@ -544,12 +546,12 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               {testing ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Testing...
+                  {t('connection.testing')}
                 </>
               ) : (
                 <>
                   <Radio className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
-                  Test Connection
+                  {t('connection.testConnection')}
                 </>
               )}
             </Button>
@@ -563,7 +565,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 disabled={submitting}
                 className="text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
               >
-                Cancel
+                {t('rowModal.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -574,10 +576,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 {submitting ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    Connecting...
+                    {t('common.loading')}
                   </>
                 ) : (
-                  cloneData ? "Clone & Save" : "Connect & Save"
+                  t('connection.saveConnection')
                 )}
               </Button>
             </div>

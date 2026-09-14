@@ -32,6 +32,7 @@ import {
   Inbox,
 } from "lucide-react";
 import type { TableSchema, FilterOption } from "../lib/types";
+import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -101,6 +102,7 @@ export const DataGrid: FC<DataGridProps> = ({
   onDeleteRow,
   onNavigateRelation,
 }) => {
+  const { t } = useTranslation();
   // Filter Builder state
   const [filterCol, setFilterCol] = useState(table.columns[0]?.name || "");
   const [filterOp, setFilterOp] = useState<
@@ -547,7 +549,7 @@ export const DataGrid: FC<DataGridProps> = ({
               type="text"
               value={quickSearch}
               onChange={(e) => setQuickSearch(e.target.value)}
-              placeholder="Search view... (/)"
+              placeholder={`${t('datagrid.searchPlaceholder')} (/)`}
               className="pl-8 pr-7 h-8 text-xs font-mono w-52"
             />
             {quickSearch && (
@@ -577,7 +579,7 @@ export const DataGrid: FC<DataGridProps> = ({
             )}
           >
             <FilterIcon className="w-3.5 h-3.5" />
-            Filter
+            {t('datagrid.filterButton')}
             {filters.length > 0 && (
               <Badge className="w-4 h-4 p-0 rounded-full bg-emerald-500 text-white dark:text-zinc-950 text-[10px] font-bold flex items-center justify-center">
                 {filters.length}
@@ -608,7 +610,7 @@ export const DataGrid: FC<DataGridProps> = ({
             className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold gap-1.5 shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Row
+            {t('datagrid.addRow')}
           </Button>
         </div>
       </div>
@@ -621,13 +623,13 @@ export const DataGrid: FC<DataGridProps> = ({
               onSubmit={handleAddFilter}
               className="flex items-center gap-2 flex-wrap text-xs font-mono"
             >
-              <span className="text-zinc-500 dark:text-zinc-400">WHERE</span>
+              <span className="text-zinc-500 dark:text-zinc-400">{t('datagrid.where')}</span>
               <Select
                 value={filterCol}
                 onValueChange={(val) => { if (typeof val === 'string') setFilterCol(val); }}
               >
                 <SelectTrigger className="h-7 text-xs font-mono min-w-32">
-                  <SelectValue placeholder="Column" />
+                  <SelectValue placeholder={t('datagrid.column')} />
                 </SelectTrigger>
                 <SelectContent side="bottom" align="start">
                   {table.columns.map((c) => (
@@ -648,7 +650,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 onValueChange={(val) => { if (typeof val === 'string') setFilterOp(val as any); }}
               >
                 <SelectTrigger className="h-7 text-xs font-mono min-w-24">
-                  <SelectValue placeholder="Operator" />
+                  <SelectValue placeholder={t('datagrid.operator')} />
                 </SelectTrigger>
                 <SelectContent side="bottom" align="start">
                   <SelectItem value="eq">=</SelectItem>
@@ -663,7 +665,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 type="text"
                 value={filterVal}
                 onChange={(e) => setFilterVal(e.target.value)}
-                placeholder="Value..."
+                placeholder={t('datagrid.valuePlaceholder')}
                 className="h-7 text-xs font-mono w-44"
               />
 
@@ -673,7 +675,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 disabled={!filterVal}
                 className="h-7 text-xs font-medium"
               >
-                Apply
+                {t('datagrid.apply')}
               </Button>
             </form>
           )}
@@ -835,11 +837,11 @@ export const DataGrid: FC<DataGridProps> = ({
         <div className="flex items-center gap-3">
           <span>
             {totalCount === 0
-              ? "0 records"
-              : `Showing ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} of ${totalCount}`}
+              ? `0 ${t('datagrid.records')}`
+              : `${t('datagrid.showing')} ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} ${t('datagrid.of')} ${totalCount}`}
           </span>
           <div className="flex items-center gap-1.5 ml-2">
-            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Per page:</span>
+            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">{t('datagrid.perPage')}</span>
             <Select
               value={String(pageSize)}
               onValueChange={(val) => val && onPageSizeChange(Number(val))}
@@ -858,7 +860,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-            Page {page + 1} of {totalPages}
+            {t('datagrid.page')} {page + 1} {t('datagrid.of')} {totalPages}
           </span>
           <div className="flex items-center gap-1">
             <Button
