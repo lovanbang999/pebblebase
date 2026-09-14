@@ -32,11 +32,24 @@ import {
   Inbox,
   ShieldAlert,
   Terminal,
+  Download,
+  UploadCloud,
+  FileSpreadsheet,
+  FileJson,
+  ChevronDown,
 } from "lucide-react";
 import type { TableSchema, FilterOption } from "../lib/types";
+import { getTableExportUrl } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
+import { ImportModal } from "./ImportModal";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
@@ -84,6 +97,7 @@ interface DataGridProps {
   ) => void;
   isReadOnly?: boolean;
   onOpenQueryConsole?: () => void;
+  connId?: string;
 }
 
 export const DataGrid: FC<DataGridProps> = ({
@@ -107,8 +121,21 @@ export const DataGrid: FC<DataGridProps> = ({
   onNavigateRelation,
   isReadOnly = false,
   onOpenQueryConsole,
+  connId,
 }) => {
   const { t } = useTranslation();
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  const handleExport = (format: "csv" | "json") => {
+    if (!connId) return;
+    const url = getTableExportUrl(connId, table.name, format, {
+      sort_by: sortBy,
+      sort_desc: sortDesc,
+      filters: filters,
+    });
+    window.open(url, "_blank");
+  };
+
   // Filter Builder state
   const [filterCol, setFilterCol] = useState(table.columns[0]?.name || "");
   const [filterOp, setFilterOp] = useState<
@@ -647,6 +674,56 @@ export const DataGrid: FC<DataGridProps> = ({
             </Button>
           )}
 
+          {/* Bulk Export Dropdown */}
+          {connId && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    title={t("datagrid.export")}
+                    className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+                  >
+                    <Download className="w-3.5 h-3.5 text-zinc-500" />
+                    <span>{t("datagrid.export")}</span>
+                    <ChevronDown className="w-3 h-3 text-zinc-400" />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-44 text-xs font-mono">
+                <DropdownMenuItem onClick={() => handleExport("csv")}>
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{t("datagrid.exportAsCsv")}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("json")}>
+                  <FileJson className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>{t("datagrid.exportAsJson")}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Bulk Import CSV Button */}
+          {connId && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsImportModalOpen(true)}
+              disabled={isReadOnly}
+              title={isReadOnly ? t("datagrid.readOnlyTooltip") : t("datagrid.importCsv")}
+              className={cn(
+                "text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white",
+                isReadOnly && "cursor-not-allowed opacity-60"
+              )}
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-zinc-500" />
+              <span>{t("datagrid.importCsv")}</span>
+            </Button>
+          )}
+
           {/* Add Row CTA */}
           <Button
             type="button"
@@ -958,6 +1035,18 @@ export const DataGrid: FC<DataGridProps> = ({
           </div>
         </div>
       </div>
+
+      {connId && (
+        <ImportModal
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
+          connId={connId}
+          table={table}
+          onSuccess={() => {
+            onRefresh();
+          }}
+        />
+      )}
     </div>
   );
 };

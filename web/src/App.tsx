@@ -173,6 +173,7 @@ function PebblebaseStudio() {
           />
         ) : (
           <DataGrid
+            connId={activeConnection?.id}
             table={activeTableSchema}
             rows={rowsResult?.rows || []}
             totalCount={rowsResult?.total_count || 0}

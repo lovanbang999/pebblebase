@@ -54,6 +54,10 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 
 	// Ad-hoc raw SQL and Mongo query execution
 	mux.HandleFunc("POST /api/connections/{id}/query", s.executeRawQuery)
+
+	// Bulk export & import
+	mux.HandleFunc("GET /api/connections/{id}/tables/{table}/export", s.exportTable)
+	mux.HandleFunc("POST /api/connections/{id}/tables/{table}/import", s.importTable)
 }
 
 // --------------------------------------------------------------------------

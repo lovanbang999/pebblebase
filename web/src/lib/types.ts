@@ -94,3 +94,9 @@ export interface QueryHistoryItem {
   row_count?: number;
   error?: string;
 }
+
+export interface ImportResult {
+  inserted_count: number;
+  duration_ms: number;
+}
+
