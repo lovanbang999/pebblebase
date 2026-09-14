@@ -248,6 +248,37 @@
     "tableTabTooltip": "Table: {{name}}",
     "queryTabTooltip": "SQL Console",
     "noTabsOpen": "No open tabs"
+  },
+  "schema": {
+    "dataGrid": "Data Grid",
+    "schemaDdl": "Schema & DDL",
+    "columnsTitle": "Column Specifications",
+    "columnsCount": "{{count}} columns defined",
+    "indexesTitle": "Database Indexes",
+    "indexesCount": "{{count}} indexes configured",
+    "noIndexes": "No explicit secondary indexes defined for this table.",
+    "ddlTitle": "Table Creation DDL Script",
+    "copyDdl": "Copy DDL",
+    "copied": "Copied!",
+    "loadingDdl": "Loading schema definition...",
+    "failedDdl": "Failed to load table DDL: {{error}}",
+    "colName": "Column Name",
+    "colType": "Data Type",
+    "colPk": "Primary Key",
+    "colNullable": "Nullable",
+    "colDefault": "Default Value",
+    "colRelations": "Relation",
+    "idxName": "Index Name",
+    "idxCols": "Columns",
+    "idxUnique": "Unique",
+    "idxType": "Type",
+    "yes": "YES",
+    "no": "NO",
+    "primary": "PRIMARY",
+    "secondary": "SECONDARY",
+    "unique": "UNIQUE",
+    "none": "None"
   }
 }
+
 

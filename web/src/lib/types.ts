@@ -120,4 +120,16 @@ export interface StudioTab {
   state?: StudioTabState;
 }
 
+export interface TableIndexInfo {
+  name: string;
+  columns: string[];
+  unique: boolean;
+  primary?: boolean;
+}
 
+export interface TableDDLResponse {
+  table: string;
+  engine: DatabaseType;
+  ddl: string;
+  indexes: TableIndexInfo[];
+}

@@ -37,12 +37,14 @@ import {
   FileSpreadsheet,
   FileJson,
   ChevronDown,
+  FileCode,
 } from "lucide-react";
 import type { TableSchema, FilterOption } from "../lib/types";
 import { getTableExportUrl } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
 import { ImportModal } from "./ImportModal";
+import { SchemaInspector } from "./SchemaInspector";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -124,6 +126,7 @@ export const DataGrid: FC<DataGridProps> = ({
   connId,
 }) => {
   const { t } = useTranslation();
+  const [activeSubView, setActiveSubView] = useState<"grid" | "schema">("grid");
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleExport = (format: "csv" | "json") => {
@@ -580,6 +583,39 @@ export const DataGrid: FC<DataGridProps> = ({
             {totalCount.toLocaleString()}{" "}
             {totalCount === 1 ? "record" : "records"}
           </span>
+
+          <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800 mx-1" />
+
+          {/* Sub-view switcher: [ Data Grid ] | [ Schema & DDL ] */}
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/60">
+            <button
+              type="button"
+              onClick={() => setActiveSubView("grid")}
+              className={cn(
+                "px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
+                activeSubView === "grid"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              )}
+            >
+              <TableIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>{t("schema.dataGrid")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveSubView("schema")}
+              className={cn(
+                "px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
+                activeSubView === "schema"
+                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              )}
+            >
+              <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>{t("schema.schemaDdl")}</span>
+            </button>
+          </div>
+
           {isReadOnly && (
             <Badge
               variant="outline"
@@ -590,7 +626,7 @@ export const DataGrid: FC<DataGridProps> = ({
               <span>{t('connection.readOnlyBadge')}</span>
             </Badge>
           )}
-          {displayedRows.length !== rows.length && (
+          {activeSubView === "grid" && displayedRows.length !== rows.length && (
             <Badge variant="outline" className="text-[11px] text-amber-700 dark:text-amber-400/90 font-mono bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40 px-1.5 py-0 h-auto font-normal">
               {t('datagrid.showingMatches', { count: displayedRows.length })}
             </Badge>
@@ -598,151 +634,194 @@ export const DataGrid: FC<DataGridProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Quick Search Input */}
-          <div className="relative flex items-center">
-            <Search className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 absolute left-2.5 pointer-events-none" />
-            <Input
-              ref={quickSearchInputRef}
-              type="text"
-              value={quickSearch}
-              onChange={(e) => setQuickSearch(e.target.value)}
-              placeholder={`${t('datagrid.searchPlaceholder')} (/)`}
-              className="pl-8 pr-7 h-8 text-xs font-mono w-52"
-            />
-            {quickSearch && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                onClick={() => setQuickSearch("")}
-                className="absolute right-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 h-6 w-6"
-                title={t('datagrid.clearSearchTooltip')}
-              >
-                <X className="w-3 h-3" />
-              </Button>
-            )}
-          </div>
-
-          {/* Filter toggle */}
-          <Button
-            type="button"
-            variant={filters.length > 0 || showFilterBuilder ? "secondary" : "outline"}
-            size="sm"
-            onClick={() => setShowFilterBuilder(!showFilterBuilder)}
-            className={cn(
-              "text-xs font-mono font-medium gap-1.5",
-              (filters.length > 0 || showFilterBuilder) &&
-                "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-300"
-            )}
-          >
-            <FilterIcon className="w-3.5 h-3.5" />
-            {t('datagrid.filterButton')}
-            {filters.length > 0 && (
-              <Badge className="w-4 h-4 p-0 rounded-full bg-emerald-500 text-white dark:text-zinc-950 text-[10px] font-bold flex items-center justify-center">
-                {filters.length}
-              </Badge>
-            )}
-          </Button>
-
-          {/* Refresh */}
-          <Button
-            type="button"
-            variant="outline"
-            size="icon-sm"
-            onClick={onRefresh}
-            disabled={isLoading}
-            title={t('datagrid.reloadTableTooltip')}
-            className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white"
-          >
-            <RefreshCw
-              className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
-            />
-          </Button>
-
-          {/* Open in SQL / Query Console */}
-          {onOpenQueryConsole && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={onOpenQueryConsole}
-              title={t('datagrid.openQueryConsole')}
-              className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
-            >
-              <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>{t('datagrid.openQueryConsole')}</span>
-            </Button>
-          )}
-
-          {/* Bulk Export Dropdown */}
-          {connId && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
+          {activeSubView === "grid" ? (
+            <>
+              {/* Quick Search Input */}
+              <div className="relative flex items-center">
+                <Search className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 absolute left-2.5 pointer-events-none" />
+                <Input
+                  ref={quickSearchInputRef}
+                  type="text"
+                  value={quickSearch}
+                  onChange={(e) => setQuickSearch(e.target.value)}
+                  placeholder={`${t('datagrid.searchPlaceholder')} (/)`}
+                  className="pl-8 pr-7 h-8 text-xs font-mono w-52"
+                />
+                {quickSearch && (
                   <Button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    title={t("datagrid.export")}
-                    className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+                    variant="ghost"
+                    size="icon-xs"
+                    onClick={() => setQuickSearch("")}
+                    className="absolute right-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 h-6 w-6"
+                    title={t('datagrid.clearSearchTooltip')}
                   >
-                    <Download className="w-3.5 h-3.5 text-zinc-500" />
-                    <span>{t("datagrid.export")}</span>
-                    <ChevronDown className="w-3 h-3 text-zinc-400" />
+                    <X className="w-3 h-3" />
                   </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-44 text-xs font-mono">
-                <DropdownMenuItem onClick={() => handleExport("csv")}>
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>{t("datagrid.exportAsCsv")}</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("json")}>
-                  <FileJson className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>{t("datagrid.exportAsJson")}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                )}
+              </div>
 
-          {/* Bulk Import CSV Button */}
-          {connId && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsImportModalOpen(true)}
-              disabled={isReadOnly}
-              title={isReadOnly ? t("datagrid.readOnlyTooltip") : t("datagrid.importCsv")}
-              className={cn(
-                "text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white",
-                isReadOnly && "cursor-not-allowed opacity-60"
+              {/* Filter toggle */}
+              <Button
+                type="button"
+                variant={filters.length > 0 || showFilterBuilder ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setShowFilterBuilder(!showFilterBuilder)}
+                className={cn(
+                  "text-xs font-mono font-medium gap-1.5",
+                  (filters.length > 0 || showFilterBuilder) &&
+                    "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-300"
+                )}
+              >
+                <FilterIcon className="w-3.5 h-3.5" />
+                {t('datagrid.filterButton')}
+                {filters.length > 0 && (
+                  <Badge className="w-4 h-4 p-0 rounded-full bg-emerald-500 text-white dark:text-zinc-950 text-[10px] font-bold flex items-center justify-center">
+                    {filters.length}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Refresh */}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={onRefresh}
+                disabled={isLoading}
+                title={t('datagrid.reloadTableTooltip')}
+                className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white"
+              >
+                <RefreshCw
+                  className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
+                />
+              </Button>
+
+              {/* Open in SQL / Query Console */}
+              {onOpenQueryConsole && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenQueryConsole}
+                  title={t('datagrid.openQueryConsole')}
+                  className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+                >
+                  <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{t('datagrid.openQueryConsole')}</span>
+                </Button>
               )}
-            >
-              <UploadCloud className="w-3.5 h-3.5 text-zinc-500" />
-              <span>{t("datagrid.importCsv")}</span>
-            </Button>
-          )}
 
-          {/* Add Row CTA */}
-          <Button
-            type="button"
-            size="sm"
-            onClick={onAddRow}
-            disabled={isReadOnly}
-            title={isReadOnly ? t('datagrid.readOnlyTooltip') : t('datagrid.addRow')}
-            className={cn(
-              "text-xs font-semibold gap-1.5 shadow-xs transition-colors",
-              isReadOnly
-                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700 cursor-not-allowed opacity-60"
-                : "bg-emerald-600 hover:bg-emerald-500 text-white"
-            )}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            {t('datagrid.addRow')}
-          </Button>
+              {/* Bulk Export Dropdown */}
+              {connId && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        title={t("datagrid.export")}
+                        className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+                      >
+                        <Download className="w-3.5 h-3.5 text-zinc-500" />
+                        <span>{t("datagrid.export")}</span>
+                        <ChevronDown className="w-3 h-3 text-zinc-400" />
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent align="end" className="w-44 text-xs font-mono">
+                    <DropdownMenuItem onClick={() => handleExport("csv")}>
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>{t("datagrid.exportAsCsv")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport("json")}>
+                      <FileJson className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>{t("datagrid.exportAsJson")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              {/* Bulk Import CSV Button */}
+              {connId && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsImportModalOpen(true)}
+                  disabled={isReadOnly}
+                  title={isReadOnly ? t("datagrid.readOnlyTooltip") : t("datagrid.importCsv")}
+                  className={cn(
+                    "text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white",
+                    isReadOnly && "cursor-not-allowed opacity-60"
+                  )}
+                >
+                  <UploadCloud className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>{t("datagrid.importCsv")}</span>
+                </Button>
+              )}
+
+              {/* Add Row CTA */}
+              <Button
+                type="button"
+                size="sm"
+                onClick={onAddRow}
+                disabled={isReadOnly}
+                title={isReadOnly ? t('datagrid.readOnlyTooltip') : t('datagrid.addRow')}
+                className={cn(
+                  "text-xs font-semibold gap-1.5 shadow-xs transition-colors",
+                  isReadOnly
+                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700 cursor-not-allowed opacity-60"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                )}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                {t('datagrid.addRow')}
+              </Button>
+            </>
+          ) : (
+            <>
+              {/* Schema View Actions */}
+              {onOpenQueryConsole && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={onOpenQueryConsole}
+                  title={t('datagrid.openQueryConsole')}
+                  className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+                >
+                  <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{t('datagrid.openQueryConsole')}</span>
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-sm"
+                onClick={onRefresh}
+                disabled={isLoading}
+                title={t('datagrid.reloadTableTooltip')}
+                className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white"
+              >
+                <RefreshCw
+                  className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
+                />
+              </Button>
+            </>
+          )}
         </div>
       </div>
+
+      {activeSubView === "schema" ? (
+        <SchemaInspector
+          connId={connId}
+          table={table}
+          onNavigateRelation={onNavigateRelation}
+        />
+      ) : (
+        <>
 
       {/* Read-Only Safety Banner */}
       {isReadOnly && (
@@ -1035,6 +1114,8 @@ export const DataGrid: FC<DataGridProps> = ({
           </div>
         </div>
       </div>
+      </>
+      )}
 
       {connId && (
         <ImportModal

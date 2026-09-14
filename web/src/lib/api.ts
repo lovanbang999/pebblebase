@@ -5,6 +5,7 @@ import type {
   TableSchema,
   QueryResult,
   RawQueryResult,
+  TableDDLResponse,
 } from './types';
 
 const BASE_URL = '/api';
@@ -200,4 +201,15 @@ export async function importTableCSV(
   );
   return handleResponse<{ inserted_count: number; duration_ms: number }>(res);
 }
+
+export async function fetchTableDDL(
+  connId: string,
+  table: string
+): Promise<TableDDLResponse> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/ddl`
+  );
+  return handleResponse<TableDDLResponse>(res);
+}
+
 
