@@ -570,9 +570,9 @@ export const DataGrid: FC<DataGridProps> = ({
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-zinc-950 overflow-hidden transition-colors">
       {/* Top Action Bar */}
       <div className="h-11 px-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 bg-white dark:bg-zinc-900/30">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 h-full">
           <SidebarTrigger className="-ml-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer shrink-0" />
-          <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800" />
+          <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800 self-center" />
           <div className="flex items-center gap-2">
             <TableIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <h2 className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -584,7 +584,7 @@ export const DataGrid: FC<DataGridProps> = ({
             {totalCount === 1 ? "record" : "records"}
           </span>
 
-          <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800 mx-1" />
+          <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800 mx-1 self-center" />
 
           {/* Sub-view switcher: [ Data Grid ] | [ Schema & DDL ] */}
           <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/60">
