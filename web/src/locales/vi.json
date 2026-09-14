@@ -235,5 +235,19 @@
     "templateMongoCount": "Đếm MongoDB Count",
     "templateMongoAgg": "Pipeline Tổng hợp (Aggregate)",
     "rowsFilter": "Lọc kết quả..."
+  },
+  "tabs": {
+    "newTab": "Tab mới",
+    "newQueryTab": "Bảng SQL mới",
+    "close": "Đóng tab",
+    "closeOthers": "Đóng các tab khác",
+    "closeToRight": "Đóng các tab bên phải",
+    "duplicate": "Nhân đôi tab",
+    "queryConsoleTitle": "Bảng SQL {{num}}",
+    "untitledQuery": "Bảng SQL",
+    "tableTabTooltip": "Bảng: {{name}}",
+    "queryTabTooltip": "Bảng SQL",
+    "noTabsOpen": "Không có tab nào đang mở"
   }
 }
+

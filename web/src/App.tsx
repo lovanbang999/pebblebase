@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Connection } from './lib/types';
 import { ConnectionModal } from './components/ConnectionModal';
 import { Sidebar } from './components/Sidebar';
+import { TabBar } from './components/TabBar';
 import { DataGrid } from './components/DataGrid';
 import { QueryConsole } from './components/QueryConsole';
 import { RowModal } from './components/RowModal';
@@ -13,6 +14,7 @@ import { DeleteRowDialog } from './components/DeleteRowDialog';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { usePebblebaseStudio } from './hooks/usePebblebaseStudio';
+import { useTabs } from './hooks/useTabs';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,7 +38,6 @@ function PebblebaseStudio() {
     isLoadingTables,
     activeTable,
     activeTableSchema,
-    handleSelectTable,
     refetchTables,
     rowsResult,
     isLoadingRows,
@@ -67,44 +68,79 @@ function PebblebaseStudio() {
     handleDeleteConnection,
     handleSaveRow,
     handleConfirmDeleteRow,
-    handleNavigateToRelatedTable,
     handleDeleteRowDirectly,
     deleteRowMutation,
     getWhereCondition,
   } = usePebblebaseStudio();
 
-  const [mainView, setMainView] = useState<'table' | 'console'>('table');
-  const [consoleInitialQuery, setConsoleInitialQuery] = useState<string | undefined>(undefined);
+  const {
+    tabs,
+    activeTabId,
+    activeTab,
+    setActiveTabId,
+    openTableTab,
+    openQueryTab,
+    closeTab,
+    closeOtherTabs,
+    closeTabsToRight,
+    duplicateTab,
+    updateActiveTabState,
+  } = useTabs({
+    connectionId: activeConnection?.id || null,
+    tables,
+  });
 
+  const activeTabIdRef = useRef<string | null>(null);
+
+  // Sync activeTab state into usePebblebaseStudio when active tab changes
+  useEffect(() => {
+    if (!activeTab) {
+      activeTabIdRef.current = null;
+      return;
+    }
+    if (activeTabIdRef.current === activeTab.id) {
+      return;
+    }
+    activeTabIdRef.current = activeTab.id;
+
+    if (activeTab.type === 'table' && activeTab.tableName) {
+      setUserSelectedTable(activeTab.tableName);
+      if (activeTab.state) {
+        setPage(activeTab.state.page ?? 0);
+        setPageSize(activeTab.state.pageSize ?? 50);
+        setSortBy(activeTab.state.sortBy ?? '');
+        setSortDesc(activeTab.state.sortDesc ?? false);
+        setFilters(activeTab.state.filters ?? []);
+      }
+    }
+  }, [
+    activeTab,
+    setUserSelectedTable,
+    setPage,
+    setPageSize,
+    setSortBy,
+    setSortDesc,
+    setFilters,
+  ]);
+
+  // Alt + Q shortcut to toggle or open query console tab
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && (e.key === 'q' || e.key === 'Q')) {
         e.preventDefault();
-        setMainView((prev) => (prev === 'console' ? 'table' : 'console'));
+        if (activeTab?.type === 'query') {
+          const tableTab = tabs.find((t) => t.type === 'table');
+          if (tableTab) {
+            setActiveTabId(tableTab.id);
+          }
+        } else {
+          openQueryTab();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const handleOpenQueryConsole = (customQuery?: string) => {
-    if (customQuery) {
-      setConsoleInitialQuery(customQuery);
-    } else if (activeTable) {
-      const isMongo = activeConnection?.type === 'mongodb';
-      const isMysql = activeConnection?.type === 'mysql';
-      setConsoleInitialQuery(
-        isMongo
-          ? `db.${activeTable}.find({}).limit(50)`
-          : isMysql
-          ? `SELECT * FROM \`${activeTable}\` LIMIT 50;`
-          : `SELECT * FROM "${activeTable}" LIMIT 50;`
-      );
-    } else {
-      setConsoleInitialQuery(undefined);
-    }
-    setMainView('console');
-  };
+  }, [activeTab, tabs, openQueryTab, setActiveTabId]);
 
   return (
     <SidebarProvider defaultOpen={true} className="h-screen w-screen overflow-hidden bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors">
@@ -118,7 +154,6 @@ function PebblebaseStudio() {
           setUserSelectedConnectionId(conn.id);
           setUserSelectedTable(null);
           setBannerError(null);
-          setConsoleInitialQuery(undefined);
         }}
         onDeleteConnection={handleDeleteConnection}
         onCloneConnection={(conn: Connection) => {
@@ -130,19 +165,32 @@ function PebblebaseStudio() {
           setIsConnModalOpen(true);
         }}
         tables={tables}
-        selectedTable={activeTable}
-        onSelectTable={(tableName) => {
-          handleSelectTable(tableName);
-          setMainView('table');
+        selectedTable={activeTab?.type === 'table' ? activeTab.tableName || null : null}
+        onSelectTable={(tableName, openInNewTab) => {
+          openTableTab(tableName, openInNewTab);
         }}
         isLoadingTables={isLoadingTables}
         onRefreshTables={() => refetchTables()}
-        activeView={mainView}
-        onOpenQueryConsole={() => handleOpenQueryConsole()}
+        activeView={activeTab?.type === 'query' ? 'console' : 'table'}
+        onOpenQueryConsole={() => openQueryTab()}
       />
 
       {/* Main Content Pane */}
       <SidebarInset className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-50/50 dark:bg-zinc-950">
+        {/* Chrome/DataGrip Style Tab Bar */}
+        {activeConnection && connections.length > 0 && (
+          <TabBar
+            tabs={tabs}
+            activeTabId={activeTabId}
+            onSelectTab={setActiveTabId}
+            onCloseTab={closeTab}
+            onCloseOtherTabs={closeOtherTabs}
+            onCloseTabsToRight={closeTabsToRight}
+            onDuplicateTab={duplicateTab}
+            onNewQueryTab={() => openQueryTab()}
+          />
+        )}
+
         {/* Error notification banner */}
         <ErrorBanner message={activeErrorMessage} onDismiss={() => setBannerError(null)} />
 
@@ -154,15 +202,15 @@ function PebblebaseStudio() {
               setIsConnModalOpen(true);
             }}
           />
-        ) : mainView === 'console' && activeConnection ? (
+        ) : activeTab?.type === 'query' && activeConnection ? (
           <QueryConsole
-            key={`console-${activeConnection.id}`}
+            key={`console-${activeTab.id}`}
             connection={activeConnection}
             tables={tables}
-            initialQuery={consoleInitialQuery}
+            initialQuery={activeTab.state?.queryText}
+            onQueryChange={(text) => updateActiveTabState({ queryText: text })}
             onNavigateToTable={(tName) => {
-              handleSelectTable(tName);
-              setMainView('table');
+              openTableTab(tName);
             }}
           />
         ) : !activeTable || !activeTableSchema ? (
@@ -173,6 +221,7 @@ function PebblebaseStudio() {
           />
         ) : (
           <DataGrid
+            key={`grid-${activeTab?.id || activeTable}`}
             connId={activeConnection?.id}
             table={activeTableSchema}
             rows={rowsResult?.rows || []}
@@ -180,10 +229,14 @@ function PebblebaseStudio() {
             isLoading={isLoadingRows}
             page={page}
             pageSize={pageSize}
-            onPageChange={setPage}
+            onPageChange={(newPage) => {
+              setPage(newPage);
+              updateActiveTabState({ page: newPage });
+            }}
             onPageSizeChange={(newSize) => {
               setPageSize(newSize);
               setPage(0);
+              updateActiveTabState({ pageSize: newSize, page: 0 });
             }}
             sortBy={sortBy}
             sortDesc={sortDesc}
@@ -191,15 +244,17 @@ function PebblebaseStudio() {
               setSortBy(col);
               setSortDesc(desc);
               setPage(0);
+              updateActiveTabState({ sortBy: col, sortDesc: desc, page: 0 });
             }}
             filters={filters}
             onFiltersChange={(newFilters) => {
               setFilters(newFilters);
               setPage(0);
+              updateActiveTabState({ filters: newFilters, page: 0 });
             }}
             onRefresh={() => refetchRows()}
             isReadOnly={Boolean(activeConnection?.read_only)}
-            onOpenQueryConsole={() => handleOpenQueryConsole()}
+            onOpenQueryConsole={() => openQueryTab()}
             onAddRow={() => {
               if (activeConnection?.read_only) return;
               setEditingRow(null);
@@ -214,7 +269,12 @@ function PebblebaseStudio() {
               if (activeConnection?.read_only) return;
               handleDeleteRowDirectly(row);
             }}
-            onNavigateRelation={handleNavigateToRelatedTable}
+            onNavigateRelation={(targetTable, targetColumn, value) => {
+              openTableTab(targetTable, false, {
+                filters: [{ column: targetColumn, operator: 'eq', value: String(value) }],
+                page: 0,
+              });
+            }}
           />
         )}
       </SidebarInset>
