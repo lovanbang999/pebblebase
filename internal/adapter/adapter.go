@@ -70,6 +70,20 @@ type BulkImporter interface {
 	BulkInsert(ctx context.Context, table string, columns []string, records [][]any) (int64, error)
 }
 
+// IndexInfo describes a table index and its uniqueness.
+type IndexInfo struct {
+	Name    string   `json:"name"`
+	Columns []string `json:"columns"`
+	Unique  bool     `json:"unique"`
+	Primary bool     `json:"primary,omitempty"`
+}
+
+// DDLProvider is implemented by database adapters capable of providing table DDL and index definitions.
+type DDLProvider interface {
+	GetTableDDL(ctx context.Context, table string) (string, error)
+	GetTableIndexes(ctx context.Context, table string) ([]IndexInfo, error)
+}
+
 // QueryOptions controls filtering, sorting, and pagination for Query calls.
 type QueryOptions struct {
 	Limit    int

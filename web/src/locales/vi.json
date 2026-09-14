@@ -248,6 +248,37 @@
     "tableTabTooltip": "Bảng: {{name}}",
     "queryTabTooltip": "Bảng SQL",
     "noTabsOpen": "Không có tab nào đang mở"
+  },
+  "schema": {
+    "dataGrid": "Lưới Dữ Liệu",
+    "schemaDdl": "Cấu trúc & DDL",
+    "columnsTitle": "Đặc tả Cột",
+    "columnsCount": "{{count}} cột được định nghĩa",
+    "indexesTitle": "Chỉ mục Cơ sở Dữ liệu",
+    "indexesCount": "{{count}} chỉ mục được cấu hình",
+    "noIndexes": "Không có chỉ mục phụ nào được định nghĩa cho bảng này.",
+    "ddlTitle": "Mã DDL Tạo Bảng",
+    "copyDdl": "Sao chép DDL",
+    "copied": "Đã sao chép!",
+    "loadingDdl": "Đang tải cấu trúc DDL...",
+    "failedDdl": "Không thể tải DDL bảng: {{error}}",
+    "colName": "Tên Cột",
+    "colType": "Kiểu Dữ Liệu",
+    "colPk": "Khóa Chính",
+    "colNullable": "Cho phép NULL",
+    "colDefault": "Giá trị Mặc định",
+    "colRelations": "Quan hệ",
+    "idxName": "Tên Chỉ mục",
+    "idxCols": "Các Cột",
+    "idxUnique": "Duy nhất (Unique)",
+    "idxType": "Loại",
+    "yes": "CÓ",
+    "no": "KHÔNG",
+    "primary": "CHÍNH (PRIMARY)",
+    "secondary": "PHỤ (SECONDARY)",
+    "unique": "DUY NHẤT",
+    "none": "Không có"
   }
 }
+
 

@@ -58,6 +58,9 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	// Bulk export & import
 	mux.HandleFunc("GET /api/connections/{id}/tables/{table}/export", s.exportTable)
 	mux.HandleFunc("POST /api/connections/{id}/tables/{table}/import", s.importTable)
+
+	// Schema DDL & Indexes inspection
+	mux.HandleFunc("GET /api/connections/{id}/tables/{table}/ddl", s.getTableDDL)
 }
 
 // --------------------------------------------------------------------------
