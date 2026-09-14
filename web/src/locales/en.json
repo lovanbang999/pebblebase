@@ -85,6 +85,7 @@
     "password": "Password",
     "database": "Database Name",
     "filepath": "SQLite Filepath",
+    "sqliteFilePathHelp": "Absolute or relative path to .db, .sqlite, or .sqlite3 file",
     "testConnection": "Test Connection",
     "testing": "Testing...",
     "saveConnection": "Save Connection",

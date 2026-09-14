@@ -85,6 +85,7 @@
     "password": "Mật khẩu (Password)",
     "database": "Tên Database",
     "filepath": "Đường dẫn file SQLite",
+    "sqliteFilePathHelp": "Đường dẫn tuyệt đối hoặc tương đối tới file .db, .sqlite hoặc .sqlite3",
     "testConnection": "Kiểm tra kết nối",
     "testing": "Đang kiểm tra...",
     "saveConnection": "Lưu kết nối",

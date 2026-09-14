@@ -76,6 +76,7 @@ const ENGINES: { type: DatabaseType; name: string; category: string; defaultPort
   { type: "postgres", name: "PostgreSQL", category: "Relational / SQL", defaultPort: "5432" },
   { type: "mysql", name: "MySQL", category: "Relational / SQL", defaultPort: "3306" },
   { type: "mongodb", name: "MongoDB", category: "Document Store / NoSQL", defaultPort: "27017" },
+  { type: "sqlite", name: "SQLite", category: "Embedded / File", defaultPort: "local-file" },
 ];
 
 export const ConnectionModal: FC<ConnectionModalProps> = ({
@@ -92,6 +93,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   // Form fields
   const [name, setName] = useState(cloneData ? `${cloneData.name} (${t('connection.copySuffix')})` : "Local Postgres");
   const [isNameCustom, setIsNameCustom] = useState(Boolean(cloneData));
+  const [filepath, setFilepath] = useState(cloneData?.filepath || "");
   const [host, setHost] = useState(cloneData?.host || "localhost");
   const [port, setPort] = useState(
     cloneData?.port ||
@@ -113,51 +115,85 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const generateDefaultName = (targetDbType: DatabaseType, targetDbName: string, targetEnv: EnvironmentType) => {
-    const engineLabel = targetDbType === "postgres" ? "PostgreSQL" : targetDbType === "mysql" ? "MySQL" : "MongoDB";
+  const generateDefaultName = (
+    targetDbType: DatabaseType,
+    targetDbName: string,
+    targetEnv: EnvironmentType,
+    targetFilepath?: string
+  ) => {
+    const engineLabel =
+      targetDbType === "postgres"
+        ? "PostgreSQL"
+        : targetDbType === "mysql"
+        ? "MySQL"
+        : targetDbType === "mongodb"
+        ? "MongoDB"
+        : "SQLite";
     const envLabel = targetEnv !== "local" ? ` - ${targetEnv}` : "";
-    const prefix = targetDbName.trim() ? targetDbName.trim() : "Local";
+    let prefix = "Local";
+
+    if (targetDbType === "sqlite") {
+      const p = targetFilepath !== undefined ? targetFilepath : filepath;
+      if (p.trim()) {
+        const parts = p.trim().split(/[/\\]/);
+        prefix = parts[parts.length - 1] || p.trim();
+      } else {
+        prefix = "Local SQLite";
+      }
+    } else if (targetDbName.trim()) {
+      prefix = targetDbName.trim();
+    }
     return `${prefix} (${engineLabel}${envLabel})`;
   };
 
   const handleDbTypeChange = (type: DatabaseType) => {
     setDbType(type);
     setTestResult(null);
-    const defaultPort = type === "postgres" ? "5432" : type === "mysql" ? "3306" : "27017";
+    const defaultPort =
+      type === "postgres" ? "5432" : type === "mysql" ? "3306" : type === "mongodb" ? "27017" : "file";
     setPort(defaultPort);
 
     if (!isNameCustom) {
-      setName(generateDefaultName(type, dbName, environment));
+      setName(generateDefaultName(type, dbName, environment, filepath));
+    }
+  };
+
+  const handleFilepathChange = (val: string) => {
+    setFilepath(val);
+    if (!isNameCustom) {
+      setName(generateDefaultName(dbType, dbName, environment, val));
     }
   };
 
   const handleEnvironmentChange = (env: EnvironmentType) => {
     setEnvironment(env);
     if (!isNameCustom) {
-      setName(generateDefaultName(dbType, dbName, env));
+      setName(generateDefaultName(dbType, dbName, env, filepath));
     }
   };
 
   const handleDbNameChange = (val: string) => {
     setDbName(val);
     if (!isNameCustom) {
-      setName(generateDefaultName(dbType, val, environment));
+      setName(generateDefaultName(dbType, val, environment, filepath));
     }
   };
 
   const getPayload = (): ConnectionInput => {
+    const isSqlite = dbType === "sqlite";
     return {
       name: name.trim() || `${dbType.toUpperCase()} Connection`,
       type: dbType,
       mode,
       environment,
-      host: mode === "form" ? host : undefined,
-      port: mode === "form" ? port : undefined,
-      db_name: mode === "form" ? dbName : undefined,
-      user: mode === "form" ? user : undefined,
-      password: mode === "form" ? password : undefined,
+      filepath: isSqlite && mode === "form" ? filepath.trim() : undefined,
+      host: !isSqlite && mode === "form" ? host : undefined,
+      port: !isSqlite && mode === "form" ? port : undefined,
+      db_name: !isSqlite && mode === "form" ? dbName : undefined,
+      user: !isSqlite && mode === "form" ? user : undefined,
+      password: !isSqlite && mode === "form" ? password : undefined,
       raw_url: mode === "url" ? rawURL : undefined,
-      save_password: savePassword,
+      save_password: isSqlite ? true : savePassword,
     };
   };
 
@@ -239,7 +275,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 {t('connection.selectDriverHelp')}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {ENGINES.map((engine) => {
                 const isSelected = dbType === engine.type;
                 return (
@@ -384,82 +420,108 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           </div>
 
             {mode === "form" ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="col-span-2">
-                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      {t('connection.hostAddress')}
-                    </label>
+              dbType === "sqlite" ? (
+                <div className="space-y-3">
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                        {t('connection.filepath')}
+                      </label>
+                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                        .db / .sqlite / .sqlite3
+                      </span>
+                    </div>
                     <Input
                       type="text"
-                      value={host}
-                      onChange={(e) => setHost(e.target.value)}
+                      value={filepath}
+                      onChange={(e) => handleFilepathChange(e.target.value)}
                       required
-                      placeholder="localhost"
+                      placeholder="/absolute/path/to/database.db or ./app.db"
                       className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
                     />
+                    <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1.5 leading-normal">
+                      {t('connection.sqliteFilePathHelp')}
+                    </p>
                   </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
+                      <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                        {t('connection.hostAddress')}
+                      </label>
+                      <Input
+                        type="text"
+                        value={host}
+                        onChange={(e) => setHost(e.target.value)}
+                        required
+                        placeholder="localhost"
+                        className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                        {t('connection.port')}
+                      </label>
+                      <Input
+                        type="text"
+                        value={port}
+                        onChange={(e) => setPort(e.target.value)}
+                        required
+                        placeholder="5432"
+                        className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      {t('connection.port')}
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs text-zinc-600 dark:text-zinc-400">
+                        {t('connection.database')}
+                      </label>
+                      <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                        {t('connection.targetSchema')}
+                      </span>
+                    </div>
                     <Input
                       type="text"
-                      value={port}
-                      onChange={(e) => setPort(e.target.value)}
+                      value={dbName}
+                      onChange={(e) => handleDbNameChange(e.target.value)}
                       required
-                      placeholder="5432"
+                      placeholder="database_name"
                       className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
                     />
                   </div>
-                </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="text-xs text-zinc-600 dark:text-zinc-400">
-                      {t('connection.database')}
-                    </label>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
-                      {t('connection.targetSchema')}
-                    </span>
-                  </div>
-                  <Input
-                    type="text"
-                    value={dbName}
-                    onChange={(e) => handleDbNameChange(e.target.value)}
-                    required
-                    placeholder="database_name"
-                    className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      {t('connection.user')}
-                    </label>
-                    <Input
-                      type="text"
-                      value={user}
-                      onChange={(e) => setUser(e.target.value)}
-                      placeholder="username"
-                      className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
-                      {t('connection.password')}
-                    </label>
-                    <Input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                        {t('connection.user')}
+                      </label>
+                      <Input
+                        type="text"
+                        value={user}
+                        onChange={(e) => setUser(e.target.value)}
+                        placeholder="username"
+                        className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                        {t('connection.password')}
+                      </label>
+                      <Input
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              )
             ) : (
               <div>
                 <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
@@ -475,7 +537,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       ? "postgres://pebble:pebble@localhost:5432/pebble_test?sslmode=disable"
                       : dbType === "mysql"
                       ? "mysql://root:secret@tcp(127.0.0.1:3306)/mydb"
-                      : "mongodb://pebble:pebble@localhost:27017/pebble_test?authSource=admin"
+                      : dbType === "mongodb"
+                      ? "mongodb://pebble:pebble@localhost:27017/pebble_test?authSource=admin"
+                      : "file:/path/to/database.db"
                   }
                   className="text-xs font-mono resize-none bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
                 />
@@ -483,7 +547,8 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             )}
 
           {/* Save password option */}
-          <div className="flex items-start gap-2 pt-0.5">
+          {dbType !== "sqlite" && (
+            <div className="flex items-start gap-2 pt-0.5">
             <Checkbox
               id="savePassword"
               checked={savePassword}
@@ -502,6 +567,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               </span>
             </label>
           </div>
+          )}
 
           {/* Test Status feedback */}
           {testResult && (

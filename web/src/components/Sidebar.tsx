@@ -95,6 +95,12 @@ const ENGINE_CONFIG: { type: DatabaseType; label: string; badge: string }[] = [
     badge:
       "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
   },
+  {
+    type: "sqlite",
+    label: "SQLite",
+    badge:
+      "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
+  },
 ];
 
 const ENV_DOTS: Record<string, string> = {

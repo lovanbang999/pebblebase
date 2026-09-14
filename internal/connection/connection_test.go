@@ -125,3 +125,57 @@ func TestToDSN_RawURL_Empty(t *testing.T) {
 		t.Fatal("ToDSN() expected error for empty RawURL, got nil")
 	}
 }
+
+func TestToDSN_SQLite_Form(t *testing.T) {
+	cases := []struct {
+		name    string
+		input   connection.ConnectionInput
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "filepath provided",
+			input: connection.ConnectionInput{
+				Type:     "sqlite",
+				Mode:     "form",
+				Filepath: "/path/to/my_app.db",
+			},
+			want: "/path/to/my_app.db",
+		},
+		{
+			name: "fallback to dbname",
+			input: connection.ConnectionInput{
+				Type:   "sqlite",
+				Mode:   "form",
+				DBName: "./local.sqlite3",
+			},
+			want: "./local.sqlite3",
+		},
+		{
+			name: "missing path and dbname",
+			input: connection.ConnectionInput{
+				Type: "sqlite",
+				Mode: "form",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := tc.input.ToDSN()
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("ToDSN() expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ToDSN() unexpected error: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("ToDSN() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
