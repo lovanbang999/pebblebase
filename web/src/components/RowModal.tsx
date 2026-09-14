@@ -7,6 +7,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -229,16 +236,24 @@ export const RowModal: FC<RowModalProps> = ({
                 </div>
 
                 {col.type === 'bool' ? (
-                  <select
-                    value={String(currentVal)}
+                  <Select
+                    value={currentVal === null || currentVal === undefined ? "null" : String(currentVal)}
                     disabled={isReadOnly}
-                    onChange={(e) => handleChange(col, e.target.value)}
-                    className="w-full px-3 py-1.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-xs text-zinc-900 dark:text-zinc-100 font-mono focus:outline-hidden focus:ring-1 focus:ring-emerald-500 disabled:opacity-50 transition-colors"
+                    onValueChange={(val) => {
+                      if (typeof val === 'string') {
+                        handleChange(col, val === "null" ? "" : val);
+                      }
+                    }}
                   >
-                    <option value="">(null / default)</option>
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                  </select>
+                    <SelectTrigger className="w-full h-8 text-xs font-mono">
+                      <SelectValue placeholder="(null / default)" />
+                    </SelectTrigger>
+                    <SelectContent side="bottom" align="start">
+                      <SelectItem value="null">(null / default)</SelectItem>
+                      <SelectItem value="true">true</SelectItem>
+                      <SelectItem value="false">false</SelectItem>
+                    </SelectContent>
+                  </Select>
                 ) : col.type === 'json' ? (
                   <Textarea
                     rows={3}

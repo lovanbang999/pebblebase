@@ -40,6 +40,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableHeader,
   TableBody,
@@ -615,34 +622,42 @@ export const DataGrid: FC<DataGridProps> = ({
               className="flex items-center gap-2 flex-wrap text-xs font-mono"
             >
               <span className="text-zinc-500 dark:text-zinc-400">WHERE</span>
-              <select
+              <Select
                 value={filterCol}
-                onChange={(e) => setFilterCol(e.target.value)}
-                className="px-2.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-zinc-900 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-xs"
+                onValueChange={(val) => { if (typeof val === 'string') setFilterCol(val); }}
               >
-                {table.columns.map((c) => (
-                  <option key={c.name} value={c.name}>
-                    {c.name}
-                  </option>
-                ))}
-                {extraColumns.map((extra) => (
-                  <option key={extra} value={extra}>
-                    {extra} (dynamic)
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-7 text-xs font-mono min-w-32">
+                  <SelectValue placeholder="Column" />
+                </SelectTrigger>
+                <SelectContent side="bottom" align="start">
+                  {table.columns.map((c) => (
+                    <SelectItem key={c.name} value={c.name}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                  {extraColumns.map((extra) => (
+                    <SelectItem key={extra} value={extra}>
+                      {extra} (dynamic)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-              <select
+              <Select
                 value={filterOp}
-                onChange={(e) => setFilterOp(e.target.value as any)}
-                className="px-2.5 py-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded text-zinc-900 dark:text-zinc-200 focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-xs"
+                onValueChange={(val) => { if (typeof val === 'string') setFilterOp(val as any); }}
               >
-                <option value="eq">=</option>
-                <option value="neq">≠</option>
-                <option value="gt">&gt;</option>
-                <option value="lt">&lt;</option>
-                <option value="contains">CONTAINS</option>
-              </select>
+                <SelectTrigger className="h-7 text-xs font-mono min-w-24">
+                  <SelectValue placeholder="Operator" />
+                </SelectTrigger>
+                <SelectContent side="bottom" align="start">
+                  <SelectItem value="eq">=</SelectItem>
+                  <SelectItem value="neq">≠</SelectItem>
+                  <SelectItem value="gt">&gt;</SelectItem>
+                  <SelectItem value="lt">&lt;</SelectItem>
+                  <SelectItem value="contains">CONTAINS</SelectItem>
+                </SelectContent>
+              </Select>
 
               <Input
                 type="text"
@@ -825,15 +840,19 @@ export const DataGrid: FC<DataGridProps> = ({
           </span>
           <div className="flex items-center gap-1.5 ml-2">
             <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Per page:</span>
-            <select
-              value={pageSize}
-              onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded px-1.5 py-0.5 text-zinc-800 dark:text-zinc-300 text-xs focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+            <Select
+              value={String(pageSize)}
+              onValueChange={(val) => val && onPageSizeChange(Number(val))}
             >
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-            </select>
+              <SelectTrigger className="h-6 w-16 px-2 py-0 text-xs font-mono">
+                <SelectValue placeholder={String(pageSize)} />
+              </SelectTrigger>
+              <SelectContent side="top" align="start" className="min-w-16">
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
