@@ -25,6 +25,7 @@ type Record struct {
 	User         string    `json:"user"`
 	DBName       string    `json:"db_name"`
 	SavePassword bool      `json:"save_password"`
+	Environment  string    `json:"environment,omitempty"`
 	EncryptedDSN string    `json:"encrypted_dsn,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 }
@@ -38,6 +39,7 @@ type Store struct {
 }
 
 // NewStore creates a Store backed by a JSON file at dataDir/connections.json.
+// Creates the file with an empty array if it doesn't exist.
 func NewStore(dataDir string, enc *Encryptor) (*Store, error) {
 	if err := os.MkdirAll(dataDir, 0700); err != nil {
 		return nil, fmt.Errorf("storage: create data dir: %w", err)
@@ -50,7 +52,12 @@ func NewStore(dataDir string, enc *Encryptor) (*Store, error) {
 
 // Save encrypts the DSN (when savePassword is true) and persists the record.
 // Returns the new record with its generated ID.
-func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePassword bool) (Record, error) {
+func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePassword bool, environment ...string) (Record, error) {
+	env := "local"
+	if len(environment) > 0 && environment[0] != "" {
+		env = environment[0]
+	}
+
 	rec := Record{
 		ID:           uuid.New().String(),
 		Name:         name,
@@ -59,6 +66,7 @@ func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePas
 		Port:         port,
 		User:         user,
 		DBName:       dbName,
+		Environment:  env,
 		SavePassword: savePassword,
 		CreatedAt:    time.Now().UTC(),
 	}

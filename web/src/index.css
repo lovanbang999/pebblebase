@@ -120,11 +120,67 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+    scrollbar-width: thin;
+    scrollbar-color: oklch(0.5 0 0 / 0.2) transparent;
+  }
+  .dark * {
+    scrollbar-color: oklch(1 0 0 / 0.2) transparent;
+  }
   body {
     @apply bg-background text-foreground;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
+}
+
+/* Modern sleek custom scrollbar for all browsers */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: oklch(0.5 0 0 / 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.5 0 0 / 0.4);
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 0.18);
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 0.35);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.5 0 0 / 0.2) transparent;
+}
+.dark .custom-scrollbar {
+  scrollbar-color: oklch(1 0 0 / 0.2) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(0.5 0 0 / 0.2);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.5 0 0 / 0.4);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: oklch(1 0 0 / 0.18);
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: oklch(1 0 0 / 0.35);
 }

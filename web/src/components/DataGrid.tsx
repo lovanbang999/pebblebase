@@ -456,9 +456,7 @@ export const DataGrid: FC<DataGridProps> = ({
             title="Delete record"
             onClick={(e) => {
               e.stopPropagation();
-              if (confirm("Delete this record permanently?")) {
-                onDeleteRow(info.row.original);
-              }
+              onDeleteRow(info.row.original);
             }}
             className="text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 h-6 w-6"
           >
