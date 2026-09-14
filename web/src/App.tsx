@@ -14,6 +14,7 @@ import {
   Zap,
   Layers,
   AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import type {
   Connection,
@@ -43,6 +44,17 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,8 +74,10 @@ function PebblebaseStudio() {
 
   // Modals state
   const [isConnModalOpen, setIsConnModalOpen] = useState(false);
+  const [cloningConnection, setCloningConnection] = useState<Connection | null>(null);
   const [isRowModalOpen, setIsRowModalOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, any> | null>(null);
+  const [rowToDelete, setRowToDelete] = useState<Record<string, any> | null>(null);
 
   // Theme state ('dark' | 'light')
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
@@ -248,13 +262,19 @@ function PebblebaseStudio() {
     setBannerError(null);
   };
 
-  const handleDeleteRowDirectly = async (row: Record<string, any>) => {
-    if (!confirm('Delete this record permanently?')) return;
-    const where = getWhereCondition(row);
+  const handleDeleteRowDirectly = (row: Record<string, any>) => {
+    setRowToDelete(row);
+  };
+
+  const handleConfirmDeleteRow = async () => {
+    if (!rowToDelete) return;
+    const where = getWhereCondition(rowToDelete);
     try {
       await deleteRowMutation.mutateAsync(where);
     } catch (err: any) {
       setBannerError(err.message || 'Failed to delete record');
+    } finally {
+      setRowToDelete(null);
     }
   };
 
@@ -272,7 +292,14 @@ function PebblebaseStudio() {
           setBannerError(null);
         }}
         onDeleteConnection={handleDeleteConnection}
-        onOpenNewConnection={() => setIsConnModalOpen(true)}
+        onCloneConnection={(conn: Connection) => {
+          setCloningConnection(conn);
+          setIsConnModalOpen(true);
+        }}
+        onOpenNewConnection={() => {
+          setCloningConnection(null);
+          setIsConnModalOpen(true);
+        }}
         tables={tables}
         selectedTable={activeTable}
         onSelectTable={handleSelectTable}
@@ -332,7 +359,10 @@ function PebblebaseStudio() {
               <Button
                 type="button"
                 size="lg"
-                onClick={() => setIsConnModalOpen(true)}
+                onClick={() => {
+                  setCloningConnection(null);
+                  setIsConnModalOpen(true);
+                }}
                 className="px-5 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm flex items-center gap-2 transition-all shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950"
               >
                 <Plus className="w-4 h-4" />
@@ -443,9 +473,14 @@ function PebblebaseStudio() {
 
       {/* Connection Modal */}
       <ConnectionModal
+        key={isConnModalOpen ? (cloningConnection ? `clone-${cloningConnection.id}` : 'new-conn') : 'closed'}
         isOpen={isConnModalOpen}
-        onClose={() => setIsConnModalOpen(false)}
+        onClose={() => {
+          setIsConnModalOpen(false);
+          setCloningConnection(null);
+        }}
         onSubmit={handleCreateConnection}
+        cloneData={cloningConnection}
       />
 
       {/* Row Insert/Edit Modal */}
@@ -470,6 +505,41 @@ function PebblebaseStudio() {
           }
         />
       )}
+
+      {/* Delete Record Confirmation Dialog */}
+      <AlertDialog
+        open={Boolean(rowToDelete)}
+        onOpenChange={(open) => !open && setRowToDelete(null)}
+      >
+        <AlertDialogContent className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 rounded-xl">
+              <Trash2 className="size-5" />
+            </AlertDialogMedia>
+            <AlertDialogTitle className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              Delete Record
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
+              Are you sure you want to delete this record permanently from <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">"{activeTable}"</span>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter className="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 -mx-4 -mb-4 px-4 py-3 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-end gap-2">
+            <AlertDialogCancel
+              onClick={() => setRowToDelete(null)}
+              className="text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800 cursor-pointer"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDeleteRow}
+              className="bg-rose-600 hover:bg-rose-500 dark:bg-rose-600 dark:hover:bg-rose-500 text-white text-xs font-semibold shadow-xs cursor-pointer"
+            >
+              Delete Record
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 }

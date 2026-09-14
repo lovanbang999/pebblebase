@@ -1,4 +1,5 @@
 export type DatabaseType = 'postgres' | 'mysql' | 'mongodb';
+export type EnvironmentType = 'local' | 'development' | 'staging' | 'production';
 
 export interface Connection {
   id: string;
@@ -8,6 +9,7 @@ export interface Connection {
   port: string;
   user: string;
   db_name: string;
+  environment?: EnvironmentType;
   save_password: boolean;
   created_at: string;
 }
@@ -21,6 +23,7 @@ export interface ConnectionInput {
   user?: string;
   password?: string;
   db_name?: string;
+  environment?: EnvironmentType;
   raw_url?: string;
   save_password: boolean;
 }

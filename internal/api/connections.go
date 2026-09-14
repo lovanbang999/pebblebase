@@ -17,11 +17,16 @@ type connectionResponse struct {
 	Port         string    `json:"port"`
 	User         string    `json:"user"`
 	DBName       string    `json:"db_name"`
+	Environment  string    `json:"environment"`
 	SavePassword bool      `json:"save_password"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 
 func toConnectionResponse(r storage.Record) connectionResponse {
+	env := r.Environment
+	if env == "" {
+		env = "local"
+	}
 	return connectionResponse{
 		ID:           r.ID,
 		Name:         r.Name,
@@ -30,6 +35,7 @@ func toConnectionResponse(r storage.Record) connectionResponse {
 		Port:         r.Port,
 		User:         r.User,
 		DBName:       r.DBName,
+		Environment:  env,
 		SavePassword: r.SavePassword,
 		CreatedAt:    r.CreatedAt,
 	}
@@ -45,6 +51,7 @@ type createConnectionRequest struct {
 	User         string `json:"user"`
 	Password     string `json:"password"`
 	DBName       string `json:"db_name"`
+	Environment  string `json:"environment,omitempty"`
 	RawURL       string `json:"raw_url"`
 	SavePassword bool   `json:"save_password"`
 }
@@ -84,7 +91,7 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rec, err := s.store.Save(req.Name, req.Type, req.Host, req.Port, req.User, req.DBName, dsn, req.SavePassword)
+	rec, err := s.store.Save(req.Name, req.Type, req.Host, req.Port, req.User, req.DBName, dsn, req.SavePassword, req.Environment)
 	if err != nil {
 		a.Close()
 		writeError(w, http.StatusInternalServerError, "save connection: "+err.Error())
