@@ -74,7 +74,7 @@ interface SidebarProps {
   onOpenNewConnection: () => void;
   tables: TableSchema[];
   selectedTable: string | null;
-  onSelectTable: (tableName: string) => void;
+  onSelectTable: (tableName: string, openInNewTab?: boolean) => void;
   isLoadingTables: boolean;
   onRefreshTables: () => void;
   activeView?: "table" | "console";
@@ -567,7 +567,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     <SidebarMenuItem key={tbl.name}>
                       <SidebarMenuButton
                         isActive={isSelected}
-                        onClick={() => onSelectTable(tbl.name)}
+                        onClick={(e) => onSelectTable(tbl.name, e.ctrlKey || e.metaKey)}
                         tooltip={`${tbl.name} (${colCount} cols)`}
                         className={cn(
                           "font-mono text-xs cursor-pointer h-7 px-2 transition-colors",

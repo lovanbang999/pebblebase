@@ -118,7 +118,7 @@ const MONGO_OPERATORS = [
 
 function createMongoCompletionSource(tables: TableSchema[]) {
   return (context: CompletionContext): CompletionResult | null => {
-    const word = context.matchBefore(/[\w\.\$]+/);
+    const word = context.matchBefore(/[\w.$]+/);
     if (!word && !context.explicit) return null;
     const token = word ? word.text : "";
 
@@ -188,7 +188,7 @@ function createMongoCompletionSource(tables: TableSchema[]) {
 // --------------------------------------------------------------------------
 function createSqlCompletionSource(tables: TableSchema[]) {
   return (context: CompletionContext): CompletionResult | null => {
-    const word = context.matchBefore(/[\w\.\$]+/);
+    const word = context.matchBefore(/[\w.$]+/);
     if (!word && !context.explicit) return null;
 
     const fullDoc = context.state.doc.toString();
@@ -296,6 +296,7 @@ interface QueryConsoleProps {
   tables: TableSchema[];
   initialQuery?: string;
   onNavigateToTable?: (tableName: string) => void;
+  onQueryChange?: (query: string) => void;
 }
 
 export const QueryConsole: FC<QueryConsoleProps> = ({
@@ -303,6 +304,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   tables,
   initialQuery,
   onNavigateToTable,
+  onQueryChange,
 }) => {
   const { t } = useTranslation();
   const isMongo = connection.type === "mongodb";
@@ -325,7 +327,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     [],
   );
 
-  // Validate if initialQuery matches current engine dialect
+  // Validate if initialQuery matches current dialect
   const isValidInitialQuery = useMemo(() => {
     if (!initialQuery) return false;
     const trimmed = initialQuery.trim();
@@ -348,6 +350,10 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   ]);
 
   const [query, setQuery] = useState(defaultQuery);
+
+  useEffect(() => {
+    onQueryChange?.(query);
+  }, [query, onQueryChange]);
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<RawQueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);

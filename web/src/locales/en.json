@@ -235,5 +235,19 @@
     "templateMongoCount": "MongoDB Count",
     "templateMongoAgg": "MongoDB Aggregation Pipeline",
     "rowsFilter": "Filter results..."
+  },
+  "tabs": {
+    "newTab": "New Tab",
+    "newQueryTab": "New SQL Console",
+    "close": "Close Tab",
+    "closeOthers": "Close Other Tabs",
+    "closeToRight": "Close Tabs to the Right",
+    "duplicate": "Duplicate Tab",
+    "queryConsoleTitle": "Console {{num}}",
+    "untitledQuery": "Console",
+    "tableTabTooltip": "Table: {{name}}",
+    "queryTabTooltip": "SQL Console",
+    "noTabsOpen": "No open tabs"
   }
 }
+

@@ -100,3 +100,24 @@ export interface ImportResult {
   duration_ms: number;
 }
 
+export type TabType = 'table' | 'query' | 'ddl';
+
+export interface StudioTabState {
+  page: number;
+  pageSize?: number;
+  filters: FilterOption[];
+  sortBy: string;
+  sortDesc: boolean;
+  queryText?: string;
+}
+
+export interface StudioTab {
+  id: string;
+  type: TabType;
+  title: string;
+  tableName?: string;
+  connectionId: string;
+  state?: StudioTabState;
+}
+
+
