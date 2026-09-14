@@ -40,6 +40,8 @@
     "searchPlaceholder": "Tìm kiếm nhanh...",
     "filterButton": "Bộ lọc",
     "addRow": "Thêm bản ghi",
+    "readOnlyBanner": "Chế độ Chỉ Đọc đang bật — các thao tác ghi dữ liệu bị vô hiệu hóa để bảo vệ database.",
+    "readOnlyTooltip": "Các thao tác chỉnh sửa bị khóa trong chế độ Chỉ Đọc",
     "refresh": "Làm mới",
     "exportCsv": "Xuất CSV",
     "showing": "Hiển thị",
@@ -111,7 +113,10 @@
     "connectionSuccess": "Kết nối thành công ({{elapsed}}ms)",
     "connectionFailed": "Kiểm tra kết nối thất bại",
     "saveFailed": "Lưu kết nối thất bại",
-    "copySuffix": "Bản sao"
+    "copySuffix": "Bản sao",
+    "readOnly": "Kết nối Chỉ Đọc (Read-Only)",
+    "readOnlyHelp": "Chặn các thao tác ghi (thêm, sửa, xóa) để bảo vệ an toàn cho dữ liệu production và staging.",
+    "readOnlyBadge": "CHỈ ĐỌC"
   },
   "rowModal": {
     "titleEdit": "Chỉnh sửa Bản ghi",

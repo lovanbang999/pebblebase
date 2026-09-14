@@ -10,6 +10,7 @@ export interface Connection {
   user: string;
   db_name: string;
   filepath?: string;
+  read_only?: boolean;
   environment?: EnvironmentType;
   save_password: boolean;
   created_at: string;
@@ -25,6 +26,7 @@ export interface ConnectionInput {
   password?: string;
   db_name?: string;
   filepath?: string;
+  read_only?: boolean;
   environment?: EnvironmentType;
   raw_url?: string;
   save_password: boolean;

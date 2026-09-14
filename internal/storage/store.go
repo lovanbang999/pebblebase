@@ -25,10 +25,18 @@ type Record struct {
 	User         string    `json:"user"`
 	DBName       string    `json:"db_name"`
 	Filepath     string    `json:"filepath,omitempty"`
+	ReadOnly     bool      `json:"read_only"`
 	SavePassword bool      `json:"save_password"`
 	Environment  string    `json:"environment,omitempty"`
 	EncryptedDSN string    `json:"encrypted_dsn,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
+}
+
+// SaveParams specifies optional parameters when saving a connection.
+type SaveParams struct {
+	Environment string
+	Filepath    string
+	ReadOnly    bool
 }
 
 // Store persists connection records as a JSON file on disk.
@@ -53,14 +61,30 @@ func NewStore(dataDir string, enc *Encryptor) (*Store, error) {
 
 // Save encrypts the DSN (when savePassword is true) and persists the record.
 // Returns the new record with its generated ID.
-func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePassword bool, extra ...string) (Record, error) {
+func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePassword bool, extra ...any) (Record, error) {
 	env := "local"
-	if len(extra) > 0 && extra[0] != "" {
-		env = extra[0]
-	}
-	var filepath string
-	if len(extra) > 1 {
-		filepath = extra[1]
+	var fp string
+	var ro bool
+
+	for _, arg := range extra {
+		switch v := arg.(type) {
+		case string:
+			if env == "local" && v != "" {
+				env = v
+			} else if fp == "" {
+				fp = v
+			}
+		case bool:
+			ro = v
+		case SaveParams:
+			if v.Environment != "" {
+				env = v.Environment
+			}
+			if v.Filepath != "" {
+				fp = v.Filepath
+			}
+			ro = v.ReadOnly
+		}
 	}
 
 	rec := Record{
@@ -71,7 +95,8 @@ func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePas
 		Port:         port,
 		User:         user,
 		DBName:       dbName,
-		Filepath:     filepath,
+		Filepath:     fp,
+		ReadOnly:     ro,
 		Environment:  env,
 		SavePassword: savePassword,
 		CreatedAt:    time.Now().UTC(),

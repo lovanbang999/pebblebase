@@ -9,6 +9,7 @@ import {
   Server,
   Terminal,
   Copy,
+  Shield,
 } from "lucide-react";
 import type { DatabaseType, EnvironmentType, Connection, ConnectionInput } from "../lib/types";
 import { useTranslation } from "react-i18next";
@@ -104,6 +105,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   const [password, setPassword] = useState("pebble");
   const [rawURL, setRawURL] = useState("");
   const [savePassword, setSavePassword] = useState(true);
+  const [readOnly, setReadOnly] = useState(cloneData?.read_only ?? false);
 
   // Statuses
   const [testing, setTesting] = useState(false);
@@ -167,6 +169,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
 
   const handleEnvironmentChange = (env: EnvironmentType) => {
     setEnvironment(env);
+    if (env === "production") {
+      setReadOnly(true);
+    }
     if (!isNameCustom) {
       setName(generateDefaultName(dbType, dbName, env, filepath));
     }
@@ -186,6 +191,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       type: dbType,
       mode,
       environment,
+      read_only: readOnly,
       filepath: isSqlite && mode === "form" ? filepath.trim() : undefined,
       host: !isSqlite && mode === "form" ? host : undefined,
       port: !isSqlite && mode === "form" ? port : undefined,
@@ -568,6 +574,35 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             </label>
           </div>
           )}
+
+          {/* Read-Only Protection Switch */}
+          <div className="flex items-start justify-between p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10">
+            <div className="flex items-start gap-2.5 pr-2">
+              <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <label
+                    htmlFor="readOnlyMode"
+                    className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 cursor-pointer"
+                  >
+                    {t('connection.readOnly')}
+                  </label>
+                  <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0 h-4 border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10">
+                    {t('connection.readOnlyBadge')}
+                  </Badge>
+                </div>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-normal">
+                  {t('connection.readOnlyHelp')}
+                </p>
+              </div>
+            </div>
+            <Checkbox
+              id="readOnlyMode"
+              checked={readOnly}
+              onCheckedChange={(checked) => setReadOnly(Boolean(checked))}
+              className="mt-0.5 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600 dark:data-[state=checked]:bg-amber-500 dark:data-[state=checked]:border-amber-500"
+            />
+          </div>
 
           {/* Test Status feedback */}
           {testResult && (

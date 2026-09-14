@@ -43,11 +43,26 @@ func (s *Server) queryRows(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, result)
 }
 
+// checkReadOnly verifies if the connection is configured in read-only mode.
+// If so, it writes a 403 Forbidden error and returns true.
+func (s *Server) checkReadOnly(w http.ResponseWriter, id string) bool {
+	rec, err := s.store.Get(id)
+	if err == nil && rec.ReadOnly {
+		writeError(w, http.StatusForbidden, "connection is in read-only mode; mutations are forbidden")
+		return true
+	}
+	return false
+}
+
 // insertRow handles POST /api/connections/{id}/tables/{table}/rows.
 // Body: {"values": {"col": val, ...}}
 func (s *Server) insertRow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	table := r.PathValue("table")
+
+	if s.checkReadOnly(w, id) {
+		return
+	}
 
 	a, err := s.getAdapter(r.Context(), id)
 	if err != nil {
@@ -80,6 +95,10 @@ func (s *Server) insertRow(w http.ResponseWriter, r *http.Request) {
 func (s *Server) updateRow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	table := r.PathValue("table")
+
+	if s.checkReadOnly(w, id) {
+		return
+	}
 
 	a, err := s.getAdapter(r.Context(), id)
 	if err != nil {
@@ -117,6 +136,10 @@ func (s *Server) updateRow(w http.ResponseWriter, r *http.Request) {
 func (s *Server) deleteRow(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	table := r.PathValue("table")
+
+	if s.checkReadOnly(w, id) {
+		return
+	}
 
 	a, err := s.getAdapter(r.Context(), id)
 	if err != nil {

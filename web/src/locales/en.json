@@ -40,6 +40,8 @@
     "searchPlaceholder": "Search view...",
     "filterButton": "Filter",
     "addRow": "Add Row",
+    "readOnlyBanner": "Read-Only Protection Active — mutations are disabled for this database profile.",
+    "readOnlyTooltip": "Mutations disabled in Read-Only mode",
     "refresh": "Refresh",
     "exportCsv": "Export CSV",
     "showing": "Showing",
@@ -111,7 +113,10 @@
     "connectionSuccess": "Connection successful ({{elapsed}}ms)",
     "connectionFailed": "Connection test failed",
     "saveFailed": "Failed to save connection",
-    "copySuffix": "Copy"
+    "copySuffix": "Copy",
+    "readOnly": "Read-Only Connection",
+    "readOnlyHelp": "Blocks mutations (INSERT, UPDATE, DELETE) to safeguard staging/production data.",
+    "readOnlyBadge": "READ-ONLY"
   },
   "rowModal": {
     "titleEdit": "Edit Record",

@@ -16,6 +16,7 @@ import {
   Sun,
   Moon,
   Copy,
+  ShieldAlert,
 } from "lucide-react";
 import type { Connection, DatabaseType, TableSchema } from "../lib/types";
 import packageJson from "../../package.json";
@@ -230,33 +231,44 @@ export const Sidebar: FC<SidebarProps> = ({
                         <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                           {t("sidebar.activeDb")}
                         </span>
-                        {selectedConnection &&
-                          (() => {
-                            const envKey =
-                              selectedConnection.environment || "local";
-                            const style =
-                              ENV_STYLES[envKey] || ENV_STYLES.local;
-                            return (
-                              <span
-                                className={cn(
-                                  "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-full border text-[9px] font-mono font-semibold uppercase leading-none select-none shrink-0",
-                                  style.bg,
-                                  style.text,
-                                  style.border,
-                                )}
-                              >
+                        <div className="flex items-center gap-1">
+                          {selectedConnection?.read_only && (
+                            <span
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[9px] font-mono font-semibold uppercase leading-none select-none shrink-0 bg-amber-500/10 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                              title={t("connection.readOnlyHelp")}
+                            >
+                              <ShieldAlert className="size-2.5 shrink-0" />
+                              <span className="leading-none">RO</span>
+                            </span>
+                          )}
+                          {selectedConnection &&
+                            (() => {
+                              const envKey =
+                                selectedConnection.environment || "local";
+                              const style =
+                                ENV_STYLES[envKey] || ENV_STYLES.local;
+                              return (
                                 <span
                                   className={cn(
-                                    "size-1.5 rounded-full shrink-0",
-                                    style.dot,
+                                    "inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-full border text-[9px] font-mono font-semibold uppercase leading-none select-none shrink-0",
+                                    style.bg,
+                                    style.text,
+                                    style.border,
                                   )}
-                                />
-                                <span className="inline-block translate-y-px leading-none">
-                                  {envKey}
+                                >
+                                  <span
+                                    className={cn(
+                                      "size-1.5 rounded-full shrink-0",
+                                      style.dot,
+                                    )}
+                                  />
+                                  <span className="inline-block translate-y-px leading-none">
+                                    {envKey}
+                                  </span>
                                 </span>
-                              </span>
-                            );
-                          })()}
+                              );
+                            })()}
+                        </div>
                       </div>
                       <span className="text-xs font-semibold truncate text-zinc-900 dark:text-zinc-100">
                         {selectedConnection
@@ -345,9 +357,20 @@ export const Sidebar: FC<SidebarProps> = ({
                                   />
                                 )}
                                 <div className="flex flex-col truncate min-w-0">
-                                  <span className="truncate text-xs font-medium leading-tight text-zinc-900 dark:text-zinc-100">
-                                    {c.name}
-                                  </span>
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <span className="truncate text-xs font-medium leading-tight text-zinc-900 dark:text-zinc-100">
+                                      {c.name}
+                                    </span>
+                                    {c.read_only && (
+                                      <span
+                                        className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded border text-[8px] font-mono font-semibold uppercase leading-none bg-amber-500/10 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30 shrink-0"
+                                        title={t("connection.readOnlyHelp")}
+                                      >
+                                        <ShieldAlert className="size-2 shrink-0" />
+                                        <span>RO</span>
+                                      </span>
+                                    )}
+                                  </div>
                                   <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono truncate leading-tight mt-0.5">
                                     {c.db_name} • {c.host}:{c.port}
                                   </span>

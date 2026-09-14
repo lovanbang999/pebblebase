@@ -16,6 +16,7 @@ type ConnectionInput struct {
 	Filepath                           string // used when Type == "sqlite" in form mode
 	RawURL                             string // used when Mode == "url", overrides form fields
 	SavePassword                       bool   // "Save password" checkbox per-connection
+	ReadOnly                           bool   // "Read-only" connection flag
 }
 
 // ToDSN normalizes input into a single DSN string ready for the driver.
