@@ -217,12 +217,12 @@ export const DataGrid: FC<DataGridProps> = ({
             >
               <div className="flex items-center gap-1.5 truncate">
                 {col.is_primary_key && (
-                  <span title="Primary Key">
+                  <span title={t('datagrid.primaryKey')}>
                     <Key className="w-3 h-3 text-amber-400 shrink-0" />
                   </span>
                 )}
                 {col.is_foreign_key && (
-                  <span title="Foreign Key">
+                  <span title={t('datagrid.foreignKey')}>
                     <Layers className="w-3 h-3 text-sky-400 shrink-0" />
                   </span>
                 )}
@@ -256,7 +256,7 @@ export const DataGrid: FC<DataGridProps> = ({
             return (
               <span
                 className="text-zinc-600 italic text-[11px] font-mono select-none"
-                title="Field not set on this record"
+                title={t('datagrid.fieldNotSet')}
               >
                 —
               </span>
@@ -284,7 +284,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     onNavigateRelation(rel.to_table, rel.to_column, val);
                   }}
                   className="inline-flex items-center gap-1 font-mono text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline group/fk text-left px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/20 hover:bg-sky-100 dark:hover:bg-sky-950/50 border border-sky-200 dark:border-sky-800/30 transition-colors cursor-pointer"
-                  title={`Navigate to ${rel.to_table} where ${rel.to_column} = ${val}`}
+                  title={t('datagrid.navigateToRelation', { table: rel.to_table, column: rel.to_column, val })}
                 >
                   <span className="font-semibold">{String(val)}</span>
                   <ArrowUpRight className="w-3 h-3 opacity-70 group-hover/fk:opacity-100 group-hover/fk:translate-x-0.5 group-hover/fk:-translate-y-0.5 transition-all shrink-0" />
@@ -369,7 +369,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   {extraColName}
                 </span>
                 <Badge variant="outline" className="text-[9px] font-mono text-amber-400/90 font-normal px-1 py-0 h-4 bg-amber-950/50 border-amber-800/40">
-                  dynamic
+                  {t('datagrid.dynamicBadge')}
                 </Badge>
               </div>
               <div className="text-zinc-400 group-hover:text-zinc-200">
@@ -392,7 +392,7 @@ export const DataGrid: FC<DataGridProps> = ({
             return (
               <span
                 className="text-zinc-600 italic text-[11px] font-mono select-none"
-                title="Field not set on this record"
+                title={t('datagrid.fieldNotSet')}
               >
                 —
               </span>
@@ -449,7 +449,7 @@ export const DataGrid: FC<DataGridProps> = ({
             type="button"
             variant="ghost"
             size="icon-xs"
-            title="Edit record"
+            title={t('datagrid.editRecordTooltip')}
             onClick={(e) => {
               e.stopPropagation();
               onEditRow(info.row.original);
@@ -462,7 +462,7 @@ export const DataGrid: FC<DataGridProps> = ({
             type="button"
             variant="ghost"
             size="icon-xs"
-            title="Delete record"
+            title={t('datagrid.deleteRecordTooltip')}
             onClick={(e) => {
               e.stopPropagation();
               onDeleteRow(info.row.original);
@@ -535,7 +535,7 @@ export const DataGrid: FC<DataGridProps> = ({
           </span>
           {displayedRows.length !== rows.length && (
             <Badge variant="outline" className="text-[11px] text-amber-700 dark:text-amber-400/90 font-mono bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40 px-1.5 py-0 h-auto font-normal">
-              Showing {displayedRows.length} matches
+              {t('datagrid.showingMatches', { count: displayedRows.length })}
             </Badge>
           )}
         </div>
@@ -559,7 +559,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 size="icon-xs"
                 onClick={() => setQuickSearch("")}
                 className="absolute right-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 h-6 w-6"
-                title="Clear search (Esc)"
+                title={t('datagrid.clearSearchTooltip')}
               >
                 <X className="w-3 h-3" />
               </Button>
@@ -594,7 +594,7 @@ export const DataGrid: FC<DataGridProps> = ({
             size="icon-sm"
             onClick={onRefresh}
             disabled={isLoading}
-            title="Reload table data"
+            title={t('datagrid.reloadTableTooltip')}
             className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white"
           >
             <RefreshCw
@@ -684,7 +684,7 @@ export const DataGrid: FC<DataGridProps> = ({
           {filters.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
               <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-mono tracking-wider mr-1">
-                Active:
+                {t('datagrid.activeFilters')}
               </span>
               {filters.map((f, i) => (
                 <Badge
@@ -713,7 +713,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 onClick={() => onFiltersChange([])}
                 className="h-auto p-0 text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 ml-2 underline"
               >
-                Clear all
+                {t('datagrid.clearAll')}
               </Button>
             </div>
           )}
@@ -755,30 +755,30 @@ export const DataGrid: FC<DataGridProps> = ({
             {quickSearch ? (
               <EmptyState
                 icon={Search}
-                title="No search results"
-                description={`No records matching "${quickSearch}" in current view.`}
+                title={t('datagrid.noSearchResultsTitle')}
+                description={t('datagrid.noSearchResultsDesc', { term: quickSearch })}
                 action={{
-                  label: "Clear search",
+                  label: t('datagrid.clearSearch'),
                   onClick: () => setQuickSearch(""),
                 }}
               />
             ) : filters.length > 0 ? (
               <EmptyState
                 icon={FilterIcon}
-                title="No matching records"
-                description="No records match the active filter criteria."
+                title={t('datagrid.noMatchingFiltersTitle')}
+                description={t('datagrid.noMatchingFiltersDesc')}
                 action={{
-                  label: "Clear all filters",
+                  label: t('datagrid.clearAllFilters'),
                   onClick: () => onFiltersChange([]),
                 }}
               />
             ) : (
               <EmptyState
                 icon={Inbox}
-                title="Table is empty"
-                description={`No records have been inserted into "${table.name}" yet.`}
+                title={t('datagrid.tableIsEmptyTitle')}
+                description={t('datagrid.tableIsEmptyDesc', { table: table.name })}
                 action={{
-                  label: "Insert first record",
+                  label: t('datagrid.insertFirstRecord'),
                   onClick: onAddRow,
                   icon: Plus,
                 }}

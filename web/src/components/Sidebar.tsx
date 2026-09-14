@@ -196,7 +196,7 @@ export const Sidebar: FC<SidebarProps> = ({
                   </Button>
                 }
               />
-              <TooltipContent side="bottom">New Connection</TooltipContent>
+              <TooltipContent side="bottom">{t('sidebar.newConnection')}</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -212,7 +212,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     tooltip={
                       selectedConnection
                         ? `${selectedConnection.name} (${selectedConnection.db_name}) • [${(selectedConnection.environment || "local").toUpperCase()}]`
-                        : "Connect Database"
+                        : t('sidebar.selectConnection')
                     }
                     className="w-full data-[state=open]:bg-sidebar-accent cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                   >
@@ -255,7 +255,7 @@ export const Sidebar: FC<SidebarProps> = ({
                       <span className="text-xs font-semibold truncate text-zinc-900 dark:text-zinc-100">
                         {selectedConnection
                           ? selectedConnection.name
-                          : "Select Connection"}
+                          : t('sidebar.selectConnection')}
                       </span>
                     </div>
                     <ChevronDown className="ml-auto size-3.5 text-muted-foreground group-data-[collapsible=icon]:hidden shrink-0" />
@@ -272,7 +272,7 @@ export const Sidebar: FC<SidebarProps> = ({
                   <div className="flex items-center gap-1.5">
                     <Database className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                     <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
-                      Connections
+                      {t('sidebar.connectionsHeader')}
                     </span>
                     <Badge
                       variant="secondary"
@@ -282,7 +282,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     </Badge>
                   </div>
                   <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
-                    Grouped by Engine
+                    {t('sidebar.groupedByEngine')}
                   </span>
                 </div>
 
@@ -356,7 +356,7 @@ export const Sidebar: FC<SidebarProps> = ({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  title="Duplicate / Clone connection settings"
+                                  title={t('sidebar.duplicateTooltip')}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     onCloneConnection(c);
@@ -370,7 +370,7 @@ export const Sidebar: FC<SidebarProps> = ({
                                   type="button"
                                   variant="ghost"
                                   size="icon-xs"
-                                  title="Delete connection"
+                                  title={t('sidebar.deleteConnTooltip')}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
@@ -397,7 +397,7 @@ export const Sidebar: FC<SidebarProps> = ({
                     className="text-xs text-emerald-600 dark:text-emerald-400 font-medium cursor-pointer flex items-center justify-center gap-1.5 py-1.5 rounded-md hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20 transition-colors"
                   >
                     <Plus className="size-3.5" />
-                    New Connection...
+                    {t('sidebar.newConnectionEllipsis')}
                   </DropdownMenuItem>
                 </div>
               </DropdownMenuContent>
@@ -441,7 +441,7 @@ export const Sidebar: FC<SidebarProps> = ({
                   </Button>
                 }
               />
-              <TooltipContent side="right">Refresh tables</TooltipContent>
+              <TooltipContent side="right">{t('sidebar.refreshTablesTooltip')}</TooltipContent>
             </Tooltip>
           </div>
         </div>
@@ -460,10 +460,10 @@ export const Sidebar: FC<SidebarProps> = ({
               <div className="py-8 px-2 text-center group-data-[collapsible=icon]:hidden">
                 <Database className="size-8 text-zinc-300 dark:text-zinc-700 mx-auto mb-2" />
                 <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
-                  No active connection
+                  {t('sidebar.noActiveConn')}
                 </p>
                 <p className="text-[11px] text-zinc-500 dark:text-zinc-500 mt-1">
-                  Connect to introspect database
+                  {t('sidebar.connectToIntrospect')}
                 </p>
               </div>
             ) : isLoadingTables ? (
@@ -487,8 +487,8 @@ export const Sidebar: FC<SidebarProps> = ({
             ) : filteredTables.length === 0 ? (
               <div className="py-8 px-2 text-center text-xs text-zinc-500 font-mono group-data-[collapsible=icon]:hidden">
                 {tables.length === 0
-                  ? "No user tables found"
-                  : `No tables matching "${tableSearch}"`}
+                  ? t('sidebar.noUserTablesFound')
+                  : t('sidebar.noTablesMatching', { term: tableSearch })}
               </div>
             ) : (
               <SidebarMenu>
@@ -526,12 +526,12 @@ export const Sidebar: FC<SidebarProps> = ({
 
                         <div className="ml-auto flex items-center gap-1 shrink-0 group-data-[collapsible=icon]:hidden">
                           {hasPk && (
-                            <span title="Primary key">
+                            <span title={t('sidebar.primaryKeyTooltip')}>
                               <Key className="size-2.5 text-amber-500 dark:text-amber-400/80" />
                             </span>
                           )}
                           {hasFk && (
-                            <span title="Foreign relations">
+                            <span title={t('sidebar.foreignRelationsTooltip')}>
                               <Layers className="size-2.5 text-sky-500 dark:text-sky-400/80" />
                             </span>
                           )}
@@ -601,7 +601,7 @@ export const Sidebar: FC<SidebarProps> = ({
                 </Button>
               }
             />
-            <TooltipContent side="right">New Connection</TooltipContent>
+            <TooltipContent side="right">{t('sidebar.newConnection')}</TooltipContent>
           </Tooltip>
         </div>
 
@@ -665,32 +665,22 @@ export const Sidebar: FC<SidebarProps> = ({
               <Trash2 className="size-5" />
             </AlertDialogMedia>
             <AlertDialogTitle className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              Remove Connection
+              {t('sidebar.removeConnTitle')}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              This action cannot be undone. This will permanently remove the
-              connection profile{" "}
-              <span className="font-semibold text-zinc-900 dark:text-zinc-100 font-mono">
-                "{deletingConnection?.name}"
-              </span>{" "}
-              from Pebblebase. Your actual database and data will not be
-              affected.
+              {t('sidebar.removeConnDesc', { name: deletingConnection?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           {/* Sensitive confirmation input */}
           <div className="space-y-2 py-1">
             <label className="text-xs text-zinc-600 dark:text-zinc-400 font-medium block">
-              To confirm deletion, please type{" "}
-              <span className="font-mono font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 dark:bg-rose-500/15 px-1.5 py-0.5 rounded border border-rose-500/20 select-all">
-                {deletingConnection?.name}
-              </span>{" "}
-              below:
+              {t('sidebar.removeConnConfirmHelp', { name: deletingConnection?.name })}
             </label>
             <Input
               value={deleteConfirmationInput}
               onChange={(e) => setDeleteConfirmationInput(e.target.value)}
-              placeholder={`Type "${deletingConnection?.name || ""}" to confirm`}
+              placeholder={t('sidebar.typeToConfirmPlaceholder', { name: deletingConnection?.name || "" })}
               className="h-9 text-xs font-mono bg-zinc-50/70 dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 focus-visible:ring-rose-500/30 focus-visible:border-rose-500/50"
               autoFocus
               onKeyDown={(e) => {
@@ -714,7 +704,7 @@ export const Sidebar: FC<SidebarProps> = ({
               }}
               className="text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800 cursor-pointer"
             >
-              Cancel
+              {t('rowModal.cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               disabled={!isDeleteConfirmed}
@@ -732,7 +722,7 @@ export const Sidebar: FC<SidebarProps> = ({
                   : "bg-rose-600/30 dark:bg-rose-600/20 text-white/40 dark:text-white/30 cursor-not-allowed pointer-events-none border border-transparent shadow-none",
               )}
             >
-              Delete Connection
+              {t('sidebar.deleteConnButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
