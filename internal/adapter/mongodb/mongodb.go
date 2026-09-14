@@ -89,3 +89,13 @@ func extractDatabaseName(rawURI string) (string, error) {
 	}
 	return dbName, nil
 }
+
+// StreamRows streams collection documents in chunks for bulk export.
+func (a *Adapter) StreamRows(ctx context.Context, table string, opts adapter.QueryOptions, onChunk func(columns []string, rows []map[string]any) error) error {
+	return streamTableRows(ctx, a, table, opts, onChunk)
+}
+
+// BulkInsert inserts documents in batches for bulk import.
+func (a *Adapter) BulkInsert(ctx context.Context, table string, columns []string, records [][]any) (int64, error) {
+	return bulkInsert(ctx, a, table, columns, records)
+}

@@ -64,3 +64,13 @@ func (a *PostgresAdapter) Mutate(ctx context.Context, table string, op adapter.M
 func (a *PostgresAdapter) ExecuteRaw(ctx context.Context, query string) (adapter.RawQueryResult, error) {
 	return executeRaw(ctx, a.pool, query)
 }
+
+// StreamRows streams table rows in chunks for bulk export.
+func (a *PostgresAdapter) StreamRows(ctx context.Context, table string, opts adapter.QueryOptions, onChunk func(columns []string, rows []map[string]any) error) error {
+	return streamTableRows(ctx, a.pool, table, opts, onChunk)
+}
+
+// BulkInsert transactionally inserts multiple records in batches.
+func (a *PostgresAdapter) BulkInsert(ctx context.Context, table string, columns []string, records [][]any) (int64, error) {
+	return bulkInsert(ctx, a.pool, table, columns, records)
+}

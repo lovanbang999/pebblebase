@@ -158,3 +158,46 @@ export async function executeRawQuery(
   );
   return handleResponse<RawQueryResult>(res);
 }
+
+export function getTableExportUrl(
+  connId: string,
+  table: string,
+  format: 'csv' | 'json',
+  params: RowQueryParams = {}
+): string {
+  const searchParams = new URLSearchParams();
+  searchParams.set('format', format);
+  if (params.sort_by) searchParams.set('sort_by', params.sort_by);
+  if (params.sort_desc) searchParams.set('sort_desc', 'true');
+  if (params.filters && params.filters.length > 0) {
+    for (const f of params.filters) {
+      if (f.column && f.operator && f.value !== '') {
+        searchParams.append('filter', `${f.column}:${f.operator}:${f.value}`);
+      }
+    }
+  }
+  const queryStr = searchParams.toString();
+  return `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/export?${queryStr}`;
+}
+
+export async function importTableCSV(
+  connId: string,
+  table: string,
+  file: File,
+  mappings?: Record<string, string>
+): Promise<{ inserted_count: number; duration_ms: number }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (mappings && Object.keys(mappings).length > 0) {
+    formData.append('mappings', JSON.stringify(mappings));
+  }
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/import`,
+    {
+      method: 'POST',
+      body: formData,
+    }
+  );
+  return handleResponse<{ inserted_count: number; duration_ms: number }>(res);
+}
+

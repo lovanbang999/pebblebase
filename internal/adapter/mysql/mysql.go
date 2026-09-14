@@ -71,3 +71,13 @@ func (a *MySQLAdapter) Mutate(ctx context.Context, table string, op adapter.Muta
 func (a *MySQLAdapter) ExecuteRaw(ctx context.Context, query string) (adapter.RawQueryResult, error) {
 	return executeRaw(ctx, a.db, query)
 }
+
+// StreamRows streams table rows in chunks for bulk export.
+func (a *MySQLAdapter) StreamRows(ctx context.Context, table string, opts adapter.QueryOptions, onChunk func(columns []string, rows []map[string]any) error) error {
+	return streamTableRows(ctx, a.db, table, opts, onChunk)
+}
+
+// BulkInsert transactionally inserts multiple records in batches.
+func (a *MySQLAdapter) BulkInsert(ctx context.Context, table string, columns []string, records [][]any) (int64, error) {
+	return bulkInsert(ctx, a.db, table, columns, records)
+}

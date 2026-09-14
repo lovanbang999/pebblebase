@@ -60,6 +60,16 @@ type RawRunner interface {
 	ExecuteRaw(ctx context.Context, query string) (RawQueryResult, error)
 }
 
+// StreamExporter is implemented by adapters supporting chunked row streaming for bulk exports.
+type StreamExporter interface {
+	StreamRows(ctx context.Context, table string, opts QueryOptions, onChunk func(columns []string, rows []map[string]any) error) error
+}
+
+// BulkImporter is implemented by adapters supporting transactional batch row insertion.
+type BulkImporter interface {
+	BulkInsert(ctx context.Context, table string, columns []string, records [][]any) (int64, error)
+}
+
 // QueryOptions controls filtering, sorting, and pagination for Query calls.
 type QueryOptions struct {
 	Limit    int
