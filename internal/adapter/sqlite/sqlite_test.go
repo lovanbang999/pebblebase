@@ -3,6 +3,7 @@ package sqlite_test
 import (
 	"context"
 	"database/sql"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -327,3 +328,99 @@ func TestSQLiteAdapter_ExecuteRaw(t *testing.T) {
 		t.Errorf("expected error for syntax mistake, got nil")
 	}
 }
+
+func TestSQLiteAggregate(t *testing.T) {
+	ctx := context.Background()
+	dbPath := filepath.Join(t.TempDir(), "test_agg.db")
+
+	f, err := os.Create(dbPath)
+	if err != nil {
+		t.Fatalf("create test db file: %v", err)
+	}
+	f.Close()
+
+	a, err := sqlite.New(ctx, dbPath)
+	if err != nil {
+		t.Fatalf("sqlite.New() error = %v", err)
+	}
+	defer a.Close()
+
+	// Setup table with categorical, numeric, and timestamp columns
+	_, err = a.ExecuteRaw(ctx, `
+		CREATE TABLE metrics (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			status TEXT,
+			score REAL,
+			created_at TEXT
+		);
+		INSERT INTO metrics (status, score, created_at) VALUES 
+			('active', 10.5, '2026-09-01 10:00:00'),
+			('active', 20.0, '2026-09-01 14:00:00'),
+			('pending', 5.5, '2026-09-02 09:30:00'),
+			('inactive', NULL, '2026-09-03 11:15:00'),
+			('active', 30.0, '2026-09-03 16:45:00');
+	`)
+	if err != nil {
+		t.Fatalf("setup metrics table error: %v", err)
+	}
+
+	// 1. Test Distribution
+	distRes, err := a.Aggregate(ctx, "metrics", adapter.AggregateOptions{
+		Column:   "status",
+		Function: "distribution",
+		Limit:    10,
+	})
+	if err != nil {
+		t.Fatalf("Aggregate(distribution) error: %v", err)
+	}
+	if len(distRes.Labels) != 3 {
+		t.Errorf("expected 3 distinct status labels, got %d (%v)", len(distRes.Labels), distRes.Labels)
+	}
+	if distRes.Labels[0] != "active" || distRes.Values[0] != int64(3) {
+		t.Errorf("expected 'active' to have count 3, got %v: %v", distRes.Labels[0], distRes.Values[0])
+	}
+
+	// 2. Test Stats
+	statsRes, err := a.Aggregate(ctx, "metrics", adapter.AggregateOptions{
+		Column:   "score",
+		Function: "stats",
+	})
+	if err != nil {
+		t.Fatalf("Aggregate(stats) error: %v", err)
+	}
+	if statsRes.Stats["total_rows"] != int64(5) {
+		t.Errorf("expected total_rows=5, got %v", statsRes.Stats["total_rows"])
+	}
+	if statsRes.Stats["null_count"] != int64(1) {
+		t.Errorf("expected null_count=1, got %v", statsRes.Stats["null_count"])
+	}
+	if statsRes.Stats["min"] != 5.5 || statsRes.Stats["max"] != 30.0 {
+		t.Errorf("expected min=5.5, max=30.0, got min=%v, max=%v", statsRes.Stats["min"], statsRes.Stats["max"])
+	}
+
+	// 3. Test Time-Series (day bucket)
+	timeRes, err := a.Aggregate(ctx, "metrics", adapter.AggregateOptions{
+		Column:   "created_at",
+		Function: "timeseries",
+		GroupBy:  "day",
+	})
+	if err != nil {
+		t.Fatalf("Aggregate(timeseries) error: %v", err)
+	}
+	if len(timeRes.Labels) != 3 {
+		t.Errorf("expected 3 day buckets, got %d (%v)", len(timeRes.Labels), timeRes.Labels)
+	}
+	if timeRes.Labels[0] != "2026-09-01" || timeRes.Values[0] != int64(2) {
+		t.Errorf("expected 2026-09-01 to have 2 entries, got %v: %v", timeRes.Labels[0], timeRes.Values[0])
+	}
+
+	// 4. Test TableStats
+	tStats, err := a.GetTableStats(ctx, "metrics")
+	if err != nil {
+		t.Fatalf("GetTableStats error: %v", err)
+	}
+	if tStats.TotalRows != 5 {
+		t.Errorf("expected total_rows=5, got %d", tStats.TotalRows)
+	}
+}
+

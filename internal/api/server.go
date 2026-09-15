@@ -87,6 +87,10 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 
 	// Schema DDL & Indexes inspection
 	mux.Handle("GET /api/connections/{id}/tables/{table}/ddl", protect(http.HandlerFunc(s.getTableDDL)))
+
+	// Column Analytics & Table Statistics
+	mux.Handle("GET /api/connections/{id}/tables/{table}/aggregate", protect(http.HandlerFunc(s.handleAggregate)))
+	mux.Handle("GET /api/connections/{id}/tables/{table}/stats", protect(http.HandlerFunc(s.handleTableStats)))
 }
 
 // protectMiddleware returns a middleware wrapper that enforces JWT auth when
