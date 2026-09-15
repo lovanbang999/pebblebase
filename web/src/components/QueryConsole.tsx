@@ -29,6 +29,9 @@ import {
   CheckCircle2,
   AlertCircle,
   X,
+  BookOpen,
+  Save,
+  Star,
 } from "lucide-react";
 import type {
   Connection,
@@ -36,7 +39,8 @@ import type {
   RawQueryResult,
   QueryHistoryItem,
 } from "../lib/types";
-import { executeRawQuery } from "../lib/api";
+import { executeRawQuery, createSavedQuery } from "../lib/api";
+import QueryLibraryPanel from "./QueryLibraryPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -363,6 +367,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   const [historySearch, setHistorySearch] = useState("");
   const [copiedHistoryId, setCopiedHistoryId] = useState<string | null>(null);
 
+  // Query Library state
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [saveTitle, setSaveTitle] = useState("");
+  const [saveTags, setSaveTags] = useState("");
+  const [saveIsFavorite, setSaveIsFavorite] = useState(false);
+  const [libRefreshKey, setLibRefreshKey] = useState(0);
+  const [saveToast, setSaveToast] = useState(false);
+
   const handleCopyHistory = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedHistoryId(id);
@@ -444,6 +457,34 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       localStorage.removeItem(storageKey);
     } catch {
       // ignore
+    }
+  };
+
+  // Save Query handler
+  const handleSaveQuery = async () => {
+    const trimmed = query.trim();
+    if (!trimmed || !saveTitle.trim()) return;
+    const tags = saveTags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    try {
+      await createSavedQuery(connection.id, {
+        title: saveTitle.trim(),
+        query: trimmed,
+        tags,
+        is_favorite: saveIsFavorite,
+      });
+      setIsSaveDialogOpen(false);
+      setSaveTitle("");
+      setSaveTags("");
+      setSaveIsFavorite(false);
+      setLibRefreshKey((k) => k + 1);
+      // Show a brief toast
+      setSaveToast(true);
+      setTimeout(() => setSaveToast(false), 2500);
+    } catch {
+      /* ignore */
     }
   };
 
@@ -788,7 +829,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             className="h-7 text-xs font-mono text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 inline-flex items-center justify-center gap-1.5"
           >
             <Trash2 className="size-3.5 shrink-0" />
-            <span className="leading-none translate-y-px">{t("console.clear")}</span>
+            <span className="leading-none translate-y-px">
+              {t("console.clear")}
+            </span>
           </Button>
 
           {/* Run Query CTA */}
@@ -816,8 +859,62 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               </>
             )}
           </Button>
+
+          {/* Save Query — indigo gradient CTA */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => {
+              setSaveTitle("");
+              setSaveTags("");
+              setSaveIsFavorite(false);
+              setIsSaveDialogOpen(true);
+            }}
+            disabled={!query.trim()}
+            className="h-7 text-xs font-semibold gap-1.5 bg-indigo-600/90 hover:bg-indigo-500 text-white border-0 shadow-sm shadow-indigo-500/20 transition-all disabled:opacity-40"
+          >
+            <Save className="w-3 h-3" />
+            <span>{t("savedQuery.save")}</span>
+          </Button>
+
+          {/* Library Toggle */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setIsLibraryOpen((v) => !v)}
+            className={cn(
+              "h-7 text-xs font-semibold gap-1.5 transition-all border",
+              isLibraryOpen
+                ? "bg-indigo-500/15 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/25"
+                : "bg-transparent text-zinc-500 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800",
+            )}
+          >
+            <BookOpen
+              className={cn("w-3 h-3", isLibraryOpen ? "text-indigo-400" : "")}
+            />
+            <span>{t("savedQuery.library")}</span>
+          </Button>
         </div>
       </div>
+
+      {/* Save toast — bottom-right floating */}
+      {saveToast && (
+        <div
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-4 py-2.5 rounded-xl
+                       bg-[#1c1d2e] border border-indigo-500/30 text-white text-xs font-semibold
+                       shadow-2xl shadow-black/40 animate-in fade-in slide-in-from-bottom-2"
+        >
+          <div className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-3.5 h-3.5 text-indigo-400" />
+          </div>
+          <div>
+            <p className="text-white/90">{t("savedQuery.saved")}</p>
+            <p className="text-[10px] text-white/40 font-normal">
+              {t("savedQuery.saveSuccess")}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Read-Only Safety Notice */}
       {connection.read_only && (
@@ -827,232 +924,367 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         </div>
       )}
 
-      {/* CodeMirror Editor Area */}
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/80 shrink-0">
-        <CodeMirror
-          value={query}
-          height="160px"
-          theme={isDark ? "dark" : "light"}
-          extensions={extensions}
-          onChange={(val) => setQuery(val)}
-          placeholder={
-            isMongo
-              ? 'db.collection.find({ "status": "active" }).limit(50)'
-              : 'SELECT * FROM "users" WHERE id > 0 ORDER BY id DESC LIMIT 50;'
-          }
-          className="text-xs font-mono border-0 focus:outline-hidden"
-          basicSetup={{
-            lineNumbers: true,
-            foldGutter: false,
-            highlightActiveLineGutter: true,
-            highlightActiveLine: true,
-            autocompletion: true,
-          }}
-        />
-      </div>
+      {/* Main content: Library Panel (optional) + Editor+Results */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Query Library Panel */}
+        {isLibraryOpen && (
+          <div className="w-60 shrink-0 overflow-hidden border-r border-zinc-200 dark:border-zinc-800">
+            <QueryLibraryPanel
+              connectionId={connection.id}
+              onLoadQuery={(q) => setQuery(q)}
+              refreshTrigger={libRefreshKey}
+            />
+          </div>
+        )}
 
-      {/* Execution Metrics & Results Status Bar */}
-      <div className="h-9 px-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 flex items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400 shrink-0">
-        <div className="flex items-center gap-3">
-          {result && (
-            <>
-              <div
-                className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold cursor-help"
-                title={
-                  result.round_trip_ms
-                    ? `Database query: ${formatLatency(result.execution_time_ms)}ms | Network round-trip: ${formatLatency(result.round_trip_ms)}ms`
-                    : `Database query: ${formatLatency(result.execution_time_ms)}ms`
-                }
-              >
-                <Zap className="w-3 h-3 fill-emerald-500/20 text-emerald-600 dark:text-emerald-400" />
-                <span>
-                  {t("console.latency", { ms: formatLatency(result.execution_time_ms) })}
-                </span>
-              </div>
+        {/* Editor + Results column */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/80 shrink-0">
+            <CodeMirror
+              value={query}
+              height="160px"
+              theme={isDark ? "dark" : "light"}
+              extensions={extensions}
+              onChange={(val) => setQuery(val)}
+              placeholder={
+                isMongo
+                  ? 'db.collection.find({ "status": "active" }).limit(50)'
+                  : 'SELECT * FROM "users" WHERE id > 0 ORDER BY id DESC LIMIT 50;'
+              }
+              className="text-xs font-mono border-0 focus:outline-hidden"
+              basicSetup={{
+                lineNumbers: true,
+                foldGutter: false,
+                highlightActiveLineGutter: true,
+                highlightActiveLine: true,
+                autocompletion: true,
+              }}
+            />
+          </div>
 
-              <span className="text-zinc-300 dark:text-zinc-700">|</span>
-
-              {result.is_mutation ? (
-                <span className="text-amber-700 dark:text-amber-400 font-medium">
-                  {t("console.rowsAffected", { count: result.rows_affected })}
-                </span>
-              ) : (
-                <span>
-                  {t("console.rowsReturned", { count: result.rows.length })}
-                </span>
-              )}
-
-              {result.columns && result.columns.length > 0 && (
+          {/* Execution Metrics & Results Status Bar */}
+          <div className="h-9 px-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 flex items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400 shrink-0">
+            <div className="flex items-center gap-3">
+              {result && (
                 <>
+                  <div
+                    className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold cursor-help"
+                    title={
+                      result.round_trip_ms
+                        ? `Database query: ${formatLatency(result.execution_time_ms)}ms | Network round-trip: ${formatLatency(result.round_trip_ms)}ms`
+                        : `Database query: ${formatLatency(result.execution_time_ms)}ms`
+                    }
+                  >
+                    <Zap className="w-3 h-3 fill-emerald-500/20 text-emerald-600 dark:text-emerald-400" />
+                    <span>
+                      {t("console.latency", {
+                        ms: formatLatency(result.execution_time_ms),
+                      })}
+                    </span>
+                  </div>
+
                   <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                  <span>{result.columns.length} columns</span>
+
+                  {result.is_mutation ? (
+                    <span className="text-amber-700 dark:text-amber-400 font-medium">
+                      {t("console.rowsAffected", {
+                        count: result.rows_affected,
+                      })}
+                    </span>
+                  ) : (
+                    <span>
+                      {t("console.rowsReturned", { count: result.rows.length })}
+                    </span>
+                  )}
+
+                  {result.columns && result.columns.length > 0 && (
+                    <>
+                      <span className="text-zinc-300 dark:text-zinc-700">
+                        |
+                      </span>
+                      <span>{result.columns.length} columns</span>
+                    </>
+                  )}
                 </>
               )}
-            </>
-          )}
 
-          {!result && !error && !isRunning && (
-            <span className="text-zinc-400 dark:text-zinc-500 italic text-[11px]">
-              {t("console.emptyPrompt")}
-            </span>
-          )}
+              {!result && !error && !isRunning && (
+                <span className="text-zinc-400 dark:text-zinc-500 italic text-[11px]">
+                  {t("console.emptyPrompt")}
+                </span>
+              )}
+            </div>
+
+            {result && result.rows.length > 0 && (
+              <div className="flex items-center gap-2">
+                {/* Quick Filter across results */}
+                <div className="relative flex items-center">
+                  <Search className="w-3 h-3 text-zinc-400 absolute left-2 pointer-events-none" />
+                  <Input
+                    type="text"
+                    value={resultFilter}
+                    onChange={(e) => setResultFilter(e.target.value)}
+                    placeholder={t("console.rowsFilter")}
+                    className="pl-6 pr-2 h-6 text-[11px] font-mono w-40 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
+                  />
+                </div>
+
+                {/* Export CSV */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCSV}
+                  className="h-6 px-2 text-[11px] font-mono gap-1 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800"
+                >
+                  <FileSpreadsheet className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                  <span>{t("console.exportResults")}</span>
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Results Content Area */}
+          <div className="flex-1 overflow-auto custom-scrollbar p-3">
+            {/* Error Alert */}
+            {error && (
+              <Alert
+                variant="destructive"
+                className="border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300"
+              >
+                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                <AlertDescription className="font-mono text-xs break-all">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Mutation Success Banner */}
+            {result && result.is_mutation && !error && (
+              <Alert className="border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <AlertDescription className="font-mono text-xs">
+                  {t("console.mutationSuccess")} ({result.rows_affected} row(s)
+                  affected in {formatLatency(result.execution_time_ms)}ms)
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Data Table */}
+            {result && result.rows.length > 0 ? (
+              <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/40 shadow-xs">
+                <Table className="w-full border-collapse text-left font-mono text-xs">
+                  <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                    <TableRow>
+                      <TableHead className="w-12 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 select-none">
+                        #
+                      </TableHead>
+                      {result.columns.map((col) => (
+                        <TableHead
+                          key={col}
+                          className="px-3 py-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border-l border-zinc-200/60 dark:border-zinc-800/60 whitespace-nowrap"
+                        >
+                          {col}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-zinc-200/80 dark:divide-zinc-800/60">
+                    {displayedRows.map((row, idx) => (
+                      <TableRow
+                        key={idx}
+                        className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group"
+                      >
+                        <TableCell className="px-2.5 py-1.5 text-[11px] font-mono text-zinc-400 dark:text-zinc-500 select-none">
+                          {idx + 1}
+                        </TableCell>
+                        {result.columns.map((col) => {
+                          const val = row[col];
+                          const cellKey = `${idx}-${col}`;
+                          const isCopied = copiedCell === cellKey;
+
+                          return (
+                            <TableCell
+                              key={col}
+                              onClick={() =>
+                                copyToClipboard(String(val), cellKey)
+                              }
+                              title="Click to copy value"
+                              className="px-3 py-1.5 text-xs border-l border-zinc-200/60 dark:border-zinc-800/60 whitespace-nowrap max-w-xs truncate cursor-pointer relative"
+                            >
+                              {val === null ? (
+                                <span className="text-zinc-400 dark:text-zinc-600 italic">
+                                  NULL
+                                </span>
+                              ) : val === undefined ? (
+                                <span className="text-zinc-400 dark:text-zinc-600 italic">
+                                  —
+                                </span>
+                              ) : typeof val === "boolean" ? (
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "px-1 py-0 text-[10px] font-mono font-medium",
+                                    val
+                                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                      : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+                                  )}
+                                >
+                                  {String(val)}
+                                </Badge>
+                              ) : typeof val === "object" ? (
+                                <span className="text-amber-700 dark:text-amber-300">
+                                  {JSON.stringify(val)}
+                                </span>
+                              ) : (
+                                <span className="text-zinc-900 dark:text-zinc-100">
+                                  {String(val)}
+                                </span>
+                              )}
+
+                              {isCopied && (
+                                <span className="absolute right-1 top-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded font-sans flex items-center gap-0.5">
+                                  <Check className="w-2.5 h-2.5" /> copied
+                                </span>
+                              )}
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : null}
+
+            {result &&
+              result.rows.length === 0 &&
+              !result.is_mutation &&
+              !error && (
+                <div className="h-48 flex flex-col items-center justify-center text-center p-6">
+                  <CheckCircle2 className="w-8 h-8 text-zinc-400 mb-2 opacity-50" />
+                  <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                    {t("console.noResults")}
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Query returned 0 rows in{" "}
+                    {formatLatency(result.execution_time_ms)}ms.
+                  </p>
+                </div>
+              )}
+          </div>
         </div>
+      </div>
+      {/* End: Editor + Results column + Library flex wrapper */}
 
-        {result && result.rows.length > 0 && (
-          <div className="flex items-center gap-2">
-            {/* Quick Filter across results */}
-            <div className="relative flex items-center">
-              <Search className="w-3 h-3 text-zinc-400 absolute left-2 pointer-events-none" />
+      {/* Save Query Dialog */}
+      <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+        <DialogContent className="bg-[#1c1d2e] border-white/10 text-white max-w-sm p-0 overflow-hidden">
+          {/* Dialog header with gradient */}
+          <div className="px-5 pt-5 pb-4 bg-linear-to-b from-indigo-500/8 to-transparent border-b border-white/6">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
+                <Save className="w-4 h-4 text-indigo-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-white text-sm font-semibold leading-tight">
+                  {t("savedQuery.saveQuery")}
+                </DialogTitle>
+                <DialogDescription className="text-white/35 text-[10px] mt-0.5">
+                  Save to your personal query library
+                </DialogDescription>
+              </div>
+            </div>
+
+            {/* SQL snippet preview */}
+            <div className="mt-3 px-2.5 py-2 rounded-md bg-black/20 border border-white/6 font-mono text-[10px] text-white/35 truncate">
+              {query.trim().split("\n")[0]?.slice(0, 60) ?? ""}
+              {(query.trim().split("\n")[0]?.length ?? 0) > 60 ? "…" : ""}
+            </div>
+          </div>
+
+          <div className="px-5 py-4 space-y-4">
+            {/* Title field */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                {t("savedQuery.title")} <span className="text-red-400">*</span>
+              </label>
               <Input
-                type="text"
-                value={resultFilter}
-                onChange={(e) => setResultFilter(e.target.value)}
-                placeholder={t("console.rowsFilter")}
-                className="pl-6 pr-2 h-6 text-[11px] font-mono w-40 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
+                value={saveTitle}
+                onChange={(e) => setSaveTitle(e.target.value)}
+                placeholder={t("savedQuery.titlePlaceholder")}
+                className="bg-white/6 border-white/10 text-white text-sm placeholder:text-white/25
+                           focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/40"
+                onKeyDown={(e) => e.key === "Enter" && handleSaveQuery()}
+                autoFocus
               />
             </div>
 
-            {/* Export CSV */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleExportCSV}
-              className="h-6 px-2 text-[11px] font-mono gap-1 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800"
-            >
-              <FileSpreadsheet className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-              <span>{t("console.exportResults")}</span>
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* Results Content Area */}
-      <div className="flex-1 overflow-auto custom-scrollbar p-3">
-        {/* Error Alert */}
-        {error && (
-          <Alert
-            variant="destructive"
-            className="border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300"
-          >
-            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-            <AlertDescription className="font-mono text-xs break-all">
-              {error}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Mutation Success Banner */}
-        {result && result.is_mutation && !error && (
-          <Alert className="border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <AlertDescription className="font-mono text-xs">
-              {t("console.mutationSuccess")} ({result.rows_affected} row(s)
-              affected in {formatLatency(result.execution_time_ms)}ms)
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Data Table */}
-        {result && result.rows.length > 0 ? (
-          <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/40 shadow-xs">
-            <Table className="w-full border-collapse text-left font-mono text-xs">
-              <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-                <TableRow>
-                  <TableHead className="w-12 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 select-none">
-                    #
-                  </TableHead>
-                  {result.columns.map((col) => (
-                    <TableHead
-                      key={col}
-                      className="px-3 py-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border-l border-zinc-200/60 dark:border-zinc-800/60 whitespace-nowrap"
-                    >
-                      {col}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y divide-zinc-200/80 dark:divide-zinc-800/60">
-                {displayedRows.map((row, idx) => (
-                  <TableRow
-                    key={idx}
-                    className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group"
-                  >
-                    <TableCell className="px-2.5 py-1.5 text-[11px] font-mono text-zinc-400 dark:text-zinc-500 select-none">
-                      {idx + 1}
-                    </TableCell>
-                    {result.columns.map((col) => {
-                      const val = row[col];
-                      const cellKey = `${idx}-${col}`;
-                      const isCopied = copiedCell === cellKey;
-
-                      return (
-                        <TableCell
-                          key={col}
-                          onClick={() => copyToClipboard(String(val), cellKey)}
-                          title="Click to copy value"
-                          className="px-3 py-1.5 text-xs border-l border-zinc-200/60 dark:border-zinc-800/60 whitespace-nowrap max-w-xs truncate cursor-pointer relative"
-                        >
-                          {val === null ? (
-                            <span className="text-zinc-400 dark:text-zinc-600 italic">
-                              NULL
-                            </span>
-                          ) : val === undefined ? (
-                            <span className="text-zinc-400 dark:text-zinc-600 italic">
-                              —
-                            </span>
-                          ) : typeof val === "boolean" ? (
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "px-1 py-0 text-[10px] font-mono font-medium",
-                                val
-                                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-                              )}
-                            >
-                              {String(val)}
-                            </Badge>
-                          ) : typeof val === "object" ? (
-                            <span className="text-amber-700 dark:text-amber-300">
-                              {JSON.stringify(val)}
-                            </span>
-                          ) : (
-                            <span className="text-zinc-900 dark:text-zinc-100">
-                              {String(val)}
-                            </span>
-                          )}
-
-                          {isCopied && (
-                            <span className="absolute right-1 top-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded font-sans flex items-center gap-0.5">
-                              <Check className="w-2.5 h-2.5" /> copied
-                            </span>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : null}
-
-        {result &&
-          result.rows.length === 0 &&
-          !result.is_mutation &&
-          !error && (
-            <div className="h-48 flex flex-col items-center justify-center text-center p-6">
-              <CheckCircle2 className="w-8 h-8 text-zinc-400 mb-2 opacity-50" />
-              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                {t("console.noResults")}
-              </h3>
-              <p className="text-xs text-zinc-500 mt-1">
-                Query returned 0 rows in {formatLatency(result.execution_time_ms)}ms.
+            {/* Tags field */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                {t("savedQuery.tags")}
+              </label>
+              <Input
+                value={saveTags}
+                onChange={(e) => setSaveTags(e.target.value)}
+                placeholder={t("savedQuery.tagsPlaceholder")}
+                className="bg-white/6 border-white/10 text-white text-sm placeholder:text-white/25
+                           focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/40"
+              />
+              <p className="text-[9px] text-white/20">
+                Separate multiple tags with commas
               </p>
             </div>
-          )}
-      </div>
+
+            {/* Favorite toggle */}
+            <button
+              type="button"
+              onClick={() => setSaveIsFavorite((v) => !v)}
+              className={cn(
+                "flex items-center gap-2.5 w-full px-3 py-2 rounded-md border transition-all text-left",
+                saveIsFavorite
+                  ? "bg-yellow-400/10 border-yellow-400/25 text-yellow-300"
+                  : "bg-white/4 border-white/8 text-white/40 hover:bg-white/8 hover:text-white/60",
+              )}
+            >
+              <Star
+                className={cn(
+                  "w-3.5 h-3.5 shrink-0",
+                  saveIsFavorite ? "fill-yellow-400 text-yellow-400" : "",
+                )}
+              />
+              <span className="text-xs font-medium">
+                {t("savedQuery.favorite")}
+              </span>
+              <span className="ml-auto text-[9px] opacity-60">
+                {saveIsFavorite ? "Starred" : "Click to star"}
+              </span>
+            </button>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-2 px-5 pb-5">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSaveDialogOpen(false)}
+              className="text-white/50 hover:text-white hover:bg-white/10 text-xs"
+            >
+              {t("savedQuery.cancel")}
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSaveQuery}
+              disabled={!saveTitle.trim()}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs gap-1.5 shadow-sm shadow-indigo-500/20 disabled:opacity-40"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {t("savedQuery.save")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* History Dialog */}
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>

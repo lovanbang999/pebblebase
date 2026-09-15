@@ -389,5 +389,34 @@
       "estimated": "ước tính",
       "pk": "Khóa chính"
     }
+  },
+  "savedQuery": {
+    "library": "Thư viện Câu hỏi",
+    "save": "Lưu",
+    "saveQuery": "Lưu câu hỏi",
+    "title": "Tiêu đề",
+    "titlePlaceholder": "Vd: Người dùng hoạt động tháng này",
+    "tags": "Thẻ nhãn",
+    "tagsPlaceholder": "Vd: báo cáo, người dùng (cách nhau bằng dấu phẩy)",
+    "favorite": "Yêu thích",
+    "export": "Xuất .sql",
+    "noSaved": "Chưa có câu hỏi nào được lưu",
+    "noSavedDesc": "Lưu câu hỏi để tải lại nhanh sau này.",
+    "search": "Tìm câu hỏi...",
+    "editQuery": "Chỉnh sửa",
+    "deleteQuery": "Xóa",
+    "copyQuery": "Sao chép SQL",
+    "loadQuery": "Tải vào trình soạn thảo",
+    "saved": "Đã lưu câu hỏi",
+    "saveSuccess": "Câu hỏi đã được lưu vào thư viện.",
+    "deleteSuccess": "Đã xóa câu hỏi.",
+    "filterByTag": "Lọc theo nhãn",
+    "allTags": "Tất cả",
+    "favorites": "Yêu thích",
+    "all": "Tất cả câu hỏi",
+    "confirmDelete": "Xóa \"{{title}}\"?",
+    "confirmDeleteDesc": "Hành động này không thể hoàn tác.",
+    "cancel": "Hủy",
+    "copied": "Đã sao chép!"
   }
 }
