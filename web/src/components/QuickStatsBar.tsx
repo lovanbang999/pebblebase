@@ -1,19 +1,26 @@
-import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { Database, HardDrive, Columns, Filter, CheckCircle2 } from 'lucide-react';
-import type { TableSchema, TableStats } from '../lib/types';
-import { Badge } from './ui/badge';
+import React from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Database,
+  HardDrive,
+  Columns,
+  Filter,
+  CheckCircle2,
+  BarChart3,
+} from "lucide-react";
+import type { TableSchema, TableStats, ColumnSchema } from "../lib/types";
 
 interface QuickStatsBarProps {
   table: TableSchema;
   stats?: TableStats | null;
   totalFilteredRows?: number;
   isFiltered?: boolean;
+  onOpenAnalytics?: (col?: ColumnSchema) => void;
 }
 
 function formatBytes(bytes: number): string {
-  if (!bytes || bytes <= 0) return '—';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  if (!bytes || bytes <= 0) return "—";
+  const units = ["B", "KB", "MB", "GB", "TB"];
   let size = bytes;
   let unitIndex = 0;
   while (size >= 1024 && unitIndex < units.length - 1) {
@@ -32,6 +39,7 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
   stats,
   totalFilteredRows,
   isFiltered = false,
+  onOpenAnalytics,
 }) => {
   const { t } = useTranslation();
 
@@ -48,37 +56,76 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
       {/* Left items: Table metrics */}
       <div className="flex items-center gap-3 text-zinc-400">
         {/* Total rows */}
-        <div className="flex items-center gap-1.5" title={t('analytics.totalRows')}>
-          <Database className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-          <span className="text-zinc-200 font-medium">{formatNumber(totalRows)}</span>
-          <span className="text-zinc-500">{t('analytics.quickStats.rows')}</span>
+        <div
+          className="flex items-center gap-1.5 leading-none"
+          title={t("analytics.totalRows")}
+        >
+          <Database className="w-3.5 h-3.5 text-indigo-400 shrink-0 translate-y-px" />
+          <span className="text-zinc-200 font-medium leading-none translate-y-px">
+            {formatNumber(totalRows)}
+          </span>
+          <span className="text-zinc-500 leading-none translate-y-px">
+            {t("analytics.quickStats.rows")}
+          </span>
           {isEstimated && (
-            <span className="text-[10px] text-zinc-500 bg-zinc-800/80 px-1 rounded">
-              {t('analytics.quickStats.estimated')}
+            <span className="text-[10px] leading-none text-zinc-500 bg-zinc-800/80 px-1 py-0.5 rounded translate-y-px">
+              {t("analytics.quickStats.estimated")}
             </span>
           )}
         </div>
 
-        <span className="text-zinc-700">|</span>
+        <span
+          className="h-3.5 w-px bg-zinc-800 shrink-0 self-center"
+          aria-hidden="true"
+        />
 
         {/* Table Size */}
-        <div className="flex items-center gap-1.5" title={t('analytics.quickStats.size')}>
-          <HardDrive className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-          <span className="text-zinc-500">{t('analytics.quickStats.size')}:</span>
-          <span className="text-zinc-200 font-medium">{formatBytes(sizeBytes)}</span>
+        <div
+          className="flex items-center gap-1.5 leading-none"
+          title={t("analytics.quickStats.size")}
+        >
+          <HardDrive className="w-3.5 h-3.5 text-emerald-400 shrink-0 translate-y-px" />
+          <span className="text-zinc-500 leading-none translate-y-px">
+            {t("analytics.quickStats.size")}:
+          </span>
+          <span className="text-zinc-200 font-medium leading-none translate-y-px">
+            {formatBytes(sizeBytes)}
+          </span>
         </div>
 
-        <span className="text-zinc-700">|</span>
+        <span
+          className="h-3.5 w-px bg-zinc-800 shrink-0 self-center"
+          aria-hidden="true"
+        />
 
         {/* Columns & PKs */}
-        <div className="flex items-center gap-1.5">
-          <Columns className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-          <span className="text-zinc-200 font-medium">{table.columns.length}</span>
-          <span className="text-zinc-500">{t('analytics.quickStats.columns')}</span>
+        <div className="flex items-center gap-1.5 leading-none">
+          <Columns className="w-3.5 h-3.5 text-sky-400 shrink-0 translate-y-px" />
+          <span className="text-zinc-200 font-medium leading-none translate-y-px">
+            {table.columns.length}
+          </span>
+          <span className="text-zinc-500 leading-none translate-y-px">
+            {t("analytics.quickStats.columns")}
+          </span>
           {pkCount > 0 && (
-            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-amber-500/40 text-amber-400 bg-amber-500/10">
-              {pkCount} {t('analytics.quickStats.pk')}
-            </Badge>
+            <span className="inline-flex items-center justify-center px-2 h-5 rounded-full text-[10px] font-mono font-medium border border-amber-500/40 text-amber-400 bg-amber-500/10 leading-none shrink-0">
+              <span className="translate-y-px">
+                {pkCount} {t("analytics.quickStats.pk")}
+              </span>
+            </span>
+          )}
+          {onOpenAnalytics && table.columns.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onOpenAnalytics(table.columns[0])}
+              title={t("analytics.openAnalytics")}
+              className="inline-flex items-center justify-center gap-1.5 px-2.5 h-5 rounded-full text-[10px] font-mono font-medium text-indigo-400/90 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-500/50 transition-colors cursor-pointer leading-none shrink-0"
+            >
+              <BarChart3 className="w-3 h-3 text-indigo-400 shrink-0 translate-y-px" />
+              <span className="leading-none translate-y-px">
+                {t("analytics.openAnalytics")}
+              </span>
+            </button>
           )}
         </div>
       </div>
@@ -89,13 +136,14 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
           <div className="flex items-center gap-1.5 text-amber-400 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded text-[11px]">
             <Filter className="w-3 h-3 shrink-0" />
             <span>
-              {t('analytics.quickStats.filtered')}: {formatNumber(totalFilteredRows ?? 0)} / {formatNumber(totalRows)}
+              {t("analytics.quickStats.filtered")}:{" "}
+              {formatNumber(totalFilteredRows ?? 0)} / {formatNumber(totalRows)}
             </span>
           </div>
         ) : (
           <div className="flex items-center gap-1 text-zinc-500 text-[11px]">
             <CheckCircle2 className="w-3 h-3 text-emerald-500/80" />
-            <span>{t('analytics.analyzingAll')}</span>
+            <span>{t("analytics.analyzingAll")}</span>
           </div>
         )}
       </div>

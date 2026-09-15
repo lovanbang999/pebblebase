@@ -15,6 +15,8 @@ import {
   Loader2,
   AlertCircle,
   Hash,
+  ChevronDown,
+  Check,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -31,6 +33,15 @@ import {
 } from "recharts";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "./ui/dropdown-menu";
 import { fetchAggregate } from "../lib/api";
 import type { ColumnSchema, FilterOption, AggregateResult } from "../lib/types";
 
@@ -40,6 +51,8 @@ interface ColumnAnalyticsDrawerProps {
   connectionId: string;
   tableName: string;
   column: ColumnSchema | null;
+  columns?: ColumnSchema[];
+  onSelectColumn?: (column: ColumnSchema) => void;
   activeFilters?: FilterOption[];
 }
 
@@ -74,6 +87,8 @@ export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
   connectionId,
   tableName,
   column,
+  columns = [],
+  onSelectColumn,
   activeFilters = [],
 }) => {
   const { t } = useTranslation();
@@ -104,6 +119,9 @@ export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
     let mounted = true;
     setLoading(true);
     setError(null);
+    setDistributionData(null);
+    setStatsData(null);
+    setTimeSeriesData(null);
 
     const loadData = async () => {
       try {
@@ -247,9 +265,72 @@ export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-base font-bold text-zinc-100">
-                  {column.name}
-                </span>
+                {columns.length > 1 ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      render={
+                        <button
+                          type="button"
+                          title={t("analytics.switchColumn", "Switch Column")}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-700/80 hover:border-zinc-500 hover:bg-zinc-800 text-zinc-100 font-mono text-sm font-semibold transition-all cursor-pointer group"
+                        >
+                          <span>{column.name}</span>
+                          <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-transform" />
+                        </button>
+                      }
+                    />
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-56 max-h-72 overflow-y-auto bg-zinc-900 border border-zinc-800 p-1 shadow-xl z-50 text-zinc-200"
+                    >
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel className="text-[10px] text-zinc-400 font-mono uppercase px-2 py-1">
+                          {t("analytics.switchColumn", "Switch Column")}
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator className="bg-zinc-800 my-1" />
+                        {columns.map((c) => {
+                          const isSelected = c.name === column.name;
+                          return (
+                            <DropdownMenuItem
+                              key={c.name}
+                              onClick={() => onSelectColumn?.(c)}
+                              className={`flex items-center justify-between px-2 py-1.5 rounded text-xs font-mono cursor-pointer ${
+                                isSelected
+                                  ? "bg-indigo-500/20 text-indigo-300 font-semibold"
+                                  : "text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+                              }`}
+                            >
+                              <div className="flex items-center gap-1.5 truncate">
+                                {c.is_primary_key && (
+                                  <Key className="w-3 h-3 text-amber-400 shrink-0" />
+                                )}
+                                {c.is_foreign_key && (
+                                  <Layers className="w-3 h-3 text-sky-400 shrink-0" />
+                                )}
+                                <span className="truncate">{c.name}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] text-zinc-400 border-transparent bg-zinc-800/80 px-1 py-0"
+                                >
+                                  {c.type}
+                                </Badge>
+                                {isSelected && (
+                                  <Check className="w-3 h-3 text-indigo-400 shrink-0" />
+                                )}
+                              </div>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <span className="font-mono text-base font-bold text-zinc-100">
+                    {column.name}
+                  </span>
+                )}
                 <Badge
                   variant="outline"
                   className="font-mono text-xs text-zinc-400 bg-zinc-800/80 border-transparent px-1.5 py-0"
