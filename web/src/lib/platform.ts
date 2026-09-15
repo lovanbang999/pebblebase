@@ -18,6 +18,8 @@ export const SHORTCUTS = {
   queryConsole: isMac ? "⌥Q" : "Alt+Q",
   erd: isMac ? "⌥E" : "Alt+E",
   sidebar: isMac ? "⌘B" : "Ctrl+B",
+  commandPalette: isMac ? "⌘K" : "Ctrl+K",
+  commandPaletteFull: isMac ? "Cmd+K" : "Ctrl+K",
 
   // Execution
   runQuery: isMac ? "⌘↵" : "Ctrl+↵",
@@ -31,9 +33,18 @@ export const SHORTCUTS = {
 } as const;
 
 /**
+ * Returns modifier key symbol (⌘ for macOS, Ctrl for Windows/Linux).
+ */
+export function getShortcutSymbol(): string {
+  return SHORTCUTS.mod;
+}
+
+/**
  * Returns accessible tooltip description for shortcuts.
  */
-export function getShortcutTooltip(action: "runQuery" | "queryConsole" | "erd"): string {
+export function getShortcutTooltip(
+  action: "runQuery" | "queryConsole" | "erd" | "commandPalette"
+): string {
   if (action === "runQuery") {
     return isMac ? "Run Query (⌘↵)" : "Run Query (Ctrl+↵ / F5)";
   }
@@ -42,6 +53,9 @@ export function getShortcutTooltip(action: "runQuery" | "queryConsole" | "erd"):
   }
   if (action === "erd") {
     return isMac ? "Toggle ERD Diagram (⌥E)" : "Toggle ERD Diagram (Alt+E)";
+  }
+  if (action === "commandPalette") {
+    return isMac ? "Command Palette (⌘K)" : "Command Palette (Ctrl+K)";
   }
   return "";
 }

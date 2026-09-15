@@ -500,5 +500,23 @@
     "mongoNotSupported": "MongoDB does not use relational DDL statements. Schema is dynamic.",
     "statementsUnit": "statement(s)",
     "rollbackDdlLabel": "Rollback SQL (Inverse DDL)"
+  },
+  "palette": {
+    "placeholder": "Type a command or search...",
+    "tables": "Tables",
+    "connections": "Connections",
+    "queries": "Saved Queries",
+    "recent": "Recent Items",
+    "actions": "Actions",
+    "noResults": "No matching commands or entities found.",
+    "openQueryConsole": "Open Query Console",
+    "openERD": "Open ERD Diagram",
+    "openMigration": "Open Migration Runner",
+    "exportTableCsv": "Export Current Table (CSV)",
+    "exportTableJson": "Export Current Table (JSON)",
+    "toggleTheme": "Toggle Dark / Light Mode",
+    "openSettings": "Open Admin & Settings",
+    "signOut": "Sign Out",
+    "shortcutHint": "Press Cmd+K or Ctrl+K anytime"
   }
 }

@@ -500,5 +500,23 @@
     "mongoNotSupported": "MongoDB không sử dụng câu lệnh DDL quan hệ. Lược đồ mang tính động.",
     "statementsUnit": "câu lệnh",
     "rollbackDdlLabel": "SQL Hoàn Tác (Inverse DDL)"
+  },
+  "palette": {
+    "placeholder": "Nhập lệnh hoặc tìm kiếm...",
+    "tables": "Bảng",
+    "connections": "Kết nối",
+    "queries": "Truy vấn đã lưu",
+    "recent": "Đã xem gần đây",
+    "actions": "Hành động",
+    "noResults": "Không tìm thấy lệnh hoặc kết quả phù hợp.",
+    "openQueryConsole": "Mở Trình truy vấn SQL",
+    "openERD": "Mở Sơ đồ ERD",
+    "openMigration": "Mở Bộ chạy Migration",
+    "exportTableCsv": "Xuất Bảng Hiện Tại (CSV)",
+    "exportTableJson": "Xuất Bảng Hiện Tại (JSON)",
+    "toggleTheme": "Chuyển Đổi Giao Diện Sáng / Tối",
+    "openSettings": "Mở Cài Đặt & Quản Trị",
+    "signOut": "Đăng Xuất",
+    "shortcutHint": "Nhấn Cmd+K hoặc Ctrl+K bất kỳ lúc nào"
   }
 }
