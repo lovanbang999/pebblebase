@@ -39,7 +39,7 @@ func setupTestServer(t *testing.T) *http.ServeMux {
 		w.Write([]byte(`{"status":"OK"}`))
 	})
 
-	srv := api.NewServer(store, enc, nil, nil, nil, false)
+	srv := api.NewServer(store, enc, nil, nil, nil, nil, false)
 	srv.RegisterRoutes(mux)
 
 	frontendFS, err := pebblebase.FrontendFS()

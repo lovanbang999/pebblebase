@@ -205,3 +205,43 @@ export interface SavedQueryUpdateInput {
   is_favorite?: boolean;
 }
 
+export interface MigrationPlanOperation {
+  action: string;
+  target_type: string;
+  target_name: string;
+  sql: string;
+}
+
+export interface MigrationResult {
+  dry_run: boolean;
+  success: boolean;
+  statements_run: number;
+  total_statements: number;
+  error?: string;
+  error_statement?: string;
+  execution_time_ms: number;
+  plan: MigrationPlanOperation[];
+  rollback_sql?: string;
+  migration_id?: string;
+}
+
+export interface MigrationRecord {
+  id: string;
+  connection_id: string;
+  ddl: string;
+  rollback_sql: string;
+  success: boolean;
+  error?: string;
+  executed_at: string;
+}
+
+export interface MigrationHistoryResponse {
+  items: MigrationRecord[];
+  total_count: number;
+}
+
+export interface ExecuteMigrationInput {
+  ddl: string;
+  dry_run?: boolean;
+}
+

@@ -87,6 +87,21 @@ type DDLProvider interface {
 	GetTableIndexes(ctx context.Context, table string) ([]IndexInfo, error)
 }
 
+// MigrationResult holds the output of a migration dry-run or live execution.
+type MigrationResult struct {
+	Success      bool     `json:"success"`
+	AffectedRows int64    `json:"affected_rows"`
+	Plan         []string `json:"plan"`
+	Error        string   `json:"error,omitempty"`
+	ExecutedAt   string   `json:"executed_at,omitempty"`
+	RollbackSQL  string   `json:"rollback_sql,omitempty"`
+}
+
+// MigrationRunner is implemented by database adapters that can execute or preview DDL migrations.
+type MigrationRunner interface {
+	ExecuteMigration(ctx context.Context, ddl string, dryRun bool) (MigrationResult, error)
+}
+
 // TableStats holds metadata statistics for a table.
 type TableStats struct {
 	TotalRows     int64  `json:"total_rows"`

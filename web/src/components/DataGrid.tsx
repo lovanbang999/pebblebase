@@ -946,6 +946,7 @@ export const DataGrid: FC<DataGridProps> = ({
         <SchemaInspector
           connId={connId}
           table={table}
+          isReadOnly={isReadOnly}
           onNavigateRelation={onNavigateRelation}
         />
       ) : (

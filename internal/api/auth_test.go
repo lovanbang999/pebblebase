@@ -64,7 +64,7 @@ func setupAuthTestServer(t *testing.T) *testAuthEnv {
 	}
 
 	mux := http.NewServeMux()
-	srv := api.NewServer(store, enc, authSvc, auditLog, nil, true)
+	srv := api.NewServer(store, enc, authSvc, auditLog, nil, nil, true)
 	srv.RegisterRoutes(mux)
 
 	// Obtain admin token
