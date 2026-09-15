@@ -4,6 +4,7 @@ import { Save, Trash2, Key, AlertCircle, Loader2, Plus } from 'lucide-react';
 import type { TableSchema, ColumnSchema } from '../lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { NumberInput } from '@/components/ui/number-input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -269,10 +270,29 @@ export const RowModal: FC<RowModalProps> = ({
                     placeholder="{}"
                     className="text-xs font-mono resize-none"
                   />
+                ) : col.type === 'int' || col.type === 'float' ? (
+                  <NumberInput
+                    isFloat={col.type === 'float'}
+                    step={col.type === 'float' ? 'any' : 1}
+                    value={currentVal}
+                    disabled={isReadOnly}
+                    onChange={(val) => handleChange(col, val)}
+                    placeholder={
+                      isPk && !isEditing
+                        ? col.name === '_id'
+                          ? t('rowModal.autoObjectId')
+                          : t('rowModal.autoManualPk')
+                        : col.default_value
+                        ? `Default: ${col.default_value}`
+                        : col.nullable
+                        ? 'NULL'
+                        : ''
+                    }
+                    className="text-xs font-mono"
+                  />
                 ) : (
                   <Input
-                    type={col.type === 'int' || col.type === 'float' ? 'number' : 'text'}
-                    step={col.type === 'float' ? 'any' : undefined}
+                    type="text"
                     value={currentVal}
                     disabled={isReadOnly}
                     onChange={(e) => handleChange(col, e.target.value)}

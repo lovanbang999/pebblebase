@@ -44,7 +44,12 @@ import {
   RotateCcw,
   Check,
 } from "lucide-react";
-import type { TableSchema, FilterOption, ColumnSchema, TableStats } from "../lib/types";
+import type {
+  TableSchema,
+  FilterOption,
+  ColumnSchema,
+  TableStats,
+} from "../lib/types";
 import { exportTableData, fetchTableStats } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
@@ -63,6 +68,7 @@ import {
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -100,6 +106,11 @@ interface DataGridProps {
   onAddRow: () => void;
   onEditRow: (row: Record<string, any>) => void;
   onDeleteRow: (row: Record<string, any>) => void;
+  onSaveCell?: (
+    row: Record<string, any>,
+    columnName: string,
+    newValue: any,
+  ) => Promise<void>;
   onNavigateRelation?: (
     targetTable: string,
     targetColumn: string,
@@ -128,6 +139,7 @@ export const DataGrid: FC<DataGridProps> = ({
   onAddRow,
   onEditRow,
   onDeleteRow,
+  onSaveCell,
   onNavigateRelation,
   isReadOnly = false,
   onOpenQueryConsole,
@@ -136,9 +148,105 @@ export const DataGrid: FC<DataGridProps> = ({
   const { t } = useTranslation();
   const [activeSubView, setActiveSubView] = useState<"grid" | "schema">("grid");
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [analyticsColumn, setAnalyticsColumn] = useState<ColumnSchema | null>(null);
+  const [analyticsColumn, setAnalyticsColumn] = useState<ColumnSchema | null>(
+    null,
+  );
   const [tableStats, setTableStats] = useState<TableStats | null>(null);
   const [copiedCol, setCopiedCol] = useState<string | null>(null);
+
+  // Right-click Context Menu State
+  const [contextMenu, setContextMenu] = useState<{
+    mouseX: number;
+    mouseY: number;
+    row: Record<string, any>;
+    colName: string;
+    cellValue: any;
+  } | null>(null);
+  const [copiedNotification, setCopiedNotification] = useState<string | null>(
+    null,
+  );
+
+  // Close context menu on click outside, scroll, or Escape key
+  useEffect(() => {
+    if (!contextMenu) return;
+    const handleClose = () => setContextMenu(null);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+    window.addEventListener("click", handleClose);
+    window.addEventListener("contextmenu", handleClose);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", handleClose, true);
+    return () => {
+      window.removeEventListener("click", handleClose);
+      window.removeEventListener("contextmenu", handleClose);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleClose, true);
+    };
+  }, [contextMenu]);
+
+  // Inline Cell Editing State
+  const [editingCell, setEditingCell] = useState<{
+    rowIndex: number;
+    colName: string;
+  } | null>(null);
+  const [inlineValue, setInlineValue] = useState<string>("");
+
+  const startEditingCell = (
+    row: Record<string, any>,
+    colName: string,
+    rowIndex: number,
+  ) => {
+    if (isReadOnly) return;
+    const colSchema = table.columns.find((c) => c.name === colName);
+    if (colSchema?.is_primary_key) return;
+
+    setEditingCell({ rowIndex, colName });
+    const currentVal = row[colName];
+    setInlineValue(
+      currentVal === null || currentVal === undefined ? "" : String(currentVal),
+    );
+  };
+
+  const saveCellEdit = async (row: Record<string, any>, colName: string) => {
+    if (!editingCell || !onSaveCell) {
+      setEditingCell(null);
+      return;
+    }
+
+    const colSchema = table.columns.find((c) => c.name === colName);
+    let parsedVal: any = inlineValue;
+
+    if (colSchema) {
+      if (inlineValue === "" && colSchema.nullable) {
+        parsedVal = null;
+      } else if (colSchema.type === "int") {
+        const p = parseInt(inlineValue, 10);
+        parsedVal = isNaN(p) ? inlineValue : p;
+      } else if (colSchema.type === "float") {
+        const p = parseFloat(inlineValue);
+        parsedVal = isNaN(p) ? inlineValue : p;
+      } else if (colSchema.type === "bool") {
+        parsedVal = inlineValue === "true";
+      } else if (colSchema.type === "json") {
+        try {
+          parsedVal = JSON.parse(inlineValue);
+        } catch {
+          parsedVal = inlineValue;
+        }
+      }
+    }
+
+    if (parsedVal !== row[colName]) {
+      try {
+        await onSaveCell(row, colName, parsedVal);
+      } catch (err) {
+        console.error("Failed to save inline cell edit:", err);
+      }
+    }
+
+    setEditingCell(null);
+  };
 
   useEffect(() => {
     if (!connId || !table.name) return;
@@ -287,19 +395,22 @@ export const DataGrid: FC<DataGridProps> = ({
             >
               <div className="flex items-center gap-1.5 truncate">
                 {col.is_primary_key && (
-                  <span title={t('datagrid.primaryKey')}>
+                  <span title={t("datagrid.primaryKey")}>
                     <Key className="w-3 h-3 text-amber-400 shrink-0" />
                   </span>
                 )}
                 {col.is_foreign_key && (
-                  <span title={t('datagrid.foreignKey')}>
+                  <span title={t("datagrid.foreignKey")}>
                     <Layers className="w-3 h-3 text-sky-400 shrink-0" />
                   </span>
                 )}
                 <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-200 truncate">
                   {col.name}
                 </span>
-                <Badge variant="outline" className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 font-normal px-1 py-0 h-4 bg-zinc-200/60 dark:bg-zinc-800/80 border-zinc-300/60 dark:border-transparent">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 font-normal px-1 py-0 h-4 bg-zinc-200/60 dark:bg-zinc-800/80 border-zinc-300/60 dark:border-transparent"
+                >
                   {col.type}
                 </Badge>
               </div>
@@ -413,94 +524,193 @@ export const DataGrid: FC<DataGridProps> = ({
           );
         },
         cell: (info) => {
+          const row = info.row.original;
+          const rowIndex = info.row.index;
           const val = info.getValue();
+          const isEditing =
+            editingCell?.rowIndex === rowIndex &&
+            editingCell?.colName === col.name;
 
-          // Graceful handling of missing / null fields
-          if (val === undefined) {
-            return (
-              <span
-                className="text-zinc-600 italic text-[11px] font-mono select-none"
-                title={t('datagrid.fieldNotSet')}
-              >
-                —
-              </span>
-            );
-          }
-          if (val === null) {
-            return (
-              <span className="text-zinc-500 italic text-[11px] font-mono">
-                NULL
-              </span>
-            );
-          }
-
-          // Signature Prisma Studio Click-to-Navigate Foreign Key
-          if (col.is_foreign_key && onNavigateRelation) {
-            const rel = table.relations?.find(
-              (r) => r.from_column === col.name,
-            );
-            if (rel) {
+          if (isEditing) {
+            if (col.type === "int" || col.type === "float") {
               return (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNavigateRelation(rel.to_table, rel.to_column, val);
-                  }}
-                  className="inline-flex items-center gap-1 font-mono text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline group/fk text-left px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/20 hover:bg-sky-100 dark:hover:bg-sky-950/50 border border-sky-200 dark:border-sky-800/30 transition-colors cursor-pointer"
-                  title={t('datagrid.navigateToRelation', { table: rel.to_table, column: rel.to_column, val })}
-                >
-                  <span className="font-semibold">{String(val)}</span>
-                  <ArrowUpRight className="w-3 h-3 opacity-70 group-hover/fk:opacity-100 group-hover/fk:translate-x-0.5 group-hover/fk:-translate-y-0.5 transition-all shrink-0" />
-                </button>
+                <div className="w-full" onClick={(e) => e.stopPropagation()}>
+                  <NumberInput
+                    isFloat={col.type === "float"}
+                    step={col.type === "float" ? "any" : 1}
+                    value={inlineValue}
+                    autoFocus
+                    onChange={(v) => setInlineValue(v)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        saveCellEdit(row, col.name);
+                      } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        setEditingCell(null);
+                      }
+                    }}
+                    onBlur={() => saveCellEdit(row, col.name)}
+                    className="h-7 text-xs font-mono"
+                  />
+                </div>
               );
             }
-          }
 
-          // Booleans
-          if (typeof val === "boolean") {
-            return (
-              <Badge
-                variant={val ? "default" : "secondary"}
-                className={`px-1.5 py-0 h-4 text-[10px] font-mono font-medium ${
-                  val
-                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-transparent"
-                }`}
-              >
-                {String(val)}
-              </Badge>
-            );
-          }
+            if (col.type === "bool") {
+              return (
+                <div className="w-full" onClick={(e) => e.stopPropagation()}>
+                  <Select
+                    value={inlineValue === "" ? "null" : inlineValue}
+                    onValueChange={(v) => {
+                      const parsed = v === "null" ? null : v === "true";
+                      setEditingCell(null);
+                      if (onSaveCell && parsed !== row[col.name]) {
+                        onSaveCell(row, col.name, parsed);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full h-7 text-xs font-mono">
+                      <SelectValue placeholder="(null)" />
+                    </SelectTrigger>
+                    <SelectContent side="bottom" align="start">
+                      <SelectItem value="null">(null)</SelectItem>
+                      <SelectItem value="true">true</SelectItem>
+                      <SelectItem value="false">false</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              );
+            }
 
-          // Objects / Arrays / BSON
-          if (typeof val === "object") {
             return (
-              <span
-                className="font-mono text-xs text-amber-700 dark:text-amber-300/90 truncate block max-w-xs cursor-help"
-                title={JSON.stringify(val, null, 2)}
-              >
-                {JSON.stringify(val)}
-              </span>
-            );
-          }
-
-          // Primary key highlight
-          if (col.is_primary_key) {
-            return (
-              <div className="flex items-center gap-1.5">
-                <Key className="w-3 h-3 text-amber-500 dark:text-amber-400/80 shrink-0" />
-                <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                  {String(val)}
-                </span>
+              <div className="w-full" onClick={(e) => e.stopPropagation()}>
+                <Input
+                  type="text"
+                  value={inlineValue}
+                  autoFocus
+                  onChange={(e) => setInlineValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      saveCellEdit(row, col.name);
+                    } else if (e.key === "Escape") {
+                      e.preventDefault();
+                      setEditingCell(null);
+                    }
+                  }}
+                  onBlur={() => saveCellEdit(row, col.name)}
+                  className="h-7 text-xs font-mono"
+                />
               </div>
             );
           }
 
+          const renderContent = () => {
+            if (val === undefined) {
+              return (
+                <span
+                  className="text-zinc-600 italic text-[11px] font-mono select-none"
+                  title={t("datagrid.fieldNotSet")}
+                >
+                  —
+                </span>
+              );
+            }
+            if (val === null) {
+              return (
+                <span className="text-zinc-500 italic text-[11px] font-mono">
+                  NULL
+                </span>
+              );
+            }
+
+            if (col.is_foreign_key && onNavigateRelation) {
+              const rel = table.relations?.find(
+                (r) => r.from_column === col.name,
+              );
+              if (rel) {
+                return (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigateRelation(rel.to_table, rel.to_column, val);
+                    }}
+                    className="inline-flex items-center gap-1 font-mono text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline group/fk text-left px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/20 hover:bg-sky-100 dark:hover:bg-sky-950/50 border border-sky-200 dark:border-sky-800/30 transition-colors cursor-pointer"
+                    title={t("datagrid.navigateToRelation", {
+                      table: rel.to_table,
+                      column: rel.to_column,
+                      val,
+                    })}
+                  >
+                    <span className="font-semibold">{String(val)}</span>
+                    <ArrowUpRight className="w-3 h-3 opacity-70 group-hover/fk:opacity-100 group-hover/fk:translate-x-0.5 group-hover/fk:-translate-y-0.5 transition-all shrink-0" />
+                  </button>
+                );
+              }
+            }
+
+            if (typeof val === "boolean") {
+              return (
+                <Badge
+                  variant={val ? "default" : "secondary"}
+                  className={`px-1.5 py-0 h-4 text-[10px] font-mono font-medium ${
+                    val
+                      ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60"
+                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-transparent"
+                  }`}
+                >
+                  {String(val)}
+                </Badge>
+              );
+            }
+
+            if (typeof val === "object") {
+              return (
+                <span
+                  className="font-mono text-xs text-amber-700 dark:text-amber-300/90 truncate block max-w-xs cursor-help"
+                  title={JSON.stringify(val, null, 2)}
+                >
+                  {JSON.stringify(val)}
+                </span>
+              );
+            }
+
+            if (col.is_primary_key) {
+              return (
+                <div className="flex items-center gap-1.5">
+                  <Key className="w-3 h-3 text-amber-500 dark:text-amber-400/80 shrink-0" />
+                  <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                    {String(val)}
+                  </span>
+                </div>
+              );
+            }
+
+            return (
+              <span className="font-mono text-xs text-zinc-800 dark:text-zinc-300 truncate block">
+                {String(val)}
+              </span>
+            );
+          };
+
+          const isCellEditable = !isReadOnly && !col.is_primary_key;
+
+          if (!isCellEditable) {
+            return renderContent();
+          }
+
           return (
-            <span className="font-mono text-xs text-zinc-800 dark:text-zinc-300 truncate block">
-              {String(val)}
-            </span>
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                startEditingCell(row, col.name, rowIndex);
+              }}
+              className="w-full h-full cursor-pointer hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50 rounded px-1.5 py-1 -mx-1.5 -my-1 transition-colors flex items-center justify-between group/cell"
+            >
+              <div className="flex-1 truncate">{renderContent()}</div>
+            </div>
           );
         },
       });
@@ -532,8 +742,11 @@ export const DataGrid: FC<DataGridProps> = ({
                 <span className="font-mono text-xs font-semibold text-amber-200/90 truncate">
                   {extraColName}
                 </span>
-                <Badge variant="outline" className="text-[9px] font-mono text-amber-400/90 font-normal px-1 py-0 h-4 bg-amber-950/50 border-amber-800/40">
-                  {t('datagrid.dynamicBadge')}
+                <Badge
+                  variant="outline"
+                  className="text-[9px] font-mono text-amber-400/90 font-normal px-1 py-0 h-4 bg-amber-950/50 border-amber-800/40"
+                >
+                  {t("datagrid.dynamicBadge")}
                 </Badge>
               </div>
               <div className="text-zinc-400 group-hover:text-zinc-200">
@@ -556,7 +769,7 @@ export const DataGrid: FC<DataGridProps> = ({
             return (
               <span
                 className="text-zinc-600 italic text-[11px] font-mono select-none"
-                title={t('datagrid.fieldNotSet')}
+                title={t("datagrid.fieldNotSet")}
               >
                 —
               </span>
@@ -602,55 +815,6 @@ export const DataGrid: FC<DataGridProps> = ({
       });
     });
 
-    // Row Actions column
-    cols.push({
-      id: "_actions",
-      header: "",
-      size: 70,
-      cell: (info) => (
-        <div className="flex items-center justify-end gap-1 opacity-70 hover:opacity-100 transition-opacity">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            disabled={isReadOnly}
-            title={isReadOnly ? t('datagrid.readOnlyTooltip') : t('datagrid.editRecordTooltip')}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isReadOnly) onEditRow(info.row.original);
-            }}
-            className={cn(
-              "h-6 w-6",
-              isReadOnly
-                ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed opacity-50"
-                : "text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400"
-            )}
-          >
-            <Edit2 className="w-3.5 h-3.5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            disabled={isReadOnly}
-            title={isReadOnly ? t('datagrid.readOnlyTooltip') : t('datagrid.deleteRecordTooltip')}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!isReadOnly) onDeleteRow(info.row.original);
-            }}
-            className={cn(
-              "h-6 w-6",
-              isReadOnly
-                ? "text-zinc-300 dark:text-zinc-600 cursor-not-allowed opacity-50"
-                : "text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400"
-            )}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </Button>
-        </div>
-      ),
-    });
-
     return cols;
   }, [
     table,
@@ -662,9 +826,14 @@ export const DataGrid: FC<DataGridProps> = ({
     pageSize,
     onEditRow,
     onDeleteRow,
+    onSaveCell,
     onNavigateRelation,
     isReadOnly,
     t,
+    editingCell,
+    inlineValue,
+    startEditingCell,
+    saveCellEdit,
   ]);
 
   // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
@@ -700,7 +869,10 @@ export const DataGrid: FC<DataGridProps> = ({
       <div className="h-11 px-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 bg-white dark:bg-zinc-900/30">
         <div className="flex items-center gap-2.5 h-full">
           <SidebarTrigger className="-ml-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer shrink-0" />
-          <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800 self-center" />
+          <Separator
+            orientation="vertical"
+            className="h-4 bg-zinc-200 dark:bg-zinc-800 self-center"
+          />
           <div className="flex items-center gap-2">
             <TableIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <h2 className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
@@ -712,7 +884,10 @@ export const DataGrid: FC<DataGridProps> = ({
             {totalCount === 1 ? "record" : "records"}
           </span>
 
-          <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800 mx-1 self-center" />
+          <Separator
+            orientation="vertical"
+            className="h-4 bg-zinc-200 dark:bg-zinc-800 mx-1 self-center"
+          />
 
           {/* Sub-view switcher: [ Data Grid ] | [ Schema & DDL ] */}
           <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/60">
@@ -723,7 +898,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 "px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
                 activeSubView === "grid"
                   ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
               )}
             >
               <TableIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -736,7 +911,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 "px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
                 activeSubView === "schema"
                   ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
               )}
             >
               <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -748,15 +923,18 @@ export const DataGrid: FC<DataGridProps> = ({
             <Badge
               variant="outline"
               className="text-[11px] font-mono px-2 py-0.5 border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 gap-1 select-none font-medium"
-              title={t('datagrid.readOnlyBanner')}
+              title={t("datagrid.readOnlyBanner")}
             >
               <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
-              <span>{t('connection.readOnlyBadge')}</span>
+              <span>{t("connection.readOnlyBadge")}</span>
             </Badge>
           )}
           {activeSubView === "grid" && displayedRows.length !== rows.length && (
-            <Badge variant="outline" className="text-[11px] text-amber-700 dark:text-amber-400/90 font-mono bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40 px-1.5 py-0 h-auto font-normal">
-              {t('datagrid.showingMatches', { count: displayedRows.length })}
+            <Badge
+              variant="outline"
+              className="text-[11px] text-amber-700 dark:text-amber-400/90 font-mono bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40 px-1.5 py-0 h-auto font-normal"
+            >
+              {t("datagrid.showingMatches", { count: displayedRows.length })}
             </Badge>
           )}
         </div>
@@ -772,7 +950,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   type="text"
                   value={quickSearch}
                   onChange={(e) => setQuickSearch(e.target.value)}
-                  placeholder={`${t('datagrid.searchPlaceholder')} (/)`}
+                  placeholder={`${t("datagrid.searchPlaceholder")} (/)`}
                   className="pl-8 pr-7 h-8 text-xs font-mono w-52"
                 />
                 {quickSearch && (
@@ -782,7 +960,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     size="icon-xs"
                     onClick={() => setQuickSearch("")}
                     className="absolute right-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 h-6 w-6"
-                    title={t('datagrid.clearSearchTooltip')}
+                    title={t("datagrid.clearSearchTooltip")}
                   >
                     <X className="w-3 h-3" />
                   </Button>
@@ -792,17 +970,21 @@ export const DataGrid: FC<DataGridProps> = ({
               {/* Filter toggle */}
               <Button
                 type="button"
-                variant={filters.length > 0 || showFilterBuilder ? "secondary" : "outline"}
+                variant={
+                  filters.length > 0 || showFilterBuilder
+                    ? "secondary"
+                    : "outline"
+                }
                 size="sm"
                 onClick={() => setShowFilterBuilder(!showFilterBuilder)}
                 className={cn(
                   "text-xs font-mono font-medium gap-1.5",
                   (filters.length > 0 || showFilterBuilder) &&
-                    "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-300"
+                    "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-300",
                 )}
               >
                 <FilterIcon className="w-3.5 h-3.5" />
-                {t('datagrid.filterButton')}
+                {t("datagrid.filterButton")}
                 {filters.length > 0 && (
                   <Badge className="w-4 h-4 p-0 rounded-full bg-emerald-500 text-white dark:text-zinc-950 text-[10px] font-bold flex items-center justify-center">
                     {filters.length}
@@ -817,7 +999,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 size="icon-sm"
                 onClick={onRefresh}
                 disabled={isLoading}
-                title={t('datagrid.reloadTableTooltip')}
+                title={t("datagrid.reloadTableTooltip")}
                 className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white"
               >
                 <RefreshCw
@@ -832,11 +1014,11 @@ export const DataGrid: FC<DataGridProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={onOpenQueryConsole}
-                  title={t('datagrid.openQueryConsole')}
+                  title={t("datagrid.openQueryConsole")}
                   className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
                 >
                   <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>{t('datagrid.openQueryConsole')}</span>
+                  <span>{t("datagrid.openQueryConsole")}</span>
                 </Button>
               )}
 
@@ -858,7 +1040,10 @@ export const DataGrid: FC<DataGridProps> = ({
                       </Button>
                     }
                   />
-                  <DropdownMenuContent align="end" className="w-44 text-xs font-mono">
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-44 text-xs font-mono"
+                  >
                     <DropdownMenuItem onClick={() => handleExport("csv")}>
                       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>{t("datagrid.exportAsCsv")}</span>
@@ -879,10 +1064,14 @@ export const DataGrid: FC<DataGridProps> = ({
                   size="sm"
                   onClick={() => setIsImportModalOpen(true)}
                   disabled={isReadOnly}
-                  title={isReadOnly ? t("datagrid.readOnlyTooltip") : t("datagrid.importCsv")}
+                  title={
+                    isReadOnly
+                      ? t("datagrid.readOnlyTooltip")
+                      : t("datagrid.importCsv")
+                  }
                   className={cn(
                     "text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white",
-                    isReadOnly && "cursor-not-allowed opacity-60"
+                    isReadOnly && "cursor-not-allowed opacity-60",
                   )}
                 >
                   <UploadCloud className="w-3.5 h-3.5 text-zinc-500" />
@@ -896,16 +1085,20 @@ export const DataGrid: FC<DataGridProps> = ({
                 size="sm"
                 onClick={onAddRow}
                 disabled={isReadOnly}
-                title={isReadOnly ? t('datagrid.readOnlyTooltip') : t('datagrid.addRow')}
+                title={
+                  isReadOnly
+                    ? t("datagrid.readOnlyTooltip")
+                    : t("datagrid.addRow")
+                }
                 className={cn(
                   "text-xs font-semibold gap-1.5 shadow-xs transition-colors",
                   isReadOnly
                     ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700 cursor-not-allowed opacity-60"
-                    : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white",
                 )}
               >
                 <Plus className="w-3.5 h-3.5" />
-                {t('datagrid.addRow')}
+                {t("datagrid.addRow")}
               </Button>
             </>
           ) : (
@@ -917,11 +1110,11 @@ export const DataGrid: FC<DataGridProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={onOpenQueryConsole}
-                  title={t('datagrid.openQueryConsole')}
+                  title={t("datagrid.openQueryConsole")}
                   className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
                 >
                   <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>{t('datagrid.openQueryConsole')}</span>
+                  <span>{t("datagrid.openQueryConsole")}</span>
                 </Button>
               )}
               <Button
@@ -930,7 +1123,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 size="icon-sm"
                 onClick={onRefresh}
                 disabled={isLoading}
-                title={t('datagrid.reloadTableTooltip')}
+                title={t("datagrid.reloadTableTooltip")}
                 className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white"
               >
                 <RefreshCw
@@ -957,301 +1150,340 @@ export const DataGrid: FC<DataGridProps> = ({
             stats={tableStats}
             totalFilteredRows={totalCount}
             isFiltered={filters.length > 0}
-            onOpenAnalytics={(col) => setAnalyticsColumn(col || table.columns[0] || null)}
+            onOpenAnalytics={(col) =>
+              setAnalyticsColumn(col || table.columns[0] || null)
+            }
           />
 
-      {/* Read-Only Safety Banner */}
-      {isReadOnly && (
-        <div className="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/30 flex items-center justify-between text-xs font-mono text-amber-800 dark:text-amber-300">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span className="font-medium">{t('datagrid.readOnlyBanner')}</span>
-          </div>
-          <Badge variant="outline" className="text-[10px] uppercase font-bold border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/20">
-            {t('connection.readOnlyBadge')}
-          </Badge>
-        </div>
-      )}
-
-      {/* Filter Builder & Active Filter Chips */}
-      {(showFilterBuilder || filters.length > 0) && (
-        <div className="p-3 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/40 space-y-2">
-          {showFilterBuilder && (
-            <form
-              onSubmit={handleAddFilter}
-              className="flex items-center gap-2 flex-wrap text-xs font-mono"
-            >
-              <span className="text-zinc-500 dark:text-zinc-400">{t('datagrid.where')}</span>
-              <Select
-                value={filterCol}
-                onValueChange={(val) => { if (typeof val === 'string') setFilterCol(val); }}
+          {/* Read-Only Safety Banner */}
+          {isReadOnly && (
+            <div className="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/30 flex items-center justify-between text-xs font-mono text-amber-800 dark:text-amber-300">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="font-medium">
+                  {t("datagrid.readOnlyBanner")}
+                </span>
+              </div>
+              <Badge
+                variant="outline"
+                className="text-[10px] uppercase font-bold border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/20"
               >
-                <SelectTrigger className="h-7 text-xs font-mono min-w-32">
-                  <SelectValue placeholder={t('datagrid.column')} />
-                </SelectTrigger>
-                <SelectContent side="bottom" align="start">
-                  {table.columns.map((c) => (
-                    <SelectItem key={c.name} value={c.name}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                  {extraColumns.map((extra) => (
-                    <SelectItem key={extra} value={extra}>
-                      {extra} (dynamic)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={filterOp}
-                onValueChange={(val) => { if (typeof val === 'string') setFilterOp(val as any); }}
-              >
-                <SelectTrigger className="h-7 text-xs font-mono min-w-24">
-                  <SelectValue placeholder={t('datagrid.operator')} />
-                </SelectTrigger>
-                <SelectContent side="bottom" align="start">
-                  <SelectItem value="eq">=</SelectItem>
-                  <SelectItem value="neq">≠</SelectItem>
-                  <SelectItem value="gt">&gt;</SelectItem>
-                  <SelectItem value="lt">&lt;</SelectItem>
-                  <SelectItem value="contains">CONTAINS</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Input
-                type="text"
-                value={filterVal}
-                onChange={(e) => setFilterVal(e.target.value)}
-                placeholder={t('datagrid.valuePlaceholder')}
-                className="h-7 text-xs font-mono w-44"
-              />
-
-              <Button
-                type="submit"
-                size="sm"
-                disabled={!filterVal}
-                className="h-7 text-xs font-medium"
-              >
-                {t('datagrid.apply')}
-              </Button>
-            </form>
+                {t("connection.readOnlyBadge")}
+              </Badge>
+            </div>
           )}
 
-          {/* Active chips */}
-          {filters.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-mono tracking-wider mr-1">
-                {t('datagrid.activeFilters')}
-              </span>
-              {filters.map((f, i) => (
-                <Badge
-                  key={i}
-                  variant="outline"
-                  className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-normal"
+          {/* Filter Builder & Active Filter Chips */}
+          {(showFilterBuilder || filters.length > 0) && (
+            <div className="p-3 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/40 space-y-2">
+              {showFilterBuilder && (
+                <form
+                  onSubmit={handleAddFilter}
+                  className="flex items-center gap-2 flex-wrap text-xs font-mono"
                 >
-                  <span className="font-semibold text-emerald-900 dark:text-emerald-200">{f.column}</span>
-                  <span className="text-emerald-600 dark:text-zinc-400">{f.operator}</span>
-                  <span className="text-emerald-800 dark:text-zinc-200 font-medium">{f.value}</span>
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    {t("datagrid.where")}
+                  </span>
+                  <Select
+                    value={filterCol}
+                    onValueChange={(val) => {
+                      if (typeof val === "string") setFilterCol(val);
+                    }}
+                  >
+                    <SelectTrigger className="h-7 text-xs font-mono min-w-32">
+                      <SelectValue placeholder={t("datagrid.column")} />
+                    </SelectTrigger>
+                    <SelectContent side="bottom" align="start">
+                      {table.columns.map((c) => (
+                        <SelectItem key={c.name} value={c.name}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                      {extraColumns.map((extra) => (
+                        <SelectItem key={extra} value={extra}>
+                          {extra} (dynamic)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={filterOp}
+                    onValueChange={(val) => {
+                      if (typeof val === "string") setFilterOp(val as any);
+                    }}
+                  >
+                    <SelectTrigger className="h-7 text-xs font-mono min-w-24">
+                      <SelectValue placeholder={t("datagrid.operator")} />
+                    </SelectTrigger>
+                    <SelectContent side="bottom" align="start">
+                      <SelectItem value="eq">=</SelectItem>
+                      <SelectItem value="neq">≠</SelectItem>
+                      <SelectItem value="gt">&gt;</SelectItem>
+                      <SelectItem value="lt">&lt;</SelectItem>
+                      <SelectItem value="contains">CONTAINS</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    type="text"
+                    value={filterVal}
+                    onChange={(e) => setFilterVal(e.target.value)}
+                    placeholder={t("datagrid.valuePlaceholder")}
+                    className="h-7 text-xs font-mono w-44"
+                  />
+
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={!filterVal}
+                    className="h-7 text-xs font-medium"
+                  >
+                    {t("datagrid.apply")}
+                  </Button>
+                </form>
+              )}
+
+              {/* Active chips */}
+              {filters.length > 0 && (
+                <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-mono tracking-wider mr-1">
+                    {t("datagrid.activeFilters")}
+                  </span>
+                  {filters.map((f, i) => (
+                    <Badge
+                      key={i}
+                      variant="outline"
+                      className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-normal"
+                    >
+                      <span className="font-semibold text-emerald-900 dark:text-emerald-200">
+                        {f.column}
+                      </span>
+                      <span className="text-emerald-600 dark:text-zinc-400">
+                        {f.operator}
+                      </span>
+                      <span className="text-emerald-800 dark:text-zinc-200 font-medium">
+                        {f.value}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() => handleRemoveFilter(i)}
+                        className="h-4 w-4 p-0 hover:text-rose-500 text-current ml-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </Badge>
+                  ))}
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => handleRemoveFilter(i)}
-                    className="h-4 w-4 p-0 hover:text-rose-500 text-current ml-0.5"
+                    variant="link"
+                    size="sm"
+                    onClick={() => onFiltersChange([])}
+                    className="h-auto p-0 text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 ml-2 underline"
                   >
-                    <X className="w-3 h-3" />
+                    {t("datagrid.clearAll")}
                   </Button>
-                </Badge>
-              ))}
-              <Button
-                type="button"
-                variant="link"
-                size="sm"
-                onClick={() => onFiltersChange([])}
-                className="h-auto p-0 text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 ml-2 underline"
-              >
-                {t('datagrid.clearAll')}
-              </Button>
+                </div>
+              )}
             </div>
           )}
-        </div>
-      )}
 
-      {/* Grid Container */}
-      <div className="flex-1 overflow-auto relative flex flex-col">
-        {isLoading ? (
-          /* Loading Skeletons */
-          <div className="flex-1 overflow-hidden p-4 space-y-2 animate-in fade-in duration-200">
-            <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50/50 dark:bg-zinc-900/20">
-              <div className="h-10 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 px-4 flex items-center gap-4">
-                <Skeleton className="h-3 w-6 rounded" />
-                {table.columns.slice(0, 5).map((c) => (
-                  <Skeleton
-                    key={c.name}
-                    className="h-3.5 w-28 rounded"
-                  />
-                ))}
-              </div>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((rowIdx) => (
-                <div
-                  key={rowIdx}
-                  className="h-10 border-b border-zinc-200/60 dark:border-zinc-800/40 px-4 flex items-center gap-4"
-                >
-                  <Skeleton className="h-3 w-6 rounded" />
-                  <Skeleton className="h-3 w-28 rounded" />
-                  <Skeleton className="h-3 w-40 rounded" />
-                  <Skeleton className="h-3 w-20 rounded" />
-                  <Skeleton className="h-3 w-32 rounded" />
+          {/* Grid Container */}
+          <div className="flex-1 overflow-auto relative flex flex-col">
+            {isLoading ? (
+              /* Loading Skeletons */
+              <div className="flex-1 overflow-hidden p-4 space-y-2 animate-in fade-in duration-200">
+                <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50/50 dark:bg-zinc-900/20">
+                  <div className="h-10 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 px-4 flex items-center gap-4">
+                    <Skeleton className="h-3 w-6 rounded" />
+                    {table.columns.slice(0, 5).map((c) => (
+                      <Skeleton key={c.name} className="h-3.5 w-28 rounded" />
+                    ))}
+                  </div>
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((rowIdx) => (
+                    <div
+                      key={rowIdx}
+                      className="h-10 border-b border-zinc-200/60 dark:border-zinc-800/40 px-4 flex items-center gap-4"
+                    >
+                      <Skeleton className="h-3 w-6 rounded" />
+                      <Skeleton className="h-3 w-28 rounded" />
+                      <Skeleton className="h-3 w-40 rounded" />
+                      <Skeleton className="h-3 w-20 rounded" />
+                      <Skeleton className="h-3 w-32 rounded" />
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        ) : displayedRows.length === 0 ? (
-          /* Empty States */
-          <div className="flex-1 flex items-center justify-center p-8">
-            {quickSearch ? (
-              <EmptyState
-                icon={Search}
-                title={t('datagrid.noSearchResultsTitle')}
-                description={t('datagrid.noSearchResultsDesc', { term: quickSearch })}
-                action={{
-                  label: t('datagrid.clearSearch'),
-                  onClick: () => setQuickSearch(""),
-                }}
-              />
-            ) : filters.length > 0 ? (
-              <EmptyState
-                icon={FilterIcon}
-                title={t('datagrid.noMatchingFiltersTitle')}
-                description={t('datagrid.noMatchingFiltersDesc')}
-                action={{
-                  label: t('datagrid.clearAllFilters'),
-                  onClick: () => onFiltersChange([]),
-                }}
-              />
+              </div>
+            ) : displayedRows.length === 0 ? (
+              /* Empty States */
+              <div className="flex-1 flex items-center justify-center p-8">
+                {quickSearch ? (
+                  <EmptyState
+                    icon={Search}
+                    title={t("datagrid.noSearchResultsTitle")}
+                    description={t("datagrid.noSearchResultsDesc", {
+                      term: quickSearch,
+                    })}
+                    action={{
+                      label: t("datagrid.clearSearch"),
+                      onClick: () => setQuickSearch(""),
+                    }}
+                  />
+                ) : filters.length > 0 ? (
+                  <EmptyState
+                    icon={FilterIcon}
+                    title={t("datagrid.noMatchingFiltersTitle")}
+                    description={t("datagrid.noMatchingFiltersDesc")}
+                    action={{
+                      label: t("datagrid.clearAllFilters"),
+                      onClick: () => onFiltersChange([]),
+                    }}
+                  />
+                ) : (
+                  <EmptyState
+                    icon={Inbox}
+                    title={t("datagrid.tableIsEmptyTitle")}
+                    description={t("datagrid.tableIsEmptyDesc", {
+                      table: table.name,
+                    })}
+                    action={
+                      isReadOnly
+                        ? undefined
+                        : {
+                            label: t("datagrid.insertFirstRecord"),
+                            onClick: onAddRow,
+                            icon: Plus,
+                          }
+                    }
+                  />
+                )}
+              </div>
             ) : (
-              <EmptyState
-                icon={Inbox}
-                title={t('datagrid.tableIsEmptyTitle')}
-                description={t('datagrid.tableIsEmptyDesc', { table: table.name })}
-                action={
-                  isReadOnly
-                    ? undefined
-                    : {
-                        label: t('datagrid.insertFirstRecord'),
-                        onClick: onAddRow,
-                        icon: Plus,
-                      }
-                }
-              />
+              /* Data Table */
+              <Table className="w-full border-collapse text-left border-b border-zinc-200 dark:border-zinc-800">
+                <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                  {reactTable.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead
+                          key={header.id}
+                          style={{ width: header.getSize() }}
+                          className="px-3 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 not-last:border-r border-zinc-200 dark:border-zinc-800/80 whitespace-nowrap h-auto"
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+
+                <TableBody className="divide-y divide-zinc-200 dark:divide-zinc-800/50">
+                  {reactTable.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group"
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setContextMenu({
+                          mouseX: e.clientX,
+                          mouseY: e.clientY,
+                          row: row.original,
+                          colName: "",
+                          cellValue: undefined,
+                        });
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell
+                          key={cell.id}
+                          className="px-3 py-2 text-xs not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap max-w-sm truncate text-zinc-800 dark:text-zinc-200"
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setContextMenu({
+                              mouseX: e.clientX,
+                              mouseY: e.clientY,
+                              row: row.original,
+                              colName: cell.column.id.replace("_extra_", ""),
+                              cellValue: cell.getValue(),
+                            });
+                          }}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </div>
-        ) : (
-          /* Data Table */
-          <Table className="w-full border-collapse text-left border-b border-zinc-200 dark:border-zinc-800">
-            <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-              {reactTable.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className="px-3 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 not-last:border-r border-zinc-200 dark:border-zinc-800/80 whitespace-nowrap h-auto"
-                    >
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
 
-            <TableBody className="divide-y divide-zinc-200 dark:divide-zinc-800/50">
-              {reactTable.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className={cn(
-                    "hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group",
-                    !isReadOnly && "cursor-pointer"
-                  )}
-                  onClick={() => !isReadOnly && onEditRow(row.original)}
+          {/* Pagination Footer */}
+          <div className="h-11 px-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 flex items-center justify-between text-xs font-mono text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-3">
+              <span>
+                {totalCount === 0
+                  ? `0 ${t("datagrid.records")}`
+                  : `${t("datagrid.showing")} ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} ${t("datagrid.of")} ${totalCount}`}
+              </span>
+              <div className="flex items-center gap-1.5 ml-2">
+                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {t("datagrid.perPage")}
+                </span>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(val) => val && onPageSizeChange(Number(val))}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="px-3 py-2 text-xs not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap max-w-sm truncate text-zinc-800 dark:text-zinc-200"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+                  <SelectTrigger className="h-6 w-16 px-2 py-0 text-xs font-mono">
+                    <SelectValue placeholder={String(pageSize)} />
+                  </SelectTrigger>
+                  <SelectContent side="top" align="start" className="min-w-16">
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-      {/* Pagination Footer */}
-      <div className="h-11 px-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 flex items-center justify-between text-xs font-mono text-zinc-500 dark:text-zinc-400">
-        <div className="flex items-center gap-3">
-          <span>
-            {totalCount === 0
-              ? `0 ${t('datagrid.records')}`
-              : `${t('datagrid.showing')} ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} ${t('datagrid.of')} ${totalCount}`}
-          </span>
-          <div className="flex items-center gap-1.5 ml-2">
-            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">{t('datagrid.perPage')}</span>
-            <Select
-              value={String(pageSize)}
-              onValueChange={(val) => val && onPageSizeChange(Number(val))}
-            >
-              <SelectTrigger className="h-6 w-16 px-2 py-0 text-xs font-mono">
-                <SelectValue placeholder={String(pageSize)} />
-              </SelectTrigger>
-              <SelectContent side="top" align="start" className="min-w-16">
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                {t("datagrid.page")} {page + 1} {t("datagrid.of")} {totalPages}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={page <= 0}
+                  onClick={() => onPageChange(page - 1)}
+                  className="text-zinc-700 dark:text-zinc-300"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={page + 1 >= totalPages}
+                  onClick={() => onPageChange(page + 1)}
+                  className="text-zinc-700 dark:text-zinc-300"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-            {t('datagrid.page')} {page + 1} {t('datagrid.of')} {totalPages}
-          </span>
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              disabled={page <= 0}
-              onClick={() => onPageChange(page - 1)}
-              className="text-zinc-700 dark:text-zinc-300"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              disabled={page + 1 >= totalPages}
-              onClick={() => onPageChange(page + 1)}
-              className="text-zinc-700 dark:text-zinc-300"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-      </>
+        </>
       )}
 
       {connId && (
@@ -1277,6 +1509,195 @@ export const DataGrid: FC<DataGridProps> = ({
           onSelectColumn={(col) => setAnalyticsColumn(col)}
           activeFilters={filters}
         />
+      )}
+
+      {/* Custom Right-Click Context Menu */}
+      {contextMenu && (
+        <div
+          style={{
+            position: "fixed",
+            left: `${Math.min(contextMenu.mouseX, window.innerWidth - 230)}px`,
+            top: `${Math.min(contextMenu.mouseY, window.innerHeight - 280)}px`,
+          }}
+          className="z-50 w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-2xl p-1 text-xs font-mono animate-in fade-in-50 zoom-in-95 duration-100"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
+            <span className="truncate">
+              {contextMenu.colName &&
+              contextMenu.colName !== "_actions" &&
+              contextMenu.colName !== "_row_index"
+                ? `Column: ${contextMenu.colName}`
+                : `Row Actions`}
+            </span>
+            <Badge
+              variant="outline"
+              className="text-[9px] px-1 py-0 h-4 font-normal"
+            >
+              Right-Click
+            </Badge>
+          </div>
+
+          <div className="py-1">
+            {/* Edit Record */}
+            <button
+              type="button"
+              disabled={isReadOnly}
+              onClick={() => {
+                onEditRow(contextMenu.row);
+                setContextMenu(null);
+              }}
+              className={cn(
+                "w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer",
+                isReadOnly &&
+                  "opacity-50 cursor-not-allowed hover:bg-transparent",
+              )}
+            >
+              <Edit2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>{t("datagrid.contextMenu.editRecord")}</span>
+            </button>
+
+            {/* Delete Record */}
+            <button
+              type="button"
+              disabled={isReadOnly}
+              onClick={() => {
+                onDeleteRow(contextMenu.row);
+                setContextMenu(null);
+              }}
+              className={cn(
+                "w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-colors cursor-pointer",
+                isReadOnly &&
+                  "opacity-50 cursor-not-allowed hover:bg-transparent",
+              )}
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+              <span>{t("datagrid.contextMenu.deleteRecord")}</span>
+            </button>
+          </div>
+
+          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+
+          <div className="py-1">
+            {/* Copy Cell Value */}
+            {contextMenu.cellValue !== undefined &&
+              contextMenu.cellValue !== null && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      String(contextMenu.cellValue),
+                    );
+                    setCopiedNotification(t("datagrid.contextMenu.copied"));
+                    setTimeout(() => setCopiedNotification(null), 1500);
+                    setContextMenu(null);
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span>{t("datagrid.contextMenu.copyCellValue")}</span>
+                </button>
+              )}
+
+            {/* Filter by this value */}
+            {contextMenu.colName &&
+              contextMenu.cellValue !== undefined &&
+              contextMenu.cellValue !== null && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onFiltersChange([
+                      ...filters,
+                      {
+                        column: contextMenu.colName,
+                        operator: "eq",
+                        value: String(contextMenu.cellValue),
+                      },
+                    ]);
+                    setContextMenu(null);
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+                >
+                  <FilterIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>{t("datagrid.contextMenu.filterByValue")}</span>
+                </button>
+              )}
+
+            {/* Copy Row as JSON */}
+            <button
+              type="button"
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  JSON.stringify(contextMenu.row, null, 2),
+                );
+                setCopiedNotification(t("datagrid.contextMenu.copied"));
+                setTimeout(() => setCopiedNotification(null), 1500);
+                setContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+            >
+              <FileJson className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+              <span>{t("datagrid.contextMenu.copyRowJson")}</span>
+            </button>
+
+            {/* Relation Navigation if FK */}
+            {(() => {
+              if (!contextMenu.colName || !onNavigateRelation) return null;
+              const rel = table.relations?.find(
+                (r) => r.from_column === contextMenu.colName,
+              );
+              if (!rel) return null;
+              return (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onNavigateRelation(
+                      rel.to_table,
+                      rel.to_column,
+                      contextMenu.cellValue,
+                    );
+                    setContextMenu(null);
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded transition-colors cursor-pointer"
+                >
+                  <ArrowUpRight className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  <span className="truncate">
+                    {t("datagrid.contextMenu.navigateToRelation")} (
+                    {rel.to_table})
+                  </span>
+                </button>
+              );
+            })()}
+
+            {/* Copy Column Name */}
+            {contextMenu.colName &&
+              contextMenu.colName !== "_actions" &&
+              contextMenu.colName !== "_row_index" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(contextMenu.colName);
+                    setCopiedNotification(t("datagrid.contextMenu.copied"));
+                    setTimeout(() => setCopiedNotification(null), 1500);
+                    setContextMenu(null);
+                  }}
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <span>{t("datagrid.contextMenu.copyColumnName")}</span>
+                </button>
+              )}
+          </div>
+        </div>
+      )}
+
+      {/* Copied Toast Notification */}
+      {copiedNotification && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-3.5 py-2 rounded-md shadow-lg text-xs font-mono flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
+          <Check className="w-4 h-4 shrink-0" />
+          <span>{copiedNotification}</span>
+        </div>
       )}
     </div>
   );

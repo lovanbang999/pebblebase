@@ -102,7 +102,17 @@
     "clearAllFilters": "Clear all filters",
     "tableIsEmptyTitle": "Table is empty",
     "tableIsEmptyDesc": "No records have been inserted into \"{{table}}\" yet.",
-    "insertFirstRecord": "Insert first record"
+    "insertFirstRecord": "Insert first record",
+    "contextMenu": {
+      "editRecord": "Edit Record",
+      "deleteRecord": "Delete Record",
+      "copyCellValue": "Copy Cell Value",
+      "copyRowJson": "Copy Row as JSON",
+      "filterByValue": "Filter by this Value",
+      "copyColumnName": "Copy Column Name",
+      "navigateToRelation": "Navigate to Relation",
+      "copied": "Copied to clipboard!"
+    }
   },
   "connection": {
     "title": "Database Connection Manager",
