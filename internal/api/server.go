@@ -17,32 +17,35 @@ import (
 	sqliteadapter "pebblebase/internal/adapter/sqlite"
 	"pebblebase/internal/audit"
 	"pebblebase/internal/auth"
+	"pebblebase/internal/migration"
 	"pebblebase/internal/savedquery"
 	"pebblebase/internal/storage"
 )
 
 // Server holds shared dependencies and exposes the route-registration method.
 type Server struct {
-	store       *storage.Store
-	enc         *storage.Encryptor
-	cache       *adapterCache
-	authSvc     *auth.Service
-	auditLog    *audit.Logger
-	querySvc    *savedquery.Store
-	authEnabled bool
+	store        *storage.Store
+	enc          *storage.Encryptor
+	cache        *adapterCache
+	authSvc      *auth.Service
+	auditLog     *audit.Logger
+	querySvc     *savedquery.Store
+	migrationSvc *migration.Store
+	authEnabled  bool
 }
 
 // NewServer creates a Server wired with the given store and encryptor.
 // Pass nil authSvc / auditLog to run without authentication (authEnabled=false).
-func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Service, auditLog *audit.Logger, querySvc *savedquery.Store, authEnabled bool) *Server {
+func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Service, auditLog *audit.Logger, querySvc *savedquery.Store, migrationSvc *migration.Store, authEnabled bool) *Server {
 	return &Server{
-		store:       store,
-		enc:         enc,
-		cache:       &adapterCache{entries: make(map[string]adapter.Adapter)},
-		authSvc:     authSvc,
-		auditLog:    auditLog,
-		querySvc:    querySvc,
-		authEnabled: authEnabled,
+		store:        store,
+		enc:          enc,
+		cache:        &adapterCache{entries: make(map[string]adapter.Adapter)},
+		authSvc:      authSvc,
+		auditLog:     auditLog,
+		querySvc:     querySvc,
+		migrationSvc: migrationSvc,
+		authEnabled:  authEnabled,
 	}
 }
 
@@ -102,6 +105,11 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("PATCH /api/connections/{id}/saved-queries/{qid}", protect(http.HandlerFunc(s.updateSavedQuery)))
 	mux.Handle("DELETE /api/connections/{id}/saved-queries/{qid}", protect(http.HandlerFunc(s.deleteSavedQuery)))
 	mux.Handle("GET /api/connections/{id}/saved-queries/{qid}/export", protect(http.HandlerFunc(s.exportSavedQuery)))
+
+	// In-App Schema Migrations
+	mux.Handle("POST /api/connections/{id}/migrations", protect(http.HandlerFunc(s.executeMigration)))
+	mux.Handle("GET /api/connections/{id}/migrations", protect(http.HandlerFunc(s.listMigrations)))
+	mux.Handle("POST /api/connections/{id}/migrations/{mid}/rollback", protect(http.HandlerFunc(s.rollbackMigration)))
 }
 
 // protectMiddleware returns a middleware wrapper that enforces JWT auth when

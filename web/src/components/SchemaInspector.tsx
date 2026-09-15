@@ -14,9 +14,11 @@ import {
   FileCode,
   ShieldAlert,
   ArrowRight,
+  Rocket,
 } from "lucide-react";
 import type { TableSchema } from "../lib/types";
 import { fetchTableDDL } from "../lib/api";
+import { MigrationRunner } from "./migration/MigrationRunner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +40,7 @@ import { cn } from "cn";
 interface SchemaInspectorProps {
   connId?: string;
   table: TableSchema;
+  isReadOnly?: boolean;
   onNavigateRelation?: (
     targetTable: string,
     targetColumn: string,
@@ -48,10 +51,12 @@ interface SchemaInspectorProps {
 export const SchemaInspector: FC<SchemaInspectorProps> = ({
   connId,
   table,
+  isReadOnly = false,
   onNavigateRelation,
 }) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<"schema" | "migration">("schema");
 
   // Fetch DDL and index data
   const {
@@ -172,68 +177,111 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetch()}
-                  disabled={isLoading || isRefetching}
-                  className="h-8 px-2.5 font-mono text-xs gap-1.5"
-                >
-                  <RefreshCw
-                    className={cn(
-                      "w-3.5 h-3.5",
-                      (isLoading || isRefetching) && "animate-spin"
-                    )}
-                  />
-                  <span>Refresh</span>
-                </Button>
-              }
-            />
-            <TooltipContent side="bottom">Refresh DDL</TooltipContent>
-          </Tooltip>
-
-          <Button
+        {/* Sub-view Switcher */}
+        <div className="flex items-center bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5 rounded-lg border border-zinc-300/40 dark:border-zinc-700/40">
+          <button
             type="button"
-            size="sm"
-            onClick={handleCopy}
-            disabled={!data?.ddl}
+            onClick={() => setActiveSubTab("schema")}
             className={cn(
-              "h-8 px-3 font-mono text-xs font-semibold gap-1.5 transition-all shadow-xs",
-              copied
-                ? "bg-emerald-600 text-white"
-                : "bg-emerald-600 hover:bg-emerald-500 text-white"
+              "px-3 py-1.5 text-xs font-mono font-medium rounded-md flex items-center gap-1.5 transition-all",
+              activeSubTab === "schema"
+                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             )}
           >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5" />
-                <span>{t("schema.copied")}</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5" />
-                <span>{t("schema.copyDdl")}</span>
-              </>
+            <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>{t("migration.tabSchema")}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveSubTab("migration")}
+            className={cn(
+              "px-3 py-1.5 text-xs font-mono font-medium rounded-md flex items-center gap-1.5 transition-all",
+              activeSubTab === "migration"
+                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             )}
-          </Button>
+          >
+            <Rocket className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>{t("migration.tabMigration")}</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {activeSubTab === "schema" && (
+            <>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => refetch()}
+                      disabled={isLoading || isRefetching}
+                      className="h-8 px-2.5 font-mono text-xs gap-1.5"
+                    >
+                      <RefreshCw
+                        className={cn(
+                          "w-3.5 h-3.5",
+                          (isLoading || isRefetching) && "animate-spin"
+                        )}
+                      />
+                      <span>Refresh</span>
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">Refresh DDL</TooltipContent>
+              </Tooltip>
+
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleCopy}
+                disabled={!data?.ddl}
+                className={cn(
+                  "h-8 px-3 font-mono text-xs font-semibold gap-1.5 transition-all shadow-xs",
+                  copied
+                    ? "bg-emerald-600 text-white"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                )}
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    <span>{t("schema.copied")}</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{t("schema.copyDdl")}</span>
+                  </>
+                )}
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {error ? (
-        <div className="p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-mono flex items-center gap-2">
-          <ShieldAlert className="w-4 h-4 shrink-0" />
-          <span>
-            {t("schema.failedDdl", {
-              error: error instanceof Error ? error.message : "Unknown error",
-            })}
-          </span>
-        </div>
-      ) : null}
+      {activeSubTab === "migration" ? (
+        <MigrationRunner
+          connId={connId}
+          table={table}
+          engine={data?.engine}
+          isReadOnly={isReadOnly}
+        />
+      ) : (
+        <>
+          {error ? (
+            <div className="p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-mono flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+              <span>
+                {t("schema.failedDdl", {
+                  error: error instanceof Error ? error.message : "Unknown error",
+                })}
+              </span>
+            </div>
+          ) : null}
 
       {/* Section 1: Column Specifications */}
       <div className="space-y-2">
@@ -540,6 +588,8 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 };

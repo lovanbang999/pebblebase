@@ -14,6 +14,7 @@ import (
 	"pebblebase/internal/api"
 	"pebblebase/internal/audit"
 	"pebblebase/internal/auth"
+	"pebblebase/internal/migration"
 	"pebblebase/internal/savedquery"
 	"pebblebase/internal/storage"
 
@@ -90,6 +91,12 @@ func main() {
 		log.Fatalf("create saved query store: %v", err)
 	}
 
+	// Init migration history store (always enabled; uses shared meta.db).
+	migrationSvc, err := migration.NewStore(metaDB)
+	if err != nil {
+		log.Fatalf("create migration history store: %v", err)
+	}
+
 	mux := http.NewServeMux()
 
 	// Health check.
@@ -100,7 +107,7 @@ func main() {
 	})
 
 	// API routes.
-	srv := api.NewServer(store, enc, authSvc, auditLog, querySvc, authEnabled)
+	srv := api.NewServer(store, enc, authSvc, auditLog, querySvc, migrationSvc, authEnabled)
 	srv.RegisterRoutes(mux)
 
 	// Embedded frontend SPA routes.

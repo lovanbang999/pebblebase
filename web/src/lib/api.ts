@@ -14,6 +14,9 @@ import type {
   SavedQueryInput,
   SavedQueryUpdateInput,
   ERDResponse,
+  MigrationResult,
+  MigrationHistoryResponse,
+  ExecuteMigrationInput,
 } from './types';
 import { getAuthHeaders, useAuthStore } from './auth';
 
@@ -472,4 +475,53 @@ export async function fetchERD(connId: string): Promise<ERDResponse> {
     { headers: getAuthHeaders() }
   );
   return handleResponse<ERDResponse>(res);
+}
+
+// ---------------------------------------------------------------------------
+// Migration Runner API
+// ---------------------------------------------------------------------------
+
+export async function executeMigration(
+  connId: string,
+  input: ExecuteMigrationInput
+): Promise<MigrationResult> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/migrations`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify(input),
+    }
+  );
+  return handleResponse<MigrationResult>(res);
+}
+
+export async function fetchMigrationHistory(
+  connId: string,
+  limit: number = 20,
+  offset: number = 0
+): Promise<MigrationHistoryResponse> {
+  const params = new URLSearchParams({
+    limit: String(limit),
+    offset: String(offset),
+  });
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/migrations?${params.toString()}`,
+    { headers: getAuthHeaders() }
+  );
+  return handleResponse<MigrationHistoryResponse>(res);
+}
+
+export async function rollbackMigration(
+  connId: string,
+  migrationId: string
+): Promise<MigrationResult> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/migrations/${encodeURIComponent(migrationId)}/rollback`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    }
+  );
+  return handleResponse<MigrationResult>(res);
 }
