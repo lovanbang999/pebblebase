@@ -826,9 +826,9 @@ export const Sidebar: FC<SidebarProps> = ({
             </span>
             <Badge
               variant="outline"
-              className="font-mono text-[9px] px-1 py-0 h-4 border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900/60 text-zinc-500 font-normal"
+              className="font-mono text-[9px] px-1.5 py-0 h-4 inline-flex items-center justify-center border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900/60 text-zinc-500 font-normal leading-none"
             >
-              v{packageJson.version}
+              <span className="translate-y-0.5">v{packageJson.version}</span>
             </Badge>
           </div>
           <div className="flex items-center gap-1 shrink-0">
