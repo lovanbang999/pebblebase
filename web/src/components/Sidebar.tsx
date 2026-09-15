@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import {
@@ -157,7 +157,7 @@ const ENV_STYLES: Record<
   },
 };
 
-export const Sidebar: FC<SidebarProps> = ({
+export default function Sidebar({
   theme,
   onToggleTheme,
   connections,
@@ -177,7 +177,7 @@ export const Sidebar: FC<SidebarProps> = ({
   onOpenAdminPanel,
   onOpenChangePassword,
   onOpenCommandPalette,
-}) => {
+}: SidebarProps) {
   const { t } = useTranslation();
   const [tableSearch, setTableSearch] = useState("");
   const [deletingConnection, setDeletingConnection] =
@@ -978,4 +978,4 @@ export const Sidebar: FC<SidebarProps> = ({
       </AlertDialog>
     </SidebarPrimitive>
   );
-};
+}

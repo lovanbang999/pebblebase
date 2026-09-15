@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Connection, SavedQuery } from './lib/types';
 import { ConnectionModal } from './components/ConnectionModal';
-import { Sidebar } from './components/Sidebar';
+import Sidebar from './components/Sidebar';
 import { TabBar } from './components/TabBar';
 import { DataGrid } from './components/DataGrid';
 import { QueryConsole } from './components/QueryConsole';

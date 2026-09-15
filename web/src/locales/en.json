@@ -250,7 +250,9 @@
     "untitledQuery": "Console",
     "tableTabTooltip": "Table: {{name}}",
     "queryTabTooltip": "SQL Console",
-    "noTabsOpen": "No open tabs"
+    "noTabsOpen": "No open tabs",
+    "scrollLeft": "Scroll left",
+    "scrollRight": "Scroll right"
   },
   "schema": {
     "dataGrid": "Data Grid",

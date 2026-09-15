@@ -250,7 +250,9 @@
     "untitledQuery": "Bảng SQL",
     "tableTabTooltip": "Bảng: {{name}}",
     "queryTabTooltip": "Bảng SQL",
-    "noTabsOpen": "Không có tab nào đang mở"
+    "noTabsOpen": "Không có tab nào đang mở",
+    "scrollLeft": "Cuộn sang trái",
+    "scrollRight": "Cuộn sang phải"
   },
   "schema": {
     "dataGrid": "Lưới Dữ Liệu",
