@@ -255,12 +255,12 @@ export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
       {/* Slide-over Drawer Panel */}
       <div
         data-testid="column-analytics-drawer"
-        className="relative z-50 w-full max-w-xl bg-zinc-950 border-l border-zinc-800 shadow-2xl flex flex-col h-full overflow-hidden animate-in slide-in-from-right duration-300 text-zinc-100"
+        className="relative z-50 w-full max-w-xl bg-white dark:bg-zinc-950 border-l border-zinc-200 dark:border-zinc-800 shadow-2xl flex flex-col h-full overflow-hidden animate-in slide-in-from-right duration-300 text-zinc-900 dark:text-zinc-100 font-sans"
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b border-zinc-800/80 flex items-start justify-between bg-zinc-900/50 shrink-0">
+        <div className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800/80 flex items-start justify-between bg-zinc-50 dark:bg-zinc-900/50 shrink-0">
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 mt-0.5">
+            <div className="p-2 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 mt-0.5">
               <BarChart3 className="w-5 h-5" />
             </div>
             <div>
@@ -272,7 +272,7 @@ export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
                         <button
                           type="button"
                           title={t("analytics.switchColumn", "Switch Column")}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-700/80 hover:border-zinc-500 hover:bg-zinc-800 text-zinc-100 font-mono text-sm font-semibold transition-all cursor-pointer group"
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-100 dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700/80 hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-mono text-sm font-semibold transition-all cursor-pointer group"
                         >
                           <span>{column.name}</span>
                           <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-transform" />

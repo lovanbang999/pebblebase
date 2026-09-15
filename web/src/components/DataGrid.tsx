@@ -296,22 +296,22 @@ export const DataGrid: FC<DataGridProps> = ({
                     <Layers className="w-3 h-3 text-sky-400 shrink-0" />
                   </span>
                 )}
-                <span className="font-mono text-xs font-semibold text-zinc-200 truncate">
+                <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-200 truncate">
                   {col.name}
                 </span>
-                <Badge variant="outline" className="text-[10px] font-mono text-zinc-400 font-normal px-1 py-0 h-4 bg-zinc-800/80 border-transparent">
+                <Badge variant="outline" className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 font-normal px-1 py-0 h-4 bg-zinc-200/60 dark:bg-zinc-800/80 border-zinc-300/60 dark:border-transparent">
                   {col.type}
                 </Badge>
               </div>
 
               <div className="flex items-center gap-0.5">
                 {/* Sort indicator */}
-                <div className="text-zinc-400 group-hover:text-zinc-200">
+                <div className="text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200">
                   {isSorted ? (
                     sortDesc ? (
-                      <ArrowDown className="w-3 h-3 text-emerald-400" />
+                      <ArrowDown className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
                     ) : (
-                      <ArrowUp className="w-3 h-3 text-emerald-400" />
+                      <ArrowUp className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
                     )
                   ) : (
                     <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -325,7 +325,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       <button
                         type="button"
                         title={t("analytics.columnMenu")}
-                        className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 opacity-0 group-hover:opacity-100 data-popup-open:opacity-100 transition-opacity cursor-pointer focus:outline-none"
+                        className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 opacity-0 group-hover:opacity-100 data-popup-open:opacity-100 transition-opacity cursor-pointer focus:outline-none"
                         onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
                       >
@@ -335,21 +335,21 @@ export const DataGrid: FC<DataGridProps> = ({
                   />
                   <DropdownMenuContent
                     align="end"
-                    className="w-48 bg-zinc-900 border border-zinc-800 text-zinc-200 shadow-xl p-1 z-50"
+                    className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 shadow-xl p-1 z-50"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/15 cursor-pointer rounded"
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-500/15 cursor-pointer rounded"
                       onClick={() => setAnalyticsColumn(col)}
                     >
-                      <BarChart3 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                      <BarChart3 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                       <span>{t("analytics.openAnalytics")}</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuSeparator className="bg-zinc-800 my-1" />
+                    <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800 my-1" />
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
                       onClick={() => onSortChange(col.name, false)}
                     >
                       <ArrowUp className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -357,7 +357,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
                       onClick={() => onSortChange(col.name, true)}
                     >
                       <ArrowDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
@@ -366,18 +366,18 @@ export const DataGrid: FC<DataGridProps> = ({
 
                     {isSorted && (
                       <DropdownMenuItem
-                        className="flex items-center gap-2 px-2 py-1.5 text-xs text-amber-400/90 hover:text-amber-300 hover:bg-amber-500/10 cursor-pointer rounded"
+                        className="flex items-center gap-2 px-2 py-1.5 text-xs text-amber-700 dark:text-amber-400/90 hover:text-amber-900 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10 cursor-pointer rounded"
                         onClick={() => onSortChange("", false)}
                       >
-                        <RotateCcw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                         <span>{t("analytics.clearSort")}</span>
                       </DropdownMenuItem>
                     )}
 
-                    <DropdownMenuSeparator className="bg-zinc-800 my-1" />
+                    <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800 my-1" />
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
                       onClick={() => {
                         setFilterCol(col.name);
                         setShowFilterBuilder(true);
@@ -388,7 +388,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
                       onClick={() => {
                         navigator.clipboard.writeText(col.name);
                         setCopiedCol(col.name);

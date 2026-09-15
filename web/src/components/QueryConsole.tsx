@@ -25,6 +25,7 @@ import {
   Terminal,
   Sparkles,
   ChevronDown,
+  ChevronUp,
   Search,
   CheckCircle2,
   AlertCircle,
@@ -45,6 +46,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -375,6 +381,36 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   const [saveIsFavorite, setSaveIsFavorite] = useState(false);
   const [libRefreshKey, setLibRefreshKey] = useState(0);
   const [saveToast, setSaveToast] = useState(false);
+
+  // Collapsible & Resizable Results Panel State
+  const [isResultsCollapsed, setIsResultsCollapsed] = useState(false);
+  const [editorHeight, setEditorHeight] = useState(450);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleMouseDownResizer = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+      const startY = e.clientY;
+      const startHeight = editorHeight;
+
+      const handleMouseMove = (moveEvent: MouseEvent) => {
+        const deltaY = moveEvent.clientY - startY;
+        const newHeight = Math.min(Math.max(80, startHeight + deltaY), 750);
+        setEditorHeight(newHeight);
+      };
+
+      const handleMouseUp = () => {
+        setIsDragging(false);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    },
+    [editorHeight]
+  );
 
   const handleCopyHistory = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -938,11 +974,17 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         )}
 
         {/* Editor + Results column */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/80 shrink-0">
+        <div className="flex-1 flex flex-col overflow-hidden relative">
+          <div
+            style={{ height: isResultsCollapsed ? "100%" : `${editorHeight}px` }}
+            className={cn(
+              "border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/80 shrink-0 transition-all duration-75 overflow-hidden",
+              isResultsCollapsed && "flex-1 border-b-0"
+            )}
+          >
             <CodeMirror
               value={query}
-              height="160px"
+              height="100%"
               theme={isDark ? "dark" : "light"}
               extensions={extensions}
               onChange={(val) => setQuery(val)}
@@ -951,7 +993,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   ? 'db.collection.find({ "status": "active" }).limit(50)'
                   : 'SELECT * FROM "users" WHERE id > 0 ORDER BY id DESC LIMIT 50;'
               }
-              className="text-xs font-mono border-0 focus:outline-hidden"
+              className="text-xs font-mono border-0 focus:outline-hidden h-full"
               basicSetup={{
                 lineNumbers: true,
                 foldGutter: false,
@@ -962,8 +1004,22 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             />
           </div>
 
+          {/* Drag Resizer Handle Bar (Visible when not collapsed) */}
+          {!isResultsCollapsed && (
+            <div
+              onMouseDown={handleMouseDownResizer}
+              className={cn(
+                "h-2 w-full bg-zinc-200/80 dark:bg-zinc-800/80 hover:bg-indigo-500/40 dark:hover:bg-indigo-500/50 cursor-row-resize flex items-center justify-center transition-colors group relative z-10 shrink-0 select-none",
+                isDragging && "bg-indigo-500/60 dark:bg-indigo-500/60"
+              )}
+              title="Drag up or down to resize editor and results panel"
+            >
+              <div className="w-10 h-1 rounded-full bg-zinc-400/80 dark:bg-zinc-600/80 group-hover:bg-indigo-500 transition-colors" />
+            </div>
+          )}
+
           {/* Execution Metrics & Results Status Bar */}
-          <div className="h-9 px-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 flex items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400 shrink-0">
+          <div className="h-9 px-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 flex items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400 shrink-0 select-none">
             <div className="flex items-center gap-3">
               {result && (
                 <>
@@ -1015,147 +1071,179 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               )}
             </div>
 
-            {result && result.rows.length > 0 && (
-              <div className="flex items-center gap-2">
-                {/* Quick Filter across results */}
-                <div className="relative flex items-center">
-                  <Search className="w-3 h-3 text-zinc-400 absolute left-2 pointer-events-none" />
-                  <Input
-                    type="text"
-                    value={resultFilter}
-                    onChange={(e) => setResultFilter(e.target.value)}
-                    placeholder={t("console.rowsFilter")}
-                    className="pl-6 pr-2 h-6 text-[11px] font-mono w-40 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
-                  />
-                </div>
+            <div className="flex items-center gap-2">
+              {result && result.rows.length > 0 && (
+                <>
+                  {/* Quick Filter across results */}
+                  <div className="relative flex items-center">
+                    <Search className="w-3 h-3 text-zinc-400 absolute left-2 pointer-events-none" />
+                    <Input
+                      type="text"
+                      value={resultFilter}
+                      onChange={(e) => setResultFilter(e.target.value)}
+                      placeholder={t("console.rowsFilter")}
+                      className="pl-6 pr-2 h-6 text-[11px] font-mono w-40 bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800"
+                    />
+                  </div>
 
-                {/* Export CSV */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleExportCSV}
-                  className="h-6 px-2 text-[11px] font-mono gap-1 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800"
-                >
-                  <FileSpreadsheet className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                  <span>{t("console.exportResults")}</span>
-                </Button>
-              </div>
-            )}
+                  {/* Export CSV */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExportCSV}
+                    className="h-6 px-2 text-[11px] font-mono gap-1 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800"
+                  >
+                    <FileSpreadsheet className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                    <span>{t("console.exportResults")}</span>
+                  </Button>
+                </>
+              )}
+
+              {/* Collapse / Expand Toggle Button */}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => setIsResultsCollapsed(!isResultsCollapsed)}
+                      className="h-6 w-6 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 cursor-pointer"
+                    >
+                      {isResultsCollapsed ? (
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                  }
+                />
+                <TooltipContent side="top">
+                  {isResultsCollapsed
+                    ? t("console.expandResults", "Expand Results")
+                    : t("console.collapseResults", "Collapse Results")}
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
 
-          {/* Results Content Area */}
-          <div className="flex-1 overflow-auto custom-scrollbar p-3">
-            {/* Error Alert */}
-            {error && (
-              <Alert
-                variant="destructive"
-                className="border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300"
-              >
-                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                <AlertDescription className="font-mono text-xs break-all">
-                  {error}
-                </AlertDescription>
-              </Alert>
-            )}
+          {/* Results Content Area (Hidden when collapsed) */}
+          {!isResultsCollapsed && (
+            <div className="flex-1 overflow-auto custom-scrollbar p-3">
+              {/* Error Alert */}
+              {error && (
+                <Alert
+                  variant="destructive"
+                  className="border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300"
+                >
+                  <AlertCircle className="w-4 h-4" />
+                  <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
+                    {error}
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            {/* Mutation Success Banner */}
-            {result && result.is_mutation && !error && (
-              <Alert className="border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <AlertDescription className="font-mono text-xs">
-                  {t("console.mutationSuccess")} ({result.rows_affected} row(s)
-                  affected in {formatLatency(result.execution_time_ms)}ms)
-                </AlertDescription>
-              </Alert>
-            )}
+              {/* Mutation Success Notice */}
+              {result?.is_mutation && !error && (
+                <Alert className="border-emerald-300 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <AlertDescription className="font-mono text-xs">
+                    {t("console.mutationSuccess")} (
+                    {t("console.rowsAffected", {
+                      count: result.rows_affected,
+                    })}
+                    )
+                  </AlertDescription>
+                </Alert>
+              )}
 
-            {/* Data Table */}
-            {result && result.rows.length > 0 ? (
-              <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/40 shadow-xs">
-                <Table className="w-full border-collapse text-left font-mono text-xs">
-                  <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-                    <TableRow>
-                      <TableHead className="w-12 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 select-none">
-                        #
-                      </TableHead>
-                      {result.columns.map((col) => (
-                        <TableHead
-                          key={col}
-                          className="px-3 py-1.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200 border-l border-zinc-200/60 dark:border-zinc-800/60 whitespace-nowrap"
-                        >
-                          {col}
+              {/* Data Table View */}
+              {result && !result.is_mutation && displayedRows.length > 0 && (
+                <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/40">
+                  <Table className="w-full border-collapse text-left">
+                    <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                      <TableRow>
+                        <TableHead className="w-12 text-center text-xs font-mono text-zinc-400">
+                          #
                         </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-y divide-zinc-200/80 dark:divide-zinc-800/60">
-                    {displayedRows.map((row, idx) => (
-                      <TableRow
-                        key={idx}
-                        className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group"
-                      >
-                        <TableCell className="px-2.5 py-1.5 text-[11px] font-mono text-zinc-400 dark:text-zinc-500 select-none">
-                          {idx + 1}
-                        </TableCell>
-                        {result.columns.map((col) => {
-                          const val = row[col];
-                          const cellKey = `${idx}-${col}`;
-                          const isCopied = copiedCell === cellKey;
-
-                          return (
-                            <TableCell
-                              key={col}
-                              onClick={() =>
-                                copyToClipboard(String(val), cellKey)
-                              }
-                              title="Click to copy value"
-                              className="px-3 py-1.5 text-xs border-l border-zinc-200/60 dark:border-zinc-800/60 whitespace-nowrap max-w-xs truncate cursor-pointer relative"
-                            >
-                              {val === null ? (
-                                <span className="text-zinc-400 dark:text-zinc-600 italic">
-                                  NULL
-                                </span>
-                              ) : val === undefined ? (
-                                <span className="text-zinc-400 dark:text-zinc-600 italic">
-                                  —
-                                </span>
-                              ) : typeof val === "boolean" ? (
-                                <Badge
-                                  variant="outline"
-                                  className={cn(
-                                    "px-1 py-0 text-[10px] font-mono font-medium",
-                                    val
-                                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                                      : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-                                  )}
-                                >
-                                  {String(val)}
-                                </Badge>
-                              ) : typeof val === "object" ? (
-                                <span className="text-amber-700 dark:text-amber-300">
-                                  {JSON.stringify(val)}
-                                </span>
-                              ) : (
-                                <span className="text-zinc-900 dark:text-zinc-100">
-                                  {String(val)}
-                                </span>
-                              )}
-
-                              {isCopied && (
-                                <span className="absolute right-1 top-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded font-sans flex items-center gap-0.5">
-                                  <Check className="w-2.5 h-2.5" /> copied
-                                </span>
-                              )}
-                            </TableCell>
-                          );
-                        })}
+                        {result.columns.map((col) => (
+                          <TableHead
+                            key={col}
+                            className="px-3 py-2 text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 border-r border-zinc-200/50 dark:border-zinc-800/50 last:border-r-0"
+                          >
+                            {col}
+                          </TableHead>
+                        ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : null}
+                    </TableHeader>
+                    <TableBody>
+                      {displayedRows.map((row, idx) => (
+                        <TableRow
+                          key={idx}
+                          className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors border-b border-zinc-100 dark:border-zinc-800/60"
+                        >
+                          <TableCell className="text-center text-xs font-mono text-zinc-400 select-none bg-zinc-50/30 dark:bg-zinc-900/30">
+                            {idx + 1}
+                          </TableCell>
+                          {result.columns.map((col) => {
+                            const val = row[col];
+                            const cellKey = `${idx}-${col}`;
+                            const isCopied = copiedCell === cellKey;
+                            return (
+                              <TableCell
+                                key={col}
+                                onClick={() =>
+                                  copyToClipboard(
+                                    typeof val === "object"
+                                      ? JSON.stringify(val)
+                                      : String(val ?? ""),
+                                    cellKey
+                                  )
+                                }
+                                title="Click to copy value"
+                                className="px-3 py-2 text-xs font-mono relative group cursor-pointer border-r border-zinc-100 dark:border-zinc-800/60 last:border-r-0 max-w-xs truncate"
+                              >
+                                {val === null || val === undefined ? (
+                                  <span className="text-zinc-400 dark:text-zinc-600 italic">
+                                    NULL
+                                  </span>
+                                ) : typeof val === "boolean" ? (
+                                  <Badge
+                                    variant="outline"
+                                    className={cn(
+                                      "px-1 py-0 text-[10px] font-mono font-medium",
+                                      val
+                                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                                    )}
+                                  >
+                                    {String(val)}
+                                  </Badge>
+                                ) : typeof val === "object" ? (
+                                  <span className="text-amber-700 dark:text-amber-300">
+                                    {JSON.stringify(val)}
+                                  </span>
+                                ) : (
+                                  <span className="text-zinc-900 dark:text-zinc-100">
+                                    {String(val)}
+                                  </span>
+                                )}
+
+                                {isCopied && (
+                                  <span className="absolute right-1 top-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded font-sans flex items-center gap-0.5">
+                                    <Check className="w-2.5 h-2.5" /> copied
+                                  </span>
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
 
             {result &&
               result.rows.length === 0 &&
@@ -1172,7 +1260,8 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   </p>
                 </div>
               )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
       {/* End: Editor + Results column + Library flex wrapper */}

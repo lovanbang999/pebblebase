@@ -235,7 +235,9 @@
     "templateMongoFind": "Truy vấn MongoDB Find",
     "templateMongoCount": "Đếm MongoDB Count",
     "templateMongoAgg": "Pipeline Tổng hợp (Aggregate)",
-    "rowsFilter": "Lọc kết quả..."
+    "rowsFilter": "Lọc kết quả...",
+    "collapseResults": "Thu gọn kết quả",
+    "expandResults": "Mở rộng kết quả"
   },
   "tabs": {
     "newTab": "Tab mới",

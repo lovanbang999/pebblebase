@@ -1,4 +1,3 @@
-import type { FC } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Search,
@@ -46,7 +45,7 @@ interface ERDToolbarProps {
   isMermaidCopied: boolean;
 }
 
-export const ERDToolbar: FC<ERDToolbarProps> = ({
+export default function ERDToolbar({
   searchQuery,
   onSearchChange,
   totalTables,
@@ -65,7 +64,7 @@ export const ERDToolbar: FC<ERDToolbarProps> = ({
   isExporting,
   onCopyMermaid,
   isMermaidCopied,
-}) => {
+}: ERDToolbarProps) {
   const { t } = useTranslation();
 
   return (
@@ -162,7 +161,9 @@ export const ERDToolbar: FC<ERDToolbarProps> = ({
                 </Button>
               }
             />
-            <TooltipContent side="bottom">{t("erd.autoArrange")}</TooltipContent>
+            <TooltipContent side="bottom">
+              {t("erd.autoArrange")}
+            </TooltipContent>
           </Tooltip>
         )}
       </div>
@@ -181,11 +182,13 @@ export const ERDToolbar: FC<ERDToolbarProps> = ({
                 "h-7 px-2 text-xs font-mono gap-1 transition-colors",
                 compactMode
                   ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-                  : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10"
+                  : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10",
               )}
             >
               <Key className="w-3 h-3 text-amber-500" />
-              <span className="text-[11px]">{compactMode ? t("erd.keysOnly") : t("erd.allCols")}</span>
+              <span className="text-[11px]">
+                {compactMode ? t("erd.keysOnly") : t("erd.allCols")}
+              </span>
             </Button>
           }
         />
@@ -231,7 +234,7 @@ export const ERDToolbar: FC<ERDToolbarProps> = ({
                 "w-7 h-7 transition-colors",
                 showMinimap
                   ? "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30"
-                  : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10"
+                  : "text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/10",
               )}
             >
               <Map className="w-3.5 h-3.5" />
@@ -256,7 +259,9 @@ export const ERDToolbar: FC<ERDToolbarProps> = ({
               {isMermaidCopied ? (
                 <>
                   <Check className="w-3 h-3 text-emerald-400" />
-                  <span className="text-emerald-400">{t("erd.mermaidCopied")}</span>
+                  <span className="text-emerald-400">
+                    {t("erd.mermaidCopied")}
+                  </span>
                 </>
               ) : (
                 <>
@@ -271,31 +276,26 @@ export const ERDToolbar: FC<ERDToolbarProps> = ({
       </Tooltip>
 
       {/* Export PNG Button */}
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onExportPng}
-              disabled={isExporting}
-              className="h-7 px-2 text-xs gap-1.5 bg-indigo-600/90 hover:bg-indigo-600 text-white font-medium shadow-sm transition-all"
-            >
-              {isExporting ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Download className="w-3 h-3" />
-              )}
-              <span>
-                {isExporting ? t("erd.exporting") : t("erd.exportPng")}
-              </span>
-            </Button>
-          }
-        />
-        <TooltipContent side="bottom">{t("erd.exportPng")}</TooltipContent>
-      </Tooltip>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onExportPng}
+        disabled={isExporting}
+        className={cn(
+          "h-7 px-2.5 text-xs gap-1.5 font-medium rounded-lg shadow-xs transition-colors cursor-pointer",
+          "bg-indigo-600 text-white hover:bg-indigo-500 hover:text-white dark:bg-indigo-600 dark:hover:bg-indigo-500 active:bg-indigo-700 dark:active:bg-indigo-700",
+          isExporting && "opacity-75 cursor-wait",
+        )}
+      >
+        {isExporting ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+        ) : (
+          <Download className="w-3.5 h-3.5 text-white" />
+        )}
+        <span className="font-semibold text-white">
+          {isExporting ? t("erd.exporting") : t("erd.exportPng")}
+        </span>
+      </Button>
     </div>
   );
-};
-
-export default ERDToolbar;
+}

@@ -235,7 +235,9 @@
     "templateMongoFind": "MongoDB Find Query",
     "templateMongoCount": "MongoDB Count",
     "templateMongoAgg": "MongoDB Aggregation Pipeline",
-    "rowsFilter": "Filter results..."
+    "rowsFilter": "Filter results...",
+    "collapseResults": "Collapse Results",
+    "expandResults": "Expand Results"
   },
   "tabs": {
     "newTab": "New Tab",
