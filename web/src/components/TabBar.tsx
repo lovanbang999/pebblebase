@@ -4,6 +4,7 @@ import {
   Table as TableIcon,
   Terminal,
   FileCode,
+  Workflow,
   X,
   Plus,
   Copy,
@@ -137,6 +138,17 @@ export const TabBar: FC<TabBarProps> = ({
             )}
           />
         );
+      case "erd":
+        return (
+          <Workflow
+            className={cn(
+              "w-3.5 h-3.5 shrink-0 transition-colors",
+              isActive
+                ? "text-indigo-600 dark:text-indigo-400"
+                : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
+            )}
+          />
+        );
       default:
         return null;
     }
@@ -200,10 +212,12 @@ export const TabBar: FC<TabBarProps> = ({
                     ? t("tabs.tableTabTooltip", {
                         name: tab.tableName || tab.title,
                       })
-                    : t("tabs.queryTabTooltip")
+                    : tab.type === "erd"
+                      ? t("erd.title")
+                      : t("tabs.queryTabTooltip")
                 }
               >
-                {tab.title}
+                {tab.type === "erd" ? t("erd.title") : tab.title}
               </span>
 
               {/* Close Button */}

@@ -74,6 +74,7 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 
 	// Schema introspection
 	mux.Handle("GET /api/connections/{id}/tables", protect(http.HandlerFunc(s.listTables)))
+	mux.Handle("GET /api/connections/{id}/erd", protect(http.HandlerFunc(s.getERD)))
 
 	// Row operations
 	mux.Handle("GET /api/connections/{id}/tables/{table}/rows", protect(http.HandlerFunc(s.queryRows)))

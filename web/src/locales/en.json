@@ -180,6 +180,7 @@
     "success": "Success",
     "error": "Error",
     "loading": "Loading...",
+    "retry": "Retry",
     "close": "Close"
   },
   "app": {
@@ -418,5 +419,30 @@
     "confirmDeleteDesc": "This cannot be undone.",
     "cancel": "Cancel",
     "copied": "Copied!"
+  },
+  "erd": {
+    "title": "ERD Diagram",
+    "openTable": "Open table in Data Grid",
+    "fitView": "Fit to View",
+    "exportPng": "Export PNG",
+    "exporting": "Exporting...",
+    "noRelations": "No foreign key relationships detected. Showing standalone tables.",
+    "search": "Filter tables...",
+    "minimap": "Toggle Minimap",
+    "layout": "Auto Layout",
+    "tablesCount": "{{count}} tables",
+    "relationsCount": "{{count}} relations",
+    "generateJoin": "Generate JOIN Query",
+    "compactMode": "Toggle Keys Only",
+    "copyMermaid": "Copy Mermaid Diagram",
+    "mermaidCopied": "Mermaid Copied!",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out",
+    "autoArrange": "Auto Arrange",
+    "keysOnly": "Keys Only",
+    "allCols": "All Cols",
+    "generateJoinConsole": "Generate SQL JOIN query in console",
+    "columnsHidden": "+{{count}} columns hidden",
+    "loading": "Loading ERD diagram..."
   }
 }

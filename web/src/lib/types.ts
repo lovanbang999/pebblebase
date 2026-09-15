@@ -100,7 +100,12 @@ export interface ImportResult {
   duration_ms: number;
 }
 
-export type TabType = 'table' | 'query' | 'ddl';
+export type TabType = 'table' | 'query' | 'ddl' | 'erd';
+
+export interface ERDResponse {
+  tables: TableSchema[];
+  relations: RelationSchema[];
+}
 
 export interface StudioTabState {
   page: number;
