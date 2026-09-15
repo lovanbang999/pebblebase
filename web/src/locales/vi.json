@@ -102,7 +102,17 @@
     "clearAllFilters": "Xóa tất cả bộ lọc",
     "tableIsEmptyTitle": "Bảng dữ liệu trống",
     "tableIsEmptyDesc": "Chưa có bản ghi nào được thêm vào \"{{table}}\".",
-    "insertFirstRecord": "Thêm bản ghi đầu tiên"
+    "insertFirstRecord": "Thêm bản ghi đầu tiên",
+    "contextMenu": {
+      "editRecord": "Chỉnh sửa bản ghi",
+      "deleteRecord": "Xóa bản ghi",
+      "copyCellValue": "Sao chép giá trị ô",
+      "copyRowJson": "Sao chép dòng dưới dạng JSON",
+      "filterByValue": "Lọc theo giá trị này",
+      "copyColumnName": "Sao chép tên cột",
+      "navigateToRelation": "Chuyển tới quan hệ",
+      "copied": "Đã sao chép vào bộ nhớ tạm!"
+    }
   },
   "connection": {
     "title": "Quản lý Kết nối Cơ sở Dữ liệu",

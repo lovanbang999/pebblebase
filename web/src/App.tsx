@@ -91,6 +91,7 @@ function PebblebaseStudio() {
     handleCreateConnection,
     handleDeleteConnection,
     handleSaveRow,
+    handleSaveCell,
     handleConfirmDeleteRow,
     handleDeleteRowDirectly,
     deleteRowMutation,
@@ -441,6 +442,10 @@ function PebblebaseStudio() {
             onDeleteRow={(row) => {
               if (activeConnection?.read_only) return;
               handleDeleteRowDirectly(row);
+            }}
+            onSaveCell={async (row, colName, newVal) => {
+              if (activeConnection?.read_only) return;
+              await handleSaveCell(row, colName, newVal);
             }}
             onNavigateRelation={(targetTable, targetColumn, value) => {
               openTableTab(targetTable, false, {

@@ -205,6 +205,16 @@ export function usePebblebaseStudio() {
     }
   };
 
+  const handleSaveCell = async (
+    row: Record<string, unknown>,
+    columnName: string,
+    newValue: unknown
+  ) => {
+    const where = getWhereCondition(row);
+    const values = { [columnName]: newValue };
+    await updateRowMutation.mutateAsync({ where, values });
+  };
+
   const handleNavigateToRelatedTable = (
     targetTable: string,
     targetColumn: string,
@@ -288,6 +298,7 @@ export function usePebblebaseStudio() {
     handleCreateConnection,
     handleDeleteConnection,
     handleSaveRow,
+    handleSaveCell,
     handleConfirmDeleteRow,
     handleNavigateToRelatedTable,
     handleDeleteRowDirectly,
