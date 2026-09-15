@@ -10,6 +10,9 @@ import type {
   AggregateResult,
   TableStats,
   FilterOption,
+  SavedQuery,
+  SavedQueryInput,
+  SavedQueryUpdateInput,
 } from './types';
 import { getAuthHeaders, useAuthStore } from './auth';
 
@@ -377,3 +380,83 @@ export async function fetchTableStats(
   return handleResponse<TableStats>(res);
 }
 
+// ---------------------------------------------------------------------------
+// Saved Queries API
+// ---------------------------------------------------------------------------
+
+export async function fetchSavedQueries(
+  connId: string,
+  params: { tag?: string; search?: string } = {}
+): Promise<SavedQuery[]> {
+  const sp = new URLSearchParams();
+  if (params.tag) sp.set('tag', params.tag);
+  if (params.search) sp.set('search', params.search);
+  const qs = sp.toString();
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/saved-queries${qs ? `?${qs}` : ''}`,
+    { headers: getAuthHeaders() }
+  );
+  return handleResponse<SavedQuery[]>(res);
+}
+
+export async function createSavedQuery(
+  connId: string,
+  input: SavedQueryInput
+): Promise<SavedQuery> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/saved-queries`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify(input),
+    }
+  );
+  return handleResponse<SavedQuery>(res);
+}
+
+export async function updateSavedQuery(
+  connId: string,
+  qid: string,
+  input: SavedQueryUpdateInput
+): Promise<SavedQuery> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/saved-queries/${encodeURIComponent(qid)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify(input),
+    }
+  );
+  return handleResponse<SavedQuery>(res);
+}
+
+export async function deleteSavedQuery(connId: string, qid: string): Promise<void> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/saved-queries/${encodeURIComponent(qid)}`,
+    { method: 'DELETE', headers: getAuthHeaders() }
+  );
+  await handleResponse<void>(res);
+}
+
+export async function downloadSavedQuery(connId: string, qid: string, title: string): Promise<void> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/saved-queries/${encodeURIComponent(qid)}/export`,
+    { headers: getAuthHeaders() }
+  );
+  if (res.status === 401) {
+    useAuthStore.getState().clearAuth();
+    throw new Error('Session expired. Please log in again.');
+  }
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${title}.sql`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

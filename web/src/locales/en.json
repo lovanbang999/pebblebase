@@ -389,5 +389,34 @@
       "estimated": "est.",
       "pk": "PK"
     }
+  },
+  "savedQuery": {
+    "library": "Query Library",
+    "save": "Save",
+    "saveQuery": "Save Query",
+    "title": "Title",
+    "titlePlaceholder": "e.g. Monthly active users",
+    "tags": "Tags",
+    "tagsPlaceholder": "e.g. reporting, users (comma-separated)",
+    "favorite": "Favorite",
+    "export": "Export .sql",
+    "noSaved": "No saved queries yet",
+    "noSavedDesc": "Save a query to quickly reload it later.",
+    "search": "Search queries...",
+    "editQuery": "Edit",
+    "deleteQuery": "Delete",
+    "copyQuery": "Copy SQL",
+    "loadQuery": "Load into editor",
+    "saved": "Query saved",
+    "saveSuccess": "Query saved to your library.",
+    "deleteSuccess": "Query deleted.",
+    "filterByTag": "Filter by tag",
+    "allTags": "All",
+    "favorites": "Favorites",
+    "all": "All queries",
+    "confirmDelete": "Delete \"{{title}}\"?",
+    "confirmDeleteDesc": "This cannot be undone.",
+    "cancel": "Cancel",
+    "copied": "Copied!"
   }
 }

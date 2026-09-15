@@ -173,3 +173,30 @@ export interface TableStats {
   estimated_rows?: boolean;
   last_updated?: string;
 }
+
+export interface SavedQuery {
+  id: string;
+  connection_id: string;
+  user_id: string;
+  title: string;
+  query: string;
+  tags: string[];
+  is_favorite: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SavedQueryInput {
+  title: string;
+  query: string;
+  tags: string[];
+  is_favorite: boolean;
+}
+
+export interface SavedQueryUpdateInput {
+  title?: string;
+  query?: string;
+  tags?: string[];
+  is_favorite?: boolean;
+}
+

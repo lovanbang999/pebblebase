@@ -17,6 +17,7 @@ import (
 	sqliteadapter "pebblebase/internal/adapter/sqlite"
 	"pebblebase/internal/audit"
 	"pebblebase/internal/auth"
+	"pebblebase/internal/savedquery"
 	"pebblebase/internal/storage"
 )
 
@@ -27,18 +28,20 @@ type Server struct {
 	cache       *adapterCache
 	authSvc     *auth.Service
 	auditLog    *audit.Logger
+	querySvc    *savedquery.Store
 	authEnabled bool
 }
 
 // NewServer creates a Server wired with the given store and encryptor.
 // Pass nil authSvc / auditLog to run without authentication (authEnabled=false).
-func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Service, auditLog *audit.Logger, authEnabled bool) *Server {
+func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Service, auditLog *audit.Logger, querySvc *savedquery.Store, authEnabled bool) *Server {
 	return &Server{
 		store:       store,
 		enc:         enc,
 		cache:       &adapterCache{entries: make(map[string]adapter.Adapter)},
 		authSvc:     authSvc,
 		auditLog:    auditLog,
+		querySvc:    querySvc,
 		authEnabled: authEnabled,
 	}
 }
@@ -91,6 +94,13 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	// Column Analytics & Table Statistics
 	mux.Handle("GET /api/connections/{id}/tables/{table}/aggregate", protect(http.HandlerFunc(s.handleAggregate)))
 	mux.Handle("GET /api/connections/{id}/tables/{table}/stats", protect(http.HandlerFunc(s.handleTableStats)))
+
+	// Saved Queries (Query Library)
+	mux.Handle("GET /api/connections/{id}/saved-queries", protect(http.HandlerFunc(s.listSavedQueries)))
+	mux.Handle("POST /api/connections/{id}/saved-queries", protect(http.HandlerFunc(s.createSavedQuery)))
+	mux.Handle("PATCH /api/connections/{id}/saved-queries/{qid}", protect(http.HandlerFunc(s.updateSavedQuery)))
+	mux.Handle("DELETE /api/connections/{id}/saved-queries/{qid}", protect(http.HandlerFunc(s.deleteSavedQuery)))
+	mux.Handle("GET /api/connections/{id}/saved-queries/{qid}/export", protect(http.HandlerFunc(s.exportSavedQuery)))
 }
 
 // protectMiddleware returns a middleware wrapper that enforces JWT auth when
