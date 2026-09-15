@@ -1,4 +1,11 @@
-import { useState, useEffect, useRef, type FC, type MouseEvent } from "react";
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type FC,
+  type MouseEvent,
+} from "react";
 import { useTranslation } from "react-i18next";
 import {
   Table as TableIcon,
@@ -10,6 +17,8 @@ import {
   Copy,
   ArrowRight,
   Layers,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { StudioTab } from "../lib/types";
 import { Button } from "@/components/ui/button";
@@ -49,8 +58,136 @@ export const TabBar: FC<TabBarProps> = ({
 }) => {
   const { t } = useTranslation();
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const targetScrollRef = useRef<number>(0);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Clean up animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
+
+  // Check scroll bounds for chevron buttons and overflow styling
+  const checkScroll = useCallback(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    checkScroll();
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [tabs, checkScroll]);
+
+  // Native non-passive mouse wheel listener to strictly block vertical page scrolling & enable buttery-smooth lerp horizontal scroll
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const handleNativeWheel = (e: WheelEvent) => {
+      const delta = e.deltaY || e.deltaX;
+      if (delta !== 0) {
+        // Prevent default vertical page scroll strictly (requires non-passive listener)
+        e.preventDefault();
+
+        // Initialize target scroll if loop is inactive
+        if (animationFrameRef.current === null) {
+          targetScrollRef.current = el.scrollLeft;
+        }
+
+        const maxScroll = el.scrollWidth - el.clientWidth;
+        targetScrollRef.current = Math.min(
+          Math.max(0, targetScrollRef.current + delta * 1.15),
+          maxScroll,
+        );
+
+        const animateScroll = () => {
+          if (!scrollContainerRef.current) {
+            animationFrameRef.current = null;
+            return;
+          }
+
+          const current = scrollContainerRef.current.scrollLeft;
+          const diff = targetScrollRef.current - current;
+
+          if (Math.abs(diff) > 0.4) {
+            scrollContainerRef.current.scrollLeft = current + diff * 0.18;
+            checkScroll();
+            animationFrameRef.current = requestAnimationFrame(animateScroll);
+          } else {
+            scrollContainerRef.current.scrollLeft = targetScrollRef.current;
+            checkScroll();
+            animationFrameRef.current = null;
+          }
+        };
+
+        if (animationFrameRef.current === null) {
+          animationFrameRef.current = requestAnimationFrame(animateScroll);
+        }
+      }
+    };
+
+    el.addEventListener("wheel", handleNativeWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", handleNativeWheel);
+    };
+  }, [checkScroll]);
+
+  // Auto-scroll active tab into view
+  useEffect(() => {
+    if (!activeTabId || !scrollContainerRef.current) return;
+    const activeTabElement = scrollContainerRef.current.querySelector(
+      `[data-tab-id="${activeTabId}"]`,
+    );
+    if (activeTabElement) {
+      activeTabElement.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+      setTimeout(checkScroll, 300);
+    }
+  }, [activeTabId, checkScroll]);
+
+  const handleScrollBy = useCallback(
+    (direction: "left" | "right") => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+
+      const delta = direction === "left" ? -240 : 240;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      const newTarget = Math.min(
+        Math.max(0, el.scrollLeft + delta),
+        maxScroll,
+      );
+      targetScrollRef.current = newTarget;
+
+      el.scrollTo({ left: newTarget, behavior: "smooth" });
+      setTimeout(checkScroll, 300);
+    },
+    [checkScroll],
+  );
 
   // Close context menu on outside click or escape
   useEffect(() => {
@@ -182,10 +319,38 @@ export const TabBar: FC<TabBarProps> = ({
 
   return (
     <div className="relative z-20 flex items-center h-9 px-2 bg-zinc-100/80 dark:bg-zinc-900/70 border-b border-zinc-200 dark:border-zinc-800 select-none overflow-hidden shrink-0">
+      {/* Left Scroll Button when overflowing */}
+      {canScrollLeft && (
+        <div className="relative z-30 flex items-center shrink-0">
+          <div className="absolute left-0 top-0 bottom-0 -ml-2 w-8 bg-linear-to-r from-zinc-100 dark:from-zinc-900 via-zinc-100/90 dark:via-zinc-900/90 to-transparent pointer-events-none" />
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleScrollBy("left");
+                  }}
+                  className="w-5 h-6 rounded text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white/95 dark:bg-zinc-800/95 border border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer relative z-10 shrink-0 ml-1"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+              }
+            />
+            <TooltipContent side="bottom">
+              {t("tabs.scrollLeft")}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
+
       {/* Scrollable Tab Strip */}
       <div
         ref={scrollContainerRef}
-        className="flex items-center gap-0.5 overflow-x-auto no-scrollbar h-full pt-1"
+        className="flex items-center gap-0.5 overflow-x-auto overflow-y-hidden no-scrollbar h-full pt-1 flex-1"
       >
         {tabs.map((tab) => {
           const isActive = tab.id === activeTabId;
@@ -193,11 +358,12 @@ export const TabBar: FC<TabBarProps> = ({
           return (
             <div
               key={tab.id}
+              data-tab-id={tab.id}
               onClick={() => onSelectTab(tab.id)}
               onContextMenu={(e) => handleContextMenu(e, tab.id)}
               onMouseDown={(e) => handleMouseDown(e, tab.id)}
               className={cn(
-                "group relative flex items-center gap-2 h-8 px-3 rounded-t-lg font-mono text-xs cursor-pointer transition-all duration-150 border-t-2 max-w-50 shrink-0",
+                "group relative flex items-center gap-2 h-8 px-3 rounded-t-lg font-mono text-xs cursor-pointer transition-all duration-150 border-t-2 max-w-50 shrink-0 select-none",
                 isActive
                   ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 border-t-emerald-500 border-x border-zinc-200 dark:border-zinc-800 font-medium shadow-xs"
                   : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40 border-t-transparent border-x border-transparent",
@@ -256,7 +422,7 @@ export const TabBar: FC<TabBarProps> = ({
                 variant="ghost"
                 size="icon-xs"
                 onClick={onNewQueryTab}
-                className="w-7 h-7 ml-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50 shrink-0"
+                className="w-7 h-7 ml-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50 shrink-0 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
               </Button>
@@ -265,6 +431,34 @@ export const TabBar: FC<TabBarProps> = ({
           <TooltipContent side="bottom">{t("tabs.newQueryTab")}</TooltipContent>
         </Tooltip>
       </div>
+
+      {/* Right Scroll Button when overflowing */}
+      {canScrollRight && (
+        <div className="relative z-30 flex items-center shrink-0">
+          <div className="absolute right-0 top-0 bottom-0 -mr-2 w-8 bg-linear-to-l from-zinc-100 dark:from-zinc-900 via-zinc-100/90 dark:via-zinc-900/90 to-transparent pointer-events-none" />
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleScrollBy("right");
+                  }}
+                  className="w-5 h-6 rounded text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white/95 dark:bg-zinc-800/95 border border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer relative z-10 shrink-0 mr-1"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              }
+            />
+            <TooltipContent side="bottom">
+              {t("tabs.scrollRight")}
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      )}
 
       {/* Floating Right-Click Context Menu */}
       {contextMenu && (
