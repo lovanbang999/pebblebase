@@ -6,6 +6,7 @@ import { Sidebar } from './components/Sidebar';
 import { TabBar } from './components/TabBar';
 import { DataGrid } from './components/DataGrid';
 import { QueryConsole } from './components/QueryConsole';
+import ERDView from './components/ERDView';
 import { RowModal } from './components/RowModal';
 import { ErrorBanner } from './components/ErrorBanner';
 import { WelcomeScreen } from './components/WelcomeScreen';
@@ -97,6 +98,7 @@ function PebblebaseStudio() {
     setActiveTabId,
     openTableTab,
     openQueryTab,
+    openErdTab,
     closeTab,
     closeOtherTabs,
     closeTabsToRight,
@@ -140,7 +142,7 @@ function PebblebaseStudio() {
     setFilters,
   ]);
 
-  // Alt + Q shortcut to toggle or open query console tab
+  // Alt + Q and Alt + E shortcuts to toggle or open query console / ERD tab
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.altKey && (e.key === 'q' || e.key === 'Q')) {
@@ -153,11 +155,21 @@ function PebblebaseStudio() {
         } else {
           openQueryTab();
         }
+      } else if (e.altKey && (e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+        if (activeTab?.type === 'erd') {
+          const tableTab = tabs.find((t) => t.type === 'table');
+          if (tableTab) {
+            setActiveTabId(tableTab.id);
+          }
+        } else {
+          openErdTab();
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, tabs, openQueryTab, setActiveTabId]);
+  }, [activeTab, tabs, openQueryTab, openErdTab, setActiveTabId]);
 
   return (
     <SidebarProvider defaultOpen={true} className="h-screen w-screen overflow-hidden bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors">
@@ -188,8 +200,9 @@ function PebblebaseStudio() {
         }}
         isLoadingTables={isLoadingTables}
         onRefreshTables={() => refetchTables()}
-        activeView={activeTab?.type === 'query' ? 'console' : 'table'}
+        activeView={activeTab?.type === 'query' ? 'console' : activeTab?.type === 'erd' ? 'erd' : 'table'}
         onOpenQueryConsole={() => openQueryTab()}
+        onOpenERD={() => openErdTab()}
         onOpenAdminPanel={() => {
           setAdminPanelDefaultTab('users');
           setIsAdminPanelOpen(true);
@@ -246,6 +259,18 @@ function PebblebaseStudio() {
             onQueryChange={(text) => updateActiveTabState({ queryText: text })}
             onNavigateToTable={(tName) => {
               openTableTab(tName);
+            }}
+          />
+        ) : activeTab?.type === 'erd' && activeConnection ? (
+          <ERDView
+            key={`erd-${activeTab.id}`}
+            connectionId={activeConnection.id}
+            connectionName={activeConnection.name}
+            onOpenTable={(tName) => {
+              openTableTab(tName);
+            }}
+            onGenerateJoinQuery={(query, title) => {
+              openQueryTab(query, title);
             }}
           />
         ) : !activeTable || !activeTableSchema ? (

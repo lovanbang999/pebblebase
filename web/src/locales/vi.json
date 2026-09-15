@@ -180,6 +180,7 @@
     "success": "Thành công",
     "error": "Lỗi",
     "loading": "Đang tải...",
+    "retry": "Thử lại",
     "close": "Đóng"
   },
   "app": {
@@ -418,5 +419,30 @@
     "confirmDeleteDesc": "Hành động này không thể hoàn tác.",
     "cancel": "Hủy",
     "copied": "Đã sao chép!"
+  },
+  "erd": {
+    "title": "Sơ đồ ERD",
+    "openTable": "Mở bảng trong lưới dữ liệu",
+    "fitView": "Vừa màn hình",
+    "exportPng": "Xuất ảnh PNG",
+    "exporting": "Đang xuất...",
+    "noRelations": "Không phát hiện khóa ngoại liên kết. Hiển thị các bảng độc lập.",
+    "search": "Tìm kiếm bảng...",
+    "minimap": "Bật/tắt bản đồ thu nhỏ",
+    "layout": "Sắp xếp tự động",
+    "tablesCount": "{{count}} bảng",
+    "relationsCount": "{{count}} quan hệ",
+    "generateJoin": "Tạo câu hỏi JOIN",
+    "compactMode": "Chỉ hiện khóa chính/ngoại",
+    "copyMermaid": "Sao chép sơ đồ Mermaid",
+    "mermaidCopied": "Đã sao chép Mermaid!",
+    "zoomIn": "Phóng to",
+    "zoomOut": "Thu nhỏ",
+    "autoArrange": "Sắp xếp tự động",
+    "keysOnly": "Chỉ hiện khóa",
+    "allCols": "Tất cả cột",
+    "generateJoinConsole": "Tạo câu lệnh JOIN SQL trong bảng truy vấn",
+    "columnsHidden": "+{{count}} cột bị ẩn",
+    "loading": "Đang tải sơ đồ ERD..."
   }
 }

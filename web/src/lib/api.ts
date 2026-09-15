@@ -13,6 +13,7 @@ import type {
   SavedQuery,
   SavedQueryInput,
   SavedQueryUpdateInput,
+  ERDResponse,
 } from './types';
 import { getAuthHeaders, useAuthStore } from './auth';
 
@@ -459,4 +460,16 @@ export async function downloadSavedQuery(connId: string, qid: string, title: str
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// ERD API
+// ---------------------------------------------------------------------------
+
+export async function fetchERD(connId: string): Promise<ERDResponse> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/erd`,
+    { headers: getAuthHeaders() }
+  );
+  return handleResponse<ERDResponse>(res);
 }

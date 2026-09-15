@@ -16,6 +16,7 @@ export const isMac =
 export const SHORTCUTS = {
   // Navigation / views
   queryConsole: isMac ? "⌥Q" : "Alt+Q",
+  erd: isMac ? "⌥E" : "Alt+E",
   sidebar: isMac ? "⌘B" : "Ctrl+B",
 
   // Execution
@@ -32,12 +33,15 @@ export const SHORTCUTS = {
 /**
  * Returns accessible tooltip description for shortcuts.
  */
-export function getShortcutTooltip(action: "runQuery" | "queryConsole"): string {
+export function getShortcutTooltip(action: "runQuery" | "queryConsole" | "erd"): string {
   if (action === "runQuery") {
     return isMac ? "Run Query (⌘↵)" : "Run Query (Ctrl+↵ / F5)";
   }
   if (action === "queryConsole") {
     return isMac ? "Toggle Query Console (⌥Q)" : "Toggle Query Console (Alt+Q)";
+  }
+  if (action === "erd") {
+    return isMac ? "Toggle ERD Diagram (⌥E)" : "Toggle ERD Diagram (Alt+E)";
   }
   return "";
 }

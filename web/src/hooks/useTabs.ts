@@ -203,6 +203,29 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     [connectionId, tabs]
   );
 
+  // Open an ERD tab
+  const openErdTab = useCallback(() => {
+    if (!connectionId) return;
+
+    const existing = tabs.find(
+      (t) => t.connectionId === connectionId && t.type === "erd"
+    );
+    if (existing) {
+      setActiveTabId(existing.id);
+      return;
+    }
+
+    const newTab: StudioTab = {
+      id: `tab_erd_${connectionId}`,
+      type: "erd",
+      title: "ERD Diagram",
+      connectionId,
+    };
+
+    setTabs((prev) => [...prev, newTab]);
+    setActiveTabId(newTab.id);
+  }, [connectionId, tabs]);
+
   // Close a specific tab
   const closeTab = useCallback(
     (tabId: string) => {
@@ -313,6 +336,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     setActiveTabId,
     openTableTab,
     openQueryTab,
+    openErdTab,
     closeTab,
     closeOtherTabs,
     closeTabsToRight,

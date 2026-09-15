@@ -23,6 +23,7 @@ import {
   Shield,
   KeyRound,
   Eye,
+  Workflow,
 } from "lucide-react";
 import type { Connection, DatabaseType, TableSchema } from "../lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "../lib/platform";
@@ -85,8 +86,9 @@ interface SidebarProps {
   onSelectTable: (tableName: string, openInNewTab?: boolean) => void;
   isLoadingTables: boolean;
   onRefreshTables: () => void;
-  activeView?: "table" | "console";
+  activeView?: "table" | "console" | "erd";
   onOpenQueryConsole?: () => void;
+  onOpenERD?: () => void;
   onOpenAdminPanel?: () => void;
   onOpenChangePassword?: () => void;
 }
@@ -170,6 +172,7 @@ export const Sidebar: FC<SidebarProps> = ({
   onRefreshTables,
   activeView = "table",
   onOpenQueryConsole,
+  onOpenERD,
   onOpenAdminPanel,
   onOpenChangePassword,
 }) => {
@@ -468,32 +471,60 @@ export const Sidebar: FC<SidebarProps> = ({
 
       {/* Tables Explorer Content */}
       <SidebarContent className="gap-0">
-        {/* Query Console Quick Action */}
-        {selectedConnection && onOpenQueryConsole && (
-          <div className="p-2 pb-1 border-b border-sidebar-border">
-            <Button
-              type="button"
-              variant={activeView === "console" ? "secondary" : "ghost"}
-              size="sm"
-              onClick={onOpenQueryConsole}
-              title={getShortcutTooltip("queryConsole")}
-              className={cn(
-                "w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
-                activeView === "console"
-                  ? "bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100",
-              )}
-            >
-              <div className="flex items-center gap-2 truncate">
-                <Terminal className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="truncate group-data-[collapsible=icon]:hidden">
-                  {t("sidebar.queryConsole")}
-                </span>
-              </div>
-              <kbd className="text-[9px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 leading-none group-data-[collapsible=icon]:hidden">
-                {SHORTCUTS.queryConsole}
-              </kbd>
-            </Button>
+        {/* Navigation Quick Actions (Query Console & ERD Diagram) */}
+        {selectedConnection && (onOpenQueryConsole || onOpenERD) && (
+          <div className="p-2 pb-1.5 space-y-1 border-b border-sidebar-border">
+            {onOpenQueryConsole && (
+              <Button
+                type="button"
+                variant={activeView === "console" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={onOpenQueryConsole}
+                title={getShortcutTooltip("queryConsole")}
+                className={cn(
+                  "w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                  activeView === "console"
+                    ? "bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-semibold"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100",
+                )}
+              >
+                <div className="flex items-center gap-2 truncate leading-none">
+                  <Terminal className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="truncate group-data-[collapsible=icon]:hidden leading-none translate-y-px">
+                    {t("sidebar.queryConsole")}
+                  </span>
+                </div>
+                <kbd className="text-[9px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 leading-none group-data-[collapsible=icon]:hidden translate-y-px">
+                  {SHORTCUTS.queryConsole}
+                </kbd>
+              </Button>
+            )}
+
+            {onOpenERD && (
+              <Button
+                type="button"
+                variant={activeView === "erd" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={onOpenERD}
+                title={getShortcutTooltip("erd")}
+                className={cn(
+                  "w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
+                  activeView === "erd"
+                    ? "bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30 font-semibold"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100",
+                )}
+              >
+                <div className="flex items-center gap-2 truncate leading-none">
+                  <Workflow className="size-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span className="truncate group-data-[collapsible=icon]:hidden leading-none translate-y-px">
+                    {t("erd.title")}
+                  </span>
+                </div>
+                <kbd className="text-[9px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 leading-none group-data-[collapsible=icon]:hidden translate-y-px">
+                  {SHORTCUTS.erd}
+                </kbd>
+              </Button>
+            )}
           </div>
         )}
 
