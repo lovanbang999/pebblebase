@@ -348,5 +348,38 @@
     "auditAction": "Hành động",
     "auditResource": "Tài nguyên / Chi tiết",
     "auditIp": "IP"
+  },
+  "analytics": {
+    "title": "Phân tích Cột",
+    "subtitle": "Phân phối giá trị, tỷ lệ hoàn chỉnh và xu hướng thời gian",
+    "distribution": "Phân phối Giá trị",
+    "nullRatio": "Tỷ lệ Hoàn chỉnh & NULL",
+    "timeSeries": "Xu hướng Chuỗi thời gian",
+    "min": "Tối thiểu",
+    "max": "Tối đa",
+    "avg": "Trung bình",
+    "sum": "Tổng",
+    "topValues": "10 Giá trị Phổ biến nhất",
+    "noData": "Không có dữ liệu cho cột này",
+    "nonNull": "Có giá trị",
+    "null": "Rỗng (NULL)",
+    "day": "Ngày",
+    "week": "Tuần",
+    "month": "Tháng",
+    "totalRows": "Tổng số dòng",
+    "analyzingAll": "Toàn bộ bảng",
+    "analyzingFiltered": "Đã lọc ({{count}} dòng)",
+    "openAnalytics": "Phân tích Cột",
+    "frequency": "Số lượng",
+    "share": "Tỷ lệ",
+    "recordCount": "Số bản ghi",
+    "quickStats": {
+      "rows": "dòng",
+      "size": "Kích thước",
+      "columns": "cột",
+      "filtered": "Đã lọc",
+      "estimated": "ước tính",
+      "pk": "Khóa chính"
+    }
   }
 }

@@ -10,6 +10,9 @@ export default defineConfig({
       '@': `${import.meta.dirname}/src`,
     },
   },
+  optimizeDeps: {
+    include: ['react-is', 'recharts'],
+  },
   server: {
     proxy: {
       '/api': {

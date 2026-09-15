@@ -7,6 +7,9 @@ import type {
   RawQueryResult,
   TableDDLResponse,
   AuditEntry,
+  AggregateResult,
+  TableStats,
+  FilterOption,
 } from './types';
 import { getAuthHeaders, useAuthStore } from './auth';
 
@@ -306,3 +309,42 @@ export async function fetchAuditLogs(
   );
   return handleResponse(res);
 }
+
+export async function fetchAggregate(
+  connectionId: string,
+  table: string,
+  column: string,
+  fn: string = 'distribution',
+  groupBy: string = 'day',
+  filters: FilterOption[] = [],
+  limit = 10
+): Promise<AggregateResult> {
+  const params = new URLSearchParams();
+  params.set('column', column);
+  params.set('function', fn);
+  params.set('group_by', groupBy);
+  params.set('limit', String(limit));
+  for (const f of filters) {
+    if (f.column && f.operator && f.value !== undefined && f.value !== '') {
+      params.append('filter', `${f.column}:${f.operator}:${f.value}`);
+    }
+  }
+
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connectionId)}/tables/${encodeURIComponent(table)}/aggregate?${params.toString()}`,
+    { headers: getAuthHeaders() }
+  );
+  return handleResponse<AggregateResult>(res);
+}
+
+export async function fetchTableStats(
+  connectionId: string,
+  table: string
+): Promise<TableStats> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connectionId)}/tables/${encodeURIComponent(table)}/stats`,
+    { headers: getAuthHeaders() }
+  );
+  return handleResponse<TableStats>(res);
+}
+

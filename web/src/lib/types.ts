@@ -152,3 +152,24 @@ export interface AuditEntry {
   created_at: string;
 }
 
+export interface AggregateResult {
+  labels: string[];
+  values: (number | string | null)[];
+  stats?: {
+    total_rows?: number;
+    non_null_count?: number;
+    null_count?: number;
+    min?: number;
+    max?: number;
+    avg?: number;
+    sum?: number;
+    [key: string]: any;
+  };
+}
+
+export interface TableStats {
+  total_rows: number;
+  size_bytes: number;
+  estimated_rows?: boolean;
+  last_updated?: string;
+}

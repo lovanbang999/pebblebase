@@ -30,6 +30,9 @@ type Adapter interface {
 	// ExecuteRaw runs an arbitrary SQL statement or MongoDB command/query.
 	ExecuteRaw(ctx context.Context, query string) (RawQueryResult, error)
 
+	// Aggregate calculates metrics, distributions, or time-series buckets for a column.
+	Aggregate(ctx context.Context, table string, opts AggregateOptions) (AggregateResult, error)
+
 	// Ping verifies that the underlying connection is alive.
 	Ping(ctx context.Context) error
 
@@ -82,6 +85,35 @@ type IndexInfo struct {
 type DDLProvider interface {
 	GetTableDDL(ctx context.Context, table string) (string, error)
 	GetTableIndexes(ctx context.Context, table string) ([]IndexInfo, error)
+}
+
+// TableStats holds metadata statistics for a table.
+type TableStats struct {
+	TotalRows     int64  `json:"total_rows"`
+	SizeBytes     int64  `json:"size_bytes"`
+	EstimatedRows bool   `json:"estimated_rows"`
+	LastUpdated   string `json:"last_updated,omitempty"`
+}
+
+// TableStatsProvider is implemented by database adapters that can report table size and stats.
+type TableStatsProvider interface {
+	GetTableStats(ctx context.Context, table string) (TableStats, error)
+}
+
+// AggregateOptions defines parameters for column aggregation requests.
+type AggregateOptions struct {
+	Column   string   `json:"column"`
+	Function string   `json:"function"` // "distribution", "stats", "timeseries" (or "count", "sum", "avg", "min", "max")
+	GroupBy  string   `json:"group_by"` // time bucket: "day", "week", "month" (for datetime columns)
+	Filters  []Filter `json:"filters"`
+	Limit    int      `json:"limit"`
+}
+
+// AggregateResult holds the computed aggregate labels, values, and summary statistics.
+type AggregateResult struct {
+	Labels []string       `json:"labels"`
+	Values []any          `json:"values"`
+	Stats  map[string]any `json:"stats,omitempty"` // For numeric/general stats (min, max, avg, sum, count, null_count, total_count)
 }
 
 // QueryOptions controls filtering, sorting, and pagination for Query calls.

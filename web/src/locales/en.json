@@ -348,5 +348,38 @@
     "auditAction": "Action",
     "auditResource": "Resource / Details",
     "auditIp": "IP"
+  },
+  "analytics": {
+    "title": "Column Analytics",
+    "subtitle": "Distribution, completeness ratio, and temporal patterns",
+    "distribution": "Value Distribution",
+    "nullRatio": "Completeness & NULL Ratio",
+    "timeSeries": "Time-Series Trend",
+    "min": "Minimum",
+    "max": "Maximum",
+    "avg": "Average",
+    "sum": "Sum",
+    "topValues": "Top 10 Values",
+    "noData": "No data available for this column",
+    "nonNull": "Non-Null",
+    "null": "NULL",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "totalRows": "Total Rows",
+    "analyzingAll": "All Records",
+    "analyzingFiltered": "Filtered ({{count}} rows)",
+    "openAnalytics": "Column Analytics",
+    "frequency": "Frequency",
+    "share": "Share",
+    "recordCount": "Records",
+    "quickStats": {
+      "rows": "rows",
+      "size": "Size",
+      "columns": "columns",
+      "filtered": "Filtered",
+      "estimated": "est.",
+      "pk": "PK"
+    }
   }
 }

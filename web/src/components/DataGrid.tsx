@@ -38,13 +38,16 @@ import {
   FileJson,
   ChevronDown,
   FileCode,
+  BarChart3,
 } from "lucide-react";
-import type { TableSchema, FilterOption } from "../lib/types";
-import { getTableExportUrl } from "../lib/api";
+import type { TableSchema, FilterOption, ColumnSchema, TableStats } from "../lib/types";
+import { getTableExportUrl, fetchTableStats } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
 import { ImportModal } from "./ImportModal";
 import { SchemaInspector } from "./SchemaInspector";
+import { QuickStatsBar } from "./QuickStatsBar";
+import { ColumnAnalyticsDrawer } from "./ColumnAnalyticsDrawer";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -128,6 +131,15 @@ export const DataGrid: FC<DataGridProps> = ({
   const { t } = useTranslation();
   const [activeSubView, setActiveSubView] = useState<"grid" | "schema">("grid");
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [analyticsColumn, setAnalyticsColumn] = useState<ColumnSchema | null>(null);
+  const [tableStats, setTableStats] = useState<TableStats | null>(null);
+
+  useEffect(() => {
+    if (!connId || !table.name) return;
+    fetchTableStats(connId, table.name)
+      .then((stats) => setTableStats(stats))
+      .catch(() => setTableStats({ total_rows: totalCount, size_bytes: 0 }));
+  }, [connId, table.name, totalCount]);
 
   const handleExport = (format: "csv" | "json") => {
     if (!connId) return;
@@ -270,16 +282,31 @@ export const DataGrid: FC<DataGridProps> = ({
                 </Badge>
               </div>
 
-              <div className="text-zinc-400 group-hover:text-zinc-200">
-                {isSorted ? (
-                  sortDesc ? (
-                    <ArrowDown className="w-3 h-3 text-emerald-400" />
+              <div className="flex items-center gap-1">
+                {/* Column Analytics Button */}
+                <button
+                  type="button"
+                  title={t('analytics.openAnalytics')}
+                  className="p-1 rounded text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/15 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAnalyticsColumn(col);
+                  }}
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                </button>
+
+                <div className="text-zinc-400 group-hover:text-zinc-200">
+                  {isSorted ? (
+                    sortDesc ? (
+                      <ArrowDown className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <ArrowUp className="w-3 h-3 text-emerald-400" />
+                    )
                   ) : (
-                    <ArrowUp className="w-3 h-3 text-emerald-400" />
-                  )
-                ) : (
-                  <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                )}
+                    <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -822,6 +849,13 @@ export const DataGrid: FC<DataGridProps> = ({
         />
       ) : (
         <>
+          {/* Quick Stats Bar */}
+          <QuickStatsBar
+            table={table}
+            stats={tableStats}
+            totalFilteredRows={totalCount}
+            isFiltered={filters.length > 0}
+          />
 
       {/* Read-Only Safety Banner */}
       {isReadOnly && (
@@ -1126,6 +1160,17 @@ export const DataGrid: FC<DataGridProps> = ({
           onSuccess={() => {
             onRefresh();
           }}
+        />
+      )}
+
+      {connId && (
+        <ColumnAnalyticsDrawer
+          isOpen={analyticsColumn !== null}
+          onClose={() => setAnalyticsColumn(null)}
+          connectionId={connId}
+          tableName={table.name}
+          column={analyticsColumn}
+          activeFilters={filters}
         />
       )}
     </div>
