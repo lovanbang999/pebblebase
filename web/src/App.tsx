@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { Connection } from './lib/types';
+import type { Connection, SavedQuery } from './lib/types';
 import { ConnectionModal } from './components/ConnectionModal';
 import { Sidebar } from './components/Sidebar';
 import { TabBar } from './components/TabBar';
@@ -15,12 +15,14 @@ import { DeleteRowDialog } from './components/DeleteRowDialog';
 import { LoginScreen } from './components/LoginScreen';
 import { DefaultPasswordBanner } from './components/DefaultPasswordBanner';
 import { AdminPanel } from './components/AdminPanel';
+import { CommandPalette, type CommandActionId } from './components/CommandPalette';
+import { getRecentItems, addRecentItem, clearRecentItems, type RecentItem } from './lib/recentItems';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { usePebblebaseStudio } from './hooks/usePebblebaseStudio';
 import { useTabs } from './hooks/useTabs';
 import { useAuthStore } from './lib/auth';
-import { fetchMe } from './lib/api';
+import { fetchMe, fetchSavedQueries, exportTableData, apiLogout } from './lib/api';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -41,6 +43,10 @@ function PebblebaseStudio() {
     adminPanelDefaultTab,
     setAdminPanelDefaultTab,
   ] = useState<'users' | 'password'>('users');
+
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
+  const [recentItems, setRecentItems] = useState<RecentItem[]>(() => getRecentItems());
 
   const isDefaultPassword = useAuthStore((s) => s.isDefaultPassword);
 
@@ -171,6 +177,118 @@ function PebblebaseStudio() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeTab, tabs, openQueryTab, openErdTab, setActiveTabId]);
 
+  // Cmd+K / Ctrl+K Command Palette trigger
+  useEffect(() => {
+    const handleCmdK = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleCmdK);
+    return () => window.removeEventListener('keydown', handleCmdK);
+  }, []);
+
+  // Fetch saved queries for current connection
+  useEffect(() => {
+    if (!activeConnection?.id) {
+      setSavedQueries([]);
+      return;
+    }
+    fetchSavedQueries(activeConnection.id)
+      .then(setSavedQueries)
+      .catch(() => setSavedQueries([]));
+  }, [activeConnection?.id]);
+
+  const handleOpenTableWithRecent = (tableName: string, openInNewTab?: boolean) => {
+    openTableTab(tableName, openInNewTab);
+    const updated = addRecentItem({
+      id: tableName,
+      type: 'table',
+      title: tableName,
+      subtitle: activeConnection ? `${activeConnection.name}` : undefined,
+    });
+    setRecentItems(updated);
+  };
+
+  const handleSelectConnectionWithRecent = (conn: Connection) => {
+    setUserSelectedConnectionId(conn.id);
+    setUserSelectedTable(null);
+    setBannerError(null);
+    const updated = addRecentItem({
+      id: conn.id,
+      type: 'connection',
+      title: conn.name,
+      subtitle: conn.type.toUpperCase(),
+    });
+    setRecentItems(updated);
+  };
+
+  const handleSelectSavedQueryWithRecent = (sq: SavedQuery) => {
+    openQueryTab(sq.query, sq.title);
+    const updated = addRecentItem({
+      id: sq.id,
+      type: 'query',
+      title: sq.title,
+      subtitle: sq.query.slice(0, 35),
+    });
+    setRecentItems(updated);
+  };
+
+  const handlePaletteAction = (actionId: CommandActionId) => {
+    switch (actionId) {
+      case 'open_query_console':
+        openQueryTab();
+        break;
+      case 'open_erd':
+        openErdTab();
+        break;
+      case 'open_migration':
+        if (activeTableSchema) {
+          openTableTab(activeTableSchema.name);
+        } else if (tables.length > 0) {
+          openTableTab(tables[0].name);
+        } else {
+          openQueryTab(
+            '-- Schema Migration Runner\n-- Write your DDL statements here (e.g. ALTER TABLE, CREATE TABLE)',
+            'Migration Runner'
+          );
+        }
+        break;
+      case 'export_csv':
+      case 'export_json': {
+        const format = actionId === 'export_csv' ? 'csv' : 'json';
+        if (activeConnection && activeTable) {
+          exportTableData(activeConnection.id, activeTable, format)
+            .then((blob) => {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${activeTable}.${format}`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            })
+            .catch((err) => console.error('Export error:', err));
+        }
+        break;
+      }
+      case 'toggle_theme':
+        toggleTheme();
+        break;
+      case 'open_settings':
+        setAdminPanelDefaultTab('users');
+        setIsAdminPanelOpen(true);
+        break;
+      case 'sign_out':
+        clearRecentItems();
+        apiLogout().catch(() => {});
+        useAuthStore.getState().clearAuth();
+        break;
+    }
+  };
+
   return (
     <SidebarProvider defaultOpen={true} className="h-screen w-screen overflow-hidden bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors">
       {/* Left Sidebar */}
@@ -179,11 +297,7 @@ function PebblebaseStudio() {
         onToggleTheme={toggleTheme}
         connections={connections}
         selectedConnection={activeConnection}
-        onSelectConnection={(conn: Connection) => {
-          setUserSelectedConnectionId(conn.id);
-          setUserSelectedTable(null);
-          setBannerError(null);
-        }}
+        onSelectConnection={handleSelectConnectionWithRecent}
         onDeleteConnection={handleDeleteConnection}
         onCloneConnection={(conn: Connection) => {
           setCloningConnection(conn);
@@ -195,9 +309,7 @@ function PebblebaseStudio() {
         }}
         tables={tables}
         selectedTable={activeTab?.type === 'table' ? activeTab.tableName || null : null}
-        onSelectTable={(tableName, openInNewTab) => {
-          openTableTab(tableName, openInNewTab);
-        }}
+        onSelectTable={handleOpenTableWithRecent}
         isLoadingTables={isLoadingTables}
         onRefreshTables={() => refetchTables()}
         activeView={activeTab?.type === 'query' ? 'console' : activeTab?.type === 'erd' ? 'erd' : 'table'}
@@ -211,6 +323,7 @@ function PebblebaseStudio() {
           setAdminPanelDefaultTab('password');
           setIsAdminPanelOpen(true);
         }}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
       />
 
       {/* Main Content Pane */}
@@ -386,6 +499,22 @@ function PebblebaseStudio() {
         isOpen={isAdminPanelOpen}
         onClose={() => setIsAdminPanelOpen(false)}
         defaultTab={adminPanelDefaultTab}
+      />
+
+      {/* Global Command Palette Modal */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        connections={connections}
+        activeConnection={activeConnection}
+        onSelectConnection={handleSelectConnectionWithRecent}
+        tables={tables}
+        onSelectTable={handleOpenTableWithRecent}
+        savedQueries={savedQueries}
+        onSelectSavedQuery={handleSelectSavedQueryWithRecent}
+        recentItems={recentItems}
+        onTriggerAction={handlePaletteAction}
+        theme={theme}
       />
     </SidebarProvider>
   );

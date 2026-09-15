@@ -91,6 +91,7 @@ interface SidebarProps {
   onOpenERD?: () => void;
   onOpenAdminPanel?: () => void;
   onOpenChangePassword?: () => void;
+  onOpenCommandPalette?: () => void;
 }
 
 const ENGINE_CONFIG: { type: DatabaseType; label: string; badge: string }[] = [
@@ -175,6 +176,7 @@ export const Sidebar: FC<SidebarProps> = ({
   onOpenERD,
   onOpenAdminPanel,
   onOpenChangePassword,
+  onOpenCommandPalette,
 }) => {
   const { t } = useTranslation();
   const [tableSearch, setTableSearch] = useState("");
@@ -221,6 +223,26 @@ export const Sidebar: FC<SidebarProps> = ({
           </div>
 
           <div className="flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
+            {onOpenCommandPalette && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={onOpenCommandPalette}
+                      className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    >
+                      <Search className="size-3.5" />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">
+                  {getShortcutTooltip("commandPalette")}
+                </TooltipContent>
+              </Tooltip>
+            )}
             <Tooltip>
               <TooltipTrigger
                 render={
@@ -538,8 +560,18 @@ export const Sidebar: FC<SidebarProps> = ({
                 placeholder={t("sidebar.filterTables")}
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
-                className="pl-7 pr-2 h-7 text-xs font-mono"
+                className="pl-7 pr-8 h-7 text-xs font-mono"
               />
+              {onOpenCommandPalette && (
+                <button
+                  type="button"
+                  onClick={onOpenCommandPalette}
+                  title={getShortcutTooltip("commandPalette")}
+                  className="absolute right-1.5 top-1 px-1 py-0.5 text-[9px] font-mono font-medium text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded border border-zinc-200 dark:border-zinc-700 cursor-pointer transition-colors"
+                >
+                  {SHORTCUTS.commandPalette}
+                </button>
+              )}
             </div>
             <Tooltip>
               <TooltipTrigger
