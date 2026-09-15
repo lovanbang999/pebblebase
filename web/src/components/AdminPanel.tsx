@@ -315,15 +315,15 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="bg-zinc-950 border-zinc-800 text-zinc-100 sm:max-w-3xl md:max-w-4xl max-h-[88vh] h-160 p-0 overflow-hidden flex flex-col gap-0 shadow-2xl rounded-2xl">
+      <DialogContent className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 sm:max-w-3xl md:max-w-4xl max-h-[88vh] h-160 p-0 overflow-hidden flex flex-col gap-0 shadow-2xl rounded-2xl font-sans">
         {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b border-zinc-800/80 shrink-0 bg-zinc-900/40">
+        <DialogHeader className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800/80 shrink-0 bg-zinc-50 dark:bg-zinc-900/40">
           <div className="flex items-center gap-3">
-            <div className="size-9 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-indigo-400 shrink-0">
+            <div className="size-9 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
               <Shield className="size-4.5" />
             </div>
             <div className="space-y-0.5">
-              <DialogTitle className="text-base font-semibold text-zinc-100 flex items-center gap-2">
+              <DialogTitle className="text-base font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                 {currentUser?.role === "admin"
                   ? t("auth.adminPanel")
                   : t("auth.changePassword")}
