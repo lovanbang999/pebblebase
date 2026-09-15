@@ -39,9 +39,13 @@ import {
   ChevronDown,
   FileCode,
   BarChart3,
+  MoreVertical,
+  Copy,
+  RotateCcw,
+  Check,
 } from "lucide-react";
 import type { TableSchema, FilterOption, ColumnSchema, TableStats } from "../lib/types";
-import { getTableExportUrl, fetchTableStats } from "../lib/api";
+import { exportTableData, fetchTableStats } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
 import { ImportModal } from "./ImportModal";
@@ -54,6 +58,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -133,6 +138,7 @@ export const DataGrid: FC<DataGridProps> = ({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [analyticsColumn, setAnalyticsColumn] = useState<ColumnSchema | null>(null);
   const [tableStats, setTableStats] = useState<TableStats | null>(null);
+  const [copiedCol, setCopiedCol] = useState<string | null>(null);
 
   useEffect(() => {
     if (!connId || !table.name) return;
@@ -141,14 +147,30 @@ export const DataGrid: FC<DataGridProps> = ({
       .catch(() => setTableStats({ total_rows: totalCount, size_bytes: 0 }));
   }, [connId, table.name, totalCount]);
 
-  const handleExport = (format: "csv" | "json") => {
-    if (!connId) return;
-    const url = getTableExportUrl(connId, table.name, format, {
-      sort_by: sortBy,
-      sort_desc: sortDesc,
-      filters: filters,
-    });
-    window.open(url, "_blank");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async (format: "csv" | "json") => {
+    if (!connId || isExporting) return;
+    try {
+      setIsExporting(true);
+      const blob = await exportTableData(connId, table.name, format, {
+        sort_by: sortBy,
+        sort_desc: sortDesc,
+        filters: filters,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${table.name}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      console.error("Export failed:", err);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Filter Builder state
@@ -282,20 +304,8 @@ export const DataGrid: FC<DataGridProps> = ({
                 </Badge>
               </div>
 
-              <div className="flex items-center gap-1">
-                {/* Column Analytics Button */}
-                <button
-                  type="button"
-                  title={t('analytics.openAnalytics')}
-                  className="p-1 rounded text-zinc-500 hover:text-indigo-400 hover:bg-indigo-500/15 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAnalyticsColumn(col);
-                  }}
-                >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                </button>
-
+              <div className="flex items-center gap-0.5">
+                {/* Sort indicator */}
                 <div className="text-zinc-400 group-hover:text-zinc-200">
                   {isSorted ? (
                     sortDesc ? (
@@ -307,6 +317,97 @@ export const DataGrid: FC<DataGridProps> = ({
                     <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                 </div>
+
+                {/* Column Action Menu (⋮) */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <button
+                        type="button"
+                        title={t("analytics.columnMenu")}
+                        className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 opacity-0 group-hover:opacity-100 data-popup-open:opacity-100 transition-opacity cursor-pointer focus:outline-none"
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="w-3.5 h-3.5" />
+                      </button>
+                    }
+                  />
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 bg-zinc-900 border border-zinc-800 text-zinc-200 shadow-xl p-1 z-50"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/15 cursor-pointer rounded"
+                      onClick={() => setAnalyticsColumn(col)}
+                    >
+                      <BarChart3 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                      <span>{t("analytics.openAnalytics")}</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator className="bg-zinc-800 my-1" />
+
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer rounded"
+                      onClick={() => onSortChange(col.name, false)}
+                    >
+                      <ArrowUp className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <span>{t("analytics.sortAsc")}</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer rounded"
+                      onClick={() => onSortChange(col.name, true)}
+                    >
+                      <ArrowDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <span>{t("analytics.sortDesc")}</span>
+                    </DropdownMenuItem>
+
+                    {isSorted && (
+                      <DropdownMenuItem
+                        className="flex items-center gap-2 px-2 py-1.5 text-xs text-amber-400/90 hover:text-amber-300 hover:bg-amber-500/10 cursor-pointer rounded"
+                        onClick={() => onSortChange("", false)}
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span>{t("analytics.clearSort")}</span>
+                      </DropdownMenuItem>
+                    )}
+
+                    <DropdownMenuSeparator className="bg-zinc-800 my-1" />
+
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer rounded"
+                      onClick={() => {
+                        setFilterCol(col.name);
+                        setShowFilterBuilder(true);
+                      }}
+                    >
+                      <FilterIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <span>{t("analytics.filterByColumn")}</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 cursor-pointer rounded"
+                      onClick={() => {
+                        navigator.clipboard.writeText(col.name);
+                        setCopiedCol(col.name);
+                        setTimeout(() => setCopiedCol(null), 1500);
+                      }}
+                    >
+                      {copiedCol === col.name ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      )}
+                      <span>
+                        {copiedCol === col.name
+                          ? t("analytics.columnNameCopied")
+                          : t("analytics.copyColumnName")}
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           );
@@ -855,6 +956,7 @@ export const DataGrid: FC<DataGridProps> = ({
             stats={tableStats}
             totalFilteredRows={totalCount}
             isFiltered={filters.length > 0}
+            onOpenAnalytics={(col) => setAnalyticsColumn(col || table.columns[0] || null)}
           />
 
       {/* Read-Only Safety Banner */}
@@ -1170,6 +1272,8 @@ export const DataGrid: FC<DataGridProps> = ({
           connectionId={connId}
           tableName={table.name}
           column={analyticsColumn}
+          columns={table.columns}
+          onSelectColumn={(col) => setAnalyticsColumn(col)}
           activeFilters={filters}
         />
       )}

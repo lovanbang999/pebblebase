@@ -196,6 +196,35 @@ export function getTableExportUrl(
   return `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/export?${queryStr}`;
 }
 
+export async function exportTableData(
+  connId: string,
+  table: string,
+  format: 'csv' | 'json',
+  params: RowQueryParams = {}
+): Promise<Blob> {
+  const url = getTableExportUrl(connId, table, format, params);
+  const res = await fetch(url, {
+    headers: getAuthHeaders(),
+  });
+  if (res.status === 401) {
+    useAuthStore.getState().clearAuth();
+    throw new Error('Session expired. Please log in again.');
+  }
+  if (!res.ok) {
+    let errorMsg = `HTTP ${res.status}: ${res.statusText}`;
+    try {
+      const data = await res.json();
+      if (data && data.error) {
+        errorMsg = data.error;
+      }
+    } catch {
+      // not json error
+    }
+    throw new Error(errorMsg);
+  }
+  return res.blob();
+}
+
 export async function importTableCSV(
   connId: string,
   table: string,
