@@ -112,6 +112,17 @@
       "copyColumnName": "Sao chép tên cột",
       "navigateToRelation": "Chuyển tới quan hệ",
       "copied": "Đã sao chép vào bộ nhớ tạm!"
+    },
+    "viewMode": {
+      "table": "Xem bảng",
+      "document": "Xem tài liệu",
+      "toggleTooltip": "Chuyển chế độ hiển thị"
+    },
+    "documentView": {
+      "copyJson": "Sao chép JSON",
+      "expand": "Mở rộng tài liệu",
+      "collapse": "Thu gọn tài liệu",
+      "copiedJson": "Đã sao chép JSON!"
     }
   },
   "connection": {
