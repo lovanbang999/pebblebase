@@ -548,7 +548,59 @@
     "exportTableJson": "Export Current Table (JSON)",
     "toggleTheme": "Toggle Dark / Light Mode",
     "openSettings": "Open Admin & Settings",
+    "productTour": "Take Product Tour",
     "signOut": "Sign Out",
     "shortcutHint": "Press Cmd+K or Ctrl+K anytime"
+  },
+  "onboarding": {
+    "welcomeBadge": "Quickstart Guide",
+    "welcomeTitle": "Welcome to Pebblebase Studio",
+    "welcomeSubtitle": "A modern, lightweight database management studio for PostgreSQL, MySQL, SQLite, and MongoDB.",
+    "startTour": "Start Interactive Tour",
+    "exploreOnMyOwn": "Explore on My Own",
+    "dontShowAgain": "Don't show this welcome screen on login",
+    "replayTour": "Quick Tour & Feature Guide",
+    "stepOf": "Step {{current}} of {{total}}",
+    "next": "Next",
+    "back": "Back",
+    "finish": "Finish Tour",
+    "skip": "Skip",
+    "features": {
+      "explorerTitle": "Multi-Engine Explorer",
+      "explorerDesc": "Seamlessly connect and browse PostgreSQL, MySQL, SQLite, and MongoDB databases.",
+      "gridTitle": "Data Grid & Document View",
+      "gridDesc": "Inline cell editing, bulk mutations, and MongoDB Compass-style document mode.",
+      "queryTitle": "SQL & NoSQL Console",
+      "queryDesc": "Execute raw SQL and MongoDB aggregation pipelines with real-time feedback.",
+      "erdTitle": "Interactive ERD Diagram",
+      "erdDesc": "Explore schema relationships visually and auto-generate complex JOIN queries."
+    },
+    "steps": {
+      "tables": {
+        "title": "Database & Tables Explorer",
+        "description": "Switch between connections, search tables or collections, and click to inspect schemas and browse data.",
+        "tip": "Tip: Use the filter box to quickly find tables."
+      },
+      "datagrid": {
+        "title": "Data Grid & Inline Editing",
+        "description": "Double-click any cell or row to edit in-place. For MongoDB collections, switch seamlessly between Table and Document views.",
+        "tip": "Tip: In Document View, Ctrl+Enter inserts a new line."
+      },
+      "queryConsole": {
+        "title": "SQL & Query Console",
+        "description": "Open full-featured query tabs to execute SQL commands or MongoDB commands with error diagnostics and query history.",
+        "tip": "Shortcut: Press Alt+Q anytime to open the Query Console."
+      },
+      "erd": {
+        "title": "Visual ERD Diagram",
+        "description": "Visualize your database schema, analyze foreign key links, and generate JOIN queries with one click.",
+        "tip": "Shortcut: Press Alt+E to view the ERD Diagram."
+      },
+      "toolbar": {
+        "title": "Search, Filters & Export",
+        "description": "Quickly search records, build custom WHERE filters, export to CSV/JSON, or import external CSV files atomically.",
+        "tip": "Shortcut: Press / to jump directly to quick search."
+      }
+    }
   }
 }
