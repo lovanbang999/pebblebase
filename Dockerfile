@@ -4,11 +4,11 @@
 FROM node:22-alpine AS frontend-builder
 
 WORKDIR /app/web
-COPY web/package*.json ./
-RUN npm ci
+COPY web/package.json web/yarn.lock* ./
+RUN yarn install --frozen-lockfile || yarn install
 
 COPY web/ ./
-RUN npm run build
+RUN yarn build
 
 # =============================================================================
 # Stage 2: Build Go binary
