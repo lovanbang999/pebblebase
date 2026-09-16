@@ -8,7 +8,6 @@ import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Database,
   Lock,
   User,
   Eye,
@@ -71,8 +70,12 @@ export function LoginScreen() {
       <div className="relative w-full max-w-sm mx-4">
         {/* Brand Header */}
         <div className="flex flex-col items-center mb-6 text-center">
-          <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center shadow-xs mb-3 text-foreground">
-            <Database className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center shadow-xs mb-3 text-foreground p-1.5">
+            <img
+              src="/favicon.svg"
+              alt="Pebblebase Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
 
           <h1 className="text-xl font-bold tracking-tight text-foreground font-sans">
@@ -144,7 +147,11 @@ export function LoginScreen() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors rounded-md focus:outline-none cursor-pointer"
-                  title={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
+                  title={
+                    showPassword
+                      ? t("auth.hidePassword")
+                      : t("auth.showPassword")
+                  }
                 >
                   {showPassword ? (
                     <EyeOff className="w-3.5 h-3.5" />
@@ -174,7 +181,9 @@ export function LoginScreen() {
               >
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-[11px] font-medium">{t("auth.quickFill")}</span>
+                  <span className="text-[11px] font-medium">
+                    {t("auth.quickFill")}
+                  </span>
                 </div>
                 <span className="font-mono text-[10px] text-muted-foreground">
                   {filledFeedback ? (
@@ -214,7 +223,3 @@ export function LoginScreen() {
     </div>
   );
 }
-
-
-
-
