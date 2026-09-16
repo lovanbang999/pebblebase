@@ -47,3 +47,25 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  studio:
+    image: lovanbang/pebblebase:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8090:8080"
+    environment:
+      - PORT=8080
+    volumes:
+      - studio_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  studio_data:
