@@ -548,7 +548,59 @@
     "exportTableJson": "Xuất Bảng Hiện Tại (JSON)",
     "toggleTheme": "Chuyển Đổi Giao Diện Sáng / Tối",
     "openSettings": "Mở Cài Đặt & Quản Trị",
+    "productTour": "Bắt Đầu Hướng Dẫn Tính Năng",
     "signOut": "Đăng Xuất",
     "shortcutHint": "Nhấn Cmd+K hoặc Ctrl+K bất kỳ lúc nào"
+  },
+  "onboarding": {
+    "welcomeBadge": "Hướng Dẫn Nhanh",
+    "welcomeTitle": "Chào mừng đến với Pebblebase Studio",
+    "welcomeSubtitle": "Công cụ quản trị cơ sở dữ liệu hiện đại, mượt mà dành cho PostgreSQL, MySQL, SQLite và MongoDB.",
+    "startTour": "Bắt Đầu Hướng Dẫn Tương Tác",
+    "exploreOnMyOwn": "Tự Khám Phá",
+    "dontShowAgain": "Không hiển thị lại màn hình này khi đăng nhập",
+    "replayTour": "Hướng dẫn tính năng & Thao tác nhanh",
+    "stepOf": "Bước {{current}} / {{total}}",
+    "next": "Tiếp theo",
+    "back": "Quay lại",
+    "finish": "Hoàn tất",
+    "skip": "Bỏ qua",
+    "features": {
+      "explorerTitle": "Hỗ Trợ Đa Hệ Quản Trị",
+      "explorerDesc": "Kết nối và duyệt dễ dàng cơ sở dữ liệu PostgreSQL, MySQL, SQLite và MongoDB.",
+      "gridTitle": "Bảng Dữ Liệu & Xem Dạng Tài Liệu",
+      "gridDesc": "Chỉnh sửa trực tiếp trên ô dữ liệu, hỗ trợ giao diện Document View chuẩn MongoDB Compass.",
+      "queryTitle": "Trình Truy Vấn SQL & NoSQL",
+      "queryDesc": "Thực thi câu lệnh SQL và Aggregation Pipeline MongoDB với kết quả thời gian thực.",
+      "erdTitle": "Sơ Đồ Lược Đồ ERD Trực Quan",
+      "erdDesc": "Khám phá mối quan hệ khóa ngoại và tự động tạo câu lệnh JOIN phức tạp chỉ với một cú nhấp chuột."
+    },
+    "steps": {
+      "tables": {
+        "title": "Cây Thư Mục Cơ Sở Dữ Liệu & Bảng",
+        "description": "Chuyển đổi linh hoạt giữa các kết nối, tìm kiếm nhanh bảng hoặc collection để xem lược đồ và dữ liệu.",
+        "tip": "Mẹo: Dùng thanh lọc để tìm bảng nhanh chóng."
+      },
+      "datagrid": {
+        "title": "Bảng Dữ Liệu & Chỉnh Sửa Trực Tiếp",
+        "description": "Nhấp đúp chuột vào bất kỳ ô hoặc tài liệu nào để chỉnh sửa trực tiếp. Với MongoDB, bạn có thể chuyển đổi linh hoạt giữa dạng Bảng và dạng Document.",
+        "tip": "Mẹo: Trong Document View, nhấn Ctrl+Enter để xuống dòng khi nhập."
+      },
+      "queryConsole": {
+        "title": "Trình Truy Vấn SQL & Lệnh",
+        "description": "Mở tab truy vấn chuyên nghiệp để chạy câu lệnh SQL hoặc lệnh MongoDB với lịch sử lưu trữ tiện lợi.",
+        "tip": "Phím tắt: Nhấn Alt+Q bất kỳ lúc nào để mở Trình truy vấn."
+      },
+      "erd": {
+        "title": "Sơ Đồ Quan Hệ Thực Thể ERD",
+        "description": "Hiển thị lược đồ quan hệ giữa các bảng và khóa ngoại, tự động sinh truy vấn JOIN nhanh chóng.",
+        "tip": "Phím tắt: Nhấn Alt+E để xem sơ đồ ERD."
+      },
+      "toolbar": {
+        "title": "Tìm Kiếm, Bộ Lọc & Xuất Nhập",
+        "description": "Tìm kiếm nhanh dữ liệu, thiết lập bộ lọc điều kiện WHERE, xuất dữ liệu CSV/JSON hoặc nhập tệp CSV an toàn.",
+        "tip": "Phím tắt: Nhấn phím / để kích hoạt nhanh thanh tìm kiếm."
+      }
+    }
   }
 }

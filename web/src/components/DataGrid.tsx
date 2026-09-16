@@ -1569,7 +1569,7 @@ export const DataGrid: FC<DataGridProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div data-tour="grid-toolbar" className="flex items-center gap-2">
           {activeSubView === "grid" ? (
             <>
               {/* Quick Search Input */}
@@ -1921,7 +1921,7 @@ export const DataGrid: FC<DataGridProps> = ({
           )}
 
           {/* Grid Container */}
-          <div className="flex-1 overflow-auto relative flex flex-col">
+          <div data-tour="datagrid-view" className="flex-1 overflow-auto relative flex flex-col">
             {isLoading ? (
               /* Loading Skeletons */
               <div className="flex-1 overflow-hidden p-4 space-y-2 animate-in fade-in duration-200">

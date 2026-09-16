@@ -16,6 +16,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { DefaultPasswordBanner } from './components/DefaultPasswordBanner';
 import { AdminPanel } from './components/AdminPanel';
 import { CommandPalette, type CommandActionId } from './components/CommandPalette';
+import { OnboardingTour } from './components/onboarding/OnboardingTour';
 import { getRecentItems, addRecentItem, clearRecentItems, type RecentItem } from './lib/recentItems';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -49,6 +50,23 @@ function PebblebaseStudio() {
   const [recentItems, setRecentItems] = useState<RecentItem[]>(() => getRecentItems());
 
   const isDefaultPassword = useAuthStore((s) => s.isDefaultPassword);
+  const currentUser = useAuthStore((s) => s.user);
+
+  const [isOnboardingWelcomeOpen, setIsOnboardingWelcomeOpen] = useState(false);
+  const [isSpotlightTourActive, setIsSpotlightTourActive] = useState(false);
+
+  // Check first-time login for onboarding tour
+  useEffect(() => {
+    if (!currentUser) return;
+    const storageKey = `pebblebase_onboarding_completed_${currentUser.id || 'guest'}`;
+    const hasCompleted = localStorage.getItem(storageKey);
+    if (!hasCompleted) {
+      const timer = setTimeout(() => {
+        setIsOnboardingWelcomeOpen(true);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentUser]);
 
   const {
     theme,
@@ -282,6 +300,9 @@ function PebblebaseStudio() {
         setAdminPanelDefaultTab('users');
         setIsAdminPanelOpen(true);
         break;
+      case 'product_tour':
+        setIsOnboardingWelcomeOpen(true);
+        break;
       case 'sign_out':
         clearRecentItems();
         apiLogout().catch(() => {});
@@ -325,6 +346,7 @@ function PebblebaseStudio() {
           setIsAdminPanelOpen(true);
         }}
         onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        onOpenOnboarding={() => setIsOnboardingWelcomeOpen(true)}
       />
 
       {/* Main Content Pane */}
@@ -521,6 +543,16 @@ function PebblebaseStudio() {
         recentItems={recentItems}
         onTriggerAction={handlePaletteAction}
         theme={theme}
+      />
+
+      {/* Onboarding Tour & Welcome Modal */}
+      <OnboardingTour
+        userId={currentUser?.id}
+        isWelcomeOpen={isOnboardingWelcomeOpen}
+        onCloseWelcome={() => setIsOnboardingWelcomeOpen(false)}
+        isTourActive={isSpotlightTourActive}
+        onStartTour={() => setIsSpotlightTourActive(true)}
+        onCloseTour={() => setIsSpotlightTourActive(false)}
       />
     </SidebarProvider>
   );

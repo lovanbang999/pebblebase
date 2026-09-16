@@ -28,6 +28,7 @@ export type CommandActionId =
   | "export_json"
   | "toggle_theme"
   | "open_settings"
+  | "product_tour"
   | "sign_out";
 
 export interface CommandPaletteProps {
@@ -143,6 +144,14 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         subtitle: "Users & Passwords",
         icon: Settings,
         action: () => onTriggerAction("open_settings"),
+      },
+      {
+        id: "action_product_tour",
+        type: "action",
+        title: t("palette.productTour", "Take Product Tour"),
+        subtitle: "Quickstart & Guide",
+        icon: Sparkles,
+        action: () => onTriggerAction("product_tour"),
       },
       {
         id: "action_sign_out",

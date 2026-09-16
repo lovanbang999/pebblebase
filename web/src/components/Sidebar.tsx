@@ -23,6 +23,7 @@ import {
   KeyRound,
   Eye,
   Workflow,
+  HelpCircle,
 } from "lucide-react";
 import type { Connection, DatabaseType, TableSchema } from "../lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "../lib/platform";
@@ -91,6 +92,7 @@ interface SidebarProps {
   onOpenAdminPanel?: () => void;
   onOpenChangePassword?: () => void;
   onOpenCommandPalette?: () => void;
+  onOpenOnboarding?: () => void;
 }
 
 const ENGINE_CONFIG: { type: DatabaseType; label: string; badge: string }[] = [
@@ -176,6 +178,7 @@ export default function Sidebar({
   onOpenAdminPanel,
   onOpenChangePassword,
   onOpenCommandPalette,
+  onOpenOnboarding,
 }: SidebarProps) {
   const { t } = useTranslation();
   const [tableSearch, setTableSearch] = useState("");
@@ -498,6 +501,7 @@ export default function Sidebar({
             {onOpenQueryConsole && (
               <Button
                 type="button"
+                data-tour="nav-query-console"
                 variant={activeView === "console" ? "secondary" : "ghost"}
                 size="sm"
                 onClick={onOpenQueryConsole}
@@ -524,6 +528,7 @@ export default function Sidebar({
             {onOpenERD && (
               <Button
                 type="button"
+                data-tour="nav-erd"
                 variant={activeView === "erd" ? "secondary" : "ghost"}
                 size="sm"
                 onClick={onOpenERD}
@@ -600,7 +605,7 @@ export default function Sidebar({
         </div>
 
         {/* Tables Group */}
-        <SidebarGroup className="p-1.5 flex-1 overflow-y-auto">
+        <SidebarGroup data-tour="sidebar-tables" className="p-1.5 flex-1 overflow-y-auto">
           <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-mono px-2 mb-1 group-data-[collapsible=icon]:hidden">
             {t("sidebar.tablesHeader")}{" "}
             {tables.length > 0
@@ -831,6 +836,26 @@ export default function Sidebar({
             </Badge>
           </div>
           <div className="flex items-center gap-1 shrink-0">
+            {onOpenOnboarding && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={onOpenOnboarding}
+                      className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center justify-center h-6 w-6"
+                    >
+                      <HelpCircle className="size-3.5 text-zinc-500 hover:text-emerald-500 dark:text-zinc-400 dark:hover:text-emerald-400 transition-colors" />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="top">
+                  {t("onboarding.replayTour", "Quick Tour & Feature Guide")}
+                </TooltipContent>
+              </Tooltip>
+            )}
             <LanguageSwitcher />
             <span className="h-3 w-px bg-zinc-200 dark:bg-zinc-800 shrink-0 self-center mx-0.5" />
             <ThemeToggle
@@ -843,6 +868,18 @@ export default function Sidebar({
 
         {/* Collapsed icon mode: vertical stack */}
         <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center justify-center gap-1.5 w-full py-1">
+          {onOpenOnboarding && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={onOpenOnboarding}
+              title={t("onboarding.replayTour", "Quick Tour & Feature Guide")}
+              className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center justify-center h-6 w-6"
+            >
+              <HelpCircle className="size-3.5 text-zinc-500 hover:text-emerald-500 dark:text-zinc-400 dark:hover:text-emerald-400 transition-colors" />
+            </Button>
+          )}
           <LanguageSwitcher compact />
           <ThemeToggle
             theme={theme}
