@@ -112,6 +112,17 @@
       "copyColumnName": "Copy Column Name",
       "navigateToRelation": "Navigate to Relation",
       "copied": "Copied to clipboard!"
+    },
+    "viewMode": {
+      "table": "Table View",
+      "document": "Document View",
+      "toggleTooltip": "Switch view mode"
+    },
+    "documentView": {
+      "copyJson": "Copy as JSON",
+      "expand": "Expand document",
+      "collapse": "Collapse document",
+      "copiedJson": "JSON copied!"
     }
   },
   "connection": {

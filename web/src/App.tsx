@@ -397,6 +397,7 @@ function PebblebaseStudio() {
           <DataGrid
             key={`grid-${activeTab?.id || activeTable}`}
             connId={activeConnection?.id}
+            dbType={activeConnection?.type}
             table={activeTableSchema}
             rows={rowsResult?.rows || []}
             totalCount={rowsResult?.total_count || 0}
