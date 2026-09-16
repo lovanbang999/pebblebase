@@ -669,7 +669,9 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                       }}
                     >
                       <SelectTrigger className="w-full h-9 bg-zinc-900/70 border-zinc-700/60 text-zinc-100 text-xs cursor-pointer focus:ring-indigo-500 font-sans">
-                        <SelectValue placeholder={t("auth.selectTargetAccount")}>
+                        <SelectValue
+                          placeholder={t("auth.selectTargetAccount")}
+                        >
                           {(val) => {
                             if (!val || val === "self") {
                               return currentUser
@@ -679,7 +681,9 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                                 : "Current User";
                             }
                             const target = users.find((u) => u.id === val);
-                            return target ? `${target.username} (${target.role})` : val;
+                            return target
+                              ? `${target.username} (${target.role})`
+                              : val;
                           }}
                         </SelectValue>
                       </SelectTrigger>

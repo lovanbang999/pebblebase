@@ -1,5 +1,5 @@
-import type { FC, ElementType } from 'react';
-import { Button } from '@/components/ui/button';
+import type { FC, ElementType } from "react";
+import { Button } from "@/components/ui/button";
 
 interface EmptyStateProps {
   icon: ElementType;
@@ -29,10 +29,14 @@ export const EmptyState: FC<EmptyStateProps> = ({
         <Icon className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
       </div>
 
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 font-mono tracking-tight">{title}</h3>
+      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 font-mono tracking-tight">
+        {title}
+      </h3>
 
       {description && (
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 font-mono leading-relaxed">{description}</p>
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 font-mono leading-relaxed">
+          {description}
+        </p>
       )}
 
       {(action || secondaryAction) && (

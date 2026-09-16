@@ -1,8 +1,8 @@
-import type { FC } from 'react';
-import { AlertCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import type { FC } from "react";
+import { AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 interface ErrorBannerProps {
   message: string | null;
@@ -32,7 +32,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({ message, onDismiss }) => {
         onClick={onDismiss}
         className="text-xs text-rose-400 hover:text-rose-100 p-0 h-auto underline ml-4 shrink-0"
       >
-        {t('app.dismiss')}
+        {t("app.dismiss")}
       </Button>
     </Alert>
   );
