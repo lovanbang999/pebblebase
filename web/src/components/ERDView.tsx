@@ -645,9 +645,7 @@ function ERDCanvas({
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 bg-zinc-50 dark:bg-[#0d0e17] text-zinc-500">
         <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        <span className="text-sm font-mono">
-          {t("erd.loading")}
-        </span>
+        <span className="text-sm font-mono">{t("erd.loading")}</span>
       </div>
     );
   }
@@ -655,7 +653,9 @@ function ERDCanvas({
   if (error) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-3 bg-zinc-50 dark:bg-[#0d0e17] text-rose-500">
-        <span className="text-sm font-semibold">{t("common.error")}: {error}</span>
+        <span className="text-sm font-semibold">
+          {t("common.error")}: {error}
+        </span>
         <button
           onClick={loadData}
           className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs hover:bg-indigo-500 transition-colors"

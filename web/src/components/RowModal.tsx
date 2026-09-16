@@ -1,27 +1,27 @@
-import { useState, useMemo, type FC, type FormEvent } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Save, Trash2, Key, AlertCircle, Loader2, Plus } from 'lucide-react';
-import type { TableSchema, ColumnSchema } from '../lib/types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { NumberInput } from '@/components/ui/number-input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useState, useMemo, type FC, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
+import { Save, Trash2, Key, AlertCircle, Loader2, Plus } from "lucide-react";
+import type { TableSchema, ColumnSchema } from "../lib/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/ui/number-input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 
 interface RowModalProps {
   isOpen: boolean;
@@ -58,7 +58,7 @@ export const RowModal: FC<RowModalProps> = ({
     const defaults: Record<string, any> = {};
     table.columns.forEach((c) => {
       if (!c.is_primary_key) {
-        defaults[c.name] = '';
+        defaults[c.name] = "";
       }
     });
     return defaults;
@@ -70,13 +70,18 @@ export const RowModal: FC<RowModalProps> = ({
 
   // Dynamic field creation state
   const [showAddField, setShowAddField] = useState(false);
-  const [newFieldName, setNewFieldName] = useState('');
-  const [newFieldValue, setNewFieldValue] = useState('');
+  const [newFieldName, setNewFieldName] = useState("");
+  const [newFieldValue, setNewFieldValue] = useState("");
 
-  const schemaColSet = useMemo(() => new Set(table.columns.map((c) => c.name)), [table.columns]);
+  const schemaColSet = useMemo(
+    () => new Set(table.columns.map((c) => c.name)),
+    [table.columns],
+  );
 
   const dynamicFieldKeys = useMemo(() => {
-    return Object.keys(formData).filter((k) => !schemaColSet.has(k) && !k.startsWith('_pb_'));
+    return Object.keys(formData).filter(
+      (k) => !schemaColSet.has(k) && !k.startsWith("_pb_"),
+    );
   }, [formData, schemaColSet]);
 
   const handleChange = (col: ColumnSchema, val: string) => {
@@ -87,8 +92,8 @@ export const RowModal: FC<RowModalProps> = ({
     const trimmed = newFieldName.trim();
     if (!trimmed) return;
     setFormData((prev) => ({ ...prev, [trimmed]: newFieldValue }));
-    setNewFieldName('');
-    setNewFieldValue('');
+    setNewFieldName("");
+    setNewFieldValue("");
     setShowAddField(false);
   };
 
@@ -111,7 +116,7 @@ export const RowModal: FC<RowModalProps> = ({
       // Parse standard schema columns
       table.columns.forEach((col) => {
         const raw = formData[col.name];
-        if (raw === undefined || raw === '') {
+        if (raw === undefined || raw === "") {
           if (!col.is_primary_key && col.nullable) {
             parsedValues[col.name] = null;
           }
@@ -119,23 +124,24 @@ export const RowModal: FC<RowModalProps> = ({
         }
 
         switch (col.type) {
-          case 'int': {
+          case "int": {
             const parsed = parseInt(raw, 10);
             parsedValues[col.name] = isNaN(parsed) ? raw : parsed;
             break;
           }
-          case 'float': {
+          case "float": {
             const parsed = parseFloat(raw);
             parsedValues[col.name] = isNaN(parsed) ? raw : parsed;
             break;
           }
-          case 'bool': {
-            parsedValues[col.name] = raw === 'true' || raw === true;
+          case "bool": {
+            parsedValues[col.name] = raw === "true" || raw === true;
             break;
           }
-          case 'json': {
+          case "json": {
             try {
-              parsedValues[col.name] = typeof raw === 'string' ? JSON.parse(raw) : raw;
+              parsedValues[col.name] =
+                typeof raw === "string" ? JSON.parse(raw) : raw;
             } catch {
               parsedValues[col.name] = raw;
             }
@@ -149,8 +155,8 @@ export const RowModal: FC<RowModalProps> = ({
       // Parse extra dynamic document properties
       dynamicFieldKeys.forEach((key) => {
         const raw = formData[key];
-        if (raw === undefined || raw === '') return;
-        if (typeof raw === 'string') {
+        if (raw === undefined || raw === "") return;
+        if (typeof raw === "string") {
           try {
             parsedValues[key] = JSON.parse(raw);
           } catch {
@@ -164,7 +170,7 @@ export const RowModal: FC<RowModalProps> = ({
       await onSave(parsedValues);
       onClose();
     } catch (err: any) {
-      setError(err.message || t('rowModal.failedToSave'));
+      setError(err.message || t("rowModal.failedToSave"));
     } finally {
       setSaving(false);
     }
@@ -179,7 +185,7 @@ export const RowModal: FC<RowModalProps> = ({
       await onDelete();
       onClose();
     } catch (err: any) {
-      setError(err.message || t('rowModal.failedToDelete'));
+      setError(err.message || t("rowModal.failedToDelete"));
     } finally {
       setDeleting(false);
     }
@@ -191,18 +197,26 @@ export const RowModal: FC<RowModalProps> = ({
         {/* Header */}
         <DialogHeader className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 space-y-1">
           <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <span>{isEditing ? t('rowModal.titleEdit') : t('rowModal.titleAdd')}</span>
-            <Badge variant="secondary" className="font-mono text-xs text-emerald-600 dark:text-emerald-400">
+            <span>
+              {isEditing ? t("rowModal.titleEdit") : t("rowModal.titleAdd")}
+            </span>
+            <Badge
+              variant="secondary"
+              className="font-mono text-xs text-emerald-600 dark:text-emerald-400"
+            >
               {table.name}
             </Badge>
           </DialogTitle>
           <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
-            {isEditing ? t('rowModal.descEdit') : t('rowModal.descAdd')}
+            {isEditing ? t("rowModal.descEdit") : t("rowModal.descAdd")}
           </DialogDescription>
         </DialogHeader>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-5 space-y-4"
+        >
           {error && (
             <Alert variant="destructive" className="text-xs">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -216,34 +230,50 @@ export const RowModal: FC<RowModalProps> = ({
             const isPk = col.is_primary_key;
             const isFk = col.is_foreign_key;
             const isReadOnly = isEditing && isPk;
-            const currentVal = formData[col.name] ?? '';
+            const currentVal = formData[col.name] ?? "";
 
             return (
               <div key={col.name} className="space-y-1">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-mono font-medium text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5">
-                    {isPk && <Key className="w-3 h-3 text-amber-500 dark:text-amber-400" />}
+                    {isPk && (
+                      <Key className="w-3 h-3 text-amber-500 dark:text-amber-400" />
+                    )}
                     {col.name}
                   </label>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0 h-4 font-normal">
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] font-mono px-1.5 py-0 h-4 font-normal"
+                    >
                       {col.type}
                     </Badge>
-                    {col.nullable && <span className="text-zinc-400 dark:text-zinc-500 italic">{t('rowModal.nullable')}</span>}
+                    {col.nullable && (
+                      <span className="text-zinc-400 dark:text-zinc-500 italic">
+                        {t("rowModal.nullable")}
+                      </span>
+                    )}
                     {isFk && (
-                      <Badge variant="secondary" className="text-[10px] font-mono px-1.5 py-0 h-4 text-sky-600 dark:text-sky-400">
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-mono px-1.5 py-0 h-4 text-sky-600 dark:text-sky-400"
+                      >
                         FK
                       </Badge>
                     )}
                   </div>
                 </div>
 
-                {col.type === 'bool' ? (
+                {col.type === "bool" ? (
                   <Select
-                    value={currentVal === null || currentVal === undefined ? "null" : String(currentVal)}
+                    value={
+                      currentVal === null || currentVal === undefined
+                        ? "null"
+                        : String(currentVal)
+                    }
                     disabled={isReadOnly}
                     onValueChange={(val) => {
-                      if (typeof val === 'string') {
+                      if (typeof val === "string") {
                         handleChange(col, val === "null" ? "" : val);
                       }
                     }}
@@ -257,11 +287,11 @@ export const RowModal: FC<RowModalProps> = ({
                       <SelectItem value="false">false</SelectItem>
                     </SelectContent>
                   </Select>
-                ) : col.type === 'json' ? (
+                ) : col.type === "json" ? (
                   <Textarea
                     rows={3}
                     value={
-                      typeof currentVal === 'object'
+                      typeof currentVal === "object"
                         ? JSON.stringify(currentVal, null, 2)
                         : currentVal
                     }
@@ -270,23 +300,23 @@ export const RowModal: FC<RowModalProps> = ({
                     placeholder="{}"
                     className="text-xs font-mono resize-none"
                   />
-                ) : col.type === 'int' || col.type === 'float' ? (
+                ) : col.type === "int" || col.type === "float" ? (
                   <NumberInput
-                    isFloat={col.type === 'float'}
-                    step={col.type === 'float' ? 'any' : 1}
+                    isFloat={col.type === "float"}
+                    step={col.type === "float" ? "any" : 1}
                     value={currentVal}
                     disabled={isReadOnly}
                     onChange={(val) => handleChange(col, val)}
                     placeholder={
                       isPk && !isEditing
-                        ? col.name === '_id'
-                          ? t('rowModal.autoObjectId')
-                          : t('rowModal.autoManualPk')
+                        ? col.name === "_id"
+                          ? t("rowModal.autoObjectId")
+                          : t("rowModal.autoManualPk")
                         : col.default_value
-                        ? `Default: ${col.default_value}`
-                        : col.nullable
-                        ? 'NULL'
-                        : ''
+                          ? `Default: ${col.default_value}`
+                          : col.nullable
+                            ? "NULL"
+                            : ""
                     }
                     className="text-xs font-mono"
                   />
@@ -298,14 +328,14 @@ export const RowModal: FC<RowModalProps> = ({
                     onChange={(e) => handleChange(col, e.target.value)}
                     placeholder={
                       isPk && !isEditing
-                        ? col.name === '_id'
-                          ? t('rowModal.autoObjectId')
-                          : t('rowModal.autoManualPk')
+                        ? col.name === "_id"
+                          ? t("rowModal.autoObjectId")
+                          : t("rowModal.autoManualPk")
                         : col.default_value
-                        ? `Default: ${col.default_value}`
-                        : col.nullable
-                        ? 'NULL'
-                        : ''
+                          ? `Default: ${col.default_value}`
+                          : col.nullable
+                            ? "NULL"
+                            : ""
                     }
                     className="text-xs font-mono"
                   />
@@ -319,18 +349,25 @@ export const RowModal: FC<RowModalProps> = ({
             <div className="pt-3 border-t border-zinc-200 dark:border-zinc-800 space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-mono font-semibold text-amber-600 dark:text-amber-300">
-                  {t('rowModal.dynamicFieldsTitle', { count: dynamicFieldKeys.length })}
+                  {t("rowModal.dynamicFieldsTitle", {
+                    count: dynamicFieldKeys.length,
+                  })}
                 </span>
-                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">{t('rowModal.dynamicFieldsHelp')}</span>
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 font-mono">
+                  {t("rowModal.dynamicFieldsHelp")}
+                </span>
               </div>
               {dynamicFieldKeys.map((key) => {
-                const currentVal = formData[key] ?? '';
+                const currentVal = formData[key] ?? "";
                 return (
                   <div key={key} className="space-y-1">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-mono font-medium text-amber-700 dark:text-amber-200/90 flex items-center gap-1.5">
                         {key}
-                        <Badge variant="outline" className="text-[9px] font-mono text-amber-700 dark:text-amber-400 px-1 py-0 h-4 font-normal">
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] font-mono text-amber-700 dark:text-amber-400 px-1 py-0 h-4 font-normal"
+                        >
                           dynamic
                         </Badge>
                       </label>
@@ -340,15 +377,24 @@ export const RowModal: FC<RowModalProps> = ({
                         size="icon-xs"
                         onClick={() => handleRemoveDynamicField(key)}
                         className="text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 h-5 w-5"
-                        title={t('rowModal.removeFieldTooltip')}
+                        title={t("rowModal.removeFieldTooltip")}
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                     <Input
                       type="text"
-                      value={typeof currentVal === 'object' ? JSON.stringify(currentVal) : String(currentVal)}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, [key]: e.target.value }))}
+                      value={
+                        typeof currentVal === "object"
+                          ? JSON.stringify(currentVal)
+                          : String(currentVal)
+                      }
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          [key]: e.target.value,
+                        }))
+                      }
                       className="text-xs font-mono"
                     />
                   </div>
@@ -362,7 +408,9 @@ export const RowModal: FC<RowModalProps> = ({
             {showAddField ? (
               <div className="p-3 rounded border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40 space-y-2 text-xs font-mono">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">{t('rowModal.addFieldTitle')}</span>
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                    {t("rowModal.addFieldTitle")}
+                  </span>
                   <Button
                     type="button"
                     variant="ghost"
@@ -376,14 +424,14 @@ export const RowModal: FC<RowModalProps> = ({
                 <div className="grid grid-cols-2 gap-2">
                   <Input
                     type="text"
-                    placeholder={t('rowModal.placeholderFieldName')}
+                    placeholder={t("rowModal.placeholderFieldName")}
                     value={newFieldName}
                     onChange={(e) => setNewFieldName(e.target.value)}
                     className="h-7 text-xs font-mono"
                   />
                   <Input
                     type="text"
-                    placeholder={t('rowModal.placeholderFieldValue')}
+                    placeholder={t("rowModal.placeholderFieldValue")}
                     value={newFieldValue}
                     onChange={(e) => setNewFieldValue(e.target.value)}
                     className="h-7 text-xs font-mono"
@@ -419,7 +467,7 @@ export const RowModal: FC<RowModalProps> = ({
                 className="text-xs font-mono text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 dark:hover:text-emerald-300 flex items-center gap-1.5 p-0 h-auto"
               >
                 <Plus className="w-3.5 h-3.5" />
-                {t('rowModal.addDynamicField')}
+                {t("rowModal.addDynamicField")}
               </Button>
             )}
           </div>
@@ -440,7 +488,7 @@ export const RowModal: FC<RowModalProps> = ({
                 ) : (
                   <Trash2 className="w-3.5 h-3.5" />
                 )}
-                {t('rowModal.deleteRecord')}
+                {t("rowModal.deleteRecord")}
               </Button>
             ) : (
               <div />
@@ -455,7 +503,7 @@ export const RowModal: FC<RowModalProps> = ({
                 disabled={saving}
                 className="text-xs"
               >
-                {t('rowModal.cancel')}
+                {t("rowModal.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -468,7 +516,9 @@ export const RowModal: FC<RowModalProps> = ({
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                {isEditing ? t('rowModal.saveChanges') : t('rowModal.insertRecord')}
+                {isEditing
+                  ? t("rowModal.saveChanges")
+                  : t("rowModal.insertRecord")}
               </Button>
             </div>
           </div>
@@ -486,10 +536,10 @@ export const RowModal: FC<RowModalProps> = ({
               <Trash2 className="size-5" />
             </AlertDialogMedia>
             <AlertDialogTitle className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-              {t('app.deleteRecordTitle')}
+              {t("app.deleteRecordTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              {t('app.deleteRecordConfirm', { table: table.name })}
+              {t("app.deleteRecordConfirm", { table: table.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -498,13 +548,13 @@ export const RowModal: FC<RowModalProps> = ({
               onClick={() => setIsConfirmDeleteOpen(false)}
               className="text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800 cursor-pointer"
             >
-              {t('rowModal.cancel')}
+              {t("rowModal.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-rose-600 hover:bg-rose-500 dark:bg-rose-600 dark:hover:bg-rose-500 text-white text-xs font-semibold shadow-xs cursor-pointer"
             >
-              {t('app.deleteRecordTitle')}
+              {t("app.deleteRecordTitle")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

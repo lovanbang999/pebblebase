@@ -177,10 +177,7 @@ export const TabBar: FC<TabBarProps> = ({
 
       const delta = direction === "left" ? -240 : 240;
       const maxScroll = el.scrollWidth - el.clientWidth;
-      const newTarget = Math.min(
-        Math.max(0, el.scrollLeft + delta),
-        maxScroll,
-      );
+      const newTarget = Math.min(Math.max(0, el.scrollLeft + delta), maxScroll);
       targetScrollRef.current = newTarget;
 
       el.scrollTo({ left: newTarget, behavior: "smooth" });

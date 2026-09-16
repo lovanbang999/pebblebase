@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef, useMemo, type FC } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useState, useEffect, useRef, useMemo, type FC } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Search,
   Table as TableIcon,
@@ -14,21 +14,21 @@ import {
   FileSpreadsheet,
   FileCode,
   Sparkles,
-} from 'lucide-react';
-import type { Connection, TableSchema, SavedQuery } from '../lib/types';
-import type { RecentItem } from '../lib/recentItems';
-import { SHORTCUTS } from '../lib/platform';
-import { cn } from 'cn';
+} from "lucide-react";
+import type { Connection, TableSchema, SavedQuery } from "../lib/types";
+import type { RecentItem } from "../lib/recentItems";
+import { SHORTCUTS } from "../lib/platform";
+import { cn } from "cn";
 
 export type CommandActionId =
-  | 'open_query_console'
-  | 'open_erd'
-  | 'open_migration'
-  | 'export_csv'
-  | 'export_json'
-  | 'toggle_theme'
-  | 'open_settings'
-  | 'sign_out';
+  | "open_query_console"
+  | "open_erd"
+  | "open_migration"
+  | "export_csv"
+  | "export_json"
+  | "toggle_theme"
+  | "open_settings"
+  | "sign_out";
 
 export interface CommandPaletteProps {
   isOpen: boolean;
@@ -42,12 +42,12 @@ export interface CommandPaletteProps {
   onSelectSavedQuery: (query: SavedQuery) => void;
   recentItems: RecentItem[];
   onTriggerAction: (actionId: CommandActionId) => void;
-  theme: 'dark' | 'light';
+  theme: "dark" | "light";
 }
 
 interface PaletteItem {
   id: string;
-  type: 'recent' | 'table' | 'connection' | 'query' | 'action';
+  type: "recent" | "table" | "connection" | "query" | "action";
   title: string;
   subtitle?: string;
   icon: any;
@@ -68,7 +68,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
   theme,
 }) => {
   const { t } = useTranslation();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -76,7 +76,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
   // Auto focus input when opened
   useEffect(() => {
     if (isOpen) {
-      setSearch('');
+      setSearch("");
       setSelectedIndex(0);
       setTimeout(() => {
         inputRef.current?.focus();
@@ -86,77 +86,81 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
 
   // Actions list definition
   const actionItems: PaletteItem[] = useMemo(() => {
-    const isDark = theme === 'dark';
+    const isDark = theme === "dark";
     return [
       {
-        id: 'action_open_query_console',
-        type: 'action',
-        title: t('palette.openQueryConsole', 'Open Query Console'),
-        subtitle: 'Alt+Q',
+        id: "action_open_query_console",
+        type: "action",
+        title: t("palette.openQueryConsole", "Open Query Console"),
+        subtitle: "Alt+Q",
         icon: Terminal,
-        action: () => onTriggerAction('open_query_console'),
+        action: () => onTriggerAction("open_query_console"),
       },
       {
-        id: 'action_open_erd',
-        type: 'action',
-        title: t('palette.openERD', 'Open ERD Diagram'),
-        subtitle: 'Alt+E',
+        id: "action_open_erd",
+        type: "action",
+        title: t("palette.openERD", "Open ERD Diagram"),
+        subtitle: "Alt+E",
         icon: Workflow,
-        action: () => onTriggerAction('open_erd'),
+        action: () => onTriggerAction("open_erd"),
       },
       {
-        id: 'action_open_migration',
-        type: 'action',
-        title: t('palette.openMigration', 'Open Migration Runner'),
-        subtitle: 'DDL & Schema Updates',
+        id: "action_open_migration",
+        type: "action",
+        title: t("palette.openMigration", "Open Migration Runner"),
+        subtitle: "DDL & Schema Updates",
         icon: Sparkles,
-        action: () => onTriggerAction('open_migration'),
+        action: () => onTriggerAction("open_migration"),
       },
       {
-        id: 'action_export_csv',
-        type: 'action',
-        title: t('palette.exportTableCsv', 'Export Current Table (CSV)'),
-        subtitle: 'Data Grid',
+        id: "action_export_csv",
+        type: "action",
+        title: t("palette.exportTableCsv", "Export Current Table (CSV)"),
+        subtitle: "Data Grid",
         icon: FileSpreadsheet,
-        action: () => onTriggerAction('export_csv'),
+        action: () => onTriggerAction("export_csv"),
       },
       {
-        id: 'action_export_json',
-        type: 'action',
-        title: t('palette.exportTableJson', 'Export Current Table (JSON)'),
-        subtitle: 'Data Grid',
+        id: "action_export_json",
+        type: "action",
+        title: t("palette.exportTableJson", "Export Current Table (JSON)"),
+        subtitle: "Data Grid",
         icon: FileCode,
-        action: () => onTriggerAction('export_json'),
+        action: () => onTriggerAction("export_json"),
       },
       {
-        id: 'action_toggle_theme',
-        type: 'action',
-        title: t('palette.toggleTheme', 'Toggle Dark / Light Mode'),
-        subtitle: isDark ? 'Current: Dark' : 'Current: Light',
+        id: "action_toggle_theme",
+        type: "action",
+        title: t("palette.toggleTheme", "Toggle Dark / Light Mode"),
+        subtitle: isDark ? "Current: Dark" : "Current: Light",
         icon: isDark ? Sun : Moon,
-        action: () => onTriggerAction('toggle_theme'),
+        action: () => onTriggerAction("toggle_theme"),
       },
       {
-        id: 'action_open_settings',
-        type: 'action',
-        title: t('palette.openSettings', 'Open Admin & Settings'),
-        subtitle: 'Users & Passwords',
+        id: "action_open_settings",
+        type: "action",
+        title: t("palette.openSettings", "Open Admin & Settings"),
+        subtitle: "Users & Passwords",
         icon: Settings,
-        action: () => onTriggerAction('open_settings'),
+        action: () => onTriggerAction("open_settings"),
       },
       {
-        id: 'action_sign_out',
-        type: 'action',
-        title: t('palette.signOut', 'Sign Out'),
-        subtitle: 'Authentication',
+        id: "action_sign_out",
+        type: "action",
+        title: t("palette.signOut", "Sign Out"),
+        subtitle: "Authentication",
         icon: LogOut,
-        action: () => onTriggerAction('sign_out'),
+        action: () => onTriggerAction("sign_out"),
       },
     ];
   }, [t, theme, onTriggerAction]);
 
   // Build items grouped into categories
-  const allItems: { groupKey: string; groupLabel: string; items: PaletteItem[] }[] = useMemo(() => {
+  const allItems: {
+    groupKey: string;
+    groupLabel: string;
+    items: PaletteItem[];
+  }[] = useMemo(() => {
     const term = search.trim().toLowerCase();
 
     // Helper fuzzy match
@@ -172,16 +176,16 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
       .map((r) => {
         let icon = Clock;
         let action = () => {};
-        if (r.type === 'table') {
+        if (r.type === "table") {
           icon = TableIcon;
           action = () => onSelectTable(r.title);
-        } else if (r.type === 'connection') {
+        } else if (r.type === "connection") {
           icon = Database;
           const conn = connections.find((c) => c.id === r.id);
           action = () => {
             if (conn) onSelectConnection(conn);
           };
-        } else if (r.type === 'query') {
+        } else if (r.type === "query") {
           icon = Terminal;
           const sq = savedQueries.find((q) => q.id === r.id);
           action = () => {
@@ -190,7 +194,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         }
         return {
           id: `recent_${r.type}_${r.id}`,
-          type: 'recent',
+          type: "recent",
           title: r.title,
           subtitle: r.subtitle || r.type,
           icon,
@@ -203,7 +207,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
       .filter((tbl) => matches(tbl.name))
       .map((tbl) => ({
         id: `table_${tbl.name}`,
-        type: 'table',
+        type: "table",
         title: tbl.name,
         subtitle: `${tbl.columns.length} columns`,
         icon: TableIcon,
@@ -215,9 +219,9 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
       .filter((c) => matches(c.name) || matches(c.type) || matches(c.db_name))
       .map((c) => ({
         id: `conn_${c.id}`,
-        type: 'connection',
+        type: "connection",
         title: c.name,
-        subtitle: `${c.type.toUpperCase()} • ${c.db_name || c.host || 'local'}`,
+        subtitle: `${c.type.toUpperCase()} • ${c.db_name || c.host || "local"}`,
         icon: Database,
         action: () => onSelectConnection(c),
       }));
@@ -227,56 +231,56 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
       .filter((q) => matches(q.title) || matches(q.query))
       .map((q) => ({
         id: `query_${q.id}`,
-        type: 'query',
+        type: "query",
         title: q.title,
-        subtitle: q.query.slice(0, 40) + (q.query.length > 40 ? '...' : ''),
+        subtitle: q.query.slice(0, 40) + (q.query.length > 40 ? "..." : ""),
         icon: Terminal,
         action: () => onSelectSavedQuery(q),
       }));
 
     // 5. Actions
     const filteredActionItems = actionItems.filter(
-      (a) => matches(a.title) || matches(a.subtitle)
+      (a) => matches(a.title) || matches(a.subtitle),
     );
 
     const groups = [];
 
     if (!term && recentPaletteItems.length > 0) {
       groups.push({
-        groupKey: 'recent',
-        groupLabel: t('palette.recent', 'Recent Items'),
+        groupKey: "recent",
+        groupLabel: t("palette.recent", "Recent Items"),
         items: recentPaletteItems,
       });
     }
 
     if (tablePaletteItems.length > 0) {
       groups.push({
-        groupKey: 'tables',
-        groupLabel: t('palette.tables', 'Tables'),
+        groupKey: "tables",
+        groupLabel: t("palette.tables", "Tables"),
         items: tablePaletteItems,
       });
     }
 
     if (connPaletteItems.length > 0) {
       groups.push({
-        groupKey: 'connections',
-        groupLabel: t('palette.connections', 'Connections'),
+        groupKey: "connections",
+        groupLabel: t("palette.connections", "Connections"),
         items: connPaletteItems,
       });
     }
 
     if (queryPaletteItems.length > 0) {
       groups.push({
-        groupKey: 'queries',
-        groupLabel: t('palette.queries', 'Saved Queries'),
+        groupKey: "queries",
+        groupLabel: t("palette.queries", "Saved Queries"),
         items: queryPaletteItems,
       });
     }
 
     if (filteredActionItems.length > 0) {
       groups.push({
-        groupKey: 'actions',
-        groupLabel: t('palette.actions', 'Actions'),
+        groupKey: "actions",
+        groupLabel: t("palette.actions", "Actions"),
         items: filteredActionItems,
       });
     }
@@ -312,26 +316,28 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
     if (!listRef.current) return;
     const selectedEl = listRef.current.querySelector('[data-selected="true"]');
     if (selectedEl) {
-      selectedEl.scrollIntoView({ block: 'nearest' });
+      selectedEl.scrollIntoView({ block: "nearest" });
     }
   }, [selectedIndex]);
 
   // Keyboard navigation handler
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex((prev) => (prev + 1) % Math.max(1, flatItems.length));
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + flatItems.length) % Math.max(1, flatItems.length));
-    } else if (e.key === 'Enter') {
+      setSelectedIndex(
+        (prev) => (prev - 1 + flatItems.length) % Math.max(1, flatItems.length),
+      );
+    } else if (e.key === "Enter") {
       e.preventDefault();
       const currentItem = flatItems[selectedIndex];
       if (currentItem) {
         currentItem.action();
         onClose();
       }
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       e.preventDefault();
       onClose();
     }
@@ -359,7 +365,10 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={t('palette.placeholder', 'Type a command or search...')}
+            placeholder={t(
+              "palette.placeholder",
+              "Type a command or search...",
+            )}
             className="flex-1 bg-transparent text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none text-base font-sans"
           />
           <span className="text-[11px] font-medium text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 font-mono">
@@ -368,10 +377,16 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         </div>
 
         {/* Results List */}
-        <div ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-4 font-sans">
+        <div
+          ref={listRef}
+          className="flex-1 overflow-y-auto p-2 space-y-4 font-sans"
+        >
           {flatItems.length === 0 ? (
             <div className="py-12 text-center text-zinc-400 text-sm">
-              {t('palette.noResults', 'No matching commands or entities found.')}
+              {t(
+                "palette.noResults",
+                "No matching commands or entities found.",
+              )}
             </div>
           ) : (
             allItems.map((group) => {
@@ -395,19 +410,19 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                         }}
                         onMouseEnter={() => setSelectedIndex(currentIndex)}
                         className={cn(
-                          'flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors text-sm',
+                          "flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors text-sm",
                           isSelected
-                            ? 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 font-medium'
-                            : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                            ? "bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 font-medium"
+                            : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
                         )}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <IconComp
                             className={cn(
-                              'w-4 h-4 shrink-0',
+                              "w-4 h-4 shrink-0",
                               isSelected
-                                ? 'text-indigo-600 dark:text-indigo-400'
-                                : 'text-zinc-400'
+                                ? "text-indigo-600 dark:text-indigo-400"
+                                : "text-zinc-400",
                             )}
                           />
                           <span className="truncate">{item.title}</span>
@@ -444,7 +459,8 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
             </span>
           </div>
           <div className="hidden sm:block text-[11px]">
-            {t('palette.shortcutHint', 'Press Cmd+K or Ctrl+K anytime')} ({SHORTCUTS.mod}K)
+            {t("palette.shortcutHint", "Press Cmd+K or Ctrl+K anytime")} (
+            {SHORTCUTS.mod}K)
           </div>
         </div>
       </div>

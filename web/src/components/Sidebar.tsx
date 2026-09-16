@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   Database,
   Table as TableIcon,
@@ -14,8 +15,6 @@ import {
   Key,
   Layers,
   CheckCircle2,
-  Sun,
-  Moon,
   Copy,
   ShieldAlert,
   Terminal,
@@ -834,60 +833,22 @@ export default function Sidebar({
           <div className="flex items-center gap-1 shrink-0">
             <LanguageSwitcher />
             <span className="h-3 w-px bg-zinc-200 dark:bg-zinc-800 shrink-0 self-center mx-0.5" />
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={onToggleTheme}
-                    className="size-6 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors"
-                  >
-                    {theme === "dark" ? (
-                      <Sun className="size-3.5 text-amber-400" />
-                    ) : (
-                      <Moon className="size-3.5 text-indigo-600" />
-                    )}
-                  </Button>
-                }
-              />
-              <TooltipContent side="top">
-                {theme === "dark"
-                  ? t("common.themeLight")
-                  : t("common.themeDark")}
-              </TooltipContent>
-            </Tooltip>
+            <ThemeToggle
+              theme={theme}
+              onToggleTheme={onToggleTheme}
+              side="top"
+            />
           </div>
         </div>
 
         {/* Collapsed icon mode: vertical stack */}
         <div className="hidden group-data-[collapsible=icon]:flex flex-col items-center justify-center gap-1.5 w-full py-1">
           <LanguageSwitcher compact />
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  onClick={onToggleTheme}
-                  className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="size-3.5 text-amber-400" />
-                  ) : (
-                    <Moon className="size-3.5 text-indigo-600" />
-                  )}
-                </Button>
-              }
-            />
-            <TooltipContent side="right">
-              {theme === "dark"
-                ? t("common.themeLight")
-                : t("common.themeDark")}
-            </TooltipContent>
-          </Tooltip>
+          <ThemeToggle
+            theme={theme}
+            onToggleTheme={onToggleTheme}
+            side="right"
+          />
         </div>
       </SidebarFooter>
 

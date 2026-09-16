@@ -409,7 +409,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     },
-    [editorHeight]
+    [editorHeight],
   );
 
   const handleCopyHistory = (id: string, text: string) => {
@@ -976,10 +976,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         {/* Editor + Results column */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
           <div
-            style={{ height: isResultsCollapsed ? "100%" : `${editorHeight}px` }}
+            style={{
+              height: isResultsCollapsed ? "100%" : `${editorHeight}px`,
+            }}
             className={cn(
               "border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/80 shrink-0 transition-all duration-75 overflow-hidden",
-              isResultsCollapsed && "flex-1 border-b-0"
+              isResultsCollapsed && "flex-1 border-b-0",
             )}
           >
             <CodeMirror
@@ -1010,7 +1012,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               onMouseDown={handleMouseDownResizer}
               className={cn(
                 "h-2 w-full bg-zinc-200/80 dark:bg-zinc-800/80 hover:bg-indigo-500/40 dark:hover:bg-indigo-500/50 cursor-row-resize flex items-center justify-center transition-colors group relative z-10 shrink-0 select-none",
-                isDragging && "bg-indigo-500/60 dark:bg-indigo-500/60"
+                isDragging && "bg-indigo-500/60 dark:bg-indigo-500/60",
               )}
               title="Drag up or down to resize editor and results panel"
             >
@@ -1198,7 +1200,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                     typeof val === "object"
                                       ? JSON.stringify(val)
                                       : String(val ?? ""),
-                                    cellKey
+                                    cellKey,
                                   )
                                 }
                                 title="Click to copy value"
@@ -1215,7 +1217,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                       "px-1 py-0 text-[10px] font-mono font-medium",
                                       val
                                         ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                                        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                                        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
                                     )}
                                   >
                                     {String(val)}
@@ -1245,21 +1247,21 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                 </div>
               )}
 
-            {result &&
-              result.rows.length === 0 &&
-              !result.is_mutation &&
-              !error && (
-                <div className="h-48 flex flex-col items-center justify-center text-center p-6">
-                  <CheckCircle2 className="w-8 h-8 text-zinc-400 mb-2 opacity-50" />
-                  <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                    {t("console.noResults")}
-                  </h3>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Query returned 0 rows in{" "}
-                    {formatLatency(result.execution_time_ms)}ms.
-                  </p>
-                </div>
-              )}
+              {result &&
+                result.rows.length === 0 &&
+                !result.is_mutation &&
+                !error && (
+                  <div className="h-48 flex flex-col items-center justify-center text-center p-6">
+                    <CheckCircle2 className="w-8 h-8 text-zinc-400 mb-2 opacity-50" />
+                    <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                      {t("console.noResults")}
+                    </h3>
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Query returned 0 rows in{" "}
+                      {formatLatency(result.execution_time_ms)}ms.
+                    </p>
+                  </div>
+                )}
             </div>
           )}
         </div>

@@ -1,9 +1,9 @@
-import type { FC } from 'react';
-import { Layers } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Separator } from '@/components/ui/separator';
+import type { FC } from "react";
+import { Layers } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
 
 interface EmptyTableScreenProps {
   connectionName?: string;
@@ -22,7 +22,10 @@ export const EmptyTableScreen: FC<EmptyTableScreenProps> = ({
     <div className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-50/50 dark:bg-zinc-950">
       <div className="h-11 px-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-2.5 bg-white dark:bg-zinc-900/30">
         <SidebarTrigger className="-ml-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer" />
-        <Separator orientation="vertical" className="h-4 bg-zinc-200 dark:bg-zinc-800 self-center" />
+        <Separator
+          orientation="vertical"
+          className="h-4 bg-zinc-200 dark:bg-zinc-800 self-center"
+        />
         <span className="font-mono text-xs text-zinc-500 dark:text-zinc-400 font-medium">
           {connectionName}
         </span>
@@ -34,7 +37,7 @@ export const EmptyTableScreen: FC<EmptyTableScreenProps> = ({
           {connectionName}
         </h3>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 font-mono">
-          {hasTables ? t('app.selectTablePrompt') : t('app.noTablesFound')}
+          {hasTables ? t("app.selectTablePrompt") : t("app.noTablesFound")}
         </p>
         {!hasTables && (
           <Button
@@ -44,7 +47,7 @@ export const EmptyTableScreen: FC<EmptyTableScreenProps> = ({
             onClick={onReintrospect}
             className="text-xs"
           >
-            {t('app.reintrospect')}
+            {t("app.reintrospect")}
           </Button>
         )}
       </div>

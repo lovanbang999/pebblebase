@@ -44,7 +44,7 @@ interface SchemaInspectorProps {
   onNavigateRelation?: (
     targetTable: string,
     targetColumn: string,
-    value: unknown
+    value: unknown,
   ) => void;
 }
 
@@ -56,16 +56,12 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
 }) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<"schema" | "migration">("schema");
+  const [activeSubTab, setActiveSubTab] = useState<"schema" | "migration">(
+    "schema",
+  );
 
   // Fetch DDL and index data
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-    isRefetching,
-  } = useQuery({
+  const { data, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ["table-ddl", connId, table.name],
     queryFn: () => fetchTableDDL(connId!, table.name),
     enabled: Boolean(connId && table.name),
@@ -81,8 +77,8 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
       data?.engine === "mysql"
         ? MySQL
         : data?.engine === "sqlite"
-        ? SQLite
-        : PostgreSQL;
+          ? SQLite
+          : PostgreSQL;
     return [sql({ dialect })];
   }, [data?.engine]);
 
@@ -186,7 +182,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
               "px-3 py-1.5 text-xs font-mono font-medium rounded-md flex items-center gap-1.5 transition-all",
               activeSubTab === "schema"
                 ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
             )}
           >
             <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
@@ -199,7 +195,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
               "px-3 py-1.5 text-xs font-mono font-medium rounded-md flex items-center gap-1.5 transition-all",
               activeSubTab === "migration"
                 ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
             )}
           >
             <Rocket className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -224,7 +220,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                       <RefreshCw
                         className={cn(
                           "w-3.5 h-3.5",
-                          (isLoading || isRefetching) && "animate-spin"
+                          (isLoading || isRefetching) && "animate-spin",
                         )}
                       />
                       <span>Refresh</span>
@@ -243,7 +239,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                   "h-8 px-3 font-mono text-xs font-semibold gap-1.5 transition-all shadow-xs",
                   copied
                     ? "bg-emerald-600 text-white"
-                    : "bg-emerald-600 hover:bg-emerald-500 text-white"
+                    : "bg-emerald-600 hover:bg-emerald-500 text-white",
                 )}
               >
                 {copied ? (
@@ -277,317 +273,320 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>
                 {t("schema.failedDdl", {
-                  error: error instanceof Error ? error.message : "Unknown error",
+                  error:
+                    error instanceof Error ? error.message : "Unknown error",
                 })}
               </span>
             </div>
           ) : null}
 
-      {/* Section 1: Column Specifications */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
-            {t("schema.columnsTitle")}
-          </h3>
-        </div>
-
-        <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/50 shadow-2xs">
-          <Table>
-            <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-12 text-center text-xs font-mono">
-                  #
-                </TableHead>
-                <TableHead className="text-xs font-mono">
-                  {t("schema.colName")}
-                </TableHead>
-                <TableHead className="text-xs font-mono">
-                  {t("schema.colType")}
-                </TableHead>
-                <TableHead className="text-xs font-mono">
-                  {t("schema.colPk")}
-                </TableHead>
-                <TableHead className="text-xs font-mono">
-                  {t("schema.colNullable")}
-                </TableHead>
-                <TableHead className="text-xs font-mono">
-                  {t("schema.colDefault")}
-                </TableHead>
-                <TableHead className="text-xs font-mono">
-                  {t("schema.colRelations")}
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {table.columns.map((col, idx) => {
-                const relation = table.relations?.find(
-                  (r) => r.from_column === col.name
-                );
-
-                return (
-                  <TableRow
-                    key={col.name}
-                    className="font-mono text-xs hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60"
-                  >
-                    <TableCell className="text-center text-zinc-400">
-                      {idx + 1}
-                    </TableCell>
-                    <TableCell className="font-semibold text-zinc-900 dark:text-zinc-100">
-                      <div className="flex items-center gap-1.5">
-                        {col.is_primary_key && (
-                          <Key className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        )}
-                        <span>{col.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          "font-mono text-[11px] font-normal px-2 py-0.5",
-                          getTypeBadgeClass(col.type)
-                        )}
-                      >
-                        {col.type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {col.is_primary_key ? (
-                        <Badge
-                          variant="outline"
-                          className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-[10px] font-bold uppercase"
-                        >
-                          {t("schema.primary")}
-                        </Badge>
-                      ) : (
-                        <span className="text-zinc-400">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {col.nullable ? (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
-                          {t("schema.yes")}
-                        </span>
-                      ) : (
-                        <span className="text-zinc-500 dark:text-zinc-400 text-[11px]">
-                          {t("schema.no")}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {col.default_value ? (
-                        <code className="text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px]">
-                          {col.default_value}
-                        </code>
-                      ) : (
-                        <span className="text-zinc-400 text-[11px]">
-                          {t("schema.none")}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {relation ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onNavigateRelation?.(
-                              relation.to_table,
-                              relation.to_column,
-                              ""
-                            )
-                          }
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:underline cursor-pointer text-[11px]"
-                        >
-                          <span>{relation.to_table}</span>
-                          <ArrowRight className="w-3 h-3" />
-                          <span>{relation.to_column}</span>
-                        </button>
-                      ) : (
-                        <span className="text-zinc-400">—</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
-
-      {/* Section 2: Database Indexes */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Key className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
-            {t("schema.indexesTitle")}
-          </h3>
-        </div>
-
-        {isLoading ? (
-          <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-2 bg-white dark:bg-zinc-900/40">
-            <Skeleton className="h-6 w-1/3" />
-            <Skeleton className="h-8 w-full" />
-            <Skeleton className="h-8 w-full" />
-          </div>
-        ) : !data?.indexes || data.indexes.length === 0 ? (
-          <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-center text-xs font-mono text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900/30">
-            {t("schema.noIndexes")}
-          </div>
-        ) : (
-          <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/50 shadow-2xs">
-            <Table>
-              <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs font-mono">
-                    {t("schema.idxName")}
-                  </TableHead>
-                  <TableHead className="text-xs font-mono">
-                    {t("schema.idxType")}
-                  </TableHead>
-                  <TableHead className="text-xs font-mono">
-                    {t("schema.idxCols")}
-                  </TableHead>
-                  <TableHead className="text-xs font-mono">
-                    {t("schema.idxUnique")}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.indexes.map((idx) => (
-                  <TableRow
-                    key={idx.name}
-                    className="font-mono text-xs hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60"
-                  >
-                    <TableCell className="font-semibold text-zinc-900 dark:text-zinc-100">
-                      {idx.name}
-                    </TableCell>
-                    <TableCell>
-                      {idx.primary ? (
-                        <Badge
-                          variant="outline"
-                          className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 font-bold text-[10px] uppercase"
-                        >
-                          {t("schema.primary")}
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 text-[10px]"
-                        >
-                          {t("schema.secondary")}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {idx.columns.map((c) => (
-                          <Badge
-                            key={c}
-                            variant="secondary"
-                            className="font-mono text-[11px] font-normal px-1.5 py-0"
-                          >
-                            {c}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {idx.unique ? (
-                        <Badge
-                          variant="outline"
-                          className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold uppercase"
-                        >
-                          {t("schema.unique")}
-                        </Badge>
-                      ) : (
-                        <span className="text-zinc-400">{t("schema.no")}</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-      </div>
-
-      {/* Section 3: Table Creation DDL Script */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FileCode className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
-              {t("schema.ddlTitle")}
-            </h3>
-          </div>
-
-          {data?.ddl && (
-            <span className="text-[11px] font-mono text-zinc-400">
-              {data.ddl.split("\n").length} lines
-            </span>
-          )}
-        </div>
-
-        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
-          {/* Editor Header Bar */}
-          <div className="h-9 px-3 bg-zinc-100/70 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-            <span className="text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 uppercase">
-              {data?.engine === "mongodb" ? "JSON Definition" : "SQL DDL"}
-            </span>
-
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleCopy}
-              disabled={!data?.ddl}
-              className="h-6 px-2 text-xs font-mono gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3 h-3 text-emerald-500" />
-                  <span className="text-emerald-600 dark:text-emerald-400">
-                    {t("schema.copied")}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3 h-3" />
-                  <span>{t("schema.copyDdl")}</span>
-                </>
-              )}
-            </Button>
-          </div>
-
-          {/* Code Container */}
-          {isLoading ? (
-            <div className="p-4 space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-2/3" />
-              <Skeleton className="h-4 w-1/3" />
+          {/* Section 1: Column Specifications */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
+                {t("schema.columnsTitle")}
+              </h3>
             </div>
-          ) : (
-            <CodeMirror
-              value={data?.ddl || ""}
-              height="auto"
-              minHeight="140px"
-              maxHeight="450px"
-              readOnly={true}
-              editable={false}
-              theme={isDark ? "dark" : "light"}
-              extensions={extensions}
-              basicSetup={{
-                lineNumbers: true,
-                foldGutter: true,
-                highlightActiveLine: false,
-              }}
-              className="font-mono text-xs"
-            />
-          )}
-        </div>
-      </div>
+
+            <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/50 shadow-2xs">
+              <Table>
+                <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-12 text-center text-xs font-mono">
+                      #
+                    </TableHead>
+                    <TableHead className="text-xs font-mono">
+                      {t("schema.colName")}
+                    </TableHead>
+                    <TableHead className="text-xs font-mono">
+                      {t("schema.colType")}
+                    </TableHead>
+                    <TableHead className="text-xs font-mono">
+                      {t("schema.colPk")}
+                    </TableHead>
+                    <TableHead className="text-xs font-mono">
+                      {t("schema.colNullable")}
+                    </TableHead>
+                    <TableHead className="text-xs font-mono">
+                      {t("schema.colDefault")}
+                    </TableHead>
+                    <TableHead className="text-xs font-mono">
+                      {t("schema.colRelations")}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {table.columns.map((col, idx) => {
+                    const relation = table.relations?.find(
+                      (r) => r.from_column === col.name,
+                    );
+
+                    return (
+                      <TableRow
+                        key={col.name}
+                        className="font-mono text-xs hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60"
+                      >
+                        <TableCell className="text-center text-zinc-400">
+                          {idx + 1}
+                        </TableCell>
+                        <TableCell className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          <div className="flex items-center gap-1.5">
+                            {col.is_primary_key && (
+                              <Key className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            )}
+                            <span>{col.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "font-mono text-[11px] font-normal px-2 py-0.5",
+                              getTypeBadgeClass(col.type),
+                            )}
+                          >
+                            {col.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {col.is_primary_key ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-[10px] font-bold uppercase"
+                            >
+                              {t("schema.primary")}
+                            </Badge>
+                          ) : (
+                            <span className="text-zinc-400">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {col.nullable ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
+                              {t("schema.yes")}
+                            </span>
+                          ) : (
+                            <span className="text-zinc-500 dark:text-zinc-400 text-[11px]">
+                              {t("schema.no")}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {col.default_value ? (
+                            <code className="text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px]">
+                              {col.default_value}
+                            </code>
+                          ) : (
+                            <span className="text-zinc-400 text-[11px]">
+                              {t("schema.none")}
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {relation ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onNavigateRelation?.(
+                                  relation.to_table,
+                                  relation.to_column,
+                                  "",
+                                )
+                              }
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:underline cursor-pointer text-[11px]"
+                            >
+                              <span>{relation.to_table}</span>
+                              <ArrowRight className="w-3 h-3" />
+                              <span>{relation.to_column}</span>
+                            </button>
+                          ) : (
+                            <span className="text-zinc-400">—</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Section 2: Database Indexes */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Key className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
+                {t("schema.indexesTitle")}
+              </h3>
+            </div>
+
+            {isLoading ? (
+              <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-2 bg-white dark:bg-zinc-900/40">
+                <Skeleton className="h-6 w-1/3" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ) : !data?.indexes || data.indexes.length === 0 ? (
+              <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-center text-xs font-mono text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900/30">
+                {t("schema.noIndexes")}
+              </div>
+            ) : (
+              <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/50 shadow-2xs">
+                <Table>
+                  <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="text-xs font-mono">
+                        {t("schema.idxName")}
+                      </TableHead>
+                      <TableHead className="text-xs font-mono">
+                        {t("schema.idxType")}
+                      </TableHead>
+                      <TableHead className="text-xs font-mono">
+                        {t("schema.idxCols")}
+                      </TableHead>
+                      <TableHead className="text-xs font-mono">
+                        {t("schema.idxUnique")}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.indexes.map((idx) => (
+                      <TableRow
+                        key={idx.name}
+                        className="font-mono text-xs hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60"
+                      >
+                        <TableCell className="font-semibold text-zinc-900 dark:text-zinc-100">
+                          {idx.name}
+                        </TableCell>
+                        <TableCell>
+                          {idx.primary ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 font-bold text-[10px] uppercase"
+                            >
+                              {t("schema.primary")}
+                            </Badge>
+                          ) : (
+                            <Badge
+                              variant="outline"
+                              className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 text-[10px]"
+                            >
+                              {t("schema.secondary")}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {idx.columns.map((c) => (
+                              <Badge
+                                key={c}
+                                variant="secondary"
+                                className="font-mono text-[11px] font-normal px-1.5 py-0"
+                              >
+                                {c}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {idx.unique ? (
+                            <Badge
+                              variant="outline"
+                              className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold uppercase"
+                            >
+                              {t("schema.unique")}
+                            </Badge>
+                          ) : (
+                            <span className="text-zinc-400">
+                              {t("schema.no")}
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Table Creation DDL Script */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCode className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
+                  {t("schema.ddlTitle")}
+                </h3>
+              </div>
+
+              {data?.ddl && (
+                <span className="text-[11px] font-mono text-zinc-400">
+                  {data.ddl.split("\n").length} lines
+                </span>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+              {/* Editor Header Bar */}
+              <div className="h-9 px-3 bg-zinc-100/70 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                <span className="text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 uppercase">
+                  {data?.engine === "mongodb" ? "JSON Definition" : "SQL DDL"}
+                </span>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopy}
+                  disabled={!data?.ddl}
+                  className="h-6 px-2 text-xs font-mono gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-500" />
+                      <span className="text-emerald-600 dark:text-emerald-400">
+                        {t("schema.copied")}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>{t("schema.copyDdl")}</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Code Container */}
+              {isLoading ? (
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-4 w-1/3" />
+                </div>
+              ) : (
+                <CodeMirror
+                  value={data?.ddl || ""}
+                  height="auto"
+                  minHeight="140px"
+                  maxHeight="450px"
+                  readOnly={true}
+                  editable={false}
+                  theme={isDark ? "dark" : "light"}
+                  extensions={extensions}
+                  basicSetup={{
+                    lineNumbers: true,
+                    foldGutter: true,
+                    highlightActiveLine: false,
+                  }}
+                  className="font-mono text-xs"
+                />
+              )}
+            </div>
+          </div>
         </>
       )}
     </div>
