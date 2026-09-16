@@ -213,8 +213,8 @@ export default function Sidebar({
       <SidebarHeader className="p-2 gap-2 border-b border-sidebar-border">
         <div className="flex items-center justify-between h-9 px-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
           <div className="flex items-center gap-2 overflow-hidden">
-            <div className="size-7 rounded-md bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
-              <Database className="size-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="size-7 rounded-md bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 p-1">
+              <img src="/favicon.svg" alt="Pebblebase" className="size-full object-contain" />
             </div>
             <span className="font-semibold text-xs tracking-wider uppercase text-zinc-900 dark:text-zinc-100 font-mono truncate group-data-[collapsible=icon]:hidden">
               Pebblebase

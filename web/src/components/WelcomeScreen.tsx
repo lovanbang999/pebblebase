@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { Database, Plus, ShieldCheck, Terminal, Zap } from "lucide-react";
+import { Plus, ShieldCheck, Terminal, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -28,8 +28,12 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center select-none">
-        <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 flex items-center justify-center mb-6 shadow-xl dark:shadow-2xl">
-          <Database className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+        <div className="w-16 h-16 rounded-2xl bg-zinc-50 border border-zinc-200 dark:bg-zinc-900 dark:border-zinc-800 flex items-center justify-center mb-6 shadow-xl dark:shadow-2xl p-2.5">
+          <img
+            src="/favicon.svg"
+            alt="Pebblebase Logo"
+            className="w-full h-full object-contain"
+          />
         </div>
 
         <h1 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 mb-2 font-mono">
