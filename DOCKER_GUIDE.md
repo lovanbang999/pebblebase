@@ -1,10 +1,10 @@
-# Pebblebase Docker Deployment & Sharing Guide
+# Pebblebase Docker Deployment and Sharing Guide
 
 This guide explains how to build and publish the **Pebblebase Studio** Docker image to Docker Hub, allowing team members to pull and run the application without needing to clone the source code or install local dependencies.
 
 ---
 
-## 📦 Step 1: Build & Push to Docker Hub (Maintainer Setup)
+## Step 1: Build and Push to Docker Hub (Maintainer Setup)
 
 Run these 3 commands in your terminal to compile the standalone image and publish it:
 
@@ -23,7 +23,7 @@ docker push lovanbang/pebblebase:latest
 
 ---
 
-## 🚀 Step 2: How Teammates Use It (Zero Source Code Required)
+## Step 2: How Teammates Use It (Zero Source Code Required)
 
 Once pushed to Docker Hub, team members can run Pebblebase Studio on their machine in either of the following two ways:
 
@@ -35,7 +35,7 @@ Teammates open their terminal and run:
 docker run -d -p 8090:8080 --name pebblebase lovanbang/pebblebase:latest
 ```
 
-Then open **[http://localhost:8090](http://localhost:8090)** in their web browser! No source code cloning or configuration required.
+Then open **[http://localhost:8090](http://localhost:8090)** in their web browser. No source code cloning or configuration required.
 
 ---
 
@@ -78,10 +78,10 @@ docker compose up -d
 
 ---
 
-## 💡 Quick Reference
+## Quick Reference
 
 | Action | Command | URL / Access |
 |---|---|---|
 | **Run 1-Line Container** | `docker run -d -p 8090:8080 --name pebblebase lovanbang/pebblebase:latest` | `http://localhost:8090` |
 | **Run Studio + DB Stack** | `docker compose up -d` | `http://localhost:8090` |
-| **Stop Running Studio** | `docker stop pebblebase` | — |
+| **Stop Running Studio** | `docker stop pebblebase` | -- |
