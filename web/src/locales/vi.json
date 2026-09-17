@@ -335,6 +335,8 @@
     "signingIn": "Đang đăng nhập...",
     "invalidCredentials": "Tên đăng nhập hoặc mật khẩu không đúng.",
     "studioSubtitle": "Đăng nhập vào không gian làm việc cơ sở dữ liệu",
+    "initializing": "Đang khởi tạo Studio...",
+    "loadingWorkspace": "Đang tải không gian làm việc...",
     "quickFill": "Tự động điền tài khoản mặc định",
     "filled": "Đã điền",
     "capsLockOn": "Caps Lock đang BẬT",
