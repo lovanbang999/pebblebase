@@ -1,32 +1,57 @@
-# React + TypeScript + Vite
+# Pebblebase Studio Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+The frontend interface for Pebblebase is built with React 19, TypeScript, Vite, and Tailwind CSS v4. It is shared across both the standalone web server and the native Wails v2 Linux desktop client.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Core Technologies
 
-## React Compiler
+- **React 19**: Modern component architecture with optimistic state mutations and hooks.
+- **TypeScript**: Strict type definitions for schema introspection, table rows, and API contracts.
+- **Tailwind CSS v4**: Modern CSS-first token configuration with container queries and subpixel rendering optimization.
+- **Base UI**: Accessible headless primitives for toolbars, dialogs, dropdowns, and form inputs.
+- **Lucide Icons**: Vector UI icons integrated into standard button components.
+- **CodeMirror**: Syntax highlighting and autocomplete for SQL and MongoDB query execution.
+- **i18next**: Multilingual internationalization supporting English and Vietnamese.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## Dual-Runtime Architecture (Web vs Desktop)
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+The frontend automatically detects its host execution environment via `isDesktopApp()` defined in `src/lib/platform.ts`:
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+### Desktop Mode (Wails v2 Runtime)
+
+- Activates `DesktopTitleBar` with `--wails-draggable: drag` and `--wails-draggable: no-drag` region declarations.
+- Exposes native window management APIs: `minimizeDesktopWindow`, `toggleMaximizeDesktopWindow`, `isDesktopWindowMaximized`, and `closeDesktopWindow`.
+- Sets CSS custom property `--titlebar-height: 38px` on the application root, positioning the sidebar container cleanly beneath the frameless studio titlebar.
+
+### Web Browser Mode
+
+- `DesktopTitleBar` returns `null` to avoid rendering operating-system-level window controls inside standard web browsers.
+- `--titlebar-height` defaults to `0px`, allowing the sidebar to occupy the full viewport height.
+
+---
+
+## Theme Architecture and CSS Sanitization
+
+- **Light and Dark Modes**: Controlled via class `.dark` and browser-level `color-scheme: light / dark` on `:root`.
+- **Browser Autofill Normalization**: Overrides WebKit and Firefox internal autofill styles using `-webkit-box-shadow: 0 0 0 1000px inset` and explicit foreground text colors. This prevents browser password managers from injecting dark background fills when operating in light mode.
+
+---
+
+## Development Scripts
+
+```bash
+# Start local Vite development server with Hot Module Replacement
+yarn dev
+
+# Compile TypeScript and build production bundle into dist/
+yarn build
+
+# Run unit tests
+yarn test
+
+# Preview production build locally
+yarn preview
 ```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
