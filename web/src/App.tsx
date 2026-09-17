@@ -24,6 +24,7 @@ import { usePebblebaseStudio } from './hooks/usePebblebaseStudio';
 import { useTabs } from './hooks/useTabs';
 import { useAuthStore } from './lib/auth';
 import { fetchMe, fetchSavedQueries, exportTableData, apiLogout } from './lib/api';
+import { isDesktopApp, quitDesktopApp, toggleFullscreen } from './lib/platform';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -206,6 +207,23 @@ function PebblebaseStudio() {
     };
     window.addEventListener('keydown', handleCmdK);
     return () => window.removeEventListener('keydown', handleCmdK);
+  }, []);
+
+  // Desktop shortcuts: Ctrl+Q to quit application, F11 to toggle fullscreen
+  useEffect(() => {
+    const handleDesktopShortcuts = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'q' || e.key === 'Q')) {
+        if (isDesktopApp()) {
+          e.preventDefault();
+          quitDesktopApp();
+        }
+      } else if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleDesktopShortcuts);
+    return () => window.removeEventListener('keydown', handleDesktopShortcuts);
   }, []);
 
   // Fetch saved queries for current connection

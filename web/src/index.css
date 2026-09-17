@@ -128,9 +128,13 @@
   }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: subpixel-antialiased;
+    text-rendering: optimizeLegibility;
   }
   html {
     @apply font-sans;
+    -webkit-font-smoothing: subpixel-antialiased;
+    text-rendering: optimizeLegibility;
   }
 }
 
@@ -243,4 +247,38 @@
 
 .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionDetail {
   opacity: 0.95 !important;
+}
+
+/* Wails Desktop Window Drag Regions */
+.wails-drag {
+  --wails-draggable: drag;
+  -webkit-app-region: drag;
+}
+
+.wails-no-drag {
+  --wails-draggable: no-drag;
+  -webkit-app-region: no-drag;
+}
+
+/* React Flow Node Crisp Rendering & Subpixel Snapping */
+.react-flow__node {
+  /* backface-visibility: hidden; */
+  /* -webkit-backface-visibility: hidden; */
+}
+
+.react-flow__viewport {
+  transform-style: flat;
+}
+
+.react-flow__edge-path {
+  shape-rendering: geometricPrecision;
+}
+
+/* Only promote to GPU compositing layer while actively dragging to prevent bitmap stretching when zooming */
+.is-dragging-node .react-flow__node {
+  will-change: transform;
+}
+
+.is-dragging-node .react-flow__edge-path {
+  animation: none !important;
 }

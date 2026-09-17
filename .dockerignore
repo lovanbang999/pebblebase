@@ -1,0 +1,31 @@
+# Git & Editor
+.git
+.gitignore
+.vscode
+.idea
+
+# Desktop (Wails) isolation - guarantees 0 MB impact on Docker image
+cmd/desktop
+wails.json
+build/bin
+build/appimage
+wailsjs
+
+# Local runtime data & secrets
+data/
+*.db
+*.db-shm
+*.db-wal
+.master.key
+.env
+.env.*
+!.env.example
+
+# Local node_modules & build artifacts (rebuilt cleanly inside Docker stage 1)
+web/node_modules
+web/dist
+
+# Documentation & plans
+*.md
+testdata/
+pebblebase
