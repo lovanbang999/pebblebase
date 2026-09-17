@@ -49,6 +49,8 @@
 }
 
 :root {
+    color-scheme: light;
+    --titlebar-height: 0px;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -84,6 +86,7 @@
 }
 
 .dark {
+    color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
@@ -281,4 +284,35 @@
 
 .is-dragging-node .react-flow__edge-path {
   animation: none !important;
+}
+
+/* Fix WebKit / Chrome / Firefox Autofill Colors to match Light and Dark themes */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px oklch(1 0 0) inset !important;
+  -webkit-text-fill-color: oklch(0.145 0 0) !important;
+  caret-color: oklch(0.145 0 0) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover, 
+.dark input:-webkit-autofill:focus, 
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px oklch(0.205 0 0) inset !important;
+  -webkit-text-fill-color: oklch(0.985 0 0) !important;
+  caret-color: oklch(0.985 0 0) !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+input:autofill {
+  background-color: oklch(1 0 0) !important;
+  color: oklch(0.145 0 0) !important;
+}
+
+.dark input:autofill {
+  background-color: oklch(0.205 0 0) !important;
+  color: oklch(0.985 0 0) !important;
 }

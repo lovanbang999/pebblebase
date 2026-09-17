@@ -604,5 +604,12 @@
         "tip": "Phím tắt: Nhấn phím / để kích hoạt nhanh thanh tìm kiếm."
       }
     }
+  },
+  "titlebar": {
+    "searchPlaceholder": "Tìm kiếm hoặc chạy lệnh...",
+    "minimize": "Thu nhỏ",
+    "maximize": "Phóng to",
+    "restore": "Khôi phục",
+    "close": "Đóng"
   }
 }

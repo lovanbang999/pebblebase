@@ -604,5 +604,12 @@
         "tip": "Shortcut: Press / to jump directly to quick search."
       }
     }
+  },
+  "titlebar": {
+    "searchPlaceholder": "Search or run commands...",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
   }
 }

@@ -5,6 +5,7 @@ import { useAuthStore } from "@/lib/auth";
 import packageJson from "../../package.json";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeToggle } from "./ThemeToggle";
+import { DesktopTitleBar } from "./DesktopTitleBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -59,15 +60,17 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-background text-foreground relative select-none antialiased">
-      {/* Top Right Header Actions (Language & Theme Controls) */}
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5">
-        <LanguageSwitcher />
-        <ThemeToggle />
-      </div>
+    <div className="h-screen w-full flex flex-col bg-background text-foreground relative select-none antialiased overflow-hidden">
+      <DesktopTitleBar />
+      <div className="flex-1 w-full flex flex-col items-center justify-center relative">
+        {/* Top Right Header Actions (Language & Theme Controls) */}
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5">
+          <LanguageSwitcher />
+          <ThemeToggle />
+        </div>
 
-      {/* Main Login Card Container */}
-      <div className="relative w-full max-w-sm mx-4">
+        {/* Main Login Card Container */}
+        <div className="relative w-full max-w-sm mx-4">
         {/* Brand Header */}
         <div className="flex flex-col items-center mb-6 text-center">
           <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center shadow-xs mb-3 text-foreground p-1.5">
@@ -98,7 +101,7 @@ export function LoginScreen() {
                 {t("auth.username")}
               </label>
               <div className="relative">
-                <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
                 <Input
                   id="login-username"
                   type="text"
@@ -106,7 +109,7 @@ export function LoginScreen() {
                   autoFocus
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="pl-8"
+                  className="pl-8 bg-background dark:bg-zinc-900/60 text-foreground border-input placeholder:text-muted-foreground focus-visible:ring-ring"
                   placeholder="admin"
                   required
                 />
@@ -130,7 +133,7 @@ export function LoginScreen() {
                 )}
               </div>
               <div className="relative">
-                <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10 pointer-events-none" />
                 <Input
                   id="login-password"
                   type={showPassword ? "text" : "password"}
@@ -139,14 +142,14 @@ export function LoginScreen() {
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onKeyUp={handleKeyDown}
-                  className="pl-8 pr-8"
+                  className="pl-8 pr-8 bg-background dark:bg-zinc-900/60 text-foreground border-input placeholder:text-muted-foreground focus-visible:ring-ring"
                   placeholder="••••••••"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors rounded-md focus:outline-none cursor-pointer"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors rounded-md focus:outline-none cursor-pointer z-10"
                   title={
                     showPassword
                       ? t("auth.hidePassword")
@@ -219,6 +222,7 @@ export function LoginScreen() {
         <p className="text-center text-[11px] text-muted-foreground mt-5 font-sans">
           Pebblebase Studio · Engine Host v{packageJson.version}
         </p>
+      </div>
       </div>
     </div>
   );
