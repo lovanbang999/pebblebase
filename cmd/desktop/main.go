@@ -29,6 +29,7 @@ func main() {
 		MinWidth:         1024,
 		MinHeight:        640,
 		WindowStartState: options.Maximised,
+		Frameless:        true,
 		StartHidden:      true,
 		OnDomReady: func(ctx context.Context) {
 			// Ensure WebKitGTK compositor has flushed the dark splash frame to the window buffer

@@ -14,6 +14,7 @@ import { EmptyTableScreen } from './components/EmptyTableScreen';
 import { DeleteRowDialog } from './components/DeleteRowDialog';
 import { LoginScreen } from './components/LoginScreen';
 import { SplashScreen } from './components/SplashScreen';
+import { DesktopTitleBar } from './components/DesktopTitleBar';
 import { DefaultPasswordBanner } from './components/DefaultPasswordBanner';
 import { AdminPanel } from './components/AdminPanel';
 import { CommandPalette, type CommandActionId } from './components/CommandPalette';
@@ -37,6 +38,7 @@ const queryClient = new QueryClient({
 });
 
 function PebblebaseStudio() {
+  const isDesktop = isDesktopApp();
   const [
     isAdminPanelOpen,
     setIsAdminPanelOpen,
@@ -331,9 +333,22 @@ function PebblebaseStudio() {
   };
 
   return (
-    <SidebarProvider defaultOpen={true} className="h-screen w-screen overflow-hidden bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors">
-      {/* Left Sidebar */}
-      <Sidebar
+    <div
+      style={
+        {
+          "--titlebar-height": isDesktop ? "38px" : "0px",
+        } as React.CSSProperties
+      }
+      className="h-screen w-screen flex flex-col overflow-hidden bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-sans transition-colors"
+    >
+      <DesktopTitleBar
+        activeConnectionName={activeConnection?.name}
+        activeDatabaseType={activeConnection?.type}
+        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+      />
+      <SidebarProvider defaultOpen={true} className="flex-1 w-full overflow-hidden min-h-0">
+        {/* Left Sidebar */}
+        <Sidebar
         theme={theme}
         onToggleTheme={toggleTheme}
         connections={connections}
@@ -573,7 +588,8 @@ function PebblebaseStudio() {
         onStartTour={() => setIsSpotlightTourActive(true)}
         onCloseTour={() => setIsSpotlightTourActive(false)}
       />
-    </SidebarProvider>
+      </SidebarProvider>
+    </div>
   );
 }
 

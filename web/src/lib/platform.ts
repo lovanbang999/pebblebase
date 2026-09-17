@@ -54,6 +54,51 @@ export function quitDesktopApp(): void {
 }
 
 /**
+ * Minimizes the desktop window to the taskbar/dock.
+ */
+export function minimizeDesktopWindow(): void {
+  if (typeof window === "undefined") return;
+  const wailsRuntime = (window as any).runtime;
+  if (wailsRuntime && typeof wailsRuntime.WindowMinimise === "function") {
+    wailsRuntime.WindowMinimise();
+  }
+}
+
+/**
+ * Toggles maximize / restore state for the desktop window.
+ */
+export function toggleMaximizeDesktopWindow(): void {
+  if (typeof window === "undefined") return;
+  const wailsRuntime = (window as any).runtime;
+  if (wailsRuntime && typeof wailsRuntime.WindowToggleMaximise === "function") {
+    wailsRuntime.WindowToggleMaximise();
+  }
+}
+
+/**
+ * Returns true if the desktop window is currently maximized.
+ */
+export async function isDesktopWindowMaximized(): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  const wailsRuntime = (window as any).runtime;
+  if (wailsRuntime && typeof wailsRuntime.WindowIsMaximised === "function") {
+    try {
+      return await wailsRuntime.WindowIsMaximised();
+    } catch {
+      return false;
+    }
+  }
+  return false;
+}
+
+/**
+ * Closes the desktop application window.
+ */
+export function closeDesktopWindow(): void {
+  quitDesktopApp();
+}
+
+/**
  * Toggles fullscreen mode for both desktop (Wails) and browser environments.
  */
 export async function toggleFullscreen(): Promise<void> {
