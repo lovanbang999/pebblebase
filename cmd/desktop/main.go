@@ -25,6 +25,7 @@ func main() {
 		Height:            850,
 		MinWidth:          1024,
 		MinHeight:         640,
+		WindowStartState:  options.Maximised,
 		AssetServer: &assetserver.Options{
 			Assets:  frontendFS,
 			Handler: app.Mux(),

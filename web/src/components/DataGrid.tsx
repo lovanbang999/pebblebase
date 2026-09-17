@@ -1468,49 +1468,49 @@ export const DataGrid: FC<DataGridProps> = ({
             orientation="vertical"
             className="h-4 bg-zinc-200 dark:bg-zinc-800 self-center"
           />
-          <div className="flex items-center gap-2">
-            <TableIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            <h2 className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <div className="flex items-center gap-2 min-w-0">
+            <TableIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <h2 className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-28 sm:max-w-44 md:max-w-none">
               {table.name}
             </h2>
           </div>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono hidden md:inline whitespace-nowrap">
             {totalCount.toLocaleString()}{" "}
             {totalCount === 1 ? "record" : "records"}
           </span>
 
           <Separator
             orientation="vertical"
-            className="h-4 bg-zinc-200 dark:bg-zinc-800 mx-1 self-center"
+            className="h-4 bg-zinc-200 dark:bg-zinc-800 mx-1 self-center hidden md:inline-block"
           />
 
           {/* Sub-view switcher: [ Data Grid ] | [ Schema & DDL ] */}
-          <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/60">
+          <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/60 shrink-0">
             <button
               type="button"
               onClick={() => setActiveSubView("grid")}
               className={cn(
-                "px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
+                "px-2 sm:px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
                 activeSubView === "grid"
                   ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
                   : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
               )}
             >
-              <TableIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>{t("schema.dataGrid")}</span>
+              <TableIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span className="hidden sm:inline">{t("schema.dataGrid")}</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveSubView("schema")}
               className={cn(
-                "px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
+                "px-2 sm:px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
                 activeSubView === "schema"
                   ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
                   : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
               )}
             >
-              <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>{t("schema.schemaDdl")}</span>
+              <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span className="hidden sm:inline">{t("schema.schemaDdl")}</span>
             </button>
           </div>
 
@@ -1569,7 +1569,7 @@ export const DataGrid: FC<DataGridProps> = ({
           )}
         </div>
 
-        <div data-tour="grid-toolbar" className="flex items-center gap-2">
+        <div data-tour="grid-toolbar" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {activeSubView === "grid" ? (
             <>
               {/* Quick Search Input */}
@@ -1581,7 +1581,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   value={quickSearch}
                   onChange={(e) => setQuickSearch(e.target.value)}
                   placeholder={`${t("datagrid.searchPlaceholder")} (/)`}
-                  className="pl-8 pr-7 h-8 text-xs font-mono w-52"
+                  className="pl-8 pr-7 h-8 text-xs font-mono w-28 sm:w-36 md:w-44 lg:w-52 focus:w-44 sm:focus:w-52 transition-all"
                 />
                 {quickSearch && (
                   <Button
@@ -1608,13 +1608,14 @@ export const DataGrid: FC<DataGridProps> = ({
                 size="sm"
                 onClick={() => setShowFilterBuilder(!showFilterBuilder)}
                 className={cn(
-                  "text-xs font-mono font-medium gap-1.5",
+                  "text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 sm:px-3",
                   (filters.length > 0 || showFilterBuilder) &&
                     "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-300",
                 )}
+                title={t("datagrid.filterButton")}
               >
                 <FilterIcon className="w-3.5 h-3.5" />
-                {t("datagrid.filterButton")}
+                <span className="hidden sm:inline">{t("datagrid.filterButton")}</span>
                 {filters.length > 0 && (
                   <Badge className="w-4 h-4 p-0 rounded-full bg-emerald-500 text-white dark:text-zinc-950 text-[10px] font-bold flex items-center justify-center">
                     {filters.length}
@@ -1630,7 +1631,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 onClick={onRefresh}
                 disabled={isLoading}
                 title={t("datagrid.reloadTableTooltip")}
-                className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white"
+                className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white shrink-0"
               >
                 <RefreshCw
                   className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
@@ -1645,10 +1646,10 @@ export const DataGrid: FC<DataGridProps> = ({
                   size="sm"
                   onClick={onOpenQueryConsole}
                   title={t("datagrid.openQueryConsole")}
-                  className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+                  className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 lg:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
                 >
-                  <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>{t("datagrid.openQueryConsole")}</span>
+                  <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="hidden xl:inline">{t("datagrid.openQueryConsole")}</span>
                 </Button>
               )}
 
@@ -1662,10 +1663,10 @@ export const DataGrid: FC<DataGridProps> = ({
                         variant="outline"
                         size="sm"
                         title={t("datagrid.export")}
-                        className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+                        className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 lg:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
                       >
-                        <Download className="w-3.5 h-3.5 text-zinc-500" />
-                        <span>{t("datagrid.export")}</span>
+                        <Download className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <span className="hidden lg:inline">{t("datagrid.export")}</span>
                         <ChevronDown className="w-3 h-3 text-zinc-400" />
                       </Button>
                     }
@@ -1700,12 +1701,12 @@ export const DataGrid: FC<DataGridProps> = ({
                       : t("datagrid.importCsv")
                   }
                   className={cn(
-                    "text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white",
+                    "text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 xl:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0",
                     isReadOnly && "cursor-not-allowed opacity-60",
                   )}
                 >
-                  <UploadCloud className="w-3.5 h-3.5 text-zinc-500" />
-                  <span>{t("datagrid.importCsv")}</span>
+                  <UploadCloud className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                  <span className="hidden xl:inline">{t("datagrid.importCsv")}</span>
                 </Button>
               )}
 
@@ -1721,14 +1722,14 @@ export const DataGrid: FC<DataGridProps> = ({
                     : t("datagrid.addRow")
                 }
                 className={cn(
-                  "text-xs font-semibold gap-1.5 shadow-xs transition-colors",
+                  "text-xs font-semibold gap-1 sm:gap-1.5 px-2.5 sm:px-3 shadow-xs transition-colors shrink-0",
                   isReadOnly
                     ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700 cursor-not-allowed opacity-60"
                     : "bg-emerald-600 hover:bg-emerald-500 text-white",
                 )}
               >
-                <Plus className="w-3.5 h-3.5" />
-                {t("datagrid.addRow")}
+                <Plus className="w-3.5 h-3.5 shrink-0" />
+                <span>{t("datagrid.addRow")}</span>
               </Button>
             </>
           ) : (
@@ -1741,10 +1742,10 @@ export const DataGrid: FC<DataGridProps> = ({
                   size="sm"
                   onClick={onOpenQueryConsole}
                   title={t("datagrid.openQueryConsole")}
-                  className="text-xs font-mono font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white"
+                  className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 sm:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
                 >
-                  <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>{t("datagrid.openQueryConsole")}</span>
+                  <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="hidden sm:inline">{t("datagrid.openQueryConsole")}</span>
                 </Button>
               )}
               <Button
@@ -2073,14 +2074,14 @@ export const DataGrid: FC<DataGridProps> = ({
           </div>
 
           {/* Pagination Footer */}
-          <div className="h-11 px-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 flex items-center justify-between text-xs font-mono text-zinc-500 dark:text-zinc-400">
-            <div className="flex items-center gap-3">
-              <span>
+          <div className="h-11 px-3 sm:px-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 flex items-center justify-between gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <span className="truncate">
                 {totalCount === 0
                   ? `0 ${t("datagrid.records")}`
                   : `${t("datagrid.showing")} ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} ${t("datagrid.of")} ${totalCount}`}
               </span>
-              <div className="flex items-center gap-1.5 ml-2">
+              <div className="hidden sm:flex items-center gap-1.5 ml-1 sm:ml-2 shrink-0">
                 <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   {t("datagrid.perPage")}
                 </span>
@@ -2100,8 +2101,8 @@ export const DataGrid: FC<DataGridProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
                 {t("datagrid.page")} {page + 1} {t("datagrid.of")} {totalPages}
               </span>
               <div className="flex items-center gap-1">

@@ -27,6 +27,7 @@ rm -rf "$PKG_DIR"
 mkdir -p "$PKG_DIR/DEBIAN"
 mkdir -p "$PKG_DIR/usr/bin"
 mkdir -p "$PKG_DIR/usr/share/applications"
+mkdir -p "$PKG_DIR/usr/share/pixmaps"
 mkdir -p "$PKG_DIR/usr/share/icons/hicolor/scalable/apps"
 
 # 1. Install binary
@@ -47,10 +48,47 @@ StartupWMClass=pebblebase
 EOF
 chmod 644 "$PKG_DIR/usr/share/applications/pebblebase.desktop"
 
-# 3. Install App Icon
+# 3. Install App Icons (Scalable SVG + Multi-resolution PNGs for GNOME/KDE/XFCE)
 if [ -f "web/public/favicon.svg" ]; then
+  # Scalable vector icon
   cp -f "web/public/favicon.svg" "$PKG_DIR/usr/share/icons/hicolor/scalable/apps/pebblebase.svg"
   chmod 644 "$PKG_DIR/usr/share/icons/hicolor/scalable/apps/pebblebase.svg"
+  cp -f "web/public/favicon.svg" "$PKG_DIR/usr/share/pixmaps/pebblebase.svg"
+  chmod 644 "$PKG_DIR/usr/share/pixmaps/pebblebase.svg"
+
+  # Render pixel-perfect PNG icons for standard Linux resolutions
+  python3 - << 'PYEOF'
+import os
+import gi
+gi.require_version('Rsvg', '2.0')
+from gi.repository import Rsvg
+import cairo
+
+svg_file = "web/public/favicon.svg"
+pkg_dir = os.environ.get("PKG_DIR", "build/deb_pkg")
+
+try:
+    handle = Rsvg.Handle.new_from_file(svg_file)
+    sizes = [16, 32, 48, 64, 128, 256, 512]
+    for sz in sizes:
+        d = f"{pkg_dir}/usr/share/icons/hicolor/{sz}x{sz}/apps"
+        os.makedirs(d, exist_ok=True)
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, sz, sz)
+        ctx = cairo.Context(surface)
+        ctx.scale(sz / 128.0, sz / 128.0)
+        handle.render_cairo(ctx)
+        surface.write_to_png(f"{d}/pebblebase.png")
+
+    # Pixmaps fallback (256x256)
+    os.makedirs(f"{pkg_dir}/usr/share/pixmaps", exist_ok=True)
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, 256, 256)
+    ctx = cairo.Context(surface)
+    ctx.scale(256 / 128.0, 256 / 128.0)
+    handle.render_cairo(ctx)
+    surface.write_to_png(f"{pkg_dir}/usr/share/pixmaps/pebblebase.png")
+except Exception as e:
+    print(f"Notice: Optional PNG icon generation skipped: {e}")
+PYEOF
 fi
 
 # 4. Control file
@@ -68,7 +106,32 @@ Description: Pebblebase Studio - Modern lightweight database studio
 EOF
 chmod 644 "$PKG_DIR/DEBIAN/control"
 
-# 5. Build .deb package with dpkg-deb
+# 5. Maintainer scripts for instant icon cache & desktop database refresh
+cat << 'EOF' > "$PKG_DIR/DEBIAN/postinst"
+#!/bin/sh
+set -e
+if which gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor 2>/dev/null || true
+fi
+if which update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q 2>/dev/null || true
+fi
+EOF
+chmod 755 "$PKG_DIR/DEBIAN/postinst"
+
+cat << 'EOF' > "$PKG_DIR/DEBIAN/postrm"
+#!/bin/sh
+set -e
+if which gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -q -t -f /usr/share/icons/hicolor 2>/dev/null || true
+fi
+if which update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q 2>/dev/null || true
+fi
+EOF
+chmod 755 "$PKG_DIR/DEBIAN/postrm"
+
+# 6. Build .deb package with dpkg-deb
 dpkg-deb --build --root-owner-group "$PKG_DIR" "build/bin/${DEB_NAME}"
 
 # Clean up staging dir
