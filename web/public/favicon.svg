@@ -16,12 +16,16 @@
       <stop offset="100%" stop-color="#064e3b" />
     </linearGradient>
 
-    <filter id="pb-glow" x="0" y="0" width="128" height="128" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#047857" flood-opacity="0.3" />
-    </filter>
+    <radialGradient id="pb-shadow-grad" cx="64" cy="102" r="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#047857" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#047857" stop-opacity="0" />
+    </radialGradient>
   </defs>
 
-  <g filter="url(#pb-glow)">
+  <!-- Base Soft Shadow (vector-native for universal Linux/librsvg compatibility) -->
+  <ellipse cx="64" cy="102" rx="42" ry="14" fill="url(#pb-shadow-grad)" />
+
+  <g id="pb-database-layers">
     <!-- Layer 1: Bottom Disk -->
     <path d="M26 82C26 89.732 43.0132 96 64 96C84.9868 96 102 89.732 102 82V96C102 103.732 84.9868 110 64 110C43.0132 110 26 103.732 26 96V82Z" fill="url(#pb-base-grad)" />
     <ellipse cx="64" cy="82" rx="38" ry="14" fill="#10b981" opacity="0.3" />
