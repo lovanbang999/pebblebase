@@ -10,7 +10,7 @@
   "frontend:dev:serverUrl": "auto",
   "build:tags": "webkit2_41",
   "postBuildHooks": {
-    "linux/*": "sh -c 'mkdir -p /home/pang/work-space/buil-software/pebblebase/build/bin && find /home/pang/work-space/buil-software/pebblebase/cmd/desktop -name pebblebase -type f -exec cp -f {} /home/pang/work-space/buil-software/pebblebase/build/bin/pebblebase \\; && rm -rf /home/pang/work-space/buil-software/pebblebase/cmd/desktop/cmd /home/pang/work-space/buil-software/pebblebase/cmd/desktop/build /home/pang/work-space/buil-software/pebblebase/cmd/desktop/web'"
+    "linux/*": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd) && mkdir -p \"$ROOT/build/bin\" && find \"$ROOT/cmd/desktop\" -name pebblebase -type f -exec cp -f {} \"$ROOT/build/bin/pebblebase\" \\; && rm -rf \"$ROOT/cmd/desktop/cmd\" \"$ROOT/cmd/desktop/build\" \"$ROOT/cmd/desktop/web\"'"
   },
   "author": {
     "name": "Pebblebase Team",

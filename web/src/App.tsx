@@ -1,13 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { cn } from 'cn';
 import type { Connection, SavedQuery } from './lib/types';
-import { ConnectionModal } from './components/ConnectionModal';
 import Sidebar from './components/Sidebar';
 import { TabBar } from './components/TabBar';
 import { DataGrid } from './components/DataGrid';
-import { QueryConsole } from './components/QueryConsole';
-import ERDView from './components/ERDView';
-import { RowModal } from './components/RowModal';
 import { ErrorBanner } from './components/ErrorBanner';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { EmptyTableScreen } from './components/EmptyTableScreen';
@@ -16,9 +13,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { SplashScreen } from './components/SplashScreen';
 import { DesktopTitleBar } from './components/DesktopTitleBar';
 import { DefaultPasswordBanner } from './components/DefaultPasswordBanner';
-import { AdminPanel } from './components/AdminPanel';
 import { CommandPalette, type CommandActionId } from './components/CommandPalette';
-import { OnboardingTour } from './components/onboarding/OnboardingTour';
 import { getRecentItems, addRecentItem, clearRecentItems, type RecentItem } from './lib/recentItems';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -27,6 +22,24 @@ import { useTabs } from './hooks/useTabs';
 import { useAuthStore } from './lib/auth';
 import { fetchMe, fetchSavedQueries, exportTableData, apiLogout } from './lib/api';
 import { isDesktopApp, quitDesktopApp, toggleFullscreen } from './lib/platform';
+
+// Lazy-loaded heavy modules for fast desktop startup and minimal initial memory
+const QueryConsole = lazy(() =>
+  import('./components/QueryConsole').then((m) => ({ default: m.QueryConsole }))
+);
+const ERDView = lazy(() => import('./components/ERDView'));
+const AdminPanel = lazy(() =>
+  import('./components/AdminPanel').then((m) => ({ default: m.AdminPanel }))
+);
+const ConnectionModal = lazy(() =>
+  import('./components/ConnectionModal').then((m) => ({ default: m.ConnectionModal }))
+);
+const RowModal = lazy(() =>
+  import('./components/RowModal').then((m) => ({ default: m.RowModal }))
+);
+const OnboardingTour = lazy(() =>
+  import('./components/onboarding/OnboardingTour').then((m) => ({ default: m.OnboardingTour }))
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -420,133 +433,191 @@ function PebblebaseStudio() {
               setIsConnModalOpen(true);
             }}
           />
-        ) : activeTab?.type === 'query' && activeConnection ? (
-          <QueryConsole
-            key={`console-${activeTab.id}`}
-            connection={activeConnection}
-            tables={tables}
-            initialQuery={activeTab.state?.queryText}
-            onQueryChange={(text) => updateActiveTabState({ queryText: text })}
-            onNavigateToTable={(tName) => {
-              openTableTab(tName);
-            }}
-          />
-        ) : activeTab?.type === 'erd' && activeConnection ? (
-          <ERDView
-            key={`erd-${activeTab.id}`}
-            connectionId={activeConnection.id}
-            connectionName={activeConnection.name}
-            onOpenTable={(tName) => {
-              openTableTab(tName);
-            }}
-            onGenerateJoinQuery={(query, title) => {
-              openQueryTab(query, title);
-            }}
-          />
-        ) : !activeTable || !activeTableSchema ? (
-          <EmptyTableScreen
-            connectionName={activeConnection?.name}
-            hasTables={tables.length > 0}
-            onReintrospect={() => refetchTables()}
-          />
         ) : (
-          <DataGrid
-            key={`grid-${activeTab?.id || activeTable}`}
-            connId={activeConnection?.id}
-            dbType={activeConnection?.type}
-            table={activeTableSchema}
-            rows={rowsResult?.rows || []}
-            totalCount={rowsResult?.total_count || 0}
-            isLoading={isLoadingRows}
-            page={page}
-            pageSize={pageSize}
-            onPageChange={(newPage) => {
-              setPage(newPage);
-              updateActiveTabState({ page: newPage });
-            }}
-            onPageSizeChange={(newSize) => {
-              setPageSize(newSize);
-              setPage(0);
-              updateActiveTabState({ pageSize: newSize, page: 0 });
-            }}
-            sortBy={sortBy}
-            sortDesc={sortDesc}
-            onSortChange={(col, desc) => {
-              setSortBy(col);
-              setSortDesc(desc);
-              setPage(0);
-              updateActiveTabState({ sortBy: col, sortDesc: desc, page: 0 });
-            }}
-            filters={filters}
-            onFiltersChange={(newFilters) => {
-              setFilters(newFilters);
-              setPage(0);
-              updateActiveTabState({ filters: newFilters, page: 0 });
-            }}
-            onRefresh={() => refetchRows()}
-            isReadOnly={Boolean(activeConnection?.read_only)}
-            onOpenQueryConsole={() => openQueryTab()}
-            onAddRow={() => {
-              if (activeConnection?.read_only) return;
-              setEditingRow(null);
-              setIsRowModalOpen(true);
-            }}
-            onEditRow={(row) => {
-              if (activeConnection?.read_only) return;
-              setEditingRow(row);
-              setIsRowModalOpen(true);
-            }}
-            onDeleteRow={(row) => {
-              if (activeConnection?.read_only) return;
-              handleDeleteRowDirectly(row);
-            }}
-            onSaveCell={async (row, colName, newVal) => {
-              if (activeConnection?.read_only) return;
-              await handleSaveCell(row, colName, newVal);
-            }}
-            onNavigateRelation={(targetTable, targetColumn, value) => {
-              openTableTab(targetTable, false, {
-                filters: [{ column: targetColumn, operator: 'eq', value: String(value) }],
-                page: 0,
-              });
-            }}
-          />
+          <>
+            {/* Open Query Tabs (Preserved in DOM with visibility toggle for instant switching) */}
+            {tabs
+              .filter((t) => t.type === 'query' && activeConnection)
+              .map((t) => (
+                <div
+                  key={t.id}
+                  className={cn(
+                    'flex-1 h-full flex flex-col overflow-hidden',
+                    activeTabId === t.id ? 'flex' : 'hidden'
+                  )}
+                >
+                  <Suspense
+                    fallback={
+                      <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
+                        Loading Query Console...
+                      </div>
+                    }
+                  >
+                    <QueryConsole
+                      connection={activeConnection}
+                      tables={tables}
+                      initialQuery={t.state?.queryText}
+                      onQueryChange={(text) => updateActiveTabState({ queryText: text })}
+                      onNavigateToTable={(tName) => {
+                        openTableTab(tName);
+                      }}
+                    />
+                  </Suspense>
+                </div>
+              ))}
+
+            {/* Open ERD Tabs (Preserved in DOM with visibility toggle) */}
+            {tabs
+              .filter((t) => t.type === 'erd' && activeConnection)
+              .map((t) => (
+                <div
+                  key={t.id}
+                  className={cn(
+                    'flex-1 h-full flex flex-col overflow-hidden',
+                    activeTabId === t.id ? 'flex' : 'hidden'
+                  )}
+                >
+                  <Suspense
+                    fallback={
+                      <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
+                        Loading ERD Diagram...
+                      </div>
+                    }
+                  >
+                    <ERDView
+                      connectionId={activeConnection.id}
+                      connectionName={activeConnection.name}
+                      onOpenTable={(tName) => {
+                        openTableTab(tName);
+                      }}
+                      onGenerateJoinQuery={(query, title) => {
+                        openQueryTab(query, title);
+                      }}
+                    />
+                  </Suspense>
+                </div>
+              ))}
+
+            {/* Table Data View (Preserved when switching to/from console/ERD) */}
+            <div
+              className={cn(
+                'flex-1 h-full flex flex-col overflow-hidden',
+                activeTab?.type === 'table' ? 'flex' : 'hidden'
+              )}
+            >
+              {!activeTable || !activeTableSchema ? (
+                <EmptyTableScreen
+                  connectionName={activeConnection?.name}
+                  hasTables={tables.length > 0}
+                  onReintrospect={() => refetchTables()}
+                />
+              ) : (
+                <DataGrid
+                  key={`grid-${activeTab?.id || activeTable}`}
+                  connId={activeConnection?.id}
+                  dbType={activeConnection?.type}
+                  table={activeTableSchema}
+                  rows={rowsResult?.rows || []}
+                  totalCount={rowsResult?.total_count || 0}
+                  isLoading={isLoadingRows}
+                  page={page}
+                  pageSize={pageSize}
+                  onPageChange={(newPage) => {
+                    setPage(newPage);
+                    updateActiveTabState({ page: newPage });
+                  }}
+                  onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    setPage(0);
+                    updateActiveTabState({ pageSize: newSize, page: 0 });
+                  }}
+                  sortBy={sortBy}
+                  sortDesc={sortDesc}
+                  onSortChange={(col, desc) => {
+                    setSortBy(col);
+                    setSortDesc(desc);
+                    setPage(0);
+                    updateActiveTabState({ sortBy: col, sortDesc: desc, page: 0 });
+                  }}
+                  filters={filters}
+                  onFiltersChange={(newFilters) => {
+                    setFilters(newFilters);
+                    setPage(0);
+                    updateActiveTabState({ filters: newFilters, page: 0 });
+                  }}
+                  onRefresh={() => refetchRows()}
+                  isReadOnly={Boolean(activeConnection?.read_only)}
+                  onOpenQueryConsole={() => openQueryTab()}
+                  onAddRow={() => {
+                    if (activeConnection?.read_only) return;
+                    setEditingRow(null);
+                    setIsRowModalOpen(true);
+                  }}
+                  onEditRow={(row) => {
+                    if (activeConnection?.read_only) return;
+                    setEditingRow(row);
+                    setIsRowModalOpen(true);
+                  }}
+                  onDeleteRow={(row) => {
+                    if (activeConnection?.read_only) return;
+                    handleDeleteRowDirectly(row);
+                  }}
+                  onSaveCell={async (row, colName, newVal) => {
+                    if (activeConnection?.read_only) return;
+                    await handleSaveCell(row, colName, newVal);
+                  }}
+                  onNavigateRelation={(targetTable, targetColumn, value) => {
+                    openTableTab(targetTable, false, {
+                      filters: [{ column: targetColumn, operator: 'eq', value: String(value) }],
+                      page: 0,
+                    });
+                  }}
+                />
+              )}
+            </div>
+          </>
         )}
       </SidebarInset>
 
       {/* Connection Modal */}
-      <ConnectionModal
-        key={isConnModalOpen ? (cloningConnection ? `clone-${cloningConnection.id}` : 'new-conn') : 'closed'}
-        isOpen={isConnModalOpen}
-        onClose={() => {
-          setIsConnModalOpen(false);
-          setCloningConnection(null);
-        }}
-        onSubmit={handleCreateConnection}
-        cloneData={cloningConnection}
-      />
+      {isConnModalOpen && (
+        <Suspense fallback={null}>
+          <ConnectionModal
+            key={cloningConnection ? `clone-${cloningConnection.id}` : 'new-conn'}
+            isOpen={isConnModalOpen}
+            onClose={() => {
+              setIsConnModalOpen(false);
+              setCloningConnection(null);
+            }}
+            onSubmit={handleCreateConnection}
+            cloneData={cloningConnection}
+          />
+        </Suspense>
+      )}
 
       {/* Row Insert/Edit Modal */}
       {activeTableSchema && isRowModalOpen && (
-        <RowModal
-          key={editingRow ? JSON.stringify(editingRow) : 'new-row'}
-          isOpen={isRowModalOpen}
-          onClose={() => {
-            setIsRowModalOpen(false);
-            setEditingRow(null);
-          }}
-          table={activeTableSchema}
-          initialRow={editingRow}
-          onSave={handleSaveRow}
-          onDelete={
-            editingRow
-              ? async () => {
-                  const where = getWhereCondition(editingRow);
-                  await deleteRowMutation.mutateAsync(where);
-                }
-              : undefined
-          }
-        />
+        <Suspense fallback={null}>
+          <RowModal
+            key={editingRow ? JSON.stringify(editingRow) : 'new-row'}
+            isOpen={isRowModalOpen}
+            onClose={() => {
+              setIsRowModalOpen(false);
+              setEditingRow(null);
+            }}
+            table={activeTableSchema}
+            initialRow={editingRow}
+            onSave={handleSaveRow}
+            onDelete={
+              editingRow
+                ? async () => {
+                    const where = getWhereCondition(editingRow);
+                    await deleteRowMutation.mutateAsync(where);
+                  }
+                : undefined
+            }
+          />
+        </Suspense>
       )}
 
       {/* Delete Record Confirmation Dialog */}
@@ -557,11 +628,15 @@ function PebblebaseStudio() {
         onConfirm={handleConfirmDeleteRow}
       />
       {/* Admin Panel Modal */}
-      <AdminPanel
-        isOpen={isAdminPanelOpen}
-        onClose={() => setIsAdminPanelOpen(false)}
-        defaultTab={adminPanelDefaultTab}
-      />
+      {isAdminPanelOpen && (
+        <Suspense fallback={null}>
+          <AdminPanel
+            isOpen={isAdminPanelOpen}
+            onClose={() => setIsAdminPanelOpen(false)}
+            defaultTab={adminPanelDefaultTab}
+          />
+        </Suspense>
+      )}
 
       {/* Global Command Palette Modal */}
       <CommandPalette
@@ -580,14 +655,18 @@ function PebblebaseStudio() {
       />
 
       {/* Onboarding Tour & Welcome Modal */}
-      <OnboardingTour
-        userId={currentUser?.id}
-        isWelcomeOpen={isOnboardingWelcomeOpen}
-        onCloseWelcome={() => setIsOnboardingWelcomeOpen(false)}
-        isTourActive={isSpotlightTourActive}
-        onStartTour={() => setIsSpotlightTourActive(true)}
-        onCloseTour={() => setIsSpotlightTourActive(false)}
-      />
+      {(isOnboardingWelcomeOpen || isSpotlightTourActive) && (
+        <Suspense fallback={null}>
+          <OnboardingTour
+            userId={currentUser?.id}
+            isWelcomeOpen={isOnboardingWelcomeOpen}
+            onCloseWelcome={() => setIsOnboardingWelcomeOpen(false)}
+            isTourActive={isSpotlightTourActive}
+            onStartTour={() => setIsSpotlightTourActive(true)}
+            onCloseTour={() => setIsSpotlightTourActive(false)}
+          />
+        </Suspense>
+      )}
       </SidebarProvider>
     </div>
   );

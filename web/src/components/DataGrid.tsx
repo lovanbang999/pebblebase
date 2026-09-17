@@ -3,6 +3,8 @@ import {
   useState,
   useEffect,
   useRef,
+  lazy,
+  Suspense,
   type FC,
   type FormEvent,
 } from "react";
@@ -12,6 +14,7 @@ import {
   flexRender,
   type ColumnDef,
 } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -56,10 +59,19 @@ import type {
 import { exportTableData, fetchTableStats } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
-import { ImportModal } from "./ImportModal";
-import { SchemaInspector } from "./SchemaInspector";
 import { QuickStatsBar } from "./QuickStatsBar";
-import { ColumnAnalyticsDrawer } from "./ColumnAnalyticsDrawer";
+
+const ImportModal = lazy(() =>
+  import("./ImportModal").then((m) => ({ default: m.ImportModal }))
+);
+const SchemaInspector = lazy(() =>
+  import("./SchemaInspector").then((m) => ({ default: m.SchemaInspector }))
+);
+const ColumnAnalyticsDrawer = lazy(() =>
+  import("./ColumnAnalyticsDrawer").then((m) => ({
+    default: m.ColumnAnalyticsDrawer,
+  }))
+);
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -1440,6 +1452,17 @@ export const DataGrid: FC<DataGridProps> = ({
     manualSorting: true,
   });
 
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const tableRows = reactTable.getRowModel().rows;
+  // Virtualize rows for smooth 60fps scrolling & minimal DOM memory
+  // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: tableRows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 37,
+    overscan: 10,
+  });
+
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
   const handleAddFilter = (e: FormEvent) => {
@@ -1767,12 +1790,20 @@ export const DataGrid: FC<DataGridProps> = ({
       </div>
 
       {activeSubView === "schema" ? (
-        <SchemaInspector
-          connId={connId}
-          table={table}
-          isReadOnly={isReadOnly}
-          onNavigateRelation={onNavigateRelation}
-        />
+        <Suspense
+          fallback={
+            <div className="p-8 text-center text-xs text-zinc-500 font-mono">
+              Loading Schema...
+            </div>
+          }
+        >
+          <SchemaInspector
+            connId={connId}
+            table={table}
+            isReadOnly={isReadOnly}
+            onNavigateRelation={onNavigateRelation}
+          />
+        </Suspense>
       ) : (
         <>
           {/* Quick Stats Bar */}
@@ -1922,7 +1953,11 @@ export const DataGrid: FC<DataGridProps> = ({
           )}
 
           {/* Grid Container */}
-          <div data-tour="datagrid-view" className="flex-1 overflow-auto relative flex flex-col">
+          <div
+            ref={tableContainerRef}
+            data-tour="datagrid-view"
+            className="flex-1 overflow-auto relative flex flex-col"
+          >
             {isLoading ? (
               /* Loading Skeletons */
               <div className="flex-1 overflow-hidden p-4 space-y-2 animate-in fade-in duration-200">
@@ -2029,45 +2064,88 @@ export const DataGrid: FC<DataGridProps> = ({
                 </TableHeader>
 
                 <TableBody className="divide-y divide-zinc-200 dark:divide-zinc-800/50">
-                  {reactTable.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group"
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        setContextMenu({
-                          mouseX: e.clientX,
-                          mouseY: e.clientY,
-                          row: row.original,
-                          colName: "",
-                          cellValue: undefined,
-                        });
-                      }}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className="px-3 py-2 text-xs not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap max-w-sm truncate text-zinc-800 dark:text-zinc-200"
-                          onContextMenu={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setContextMenu({
-                              mouseX: e.clientX,
-                              mouseY: e.clientY,
-                              row: row.original,
-                              colName: cell.column.id.replace("_extra_", ""),
-                              cellValue: cell.getValue(),
-                            });
-                          }}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                  {rowVirtualizer.getVirtualItems().length > 0 && (
+                    <>
+                      {rowVirtualizer.getVirtualItems()[0].start > 0 && (
+                        <tr>
+                          <td
+                            colSpan={reactTable.getVisibleLeafColumns().length}
+                            style={{
+                              height: `${rowVirtualizer.getVirtualItems()[0].start}px`,
+                              padding: 0,
+                              border: 0,
+                            }}
+                          />
+                        </tr>
+                      )}
+                      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const row = tableRows[virtualRow.index];
+                        if (!row) return null;
+                        return (
+                          <TableRow
+                            key={row.id}
+                            data-index={virtualRow.index}
+                            ref={rowVirtualizer.measureElement}
+                            className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group"
+                            onContextMenu={(e) => {
+                              e.preventDefault();
+                              setContextMenu({
+                                mouseX: e.clientX,
+                                mouseY: e.clientY,
+                                row: row.original,
+                                colName: "",
+                                cellValue: undefined,
+                              });
+                            }}
+                          >
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell
+                                key={cell.id}
+                                className="px-3 py-2 text-xs not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap max-w-sm truncate text-zinc-800 dark:text-zinc-200"
+                                onContextMenu={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setContextMenu({
+                                    mouseX: e.clientX,
+                                    mouseY: e.clientY,
+                                    row: row.original,
+                                    colName: cell.column.id.replace("_extra_", ""),
+                                    cellValue: cell.getValue(),
+                                  });
+                                }}
+                              >
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext(),
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        );
+                      })}
+                      {rowVirtualizer.getTotalSize() -
+                        (rowVirtualizer.getVirtualItems()[
+                          rowVirtualizer.getVirtualItems().length - 1
+                        ]?.end ?? 0) >
+                        0 && (
+                        <tr>
+                          <td
+                            colSpan={reactTable.getVisibleLeafColumns().length}
+                            style={{
+                              height: `${
+                                rowVirtualizer.getTotalSize() -
+                                (rowVirtualizer.getVirtualItems()[
+                                  rowVirtualizer.getVirtualItems().length - 1
+                                ]?.end ?? 0)
+                              }px`,
+                              padding: 0,
+                              border: 0,
+                            }}
+                          />
+                        </tr>
+                      )}
+                    </>
+                  )}
                 </TableBody>
               </Table>
             )}
@@ -2132,29 +2210,33 @@ export const DataGrid: FC<DataGridProps> = ({
         </>
       )}
 
-      {connId && (
-        <ImportModal
-          isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-          connId={connId}
-          table={table}
-          onSuccess={() => {
-            onRefresh();
-          }}
-        />
+      {connId && isImportModalOpen && (
+        <Suspense fallback={null}>
+          <ImportModal
+            isOpen={isImportModalOpen}
+            onClose={() => setIsImportModalOpen(false)}
+            connId={connId}
+            table={table}
+            onSuccess={() => {
+              onRefresh();
+            }}
+          />
+        </Suspense>
       )}
 
-      {connId && (
-        <ColumnAnalyticsDrawer
-          isOpen={analyticsColumn !== null}
-          onClose={() => setAnalyticsColumn(null)}
-          connectionId={connId}
-          tableName={table.name}
-          column={analyticsColumn}
-          columns={table.columns}
-          onSelectColumn={(col) => setAnalyticsColumn(col)}
-          activeFilters={filters}
-        />
+      {connId && analyticsColumn !== null && (
+        <Suspense fallback={null}>
+          <ColumnAnalyticsDrawer
+            isOpen={analyticsColumn !== null}
+            onClose={() => setAnalyticsColumn(null)}
+            connectionId={connId}
+            tableName={table.name}
+            column={analyticsColumn}
+            columns={table.columns}
+            onSelectColumn={(col) => setAnalyticsColumn(col)}
+            activeFilters={filters}
+          />
+        </Suspense>
       )}
 
       {/* Custom Right-Click Context Menu */}

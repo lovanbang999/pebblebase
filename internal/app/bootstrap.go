@@ -26,12 +26,24 @@ type Instance struct {
 	DataDir     string
 	MetaDB      *sql.DB
 	AuthEnabled bool
+	APIServer   *api.Server
 }
 
-// Close releases resources held by the instance.
+// Close releases resources held by the instance, including all active database adapter pools.
 func (inst *Instance) Close() error {
+	var errs []string
+	if inst.APIServer != nil {
+		if err := inst.APIServer.Close(); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
 	if inst.MetaDB != nil {
-		return inst.MetaDB.Close()
+		if err := inst.MetaDB.Close(); err != nil {
+			errs = append(errs, err.Error())
+		}
+	}
+	if len(errs) > 0 {
+		return fmt.Errorf("instance close: %s", strings.Join(errs, "; "))
 	}
 	return nil
 }
@@ -127,6 +139,7 @@ func Bootstrap(dataDir string, authEnabled bool) (*Instance, error) {
 		DataDir:     dataDir,
 		MetaDB:      metaDB,
 		AuthEnabled: authEnabled,
+		APIServer:   apiSrv,
 	}, nil
 }
 
