@@ -1,0 +1,26 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "pebblebase",
+  "outputfilename": "pebblebase",
+  "projectdir": "./cmd/desktop",
+  "frontend:dir": "../../web",
+  "frontend:install": "yarn install",
+  "frontend:build": "yarn build",
+  "frontend:dev:watcher": "yarn dev",
+  "frontend:dev:serverUrl": "auto",
+  "build:tags": "webkit2_41",
+  "postBuildHooks": {
+    "linux/*": "sh -c 'mkdir -p /home/pang/work-space/buil-software/pebblebase/build/bin && find /home/pang/work-space/buil-software/pebblebase/cmd/desktop -name pebblebase -type f -exec cp -f {} /home/pang/work-space/buil-software/pebblebase/build/bin/pebblebase \\; && rm -rf /home/pang/work-space/buil-software/pebblebase/cmd/desktop/cmd /home/pang/work-space/buil-software/pebblebase/cmd/desktop/build /home/pang/work-space/buil-software/pebblebase/cmd/desktop/web'"
+  },
+  "author": {
+    "name": "Pebblebase Team",
+    "email": "lovanbangbox9@gmail.com"
+  },
+  "info": {
+    "companyName": "Pebblebase",
+    "productName": "Pebblebase Studio",
+    "productVersion": "0.1.1",
+    "copyright": "Copyright 2026",
+    "comments": "Modern lightweight database studio"
+  }
+}

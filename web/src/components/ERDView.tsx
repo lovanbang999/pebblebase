@@ -227,14 +227,17 @@ function ERDCanvas({
   );
 
   const isDraggingRef = useRef(false);
+  const [isDraggingNode, setIsDraggingNode] = useState(false);
 
   const handleNodeDragStart = useCallback(() => {
     isDraggingRef.current = true;
+    setIsDraggingNode(true);
     setHoveredTable(null);
     setHoveredColumn(null);
   }, []);
 
   const handleNodeDragStop = useCallback(() => {
+    setIsDraggingNode(false);
     setTimeout(() => {
       isDraggingRef.current = false;
     }, 100);
@@ -671,7 +674,7 @@ function ERDCanvas({
   return (
     <div
       ref={reactFlowWrapper}
-      className="relative flex-1 w-full h-full bg-[#f8fafc] dark:bg-[#0a0b12] overflow-hidden select-none"
+      className={`relative flex-1 w-full h-full bg-[#f8fafc] dark:bg-[#0a0b12] overflow-hidden select-none ${isDraggingNode ? "is-dragging-node" : ""}`}
     >
       {/* Floating Toolbar */}
       <ERDToolbar
@@ -711,10 +714,25 @@ function ERDCanvas({
         onEdgesChange={onEdgesChange}
         onNodeDragStart={handleNodeDragStart}
         onNodeDragStop={handleNodeDragStop}
+        onMoveStart={() => {
+          const vp = document.querySelector<HTMLElement>(
+            ".react-flow__viewport",
+          );
+          if (vp) vp.style.willChange = "transform";
+        }}
+        onMoveEnd={() => {
+          const vp = document.querySelector<HTMLElement>(
+            ".react-flow__viewport",
+          );
+          if (vp) vp.style.willChange = "auto";
+        }}
         nodeTypes={nodeTypes}
         nodesDraggable={true}
         nodesConnectable={false}
         elementsSelectable={true}
+        onlyRenderVisibleElements={true}
+        elevateNodesOnSelect={false}
+        nodeDragThreshold={1}
         minZoom={0.1}
         maxZoom={2.5}
         defaultEdgeOptions={{

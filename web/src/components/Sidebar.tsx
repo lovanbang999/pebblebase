@@ -213,9 +213,12 @@ export default function Sidebar({
       className="select-none transition-colors border-r border-sidebar-border bg-sidebar"
     >
       {/* Brand Header & Quick Actions */}
-      <SidebarHeader className="p-2 gap-2 border-b border-sidebar-border">
+      <SidebarHeader
+        className="p-2 gap-2 border-b border-sidebar-border wails-drag"
+        style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+      >
         <div className="flex items-center justify-between h-9 px-1 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
-          <div className="flex items-center gap-2 overflow-hidden">
+          <div className="flex items-center gap-2 overflow-hidden pointer-events-none">
             <div className="size-7 rounded-md bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 p-1">
               <img src="/favicon.svg" alt="Pebblebase" className="size-full object-contain" />
             </div>
@@ -224,7 +227,10 @@ export default function Sidebar({
             </span>
           </div>
 
-          <div className="flex items-center gap-0.5 group-data-[collapsible=icon]:hidden">
+          <div
+            className="flex items-center gap-0.5 group-data-[collapsible=icon]:hidden wails-no-drag"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+          >
             {onOpenCommandPalette && (
               <Tooltip>
                 <TooltipTrigger
@@ -234,7 +240,8 @@ export default function Sidebar({
                       variant="ghost"
                       size="icon-xs"
                       onClick={onOpenCommandPalette}
-                      className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                      className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 wails-no-drag"
+                      style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                     >
                       <Search className="size-3.5" />
                     </Button>
@@ -253,7 +260,8 @@ export default function Sidebar({
                     variant="ghost"
                     size="icon-xs"
                     onClick={onOpenNewConnection}
-                    className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 wails-no-drag"
+                    style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                   >
                     <Plus className="size-3.5" />
                   </Button>
@@ -267,7 +275,10 @@ export default function Sidebar({
         </div>
 
         {/* Active Connection Switcher */}
-        <SidebarMenu>
+        <SidebarMenu
+          className="wails-no-drag"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        >
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger

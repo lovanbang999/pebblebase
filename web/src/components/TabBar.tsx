@@ -290,8 +290,11 @@ export const TabBar: FC<TabBarProps> = ({
 
   if (tabs.length === 0) {
     return (
-      <div className="relative z-20 flex items-center justify-between h-9 px-3 bg-zinc-100/80 dark:bg-zinc-900/70 border-b border-zinc-200 dark:border-zinc-800 select-none shrink-0">
-        <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono italic">
+      <div
+        className="relative z-20 flex items-center justify-between h-9 px-3 bg-zinc-100/80 dark:bg-zinc-900/70 border-b border-zinc-200 dark:border-zinc-800 select-none shrink-0 wails-drag"
+        style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+      >
+        <span className="text-xs text-zinc-400 dark:text-zinc-500 font-mono italic select-none pointer-events-none">
           {t("tabs.noTabsOpen")}
         </span>
         <Tooltip>
@@ -302,7 +305,8 @@ export const TabBar: FC<TabBarProps> = ({
                 variant="ghost"
                 size="icon-xs"
                 onClick={onNewQueryTab}
-                className="w-7 h-7 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50 shrink-0"
+                className="w-7 h-7 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50 shrink-0 wails-no-drag"
+                style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 <Plus className="w-3.5 h-3.5" />
               </Button>
@@ -315,7 +319,10 @@ export const TabBar: FC<TabBarProps> = ({
   }
 
   return (
-    <div className="relative z-20 flex items-center h-9 px-2 bg-zinc-100/80 dark:bg-zinc-900/70 border-b border-zinc-200 dark:border-zinc-800 select-none overflow-hidden shrink-0">
+    <div
+      className="relative z-20 flex items-center h-9 px-2 bg-zinc-100/80 dark:bg-zinc-900/70 border-b border-zinc-200 dark:border-zinc-800 select-none overflow-hidden shrink-0 wails-drag"
+      style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+    >
       {/* Left Scroll Button when overflowing */}
       {canScrollLeft && (
         <div className="relative z-30 flex items-center shrink-0">
@@ -331,7 +338,8 @@ export const TabBar: FC<TabBarProps> = ({
                     e.stopPropagation();
                     handleScrollBy("left");
                   }}
-                  className="w-5 h-6 rounded text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white/95 dark:bg-zinc-800/95 border border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer relative z-10 shrink-0 ml-1"
+                  className="w-5 h-6 rounded text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white/95 dark:bg-zinc-800/95 border border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer relative z-10 shrink-0 ml-1 wails-no-drag"
+                  style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </Button>
@@ -360,11 +368,12 @@ export const TabBar: FC<TabBarProps> = ({
               onContextMenu={(e) => handleContextMenu(e, tab.id)}
               onMouseDown={(e) => handleMouseDown(e, tab.id)}
               className={cn(
-                "group relative flex items-center gap-2 h-8 px-3 rounded-t-lg font-mono text-xs cursor-pointer transition-all duration-150 border-t-2 max-w-50 shrink-0 select-none",
+                "group relative flex items-center gap-2 h-8 px-3 rounded-t-lg font-mono text-xs cursor-pointer transition-all duration-150 border-t-2 max-w-50 shrink-0 select-none wails-no-drag",
                 isActive
                   ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 border-t-emerald-500 border-x border-zinc-200 dark:border-zinc-800 font-medium shadow-xs"
                   : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40 border-t-transparent border-x border-transparent",
               )}
+              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
             >
               {getTabIcon(tab, isActive)}
 
@@ -419,7 +428,8 @@ export const TabBar: FC<TabBarProps> = ({
                 variant="ghost"
                 size="icon-xs"
                 onClick={onNewQueryTab}
-                className="w-7 h-7 ml-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50 shrink-0 cursor-pointer"
+                className="w-7 h-7 ml-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50 shrink-0 cursor-pointer wails-no-drag"
+                style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 <Plus className="w-3.5 h-3.5" />
               </Button>
@@ -444,7 +454,8 @@ export const TabBar: FC<TabBarProps> = ({
                     e.stopPropagation();
                     handleScrollBy("right");
                   }}
-                  className="w-5 h-6 rounded text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white/95 dark:bg-zinc-800/95 border border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer relative z-10 shrink-0 mr-1"
+                  className="w-5 h-6 rounded text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 bg-white/95 dark:bg-zinc-800/95 border border-zinc-200 dark:border-zinc-700 shadow-xs cursor-pointer relative z-10 shrink-0 mr-1 wails-no-drag"
+                  style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </Button>
@@ -461,8 +472,12 @@ export const TabBar: FC<TabBarProps> = ({
       {contextMenu && (
         <div
           ref={contextMenuRef}
-          style={{ top: `${contextMenu.y}px`, left: `${contextMenu.x}px` }}
-          className="fixed z-50 min-w-42.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-lg p-1 font-mono text-xs text-zinc-700 dark:text-zinc-200 animate-in fade-in-50 zoom-in-95 duration-100"
+          style={{
+            top: `${contextMenu.y}px`,
+            left: `${contextMenu.x}px`,
+            WebkitAppRegion: "no-drag",
+          } as React.CSSProperties}
+          className="fixed z-50 min-w-42.5 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-lg p-1 font-mono text-xs text-zinc-700 dark:text-zinc-200 animate-in fade-in-50 zoom-in-95 duration-100 wails-no-drag"
         >
           <button
             type="button"
