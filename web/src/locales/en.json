@@ -335,6 +335,8 @@
     "signingIn": "Signing in...",
     "invalidCredentials": "Invalid username or password.",
     "studioSubtitle": "Sign in to your database workspace",
+    "initializing": "Initializing Studio...",
+    "loadingWorkspace": "Loading database workspace...",
     "quickFill": "Quick fill default credentials",
     "filled": "Filled",
     "capsLockOn": "Caps Lock is ON",

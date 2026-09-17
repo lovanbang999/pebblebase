@@ -13,6 +13,7 @@ import { WelcomeScreen } from './components/WelcomeScreen';
 import { EmptyTableScreen } from './components/EmptyTableScreen';
 import { DeleteRowDialog } from './components/DeleteRowDialog';
 import { LoginScreen } from './components/LoginScreen';
+import { SplashScreen } from './components/SplashScreen';
 import { DefaultPasswordBanner } from './components/DefaultPasswordBanner';
 import { AdminPanel } from './components/AdminPanel';
 import { CommandPalette, type CommandActionId } from './components/CommandPalette';
@@ -598,13 +599,27 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Dismiss the static splash overlay smoothly once initialization completes
+  useEffect(() => {
+    if (isInitialized) {
+      const splash = document.getElementById('pb-splash');
+      if (splash) {
+        splash.classList.add('pb-splash-hidden');
+        const timer = setTimeout(() => {
+          splash.remove();
+          document.body.style.backgroundColor = '';
+        }, 350);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isInitialized]);
+
   if (!isInitialized) {
-    // Minimal loading state while we validate the token.
-    return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    // If the HTML splash overlay exists, let it handle the single continuous loading sequence
+    if (typeof document !== 'undefined' && document.getElementById('pb-splash')) {
+      return null;
+    }
+    return <SplashScreen />;
   }
 
   if (!token) {
