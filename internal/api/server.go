@@ -177,6 +177,25 @@ func (c *adapterCache) delete(id string) {
 	}
 }
 
+func (c *adapterCache) closeAll() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for id, a := range c.entries {
+		if a != nil {
+			a.Close()
+		}
+		delete(c.entries, id)
+	}
+}
+
+// Close gracefully closes all active database adapter pools.
+func (s *Server) Close() error {
+	if s.cache != nil {
+		s.cache.closeAll()
+	}
+	return nil
+}
+
 // getAdapter returns a cached adapter or opens a new one from the stored DSN.
 // Returns an error when SavePassword=false and the adapter is not cached
 // (i.e., the server restarted and no password was retained).

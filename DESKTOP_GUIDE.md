@@ -54,12 +54,13 @@ The desktop binary is compiled using the Wails CLI:
 
 ```bash
 # From the project root
-wails build -s -skipbindings -clean
+wails build -s -skipbindings -clean -ldflags "-s -w"
 ```
 
 - `-s`: Suppresses non-essential build logs for faster compilation.
 - `-skipbindings`: Skips regenerating Go-TypeScript bindings when only frontend UI or packaging changes are made.
 - `-clean`: Cleans existing build outputs before compiling.
+- `-ldflags "-s -w"`: Strips DWARF debug information and symbol tables, reducing the binary size by ~30–40%.
 
 The compiled binary will be placed at `build/bin/pebblebase`.
 

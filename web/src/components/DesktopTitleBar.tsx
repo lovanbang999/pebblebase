@@ -24,11 +24,13 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
   const isDesktop = isDesktopApp();
   const [isMaximized, setIsMaximized] = useState(true);
 
-  // Sync window maximized state
+  // Sync window maximized state reactively without polling
   useEffect(() => {
     if (!isDesktop) return;
 
     let mounted = true;
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+
     const checkMaximized = async () => {
       try {
         const maximized = await isDesktopWindowMaximized();
@@ -39,10 +41,18 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
     };
 
     checkMaximized();
-    const interval = setInterval(checkMaximized, 1000);
+
+    const handleResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(checkMaximized, 100);
+    };
+
+    window.addEventListener("resize", handleResize);
+
     return () => {
       mounted = false;
-      clearInterval(interval);
+      if (resizeTimer) clearTimeout(resizeTimer);
+      window.removeEventListener("resize", handleResize);
     };
   }, [isDesktop]);
 
@@ -58,8 +68,16 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
   const handleToggleMaximize = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     toggleMaximizeDesktopWindow();
-    // Optimistic toggle
+    // Optimistic toggle followed by verified state
     setIsMaximized((prev) => !prev);
+    setTimeout(async () => {
+      try {
+        const maximized = await isDesktopWindowMaximized();
+        setIsMaximized(maximized);
+      } catch {
+        // ignore check errors
+      }
+    }, 150);
   };
 
   const handleClose = (e: React.MouseEvent) => {

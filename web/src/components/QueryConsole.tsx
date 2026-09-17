@@ -1,9 +1,17 @@
-import { useState, useEffect, useMemo, useCallback, type FC } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  type FC,
+} from "react";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
 import { keymap } from "@codemirror/view";
 import { sql, PostgreSQL, MySQL, SQLite } from "@codemirror/lang-sql";
 import { json, jsonLanguage } from "@codemirror/lang-json";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   autocompletion,
   type CompletionContext,
@@ -754,6 +762,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     );
   }, [result, resultFilter]);
 
+  const resultsContainerRef = useRef<HTMLDivElement>(null);
+  // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
+  const rowVirtualizer = useVirtualizer({
+    count: displayedRows.length,
+    getScrollElement: () => resultsContainerRef.current,
+    estimateSize: () => 36,
+    overscan: 10,
+  });
+
   const copyToClipboard = (text: string, cellKey: string) => {
     navigator.clipboard.writeText(text);
     setCopiedCell(cellKey);
@@ -1162,9 +1179,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
               {/* Data Table View */}
               {result && !result.is_mutation && displayedRows.length > 0 && (
-                <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/40">
+                <div
+                  ref={resultsContainerRef}
+                  className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-auto max-h-[calc(100vh-380px)] min-h-40 bg-white dark:bg-zinc-900/40"
+                >
                   <Table className="w-full border-collapse text-left">
-                    <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                    <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
                       <TableRow>
                         <TableHead className="w-12 text-center text-xs font-mono text-zinc-400">
                           #
@@ -1180,68 +1200,116 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {displayedRows.map((row, idx) => (
-                        <TableRow
-                          key={idx}
-                          className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors border-b border-zinc-100 dark:border-zinc-800/60"
-                        >
-                          <TableCell className="text-center text-xs font-mono text-zinc-400 select-none bg-zinc-50/30 dark:bg-zinc-900/30">
-                            {idx + 1}
-                          </TableCell>
-                          {result.columns.map((col) => {
-                            const val = row[col];
-                            const cellKey = `${idx}-${col}`;
-                            const isCopied = copiedCell === cellKey;
-                            return (
-                              <TableCell
-                                key={col}
-                                onClick={() =>
-                                  copyToClipboard(
-                                    typeof val === "object"
-                                      ? JSON.stringify(val)
-                                      : String(val ?? ""),
-                                    cellKey,
-                                  )
-                                }
-                                title="Click to copy value"
-                                className="px-3 py-2 text-xs font-mono relative group cursor-pointer border-r border-zinc-100 dark:border-zinc-800/60 last:border-r-0 max-w-xs truncate"
-                              >
-                                {val === null || val === undefined ? (
-                                  <span className="text-zinc-400 dark:text-zinc-600 italic">
-                                    NULL
-                                  </span>
-                                ) : typeof val === "boolean" ? (
-                                  <Badge
-                                    variant="outline"
-                                    className={cn(
-                                      "px-1 py-0 text-[10px] font-mono font-medium",
-                                      val
-                                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                                        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-                                    )}
-                                  >
-                                    {String(val)}
-                                  </Badge>
-                                ) : typeof val === "object" ? (
-                                  <span className="text-amber-700 dark:text-amber-300">
-                                    {JSON.stringify(val)}
-                                  </span>
-                                ) : (
-                                  <span className="text-zinc-900 dark:text-zinc-100">
-                                    {String(val)}
-                                  </span>
-                                )}
+                      {rowVirtualizer.getVirtualItems().length > 0 && (
+                        <>
+                          {rowVirtualizer.getVirtualItems()[0].start > 0 && (
+                            <tr>
+                              <td
+                                colSpan={result.columns.length + 1}
+                                style={{
+                                  height: `${rowVirtualizer.getVirtualItems()[0].start}px`,
+                                  padding: 0,
+                                  border: 0,
+                                }}
+                              />
+                            </tr>
+                          )}
+                          {rowVirtualizer
+                            .getVirtualItems()
+                            .map((virtualRow) => {
+                              const row = displayedRows[virtualRow.index];
+                              const idx = virtualRow.index;
+                              if (!row) return null;
+                              return (
+                                <TableRow
+                                  key={idx}
+                                  data-index={virtualRow.index}
+                                  ref={rowVirtualizer.measureElement}
+                                  className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors border-b border-zinc-100 dark:border-zinc-800/60"
+                                >
+                                  <TableCell className="text-center text-xs font-mono text-zinc-400 select-none bg-zinc-50/30 dark:bg-zinc-900/30">
+                                    {idx + 1}
+                                  </TableCell>
+                                  {result.columns.map((col) => {
+                                    const val = row[col];
+                                    const cellKey = `${idx}-${col}`;
+                                    const isCopied = copiedCell === cellKey;
+                                    return (
+                                      <TableCell
+                                        key={col}
+                                        onClick={() =>
+                                          copyToClipboard(
+                                            typeof val === "object"
+                                              ? JSON.stringify(val)
+                                              : String(val ?? ""),
+                                            cellKey,
+                                          )
+                                        }
+                                        title="Click to copy value"
+                                        className="px-3 py-2 text-xs font-mono relative group cursor-pointer border-r border-zinc-100 dark:border-zinc-800/60 last:border-r-0 max-w-xs truncate"
+                                      >
+                                        {val === null || val === undefined ? (
+                                          <span className="text-zinc-400 dark:text-zinc-600 italic">
+                                            NULL
+                                          </span>
+                                        ) : typeof val === "boolean" ? (
+                                          <Badge
+                                            variant="outline"
+                                            className={cn(
+                                              "px-1 py-0 text-[10px] font-mono font-medium",
+                                              val
+                                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                                : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+                                            )}
+                                          >
+                                            {String(val)}
+                                          </Badge>
+                                        ) : typeof val === "object" ? (
+                                          <span className="text-amber-700 dark:text-amber-300">
+                                            {JSON.stringify(val)}
+                                          </span>
+                                        ) : (
+                                          <span className="text-zinc-900 dark:text-zinc-100">
+                                            {String(val)}
+                                          </span>
+                                        )}
 
-                                {isCopied && (
-                                  <span className="absolute right-1 top-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded font-sans flex items-center gap-0.5">
-                                    <Check className="w-2.5 h-2.5" /> copied
-                                  </span>
-                                )}
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      ))}
+                                        {isCopied && (
+                                          <span className="absolute right-1 top-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded font-sans flex items-center gap-0.5">
+                                            <Check className="w-2.5 h-2.5" />{" "}
+                                            copied
+                                          </span>
+                                        )}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              );
+                            })}
+                          {rowVirtualizer.getTotalSize() -
+                            (rowVirtualizer.getVirtualItems()[
+                              rowVirtualizer.getVirtualItems().length - 1
+                            ]?.end ?? 0) >
+                            0 && (
+                            <tr>
+                              <td
+                                colSpan={result.columns.length + 1}
+                                style={{
+                                  height: `${
+                                    rowVirtualizer.getTotalSize() -
+                                    (rowVirtualizer.getVirtualItems()[
+                                      rowVirtualizer.getVirtualItems().length -
+                                        1
+                                    ]?.end ?? 0)
+                                  }px`,
+                                  padding: 0,
+                                  border: 0,
+                                }}
+                              />
+                            </tr>
+                          )}
+                        </>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
