@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { ThemeToggle } from "./ThemeToggle";
@@ -24,6 +24,7 @@ import {
   Eye,
   Workflow,
   HelpCircle,
+  Pin,
 } from "lucide-react";
 import type { Connection, DatabaseType, TableSchema } from "../lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "../lib/platform";
@@ -67,6 +68,7 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -158,6 +160,21 @@ const ENV_STYLES: Record<
   },
 };
 
+function getStoredPinnedTables(connectionId?: string): string[] {
+  if (!connectionId) return [];
+  try {
+    const raw = localStorage.getItem(`pebblebase:pinned:${connectionId}`);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((item): item is string => typeof item === "string");
+    }
+  } catch {
+    /* ignore storage errors */
+  }
+  return [];
+}
+
 export default function Sidebar({
   theme,
   onToggleTheme,
@@ -216,9 +233,167 @@ export default function Sidebar({
     deleteConfirmationInput.trim() === deletingConnection.name.trim(),
   );
 
+  const [pinnedTableNames, setPinnedTableNames] = useState<string[]>(() =>
+    getStoredPinnedTables(selectedConnection?.id),
+  );
+  const [pinToast, setPinToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPinnedTableNames(getStoredPinnedTables(selectedConnection?.id));
+  }, [selectedConnection?.id]);
+
+  useEffect(() => {
+    if (!pinToast) return;
+    const timer = setTimeout(() => setPinToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [pinToast]);
+
+  const handleTogglePin = (tableName: string) => {
+    if (!selectedConnection) return;
+    const connId = selectedConnection.id;
+    setPinnedTableNames((prev) => {
+      const isPinned = prev.includes(tableName);
+      let next: string[];
+      if (isPinned) {
+        next = prev.filter((name) => name !== tableName);
+      } else {
+        if (prev.length >= 10) {
+          setPinToast(t("sidebar.pin.max"));
+          return prev;
+        }
+        next = [...prev, tableName];
+      }
+      try {
+        localStorage.setItem(
+          `pebblebase:pinned:${connId}`,
+          JSON.stringify(next),
+        );
+      } catch {
+        /* ignore storage errors */
+      }
+      return next;
+    });
+  };
+
+  const pinnedTables = useMemo(() => {
+    const tableMap = new Map(tables.map((t) => [t.name, t]));
+    return pinnedTableNames
+      .map((name) => tableMap.get(name))
+      .filter((t): t is TableSchema => Boolean(t));
+  }, [tables, pinnedTableNames]);
+
+  const unpinnedTables = useMemo(() => {
+    const pinnedSet = new Set(pinnedTableNames);
+    return tables.filter((t) => !pinnedSet.has(t.name));
+  }, [tables, pinnedTableNames]);
+
+  const filteredPinnedTables = useMemo(() => {
+    if (!tableSearch) return pinnedTables;
+    const query = tableSearch.toLowerCase();
+    return pinnedTables.filter((t) => t.name.toLowerCase().includes(query));
+  }, [pinnedTables, tableSearch]);
+
+  const filteredUnpinnedTables = useMemo(() => {
+    if (!tableSearch) return unpinnedTables;
+    const query = tableSearch.toLowerCase();
+    return unpinnedTables.filter((t) => t.name.toLowerCase().includes(query));
+  }, [unpinnedTables, tableSearch]);
+
   const filteredTables = tables.filter((t) =>
     t.name.toLowerCase().includes(tableSearch.toLowerCase()),
   );
+
+  const renderTableItem = (tbl: TableSchema, isPinned: boolean) => {
+    const isSelected = selectedTable === tbl.name;
+    const hasPk = tbl.columns.some((c) => c.is_primary_key);
+    const hasFk = tbl.columns.some((c) => c.is_foreign_key);
+    const colCount = tbl.columns.length;
+
+    return (
+      <SidebarMenuItem key={tbl.name}>
+        <SidebarMenuButton
+          isActive={isSelected}
+          onClick={(e) =>
+            onSelectTable(tbl.name, e.ctrlKey || e.metaKey)
+          }
+          tooltip={
+            isPinned
+              ? `⭐ ${tbl.name} (${colCount} cols)`
+              : `${tbl.name} (${colCount} cols)`
+          }
+          className={cn(
+            "font-mono text-xs cursor-pointer h-7 px-2 pr-7 transition-colors",
+            isSelected
+              ? "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 font-semibold border border-emerald-500/30"
+              : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100",
+          )}
+        >
+          <TableIcon
+            className={cn(
+              "size-3.5 shrink-0",
+              isSelected
+                ? "text-emerald-600 dark:text-emerald-400"
+                : isPinned
+                  ? "text-amber-500 dark:text-amber-400"
+                  : "text-zinc-400 dark:text-zinc-500",
+            )}
+          />
+          <span className="truncate group-data-[collapsible=icon]:hidden">
+            {tbl.name}
+          </span>
+
+          <div className="ml-auto flex items-center gap-1 shrink-0 group-data-[collapsible=icon]:hidden">
+            {hasPk && (
+              <span title={t("sidebar.primaryKeyTooltip")}>
+                <Key className="size-2.5 text-amber-500 dark:text-amber-400/80" />
+              </span>
+            )}
+            {hasFk && (
+              <span title={t("sidebar.foreignRelationsTooltip")}>
+                <Layers className="size-2.5 text-sky-500 dark:text-sky-400/80" />
+              </span>
+            )}
+            <Badge
+              variant={isSelected ? "default" : "secondary"}
+              className={cn(
+                "h-4 min-w-4 p-0 text-[10px] font-mono font-medium tabular-nums leading-none rounded-full inline-flex items-center justify-center text-center gap-0 shrink-0 select-none",
+                colCount > 9 ? "px-1.5 min-w-5" : "px-0",
+              )}
+            >
+              <span className="inline-block translate-y-px leading-none">
+                {colCount}
+              </span>
+            </Badge>
+          </div>
+        </SidebarMenuButton>
+
+        <SidebarMenuAction
+          showOnHover={!isPinned}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleTogglePin(tbl.name);
+          }}
+          className={cn(
+            "h-5 w-5 top-1 right-1 transition-colors cursor-pointer",
+            isPinned
+              ? "text-amber-500 dark:text-amber-400 opacity-100 hover:text-amber-600 dark:hover:text-amber-300"
+              : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200",
+          )}
+          title={isPinned ? t("sidebar.pin.remove") : t("sidebar.pin.add")}
+        >
+          <Pin
+            className={cn(
+              "size-3 transition-transform",
+              isPinned && "fill-current rotate-45",
+            )}
+          />
+          <span className="sr-only">
+            {isPinned ? t("sidebar.pin.remove") : t("sidebar.pin.add")}
+          </span>
+        </SidebarMenuAction>
+      </SidebarMenuItem>
+    );
+  };
 
   return (
     <SidebarPrimitive
@@ -631,12 +806,14 @@ export default function Sidebar({
 
         {/* Tables Group */}
         <SidebarGroup data-tour="sidebar-tables" className="p-1.5 flex-1 overflow-y-auto">
-          <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-mono px-2 mb-1 group-data-[collapsible=icon]:hidden">
-            {t("sidebar.tablesHeader")}{" "}
-            {tables.length > 0
-              ? `(${filteredTables.length}/${tables.length})`
-              : ""}
-          </SidebarGroupLabel>
+          {pinnedTables.length === 0 && (
+            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-mono px-2 mb-1 group-data-[collapsible=icon]:hidden">
+              {t("sidebar.tablesHeader")}{" "}
+              {tables.length > 0
+                ? `(${filteredTables.length}/${tables.length})`
+                : ""}
+            </SidebarGroupLabel>
+          )}
 
           <SidebarGroupContent>
             {!selectedConnection ? (
@@ -679,69 +856,41 @@ export default function Sidebar({
                   : t("sidebar.noTablesMatching", { term: tableSearch })}
               </div>
             ) : (
-              <SidebarMenu>
-                {filteredTables.map((tbl) => {
-                  const isSelected = selectedTable === tbl.name;
-                  const hasPk = tbl.columns.some((c) => c.is_primary_key);
-                  const hasFk = tbl.columns.some((c) => c.is_foreign_key);
+              <div className="space-y-3">
+                {/* Pinned Section */}
+                {filteredPinnedTables.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 font-mono group-data-[collapsible=icon]:hidden">
+                      <span>⭐ {t("sidebar.pinned")}</span>
+                      <span className="text-zinc-400 dark:text-zinc-500 font-normal">
+                        ({filteredPinnedTables.length})
+                      </span>
+                    </div>
+                    <SidebarMenu>
+                      {filteredPinnedTables.map((tbl) => renderTableItem(tbl, true))}
+                    </SidebarMenu>
+                  </div>
+                )}
 
-                  const colCount = tbl.columns.length;
-
-                  return (
-                    <SidebarMenuItem key={tbl.name}>
-                      <SidebarMenuButton
-                        isActive={isSelected}
-                        onClick={(e) =>
-                          onSelectTable(tbl.name, e.ctrlKey || e.metaKey)
-                        }
-                        tooltip={`${tbl.name} (${colCount} cols)`}
-                        className={cn(
-                          "font-mono text-xs cursor-pointer h-7 px-2 transition-colors",
-                          isSelected
-                            ? "bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 font-semibold border border-emerald-500/30"
-                            : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100",
+                {/* All / Unpinned Tables Section */}
+                {filteredUnpinnedTables.length > 0 && (
+                  <div>
+                    {pinnedTables.length > 0 && (
+                      <div className="flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 font-mono group-data-[collapsible=icon]:hidden">
+                        <span>{t("sidebar.tablesHeader")}</span>
+                        {tables.length > 0 && (
+                          <span className="text-zinc-400 dark:text-zinc-500 font-normal">
+                            ({filteredUnpinnedTables.length}/{unpinnedTables.length})
+                          </span>
                         )}
-                      >
-                        <TableIcon
-                          className={cn(
-                            "size-3.5 shrink-0",
-                            isSelected
-                              ? "text-emerald-600 dark:text-emerald-400"
-                              : "text-zinc-400 dark:text-zinc-500",
-                          )}
-                        />
-                        <span className="truncate group-data-[collapsible=icon]:hidden">
-                          {tbl.name}
-                        </span>
-
-                        <div className="ml-auto flex items-center gap-1 shrink-0 group-data-[collapsible=icon]:hidden">
-                          {hasPk && (
-                            <span title={t("sidebar.primaryKeyTooltip")}>
-                              <Key className="size-2.5 text-amber-500 dark:text-amber-400/80" />
-                            </span>
-                          )}
-                          {hasFk && (
-                            <span title={t("sidebar.foreignRelationsTooltip")}>
-                              <Layers className="size-2.5 text-sky-500 dark:text-sky-400/80" />
-                            </span>
-                          )}
-                          <Badge
-                            variant={isSelected ? "default" : "secondary"}
-                            className={cn(
-                              "h-4 min-w-4 p-0 text-[10px] font-mono font-medium tabular-nums leading-none rounded-full inline-flex items-center justify-center text-center gap-0 shrink-0 select-none",
-                              colCount > 9 ? "px-1.5 min-w-5" : "px-0",
-                            )}
-                          >
-                            <span className="inline-block translate-y-px leading-none">
-                              {colCount}
-                            </span>
-                          </Badge>
-                        </div>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
+                      </div>
+                    )}
+                    <SidebarMenu>
+                      {filteredUnpinnedTables.map((tbl) => renderTableItem(tbl, false))}
+                    </SidebarMenu>
+                  </div>
+                )}
+              </div>
             )}
           </SidebarGroupContent>
         </SidebarGroup>
@@ -1004,6 +1153,18 @@ export default function Sidebar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Pin limit toast */}
+      {pinToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-6 z-50 flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-zinc-100 dark:text-zinc-900 text-xs font-medium shadow-xl border border-zinc-700/50 dark:border-zinc-300 animate-in fade-in slide-in-from-bottom-2"
+        >
+          <Pin className="size-3.5 text-amber-500 fill-amber-500 shrink-0 rotate-45" />
+          <span>{pinToast}</span>
+        </div>
+      )}
     </SidebarPrimitive>
   );
 }

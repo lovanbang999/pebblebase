@@ -30,7 +30,13 @@
     "typeToConfirmPlaceholder": "Type \"{{name}}\" to confirm",
     "deleteConnButton": "Delete Connection",
     "queryConsole": "Query Console",
-    "queryConsoleShortcut": "Query Console (Alt+Q)"
+    "queryConsoleShortcut": "Query Console (Alt+Q)",
+    "pinned": "Pinned",
+    "pin": {
+      "add": "Pin table",
+      "remove": "Unpin table",
+      "max": "Maximum 10 tables can be pinned"
+    }
   },
   "datagrid": {
     "where": "WHERE",

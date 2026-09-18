@@ -30,7 +30,13 @@
     "typeToConfirmPlaceholder": "Nhập \"{{name}}\" để xác nhận",
     "deleteConnButton": "Xóa Kết nối",
     "queryConsole": "Bảng Truy vấn",
-    "queryConsoleShortcut": "Bảng Truy vấn (Alt+Q)"
+    "queryConsoleShortcut": "Bảng Truy vấn (Alt+Q)",
+    "pinned": "Đã ghim",
+    "pin": {
+      "add": "Ghim bảng",
+      "remove": "Bỏ ghim bảng",
+      "max": "Chỉ có thể ghim tối đa 10 bảng"
+    }
   },
   "datagrid": {
     "where": "WHERE",
