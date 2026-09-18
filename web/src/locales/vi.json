@@ -198,6 +198,18 @@
     "failedToSave": "Lưu bản ghi thất bại",
     "failedToDelete": "Xóa bản ghi thất bại"
   },
+  "row": {
+    "diff": {
+      "title": "Xem lại thay đổi",
+      "before": "Trước",
+      "after": "Sau",
+      "changed_fields": "{{count}} trường thay đổi",
+      "changed_fields_plural": "{{count}} trường thay đổi",
+      "confirm": "Xác nhận & Lưu",
+      "noChanges": "Không có thay đổi nào",
+      "recordPreview": "Xem trước bản ghi"
+    }
+  },
   "common": {
     "language": "Ngôn ngữ",
     "vietnamese": "Tiếng Việt",
