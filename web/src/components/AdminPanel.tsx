@@ -64,14 +64,14 @@ function RoleBadge({ role }: { role: AuthRole }) {
   return role === "admin" ? (
     <Badge
       variant="secondary"
-      className="inline-flex items-center gap-1 bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 px-2 py-0.5 text-[11px] font-medium"
+      className="inline-flex items-center gap-1 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 px-2 py-0.5 text-[11px] font-medium"
     >
       <Shield className="size-3" /> {t("auth.role.admin")}
     </Badge>
   ) : (
     <Badge
       variant="outline"
-      className="inline-flex items-center gap-1 bg-zinc-800/60 text-zinc-400 border border-zinc-700/40 px-2 py-0.5 text-[11px] font-medium"
+      className="inline-flex items-center gap-1 bg-zinc-100 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/40 px-2 py-0.5 text-[11px] font-medium"
     >
       <Eye className="size-3" /> {t("auth.role.viewer")}
     </Badge>
@@ -84,7 +84,7 @@ function AuditActionBadge({ action }: { action: AuditAction | string }) {
       return (
         <Badge
           variant="secondary"
-          className="bg-sky-500/15 text-sky-400 border border-sky-500/25 font-mono text-[10px]"
+          className="bg-sky-500/10 dark:bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20 dark:border-sky-500/25 font-mono text-[10px]"
         >
           login
         </Badge>
@@ -93,7 +93,7 @@ function AuditActionBadge({ action }: { action: AuditAction | string }) {
       return (
         <Badge
           variant="secondary"
-          className="bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-mono text-[10px]"
+          className="bg-emerald-500/10 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/25 font-mono text-[10px]"
         >
           connection_create
         </Badge>
@@ -102,7 +102,7 @@ function AuditActionBadge({ action }: { action: AuditAction | string }) {
       return (
         <Badge
           variant="secondary"
-          className="bg-amber-500/15 text-amber-400 border border-amber-500/25 font-mono text-[10px]"
+          className="bg-amber-500/10 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20 dark:border-amber-500/25 font-mono text-[10px]"
         >
           query_execute
         </Badge>
@@ -111,7 +111,7 @@ function AuditActionBadge({ action }: { action: AuditAction | string }) {
       return (
         <Badge
           variant="secondary"
-          className="bg-purple-500/15 text-purple-400 border border-purple-500/25 font-mono text-[10px]"
+          className="bg-purple-500/10 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/20 dark:border-purple-500/25 font-mono text-[10px]"
         >
           row_mutate
         </Badge>
@@ -120,7 +120,7 @@ function AuditActionBadge({ action }: { action: AuditAction | string }) {
       return (
         <Badge
           variant="secondary"
-          className="bg-rose-500/15 text-rose-400 border border-rose-500/25 font-mono text-[10px]"
+          className="bg-rose-500/10 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20 dark:border-rose-500/25 font-mono text-[10px]"
         >
           schema_change
         </Badge>
@@ -129,7 +129,7 @@ function AuditActionBadge({ action }: { action: AuditAction | string }) {
       return (
         <Badge
           variant="outline"
-          className="font-mono text-[10px] text-zinc-400"
+          className="font-mono text-[10px] text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
         >
           {action}
         </Badge>
@@ -157,7 +157,7 @@ function PasswordField({
   const [show, setShow] = useState(false);
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="text-xs font-medium text-zinc-300">
+      <label htmlFor={id} className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
         {label}
       </label>
       <div className="relative">
@@ -168,12 +168,12 @@ function PasswordField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="bg-zinc-900/70 border-zinc-700/60 pr-9 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:border-indigo-500 focus-visible:ring-indigo-500/20 h-9"
+          className="bg-zinc-50 dark:bg-zinc-900/70 border-zinc-300 dark:border-zinc-700/60 pr-9 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:border-indigo-500 focus-visible:ring-indigo-500/20 h-9"
         />
         <button
           type="button"
           onClick={() => setShow(!show)}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 cursor-pointer transition-colors"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer transition-colors"
           tabIndex={-1}
         >
           {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -317,7 +317,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="bg-white dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 sm:max-w-3xl md:max-w-4xl max-h-[88vh] h-160 p-0 overflow-hidden flex flex-col gap-0 shadow-2xl rounded-2xl font-sans">
         {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800/80 shrink-0 bg-zinc-50 dark:bg-zinc-900/40">
+        <DialogHeader className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-800/80 shrink-0 bg-zinc-50/70 dark:bg-zinc-900/40">
           <div className="flex items-center gap-3">
             <div className="size-9 rounded-xl bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
               <Shield className="size-4.5" />
@@ -328,7 +328,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                   ? t("auth.adminPanel")
                   : t("auth.changePassword")}
               </DialogTitle>
-              <DialogDescription className="text-xs text-zinc-400">
+              <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
                 {currentUser?.role === "admin"
                   ? t("auth.adminPanelDesc")
                   : t("auth.changePasswordDesc")}
@@ -344,40 +344,40 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
           className="flex-1 overflow-hidden flex flex-col"
         >
           {currentUser?.role === "admin" && (
-            <div className="px-6 py-2.5 border-b border-zinc-800/60 bg-zinc-900/20 shrink-0">
-              <TabsList className="bg-zinc-900/90 border border-zinc-800/80 p-1 group-data-horizontal/tabs:h-10.5 h-10.5 gap-1.5 rounded-lg">
+            <div className="px-6 py-2.5 border-b border-zinc-200 dark:border-zinc-800/60 bg-zinc-50/50 dark:bg-zinc-900/20 shrink-0">
+              <TabsList className="bg-zinc-100 dark:bg-zinc-900/90 border border-zinc-200 dark:border-zinc-800/80 p-1 group-data-horizontal/tabs:h-10.5 h-10.5 gap-1.5 rounded-lg">
                 <TabsTrigger
                   value="users"
-                  className="gap-2 px-3.5 h-full text-xs font-medium cursor-pointer data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-xs"
+                  className="gap-2 px-3.5 h-full text-xs font-medium cursor-pointer text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 data-active:bg-white dark:data-active:bg-zinc-800 data-active:text-zinc-900 dark:data-active:text-zinc-100 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-active:shadow-xs data-[state=active]:shadow-xs transition-colors"
                 >
                   <Users className="size-3.5" />
                   {t("auth.userManagement")}
-                  <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">
+                  <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border border-zinc-300/60 dark:border-zinc-700/50">
                     {users.length}
                   </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="create"
-                  className="gap-2 px-3.5 h-full text-xs font-medium cursor-pointer data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-xs"
+                  className="gap-2 px-3.5 h-full text-xs font-medium cursor-pointer text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 data-active:bg-white dark:data-active:bg-zinc-800 data-active:text-zinc-900 dark:data-active:text-zinc-100 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-active:shadow-xs data-[state=active]:shadow-xs transition-colors"
                 >
                   <UserPlus className="size-3.5" />
                   {t("auth.createUser")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="password"
-                  className="gap-2 px-3.5 h-full text-xs font-medium cursor-pointer data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-xs"
+                  className="gap-2 px-3.5 h-full text-xs font-medium cursor-pointer text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 data-active:bg-white dark:data-active:bg-zinc-800 data-active:text-zinc-900 dark:data-active:text-zinc-100 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-active:shadow-xs data-[state=active]:shadow-xs transition-colors"
                 >
                   <KeyRound className="size-3.5" />
                   {t("auth.changePassword")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="audit"
-                  className="gap-2 px-3.5 h-full text-xs font-medium cursor-pointer data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-xs"
+                  className="gap-2 px-3.5 h-full text-xs font-medium cursor-pointer text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 data-active:bg-white dark:data-active:bg-zinc-800 data-active:text-zinc-900 dark:data-active:text-zinc-100 data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-zinc-100 data-active:shadow-xs data-[state=active]:shadow-xs transition-colors"
                 >
                   <ScrollText className="size-3.5" />
                   {t("auth.auditLog")}
                   {auditTotal > 0 && (
-                    <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-800/80 text-zinc-400 border border-zinc-700/50">
+                    <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded-full bg-zinc-200/80 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-400 border border-zinc-300/60 dark:border-zinc-700/50">
                       {auditTotal}
                     </span>
                   )}
@@ -391,10 +391,10 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-1">
                 <div>
-                  <h3 className="text-sm font-medium text-zinc-200">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                     {t("auth.workspaceAccounts")}
                   </h3>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {t("auth.workspaceAccountsDesc")}
                   </p>
                 </div>
@@ -409,30 +409,30 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
               </div>
 
               {loadingUsers ? (
-                <div className="flex items-center justify-center py-16 text-xs text-zinc-500 gap-2">
-                  <RefreshCw className="size-4 animate-spin text-indigo-400" />
+                <div className="flex items-center justify-center py-16 text-xs text-zinc-500 dark:text-zinc-400 gap-2">
+                  <RefreshCw className="size-4 animate-spin text-indigo-500 dark:text-indigo-400" />
                   {t("auth.loadingAccounts")}
                 </div>
               ) : users.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Users className="size-8 text-zinc-600 mb-2" />
-                  <p className="text-sm text-zinc-400">{t("auth.noUsers")}</p>
+                  <Users className="size-8 text-zinc-400 dark:text-zinc-600 mb-2" />
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("auth.noUsers")}</p>
                 </div>
               ) : (
-                <div className="border border-zinc-800/80 rounded-xl overflow-hidden bg-zinc-900/30">
+                <div className="border border-zinc-200 dark:border-zinc-800/80 rounded-xl overflow-hidden bg-white dark:bg-zinc-900/30 shadow-xs">
                   <Table>
-                    <TableHeader className="bg-zinc-900/60">
-                      <TableRow className="border-b border-zinc-800 hover:bg-transparent">
-                        <TableHead className="text-xs font-medium text-zinc-400 pl-4">
+                    <TableHeader className="bg-zinc-50/80 dark:bg-zinc-900/60">
+                      <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400 pl-4">
                           {t("auth.user")}
                         </TableHead>
-                        <TableHead className="text-xs font-medium text-zinc-400">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                           {t("auth.role")}
                         </TableHead>
-                        <TableHead className="text-xs font-medium text-zinc-400">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                           {t("auth.createdAt")}
                         </TableHead>
-                        <TableHead className="text-xs font-medium text-zinc-400 text-right pr-4">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400 text-right pr-4">
                           {t("auth.actions")}
                         </TableHead>
                       </TableRow>
@@ -443,21 +443,21 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                         return (
                           <TableRow
                             key={u.id}
-                            className="border-b border-zinc-800/60 hover:bg-zinc-900/40"
+                            className="border-b border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50/80 dark:hover:bg-zinc-900/40 transition-colors"
                           >
                             <TableCell className="pl-4 py-3">
                               <div className="flex items-center gap-2.5">
-                                <div className="size-7 rounded-full bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-indigo-400 font-semibold text-xs shrink-0">
+                                <div className="size-7 rounded-full bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-semibold text-xs shrink-0">
                                   {u.username.slice(0, 2).toUpperCase()}
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="font-medium text-zinc-200 text-sm">
+                                  <span className="font-medium text-zinc-900 dark:text-zinc-100 text-sm">
                                     {u.username}
                                   </span>
                                   {isSelf && (
                                     <Badge
                                       variant="outline"
-                                      className="text-[10px] px-1.5 py-0 border-indigo-500/30 text-indigo-400 bg-indigo-500/10"
+                                      className="text-[10px] px-1.5 py-0 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 bg-indigo-500/10"
                                     >
                                       {t("auth.you")}
                                     </Badge>
@@ -468,7 +468,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                             <TableCell className="py-3">
                               <RoleBadge role={u.role} />
                             </TableCell>
-                            <TableCell className="text-xs text-zinc-400 py-3 font-mono">
+                            <TableCell className="text-xs text-zinc-500 dark:text-zinc-400 py-3 font-mono">
                               {new Date(u.created_at).toLocaleDateString(
                                 undefined,
                                 {
@@ -488,7 +488,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                                     setActiveTab("password");
                                   }}
                                   title={t("auth.resetPassword")}
-                                  className="cursor-pointer text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                                  className="cursor-pointer text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                 >
                                   <KeyRound className="size-3.5" />
                                 </Button>
@@ -498,7 +498,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                                     size="icon-sm"
                                     onClick={() => handleDeleteUser(u)}
                                     title={t("auth.deleteUser")}
-                                    className="cursor-pointer text-zinc-400 hover:text-rose-400 hover:bg-rose-500/10"
+                                    className="cursor-pointer text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-500/10"
                                   >
                                     <Trash2 className="size-3.5" />
                                   </Button>
@@ -522,21 +522,21 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
           >
             <div className="max-w-md mx-auto py-2 space-y-6">
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-zinc-200">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                   {t("auth.registerNewUser")}
                 </h3>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
                   {t("auth.registerNewUserDesc")}
                 </p>
               </div>
 
               <form onSubmit={handleCreateUser} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-300">
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                     {t("auth.username")}
                   </label>
                   <div className="relative">
-                    <User className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-500" />
+                    <User className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-zinc-400 dark:text-zinc-500" />
                     <Input
                       type="text"
                       value={newUsername}
@@ -544,7 +544,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                       placeholder="e.g. dev_analyst"
                       required
                       minLength={2}
-                      className="pl-8.5 bg-zinc-900/70 border-zinc-700/60 text-sm text-zinc-100 placeholder:text-zinc-600 focus-visible:border-indigo-500 focus-visible:ring-indigo-500/20 h-9"
+                      className="pl-8.5 bg-zinc-50 dark:bg-zinc-900/70 border-zinc-300 dark:border-zinc-700/60 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:border-indigo-500 focus-visible:ring-indigo-500/20 h-9"
                     />
                   </div>
                 </div>
@@ -559,7 +559,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                 />
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-zinc-300">
+                  <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                     {t("auth.role")}
                   </label>
                   <Select
@@ -570,19 +570,19 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                       }
                     }}
                   >
-                    <SelectTrigger className="w-full h-9 bg-zinc-900/70 border-zinc-700/60 text-zinc-100 text-xs cursor-pointer focus:ring-indigo-500 font-sans">
+                    <SelectTrigger className="w-full h-9 bg-zinc-50 dark:bg-zinc-900/70 border-zinc-300 dark:border-zinc-700/60 text-zinc-900 dark:text-zinc-100 text-xs cursor-pointer focus:ring-indigo-500 font-sans">
                       <SelectValue placeholder={t("auth.role")} />
                     </SelectTrigger>
                     <SelectContent
                       side="bottom"
                       align="start"
-                      className="bg-zinc-900 border-zinc-800 text-zinc-100 z-50"
+                      className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 z-50 shadow-md"
                     >
                       <SelectItem
                         value="viewer"
                         label={`${t("auth.role.viewer")} (${t("auth.readOnly")})`}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
                           <Eye className="size-3.5 text-zinc-400" />
                           <span>
                             {t("auth.role.viewer")} ({t("auth.readOnly")})
@@ -593,8 +593,8 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                         value="admin"
                         label={`${t("auth.role.admin")} (${t("auth.fullAccess")})`}
                       >
-                        <div className="flex items-center gap-2">
-                          <Shield className="size-3.5 text-indigo-400" />
+                        <div className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
+                          <Shield className="size-3.5 text-indigo-500 dark:text-indigo-400" />
                           <span>
                             {t("auth.role.admin")} ({t("auth.fullAccess")})
                           </span>
@@ -602,7 +602,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-[11px] text-zinc-500">
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
                     {t("auth.viewerPermissionNote")}
                   </p>
                 </div>
@@ -610,18 +610,18 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                 {createError && (
                   <Alert
                     variant="destructive"
-                    className="bg-rose-500/10 border-rose-500/25 text-rose-300 py-2.5 px-3"
+                    className="bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-300 py-2.5 px-3"
                   >
-                    <AlertCircle className="size-4 text-rose-400" />
-                    <AlertDescription className="text-xs text-rose-300">
+                    <AlertCircle className="size-4 text-rose-500 dark:text-rose-400" />
+                    <AlertDescription className="text-xs text-rose-700 dark:text-rose-300">
                       {createError}
                     </AlertDescription>
                   </Alert>
                 )}
                 {createSuccess && (
-                  <Alert className="bg-emerald-500/10 border-emerald-500/25 text-emerald-300 py-2.5 px-3">
-                    <CheckCircle2 className="size-4 text-emerald-400" />
-                    <AlertDescription className="text-xs text-emerald-300">
+                  <Alert className="bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300 py-2.5 px-3">
+                    <CheckCircle2 className="size-4 text-emerald-500 dark:text-emerald-400" />
+                    <AlertDescription className="text-xs text-emerald-700 dark:text-emerald-300">
                       {createSuccess}
                     </AlertDescription>
                   </Alert>
@@ -646,10 +646,10 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
           >
             <div className="max-w-md mx-auto py-2 space-y-6">
               <div className="space-y-1">
-                <h3 className="text-sm font-semibold text-zinc-200">
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                   {t("auth.changePassword")}
                 </h3>
-                <p className="text-xs text-zinc-400">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
                   {t("auth.changePasswordSubDesc")}
                 </p>
               </div>
@@ -657,7 +657,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
               <form onSubmit={handleChangePassword} className="space-y-4">
                 {currentUser?.role === "admin" && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-zinc-300">
+                    <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                       {t("auth.targetAccount")}
                     </label>
                     <Select
@@ -668,7 +668,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                         }
                       }}
                     >
-                      <SelectTrigger className="w-full h-9 bg-zinc-900/70 border-zinc-700/60 text-zinc-100 text-xs cursor-pointer focus:ring-indigo-500 font-sans">
+                      <SelectTrigger className="w-full h-9 bg-zinc-50 dark:bg-zinc-900/70 border-zinc-300 dark:border-zinc-700/60 text-zinc-900 dark:text-zinc-100 text-xs cursor-pointer focus:ring-indigo-500 font-sans">
                         <SelectValue
                           placeholder={t("auth.selectTargetAccount")}
                         >
@@ -690,7 +690,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                       <SelectContent
                         side="bottom"
                         align="start"
-                        className="bg-zinc-900 border-zinc-800 text-zinc-100 max-h-56 z-50"
+                        className="bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 max-h-56 z-50 shadow-md"
                       >
                         <SelectItem
                           value="self"
@@ -702,8 +702,8 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                               : "Current User"
                           }
                         >
-                          <div className="flex items-center gap-2">
-                            <User className="size-3.5 text-indigo-400" />
+                          <div className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
+                            <User className="size-3.5 text-indigo-500 dark:text-indigo-400" />
                             <span>
                               {currentUser
                                 ? t("auth.currentUserSelf", {
@@ -721,9 +721,9 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                               value={u.id}
                               label={`${u.username} (${u.role})`}
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 text-zinc-900 dark:text-zinc-100">
                                 {u.role === "admin" ? (
-                                  <Shield className="size-3.5 text-indigo-400" />
+                                  <Shield className="size-3.5 text-indigo-500 dark:text-indigo-400" />
                                 ) : (
                                   <Eye className="size-3.5 text-zinc-400" />
                                 )}
@@ -771,18 +771,18 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                 {pwError && (
                   <Alert
                     variant="destructive"
-                    className="bg-rose-500/10 border-rose-500/25 text-rose-300 py-2.5 px-3"
+                    className="bg-rose-500/10 border-rose-500/25 text-rose-700 dark:text-rose-300 py-2.5 px-3"
                   >
-                    <AlertCircle className="size-4 text-rose-400" />
-                    <AlertDescription className="text-xs text-rose-300">
+                    <AlertCircle className="size-4 text-rose-500 dark:text-rose-400" />
+                    <AlertDescription className="text-xs text-rose-700 dark:text-rose-300">
                       {pwError}
                     </AlertDescription>
                   </Alert>
                 )}
                 {pwSuccess && (
-                  <Alert className="bg-emerald-500/10 border-emerald-500/25 text-emerald-300 py-2.5 px-3">
-                    <CheckCircle2 className="size-4 text-emerald-400" />
-                    <AlertDescription className="text-xs text-emerald-300">
+                  <Alert className="bg-emerald-500/10 border-emerald-500/25 text-emerald-700 dark:text-emerald-300 py-2.5 px-3">
+                    <CheckCircle2 className="size-4 text-emerald-500 dark:text-emerald-400" />
+                    <AlertDescription className="text-xs text-emerald-700 dark:text-emerald-300">
                       {pwSuccess}
                     </AlertDescription>
                   </Alert>
@@ -810,10 +810,10 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
             <div className="space-y-4">
               <div className="flex items-center justify-between pb-1">
                 <div>
-                  <h3 className="text-sm font-medium text-zinc-200">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                     {t("auth.auditActivityTitle")}
                   </h3>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
                     {t("auth.auditActivityDesc")}
                   </p>
                 </div>
@@ -822,45 +822,45 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                   size="sm"
                   onClick={loadAuditLogs}
                   disabled={loadingAudit}
-                  className="cursor-pointer border-zinc-800 text-zinc-300 hover:bg-zinc-800 h-8 text-xs gap-1.5"
+                  className="cursor-pointer border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 h-8 text-xs gap-1.5"
                 >
                   <RefreshCw
-                    className={`size-3.5 ${loadingAudit ? "animate-spin text-indigo-400" : ""}`}
+                    className={`size-3.5 ${loadingAudit ? "animate-spin text-indigo-500 dark:text-indigo-400" : ""}`}
                   />
                   {t("auth.refresh")}
                 </Button>
               </div>
 
               {loadingAudit && auditEntries.length === 0 ? (
-                <div className="flex items-center justify-center py-16 text-xs text-zinc-500 gap-2">
-                  <RefreshCw className="size-4 animate-spin text-indigo-400" />
+                <div className="flex items-center justify-center py-16 text-xs text-zinc-500 dark:text-zinc-400 gap-2">
+                  <RefreshCw className="size-4 animate-spin text-indigo-500 dark:text-indigo-400" />
                   {t("auth.loadingAudit")}
                 </div>
               ) : auditEntries.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <ScrollText className="size-8 text-zinc-600 mb-2" />
-                  <p className="text-sm text-zinc-400">
+                  <ScrollText className="size-8 text-zinc-400 dark:text-zinc-600 mb-2" />
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
                     {t("auth.auditLogEmpty")}
                   </p>
                 </div>
               ) : (
-                <div className="border border-zinc-800/80 rounded-xl overflow-hidden bg-zinc-900/30">
+                <div className="border border-zinc-200 dark:border-zinc-800/80 rounded-xl overflow-hidden bg-white dark:bg-zinc-900/30 shadow-xs">
                   <Table>
-                    <TableHeader className="bg-zinc-900/60">
-                      <TableRow className="border-b border-zinc-800 hover:bg-transparent">
-                        <TableHead className="text-xs font-medium text-zinc-400 pl-4 w-40">
+                    <TableHeader className="bg-zinc-50/80 dark:bg-zinc-900/60">
+                      <TableRow className="border-b border-zinc-200 dark:border-zinc-800 hover:bg-transparent">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400 pl-4 w-40">
                           {t("auth.auditTime")}
                         </TableHead>
-                        <TableHead className="text-xs font-medium text-zinc-400 w-30">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400 w-30">
                           {t("auth.auditUser")}
                         </TableHead>
-                        <TableHead className="text-xs font-medium text-zinc-400 w-35">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400 w-35">
                           {t("auth.auditAction")}
                         </TableHead>
-                        <TableHead className="text-xs font-medium text-zinc-400">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
                           {t("auth.auditResource")}
                         </TableHead>
-                        <TableHead className="text-xs font-medium text-zinc-400 text-right pr-4 w-30">
+                        <TableHead className="text-xs font-medium text-zinc-500 dark:text-zinc-400 text-right pr-4 w-30">
                           {t("auth.auditIp")}
                         </TableHead>
                       </TableRow>
@@ -869,17 +869,17 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                       {auditEntries.map((e) => (
                         <TableRow
                           key={e.id}
-                          className="border-b border-zinc-800/60 hover:bg-zinc-900/40 text-xs"
+                          className="border-b border-zinc-100 dark:border-zinc-800/60 hover:bg-zinc-50/80 dark:hover:bg-zinc-900/40 text-xs transition-colors"
                         >
-                          <TableCell className="pl-4 py-2.5 text-zinc-400 font-mono whitespace-nowrap">
+                          <TableCell className="pl-4 py-2.5 text-zinc-600 dark:text-zinc-400 font-mono whitespace-nowrap">
                             <div className="flex items-center gap-1.5">
-                              <Clock className="size-3 text-zinc-500 shrink-0" />
+                              <Clock className="size-3 text-zinc-400 dark:text-zinc-500 shrink-0" />
                               {new Date(e.created_at).toLocaleTimeString([], {
                                 hour: "2-digit",
                                 minute: "2-digit",
                                 second: "2-digit",
                               })}{" "}
-                              <span className="text-zinc-600 text-[10px]">
+                              <span className="text-zinc-400 dark:text-zinc-600 text-[10px]">
                                 {new Date(e.created_at).toLocaleDateString([], {
                                   month: "numeric",
                                   day: "numeric",
@@ -887,23 +887,23 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="py-2.5 font-medium text-zinc-200">
+                          <TableCell className="py-2.5 font-medium text-zinc-900 dark:text-zinc-100">
                             {e.username || "anonymous"}
                           </TableCell>
                           <TableCell className="py-2.5">
                             <AuditActionBadge action={e.action} />
                           </TableCell>
-                          <TableCell className="py-2.5 max-w-70 truncate text-zinc-300">
+                          <TableCell className="py-2.5 max-w-70 truncate text-zinc-700 dark:text-zinc-300">
                             {e.resource && (
-                              <span className="font-medium text-zinc-200 mr-2">
+                              <span className="font-medium text-zinc-900 dark:text-zinc-100 mr-2">
                                 {e.resource}:
                               </span>
                             )}
-                            <span className="text-zinc-400 font-mono text-[11px]">
+                            <span className="text-zinc-600 dark:text-zinc-400 font-mono text-[11px]">
                               {e.detail || "—"}
                             </span>
                           </TableCell>
-                          <TableCell className="text-right pr-4 py-2.5 font-mono text-zinc-500 text-[11px]">
+                          <TableCell className="text-right pr-4 py-2.5 font-mono text-zinc-500 dark:text-zinc-500 text-[11px]">
                             {e.ip}
                           </TableCell>
                         </TableRow>
