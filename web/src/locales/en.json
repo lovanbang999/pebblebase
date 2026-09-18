@@ -198,6 +198,18 @@
     "failedToSave": "Failed to save record",
     "failedToDelete": "Failed to delete record"
   },
+  "row": {
+    "diff": {
+      "title": "Review Changes",
+      "before": "Before",
+      "after": "After",
+      "changed_fields": "{{count}} field changed",
+      "changed_fields_plural": "{{count}} fields changed",
+      "confirm": "Confirm & Save",
+      "noChanges": "No changes detected",
+      "recordPreview": "Record Preview"
+    }
+  },
   "common": {
     "language": "Language",
     "vietnamese": "Tiếng Việt",

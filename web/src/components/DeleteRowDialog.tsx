@@ -46,6 +46,51 @@ export const DeleteRowDialog: FC<DeleteRowDialogProps> = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
+        {rowToDelete && (
+          <div className="my-2 max-h-56 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/50 p-2.5">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-mono mb-1.5 px-1">
+              {t("row.diff.recordPreview")}
+            </div>
+            <table className="w-full text-xs font-mono border-collapse">
+              <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                {Object.entries(rowToDelete)
+                  .filter(([k]) => !k.startsWith("_pb_"))
+                  .map(([col, val]) => (
+                    <tr
+                      key={col}
+                      className="hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40 transition-colors"
+                    >
+                      <td className="py-1.5 px-1 font-semibold text-zinc-700 dark:text-zinc-300 w-1/3 align-top truncate">
+                        {col}
+                      </td>
+                      <td className="py-1.5 px-1 text-zinc-600 dark:text-zinc-400 align-top break-all">
+                        {val === null || val === undefined ? (
+                          <span className="italic text-zinc-400 dark:text-zinc-500">
+                            NULL
+                          </span>
+                        ) : typeof val === "boolean" ? (
+                          <span
+                            className={
+                              val
+                                ? "text-emerald-600 dark:text-emerald-400 font-medium"
+                                : "text-rose-600 dark:text-rose-400 font-medium"
+                            }
+                          >
+                            {String(val)}
+                          </span>
+                        ) : typeof val === "object" ? (
+                          <span>{JSON.stringify(val)}</span>
+                        ) : (
+                          <span>{String(val)}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
         <AlertDialogFooter className="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 -mx-4 -mb-4 px-4 py-3 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-end gap-2">
           <AlertDialogCancel
             onClick={onClose}

@@ -34,6 +34,61 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+interface FieldDiff {
+  column: string;
+  before: any;
+  after: any;
+}
+
+function areValuesEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (
+    (a === null || a === undefined || a === "") &&
+    (b === null || b === undefined || b === "")
+  )
+    return true;
+  if (typeof a === "object" || typeof b === "object") {
+    try {
+      return JSON.stringify(a) === JSON.stringify(b);
+    } catch {
+      return false;
+    }
+  }
+  return String(a) === String(b);
+}
+
+function formatDiffValue(val: any): React.ReactNode {
+  if (val === null || val === undefined) {
+    return <span className="italic text-zinc-400 dark:text-zinc-500">NULL</span>;
+  }
+  if (val === "") {
+    return (
+      <span className="italic text-zinc-400 dark:text-zinc-500">&quot;&quot;</span>
+    );
+  }
+  if (typeof val === "boolean") {
+    return (
+      <span
+        className={
+          val
+            ? "text-emerald-600 dark:text-emerald-400 font-medium"
+            : "text-rose-600 dark:text-rose-400 font-medium"
+        }
+      >
+        {String(val)}
+      </span>
+    );
+  }
+  if (typeof val === "object") {
+    try {
+      return <span>{JSON.stringify(val)}</span>;
+    } catch {
+      return <span>{String(val)}</span>;
+    }
+  }
+  return <span>{String(val)}</span>;
+}
+
 interface RowModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -67,6 +122,14 @@ export const RowModal: FC<RowModalProps> = ({
   const [deleting, setDeleting] = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Before / After Diff modal state
+  const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
+  const [pendingDiffs, setPendingDiffs] = useState<FieldDiff[]>([]);
+  const [pendingSaveValues, setPendingSaveValues] = useState<Record<
+    string,
+    any
+  > | null>(null);
 
   // Dynamic field creation state
   const [showAddField, setShowAddField] = useState(false);
@@ -105,9 +168,23 @@ export const RowModal: FC<RowModalProps> = ({
     });
   };
 
+  const executeSave = async (valuesToSave: Record<string, any>) => {
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave(valuesToSave);
+      setIsDiffModalOpen(false);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || t("rowModal.failedToSave"));
+      setIsDiffModalOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     setError(null);
 
     try {
@@ -167,12 +244,40 @@ export const RowModal: FC<RowModalProps> = ({
         }
       });
 
-      await onSave(parsedValues);
-      onClose();
+      // If editing an existing row, calculate diffs
+      if (isEditing && initialRow) {
+        const diffs: FieldDiff[] = [];
+        const allKeys = Array.from(
+          new Set([
+            ...table.columns.map((c) => c.name),
+            ...Object.keys(initialRow),
+            ...Object.keys(parsedValues),
+          ]),
+        ).filter((k) => !k.startsWith("_pb_"));
+
+        allKeys.forEach((key) => {
+          const before = initialRow[key];
+          const after = parsedValues[key];
+          if (!areValuesEqual(before, after)) {
+            diffs.push({
+              column: key,
+              before,
+              after,
+            });
+          }
+        });
+
+        if (diffs.length > 0) {
+          setPendingSaveValues(parsedValues);
+          setPendingDiffs(diffs);
+          setIsDiffModalOpen(true);
+          return;
+        }
+      }
+
+      await executeSave(parsedValues);
     } catch (err: any) {
       setError(err.message || t("rowModal.failedToSave"));
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -543,6 +648,33 @@ export const RowModal: FC<RowModalProps> = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
 
+          {initialRow && (
+            <div className="my-2 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/50 p-2.5">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 font-mono mb-1.5 px-1">
+                {t("row.diff.recordPreview")}
+              </div>
+              <table className="w-full text-xs font-mono border-collapse">
+                <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                  {Object.entries(initialRow)
+                    .filter(([k]) => !k.startsWith("_pb_"))
+                    .map(([col, val]) => (
+                      <tr
+                        key={col}
+                        className="hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40 transition-colors"
+                      >
+                        <td className="py-1.5 px-1 font-semibold text-zinc-700 dark:text-zinc-300 w-1/3 align-top truncate">
+                          {col}
+                        </td>
+                        <td className="py-1.5 px-1 text-zinc-600 dark:text-zinc-400 align-top break-all">
+                          {formatDiffValue(val)}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           <AlertDialogFooter className="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 -mx-4 -mb-4 px-4 py-3 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-end gap-2">
             <AlertDialogCancel
               onClick={() => setIsConfirmDeleteOpen(false)}
@@ -555,6 +687,97 @@ export const RowModal: FC<RowModalProps> = ({
               className="bg-rose-600 hover:bg-rose-500 dark:bg-rose-600 dark:hover:bg-rose-500 text-white text-xs font-semibold shadow-xs cursor-pointer"
             >
               {t("app.deleteRecordTitle")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Before / After Diff Confirmation Modal */}
+      <AlertDialog open={isDiffModalOpen} onOpenChange={setIsDiffModalOpen}>
+        <AlertDialogContent className="sm:max-w-xl max-h-[85vh] flex flex-col p-0 overflow-hidden bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl">
+          <AlertDialogHeader className="px-5 py-4 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+            <div className="flex items-center justify-between gap-2">
+              <AlertDialogTitle className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <span>{t("row.diff.title")}</span>
+                <Badge
+                  variant="outline"
+                  className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 font-mono text-[11px] font-normal px-2 py-0.5"
+                >
+                  {t(
+                    pendingDiffs.length === 1
+                      ? "row.diff.changed_fields"
+                      : "row.diff.changed_fields_plural",
+                    { count: pendingDiffs.length },
+                  )}
+                </Badge>
+              </AlertDialogTitle>
+              <Badge
+                variant="secondary"
+                className="font-mono text-xs text-emerald-600 dark:text-emerald-400 shrink-0"
+              >
+                {table.name}
+              </Badge>
+            </div>
+            <AlertDialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">
+              {t("rowModal.descEdit")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="flex-1 overflow-y-auto p-4 max-h-[50vh]">
+            <table className="w-full text-xs font-mono border-collapse">
+              <thead>
+                <tr className="border-b border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500 uppercase text-[10px] tracking-wider text-left">
+                  <th className="pb-2 px-2 font-semibold w-1/4">Column</th>
+                  <th className="pb-2 px-2 font-semibold w-[37.5%]">
+                    {t("row.diff.before")}
+                  </th>
+                  <th className="pb-2 px-2 font-semibold w-[37.5%]">
+                    {t("row.diff.after")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                {pendingDiffs.map((diff) => (
+                  <tr
+                    key={diff.column}
+                    className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors"
+                  >
+                    <td className="py-2.5 px-2 font-semibold text-zinc-800 dark:text-zinc-200 align-top break-all">
+                      {diff.column}
+                    </td>
+                    <td className="py-2.5 px-2 text-zinc-500 dark:text-zinc-400 line-through align-top break-all">
+                      {formatDiffValue(diff.before)}
+                    </td>
+                    <td className="py-2.5 px-2 align-top break-all">
+                      <span className="inline-block px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 font-medium">
+                        {formatDiffValue(diff.after)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <AlertDialogFooter className="pt-3 border-t border-zinc-100 dark:border-zinc-800/80 -mx-4 -mb-4 px-4 py-3 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-end gap-2">
+            <AlertDialogCancel
+              onClick={() => setIsDiffModalOpen(false)}
+              disabled={saving}
+              className="text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border-zinc-200 dark:border-zinc-800 cursor-pointer"
+            >
+              {t("rowModal.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => pendingSaveValues && executeSave(pendingSaveValues)}
+              disabled={saving}
+              className="bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs cursor-pointer gap-1.5"
+            >
+              {saving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Save className="w-3.5 h-3.5" />
+              )}
+              {t("row.diff.confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
