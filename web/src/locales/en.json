@@ -461,7 +461,18 @@
     "confirmDelete": "Delete \"{{title}}\"?",
     "confirmDeleteDesc": "This cannot be undone.",
     "cancel": "Cancel",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "tabs": {
+      "library": "Library",
+      "history": "History"
+    },
+    "history": {
+      "searchPlaceholder": "Search query history...",
+      "empty": "No query history yet. Queries you run will appear here.",
+      "load": "Load into editor",
+      "executedAt": "Executed",
+      "by": "by"
+    }
   },
   "erd": {
     "title": "ERD Diagram",

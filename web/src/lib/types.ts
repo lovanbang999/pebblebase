@@ -157,6 +157,18 @@ export interface AuditEntry {
   created_at: string;
 }
 
+// QueryHistoryEntry mirrors audit.Entry specifically for query_execute records.
+export interface QueryHistoryEntry {
+  id: string;
+  user_id: string;
+  username: string;
+  action: AuditAction;
+  resource: string;   // connection name
+  detail: string;     // SQL text
+  ip: string;
+  created_at: string;
+}
+
 export interface AggregateResult {
   labels: string[];
   values: (number | string | null)[];

@@ -461,7 +461,18 @@
     "confirmDelete": "Xóa \"{{title}}\"?",
     "confirmDeleteDesc": "Hành động này không thể hoàn tác.",
     "cancel": "Hủy",
-    "copied": "Đã sao chép!"
+    "copied": "Đã sao chép!",
+    "tabs": {
+      "library": "Thư viện",
+      "history": "Lịch sử"
+    },
+    "history": {
+      "searchPlaceholder": "Tìm kiếm lịch sử truy vấn...",
+      "empty": "Chưa có lịch sử truy vấn. Các câu lệnh bạn chạy sẽ xuất hiện tại đây.",
+      "load": "Tải vào trình soạn thảo",
+      "executedAt": "Đã thực thi",
+      "by": "bởi"
+    }
   },
   "erd": {
     "title": "Sơ đồ ERD",

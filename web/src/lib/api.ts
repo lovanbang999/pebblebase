@@ -17,6 +17,7 @@ import type {
   MigrationResult,
   MigrationHistoryResponse,
   ExecuteMigrationInput,
+  QueryHistoryEntry,
 } from './types';
 import { getAuthHeaders, useAuthStore } from './auth';
 
@@ -463,6 +464,26 @@ export async function downloadSavedQuery(connId: string, qid: string, title: str
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Query History API
+// ---------------------------------------------------------------------------
+
+export async function fetchQueryHistory(
+  connId: string,
+  params: { search?: string; limit?: number; offset?: number } = {}
+): Promise<{ entries: QueryHistoryEntry[]; total_count: number }> {
+  const sp = new URLSearchParams();
+  if (params.search) sp.set('search', params.search);
+  if (params.limit) sp.set('limit', String(params.limit));
+  if (params.offset) sp.set('offset', String(params.offset));
+  const qs = sp.toString();
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/query-history${qs ? `?${qs}` : ''}`,
+    { headers: getAuthHeaders() }
+  );
+  return handleResponse<{ entries: QueryHistoryEntry[]; total_count: number }>(res);
 }
 
 // ---------------------------------------------------------------------------
