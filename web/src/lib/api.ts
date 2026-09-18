@@ -5,6 +5,7 @@ import type {
   TableSchema,
   QueryResult,
   RawQueryResult,
+  ExplainResult,
   TableDDLResponse,
   AuditEntry,
   AggregateResult,
@@ -181,6 +182,21 @@ export async function executeRawQuery(
     }
   );
   return handleResponse<RawQueryResult>(res);
+}
+
+export async function explainQuery(
+  connId: string,
+  query: string
+): Promise<ExplainResult> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/explain`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      body: JSON.stringify({ query }),
+    }
+  );
+  return handleResponse<ExplainResult>(res);
 }
 
 export function getTableExportUrl(

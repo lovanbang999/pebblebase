@@ -47,7 +47,7 @@ func (a *SQLiteAdapter) GetTableDDL(ctx context.Context, table string) (string, 
 				indexStatements = append(indexStatements, stmt)
 			}
 		}
-		if len(indexStatements) > 0 {
+		if err := rows.Err(); err == nil && len(indexStatements) > 0 {
 			ddl += "\n\n-- Indexes\n" + strings.Join(indexStatements, "\n")
 		}
 	}
@@ -102,6 +102,10 @@ func (a *SQLiteAdapter) GetTableIndexes(ctx context.Context, table string) ([]ad
 			if err := infoRows.Scan(&seqno, &cid, &name); err == nil {
 				cols = append(cols, name)
 			}
+		}
+		if err := infoRows.Err(); err != nil {
+			infoRows.Close()
+			continue
 		}
 		infoRows.Close()
 

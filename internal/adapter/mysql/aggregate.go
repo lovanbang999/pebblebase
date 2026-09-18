@@ -49,6 +49,9 @@ func (a *MySQLAdapter) Aggregate(ctx context.Context, table string, opts adapter
 			labels = append(labels, label)
 			values = append(values, count)
 		}
+		if err := rows.Err(); err != nil {
+			return adapter.AggregateResult{}, fmt.Errorf("mysql aggregate distribution iterate: %w", err)
+		}
 		if labels == nil {
 			labels = []string{}
 			values = []any{}
@@ -96,6 +99,9 @@ func (a *MySQLAdapter) Aggregate(ctx context.Context, table string, opts adapter
 				labels = append(labels, bucket.String)
 				values = append(values, count)
 			}
+		}
+		if err := rows.Err(); err != nil {
+			return adapter.AggregateResult{}, fmt.Errorf("mysql aggregate timeseries iterate: %w", err)
 		}
 		if labels == nil {
 			labels = []string{}
