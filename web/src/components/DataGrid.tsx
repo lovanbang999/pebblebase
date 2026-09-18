@@ -94,7 +94,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
   TableHeader,
   TableBody,
   TableRow,
@@ -1461,6 +1460,7 @@ export const DataGrid: FC<DataGridProps> = ({
     getScrollElement: () => tableContainerRef.current,
     estimateSize: () => 37,
     overscan: 10,
+    useFlushSync: false,
   });
 
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
@@ -2043,7 +2043,7 @@ export const DataGrid: FC<DataGridProps> = ({
               />
             ) : (
               /* Data Table */
-              <Table className="w-full border-collapse text-left border-b border-zinc-200 dark:border-zinc-800">
+              <table className="w-full caption-bottom text-sm border-collapse text-left border-b border-zinc-200 dark:border-zinc-800">
                 <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
                   {reactTable.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
@@ -2147,7 +2147,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     </>
                   )}
                 </TableBody>
-              </Table>
+              </table>
             )}
           </div>
 
