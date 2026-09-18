@@ -5,6 +5,7 @@ import {
   useRef,
   lazy,
   Suspense,
+  useCallback,
   type FC,
   type FormEvent,
 } from "react";
@@ -120,6 +121,7 @@ interface DataGridProps {
   onAddRow: () => void;
   onEditRow: (row: Record<string, any>) => void;
   onDeleteRow: (row: Record<string, any>) => void;
+  onDuplicateRow?: (row: Record<string, any>) => void;
   onSaveCell?: (
     row: Record<string, any>,
     columnName: string,
@@ -753,6 +755,7 @@ export const DataGrid: FC<DataGridProps> = ({
   onAddRow,
   onEditRow,
   onDeleteRow,
+  onDuplicateRow,
   onSaveCell,
   onNavigateRelation,
   isReadOnly = false,
@@ -816,68 +819,34 @@ export const DataGrid: FC<DataGridProps> = ({
     };
   }, [contextMenu]);
 
-  // Inline Cell Editing State
+  // Focused Cell & Inline Cell Editing State
+  const [focusedCell, setFocusedCell] = useState<{
+    rowIndex: number;
+    colName: string;
+  } | null>(null);
   const [editingCell, setEditingCell] = useState<{
     rowIndex: number;
     colName: string;
   } | null>(null);
   const [inlineValue, setInlineValue] = useState<string>("");
 
-  const startEditingCell = (
-    row: Record<string, any>,
-    colName: string,
-    rowIndex: number,
-  ) => {
-    if (isReadOnly) return;
-    const colSchema = table.columns.find((c) => c.name === colName);
-    if (colSchema?.is_primary_key) return;
+  const startEditingCell = useCallback(
+    (row: Record<string, any>, colName: string, rowIndex: number) => {
+      if (isReadOnly) return;
+      const colSchema = table.columns.find((c) => c.name === colName);
+      if (colSchema?.is_primary_key) return;
 
-    setEditingCell({ rowIndex, colName });
-    const currentVal = row[colName];
-    setInlineValue(
-      currentVal === null || currentVal === undefined ? "" : String(currentVal),
-    );
-  };
-
-  const saveCellEdit = async (row: Record<string, any>, colName: string) => {
-    if (!editingCell || !onSaveCell) {
-      setEditingCell(null);
-      return;
-    }
-
-    const colSchema = table.columns.find((c) => c.name === colName);
-    let parsedVal: any = inlineValue;
-
-    if (colSchema) {
-      if (inlineValue === "" && colSchema.nullable) {
-        parsedVal = null;
-      } else if (colSchema.type === "int") {
-        const p = parseInt(inlineValue, 10);
-        parsedVal = isNaN(p) ? inlineValue : p;
-      } else if (colSchema.type === "float") {
-        const p = parseFloat(inlineValue);
-        parsedVal = isNaN(p) ? inlineValue : p;
-      } else if (colSchema.type === "bool") {
-        parsedVal = inlineValue === "true";
-      } else if (colSchema.type === "json") {
-        try {
-          parsedVal = JSON.parse(inlineValue);
-        } catch {
-          parsedVal = inlineValue;
-        }
-      }
-    }
-
-    if (parsedVal !== row[colName]) {
-      try {
-        await onSaveCell(row, colName, parsedVal);
-      } catch (err) {
-        console.error("Failed to save inline cell edit:", err);
-      }
-    }
-
-    setEditingCell(null);
-  };
+      setFocusedCell({ rowIndex, colName });
+      setEditingCell({ rowIndex, colName });
+      const currentVal = row[colName];
+      setInlineValue(
+        currentVal === null || currentVal === undefined
+          ? ""
+          : String(currentVal),
+      );
+    },
+    [isReadOnly, table.columns],
+  );
 
   useEffect(() => {
     if (!connId || !table.name) return;
@@ -1455,16 +1424,11 @@ export const DataGrid: FC<DataGridProps> = ({
     onSortChange,
     page,
     pageSize,
-    onEditRow,
-    onDeleteRow,
-    onSaveCell,
     onNavigateRelation,
     isReadOnly,
     t,
     editingCell,
     inlineValue,
-    startEditingCell,
-    saveCellEdit,
   ]);
 
   // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
@@ -1487,6 +1451,257 @@ export const DataGrid: FC<DataGridProps> = ({
     overscan: 10,
     useFlushSync: false,
   });
+
+  const saveCellEdit = useCallback(
+    async (
+      row: Record<string, any>,
+      colName: string,
+      moveFocusDown = false,
+    ) => {
+      if (!editingCell || !onSaveCell) {
+        setEditingCell(null);
+        if (moveFocusDown && focusedCell) {
+          const nextRowIndex = Math.min(
+            focusedCell.rowIndex + 1,
+            displayedRows.length - 1,
+          );
+          setFocusedCell({ rowIndex: nextRowIndex, colName });
+          rowVirtualizer.scrollToIndex(nextRowIndex, { align: "auto" });
+        }
+        return;
+      }
+
+      const colSchema = table.columns.find((c) => c.name === colName);
+      let parsedVal: any = inlineValue;
+
+      if (colSchema) {
+        if (inlineValue === "" && colSchema.nullable) {
+          parsedVal = null;
+        } else if (colSchema.type === "int") {
+          const p = parseInt(inlineValue, 10);
+          parsedVal = isNaN(p) ? inlineValue : p;
+        } else if (colSchema.type === "float") {
+          const p = parseFloat(inlineValue);
+          parsedVal = isNaN(p) ? inlineValue : p;
+        } else if (colSchema.type === "bool") {
+          parsedVal = inlineValue === "true";
+        } else if (colSchema.type === "json") {
+          try {
+            parsedVal = JSON.parse(inlineValue);
+          } catch {
+            parsedVal = inlineValue;
+          }
+        }
+      }
+
+      if (parsedVal !== row[colName]) {
+        try {
+          await onSaveCell(row, colName, parsedVal);
+        } catch (err) {
+          console.error("Failed to save inline cell edit:", err);
+        }
+      }
+
+      setEditingCell(null);
+      if (moveFocusDown && focusedCell) {
+        const nextRowIndex = Math.min(
+          focusedCell.rowIndex + 1,
+          displayedRows.length - 1,
+        );
+        setFocusedCell({ rowIndex: nextRowIndex, colName });
+        rowVirtualizer.scrollToIndex(nextRowIndex, { align: "auto" });
+      }
+    },
+    [
+      editingCell,
+      onSaveCell,
+      focusedCell,
+      displayedRows.length,
+      rowVirtualizer,
+      table.columns,
+      inlineValue,
+    ],
+  );
+
+  // Keyboard-First DataGrid Navigation Listener
+  useEffect(() => {
+    if (activeSubView !== "grid" || viewMode !== "table") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      // If user is focused inside search bar or outside inputs, ignore
+      const isSearchInput = activeEl === quickSearchInputRef.current;
+      const isModalOrOutside =
+        activeEl &&
+        (activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          activeEl.tagName === "SELECT") &&
+        !activeEl.closest("[data-cell-editing='true']");
+
+      if (isSearchInput || isModalOrOutside) return;
+
+      if (!focusedCell && displayedRows.length > 0) {
+        if (
+          e.key === "Tab" ||
+          e.key === "ArrowDown" ||
+          e.key === "ArrowUp" ||
+          e.key === "ArrowRight" ||
+          e.key === "ArrowLeft" ||
+          e.key === "Enter"
+        ) {
+          const firstDataCol =
+            table.columns.find((c) => !c.is_primary_key)?.name ||
+            table.columns[0]?.name ||
+            "_row_index";
+          setFocusedCell({ rowIndex: 0, colName: firstDataCol });
+        }
+        return;
+      }
+
+      if (!focusedCell || displayedRows.length === 0) return;
+
+      const currentRowIndex = focusedCell.rowIndex;
+      const currentRow = displayedRows[currentRowIndex];
+      if (!currentRow) return;
+
+      const leafCols = reactTable.getVisibleLeafColumns();
+      const visibleColNames = leafCols.map((c) =>
+        c.id.replace("_extra_", ""),
+      );
+      const currentColName = focusedCell.colName;
+      let currentColIndex = visibleColNames.indexOf(currentColName);
+      if (currentColIndex === -1) currentColIndex = 0;
+
+      // 1. Ctrl+D / Cmd+D: Duplicate Row
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        if (!isReadOnly) {
+          if (onDuplicateRow) {
+            onDuplicateRow(currentRow);
+          } else {
+            onAddRow();
+          }
+        }
+        return;
+      }
+
+      // 2. Delete / Backspace: Trigger Delete Confirmation (when not in edit mode)
+      if (!editingCell && (e.key === "Delete" || e.key === "Backspace")) {
+        e.preventDefault();
+        if (!isReadOnly) {
+          onDeleteRow(currentRow);
+        }
+        return;
+      }
+
+      // 3. Escape: Cancel Edit Mode
+      if (e.key === "Escape") {
+        if (editingCell) {
+          e.preventDefault();
+          setEditingCell(null);
+        }
+        return;
+      }
+
+      // 4. Enter: Edit Mode Toggle & Commit-And-Down
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (editingCell) {
+          saveCellEdit(currentRow, editingCell.colName, true);
+        } else {
+          const colSchema = table.columns.find((c) => c.name === currentColName);
+          if (
+            !isReadOnly &&
+            !colSchema?.is_primary_key &&
+            currentColName !== "_row_index"
+          ) {
+            startEditingCell(currentRow, currentColName, currentRowIndex);
+          }
+        }
+        return;
+      }
+
+      // 5. ArrowUp / ArrowDown: Move up/down rows
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (editingCell) {
+          saveCellEdit(currentRow, editingCell.colName);
+        }
+        const nextRowIndex = Math.max(0, currentRowIndex - 1);
+        setFocusedCell({ rowIndex: nextRowIndex, colName: currentColName });
+        rowVirtualizer.scrollToIndex(nextRowIndex, { align: "auto" });
+        return;
+      }
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (editingCell) {
+          saveCellEdit(currentRow, editingCell.colName);
+        }
+        const nextRowIndex = Math.min(
+          displayedRows.length - 1,
+          currentRowIndex + 1,
+        );
+        setFocusedCell({ rowIndex: nextRowIndex, colName: currentColName });
+        rowVirtualizer.scrollToIndex(nextRowIndex, { align: "auto" });
+        return;
+      }
+
+      // 6. Tab / Shift+Tab: Move left/right cells
+      if (e.key === "Tab") {
+        e.preventDefault();
+        if (editingCell) {
+          saveCellEdit(currentRow, editingCell.colName);
+        }
+        if (e.shiftKey) {
+          // Shift+Tab: Move left
+          if (currentColIndex > 0) {
+            setFocusedCell({
+              rowIndex: currentRowIndex,
+              colName: visibleColNames[currentColIndex - 1],
+            });
+          } else if (currentRowIndex > 0) {
+            const prevRowIndex = currentRowIndex - 1;
+            const lastColName = visibleColNames[visibleColNames.length - 1];
+            setFocusedCell({ rowIndex: prevRowIndex, colName: lastColName });
+            rowVirtualizer.scrollToIndex(prevRowIndex, { align: "auto" });
+          }
+        } else {
+          // Tab: Move right
+          if (currentColIndex < visibleColNames.length - 1) {
+            setFocusedCell({
+              rowIndex: currentRowIndex,
+              colName: visibleColNames[currentColIndex + 1],
+            });
+          } else if (currentRowIndex < displayedRows.length - 1) {
+            const nextRowIndex = currentRowIndex + 1;
+            const firstColName = visibleColNames[0];
+            setFocusedCell({ rowIndex: nextRowIndex, colName: firstColName });
+            rowVirtualizer.scrollToIndex(nextRowIndex, { align: "auto" });
+          }
+        }
+        return;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [
+    activeSubView,
+    viewMode,
+    focusedCell,
+    editingCell,
+    displayedRows,
+    reactTable,
+    table,
+    isReadOnly,
+    onDuplicateRow,
+    onAddRow,
+    onDeleteRow,
+    saveCellEdit,
+    startEditingCell,
+    rowVirtualizer,
+  ]);
 
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
@@ -2215,31 +2430,56 @@ export const DataGrid: FC<DataGridProps> = ({
                               });
                             }}
                           >
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell
-                                key={cell.id}
-                                className="px-3 py-2 text-xs not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap max-w-sm truncate text-zinc-800 dark:text-zinc-200"
-                                onContextMenu={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  setContextMenu({
-                                    mouseX: e.clientX,
-                                    mouseY: e.clientY,
-                                    row: row.original,
-                                    colName: cell.column.id.replace(
-                                      "_extra_",
-                                      "",
-                                    ),
-                                    cellValue: cell.getValue(),
-                                  });
-                                }}
-                              >
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext(),
-                                )}
-                              </TableCell>
-                            ))}
+                            {row.getVisibleCells().map((cell) => {
+                              const colId = cell.column.id.replace(
+                                "_extra_",
+                                "",
+                              );
+                              const isCellFocused =
+                                focusedCell?.rowIndex === virtualRow.index &&
+                                focusedCell?.colName === colId;
+                              const isEditingThisCell =
+                                editingCell?.rowIndex === virtualRow.index &&
+                                editingCell?.colName === colId;
+
+                              return (
+                                <TableCell
+                                  key={cell.id}
+                                  tabIndex={0}
+                                  data-cell-editing={
+                                    isEditingThisCell ? "true" : undefined
+                                  }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFocusedCell({
+                                      rowIndex: virtualRow.index,
+                                      colName: colId,
+                                    });
+                                  }}
+                                  className={cn(
+                                    "px-3 py-2 text-xs not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap max-w-sm truncate text-zinc-800 dark:text-zinc-200 outline-none transition-all",
+                                    isCellFocused &&
+                                      "ring-2 ring-emerald-500 dark:ring-emerald-400 ring-inset bg-emerald-500/10 dark:bg-emerald-500/20 z-20 relative font-medium",
+                                  )}
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setContextMenu({
+                                      mouseX: e.clientX,
+                                      mouseY: e.clientY,
+                                      row: row.original,
+                                      colName: colId,
+                                      cellValue: cell.getValue(),
+                                    });
+                                  }}
+                                >
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext(),
+                                  )}
+                                </TableCell>
+                              );
+                            })}
                           </TableRow>
                         );
                       })}

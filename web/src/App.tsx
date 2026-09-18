@@ -575,6 +575,11 @@ function PebblebaseStudio() {
                     setEditingRow(row);
                     setIsRowModalOpen(true);
                   }}
+                  onDuplicateRow={(row) => {
+                    if (activeConnection?.read_only) return;
+                    setEditingRow({ ...row, _isDuplicate: true });
+                    setIsRowModalOpen(true);
+                  }}
                   onDeleteRow={(row) => {
                     if (activeConnection?.read_only) return;
                     handleDeleteRowDirectly(row);
