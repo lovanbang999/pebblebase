@@ -204,6 +204,15 @@
     "retry": "Thử lại",
     "close": "Đóng"
   },
+  "errorBoundary": {
+    "defaultTitle": "Đã xảy ra lỗi trong chế độ xem này",
+    "defaultMessage": "Đã xảy ra lỗi không mong muốn.",
+    "reloadView": "Tải lại chế độ xem",
+    "appTitle": "Lỗi ứng dụng",
+    "appMessage": "Đã xảy ra lỗi không mong muốn trong Pebblebase Studio. Vui lòng khởi động lại ứng dụng hoặc tải lại.",
+    "queryConsoleTitle": "Lỗi Trình truy vấn",
+    "queryConsoleMessage": "Đã xảy ra lỗi khi tải hoặc hiển thị Trình truy vấn SQL/MongoDB."
+  },
   "app": {
     "failedToDelete": "Xóa bản ghi thất bại",
     "dismiss": "Bỏ qua",

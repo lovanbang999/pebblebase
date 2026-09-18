@@ -85,7 +85,7 @@ interface SidebarProps {
   selectedTable: string | null;
   onSelectTable: (tableName: string, openInNewTab?: boolean) => void;
   isLoadingTables: boolean;
-  onRefreshTables: () => void;
+  onRefreshTables: () => void | Promise<void>;
   activeView?: "table" | "console" | "erd";
   onOpenQueryConsole?: () => void;
   onOpenERD?: () => void;
@@ -185,6 +185,19 @@ export default function Sidebar({
   const [deletingConnection, setDeletingConnection] =
     useState<Connection | null>(null);
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (isRefreshing || isLoadingTables || !selectedConnection) return;
+    setIsRefreshing(true);
+    try {
+      await onRefreshTables();
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 500);
+    }
+  };
 
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
@@ -595,14 +608,15 @@ export default function Sidebar({
                     type="button"
                     variant="ghost"
                     size="icon-xs"
-                    onClick={onRefreshTables}
-                    disabled={isLoadingTables || !selectedConnection}
-                    className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 h-7 w-7 shrink-0"
+                    onClick={handleRefresh}
+                    disabled={isLoadingTables || isRefreshing || !selectedConnection}
+                    className="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/80 active:bg-zinc-200 dark:active:bg-zinc-700/80 h-7 w-7 shrink-0 transition-colors cursor-pointer"
                   >
                     <RefreshCw
                       className={cn(
-                        "size-3.5",
-                        isLoadingTables && "animate-spin",
+                        "size-3.5 transition-colors",
+                        (isLoadingTables || isRefreshing) &&
+                          "animate-spin text-indigo-600 dark:text-indigo-400",
                       )}
                     />
                   </Button>
@@ -635,24 +649,29 @@ export default function Sidebar({
                   {t("sidebar.connectToIntrospect")}
                 </p>
               </div>
-            ) : isLoadingTables ? (
-              <div className="p-1 space-y-1 animate-in fade-in duration-150">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between px-2 py-1.5 rounded bg-zinc-100/60 dark:bg-zinc-900/50 border border-zinc-200/60 dark:border-zinc-900 group-data-[collapsible=icon]:justify-center"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="size-3.5 rounded" />
+            ) : isLoadingTables || isRefreshing ? (
+              <SidebarMenu className="space-y-0.5 animate-in fade-in duration-150">
+                {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                  <SidebarMenuItem key={i}>
+                    <div className="flex items-center gap-2 h-7 px-2 rounded-md transition-colors">
+                      <Skeleton className="size-3.5 rounded shrink-0 bg-zinc-200/90 dark:bg-zinc-800/90" />
                       <Skeleton
-                        className="h-3 rounded group-data-[collapsible=icon]:hidden"
-                        style={{ width: `${65 + (i % 4) * 20}px` }}
+                        className="h-3 rounded bg-zinc-200/80 dark:bg-zinc-800/80 group-data-[collapsible=icon]:hidden"
+                        style={{ width: `${58 + ((i * 19) % 45)}px` }}
                       />
+                      <div className="ml-auto flex items-center gap-1.5 shrink-0 group-data-[collapsible=icon]:hidden">
+                        {i % 2 === 0 && (
+                          <Skeleton className="size-2.5 rounded-full bg-amber-400/35 dark:bg-amber-400/25" />
+                        )}
+                        {i % 3 === 0 && (
+                          <Skeleton className="size-2.5 rounded-full bg-sky-400/35 dark:bg-sky-400/25" />
+                        )}
+                        <Skeleton className="h-4 w-4 rounded-full bg-zinc-200/90 dark:bg-zinc-800/90" />
+                      </div>
                     </div>
-                    <Skeleton className="h-3 w-4 rounded group-data-[collapsible=icon]:hidden" />
-                  </div>
+                  </SidebarMenuItem>
                 ))}
-              </div>
+              </SidebarMenu>
             ) : filteredTables.length === 0 ? (
               <div className="py-8 px-2 text-center text-xs text-zinc-500 font-mono group-data-[collapsible=icon]:hidden">
                 {tables.length === 0

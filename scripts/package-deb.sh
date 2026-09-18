@@ -15,8 +15,26 @@ DEB_NAME="${APP_NAME}_${VERSION}_${ARCH}.deb"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# Check if binary is missing, --build was passed, or source files are newer than build/bin/pebblebase
+REBUILD=false
+if [ "$1" = "--build" ] || [ ! -f "build/bin/pebblebase" ]; then
+  REBUILD=true
+elif [ -f "build/bin/pebblebase" ]; then
+  NEWER=$(find web/src cmd internal -newer "build/bin/pebblebase" 2>/dev/null | head -n 1)
+  if [ -n "$NEWER" ]; then
+    echo "🔍 Detected source modifications newer than build/bin/pebblebase ($NEWER)."
+    REBUILD=true
+  fi
+fi
+
+if [ "$REBUILD" = true ]; then
+  echo "🔨 Building frontend and desktop binary with Wails..."
+  (cd web && yarn build)
+  wails build -s -skipbindings -clean -ldflags "-s -w"
+fi
+
 if [ ! -f "build/bin/pebblebase" ]; then
-  echo "Error: build/bin/pebblebase not found. Please run 'wails build' first."
+  echo "Error: build/bin/pebblebase not found. Build failed."
   exit 1
 fi
 

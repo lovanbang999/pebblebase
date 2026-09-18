@@ -369,9 +369,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
   const [query, setQuery] = useState(defaultQuery);
 
-  useEffect(() => {
-    onQueryChange?.(query);
-  }, [query, onQueryChange]);
+  const handleQueryChange = useCallback(
+    (newQuery: string) => {
+      setQuery(newQuery);
+      onQueryChange?.(newQuery);
+    },
+    [onQueryChange],
+  );
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<RawQueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -466,11 +470,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       isDialectMismatch ||
       !trimmed
     ) {
-      setQuery(buildExampleQuery(connection.type, tables));
+      const example = buildExampleQuery(connection.type, tables);
+      setQuery(example);
+      onQueryChange?.(example);
       setResult(null);
       setError(null);
     }
-  }, [tables, connection.type, isMongo, buildExampleQuery]);
+  }, [tables, connection.type, isMongo, buildExampleQuery, onQueryChange]);
 
   const saveHistory = useCallback(
     (item: Omit<QueryHistoryItem, "id" | "timestamp">) => {
@@ -847,7 +853,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               {sampleTemplates.map((item, i) => (
                 <DropdownMenuItem
                   key={i}
-                  onClick={() => setQuery(item.query)}
+                  onClick={() => handleQueryChange(item.query)}
                   className="cursor-pointer text-xs"
                 >
                   {item.label}
@@ -984,7 +990,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           <div className="w-60 shrink-0 overflow-hidden border-r border-zinc-200 dark:border-zinc-800">
             <QueryLibraryPanel
               connectionId={connection.id}
-              onLoadQuery={(q) => setQuery(q)}
+              onLoadQuery={(q) => handleQueryChange(q)}
               refreshTrigger={libRefreshKey}
             />
           </div>
@@ -1006,7 +1012,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               height="100%"
               theme={isDark ? "dark" : "light"}
               extensions={extensions}
-              onChange={(val) => setQuery(val)}
+              onChange={(val) => handleQueryChange(val)}
               placeholder={
                 isMongo
                   ? 'db.collection.find({ "status": "active" }).limit(50)'

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cn } from 'cn';
 import type { Connection, SavedQuery } from './lib/types';
@@ -22,6 +22,7 @@ import { useTabs } from './hooks/useTabs';
 import { useAuthStore } from './lib/auth';
 import { fetchMe, fetchSavedQueries, exportTableData, apiLogout } from './lib/api';
 import { isDesktopApp, quitDesktopApp, toggleFullscreen } from './lib/platform';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy-loaded heavy modules for fast desktop startup and minimal initial memory
 const QueryConsole = lazy(() =>
@@ -183,6 +184,13 @@ function PebblebaseStudio() {
     setSortDesc,
     setFilters,
   ]);
+
+  const handleQueryTextChange = useCallback(
+    (text: string) => {
+      updateActiveTabState({ queryText: text });
+    },
+    [updateActiveTabState]
+  );
 
   // Alt + Q and Alt + E shortcuts to toggle or open query console / ERD tab
   useEffect(() => {
@@ -380,7 +388,12 @@ function PebblebaseStudio() {
         selectedTable={activeTab?.type === 'table' ? activeTab.tableName || null : null}
         onSelectTable={handleOpenTableWithRecent}
         isLoadingTables={isLoadingTables}
-        onRefreshTables={() => refetchTables()}
+        onRefreshTables={async () => {
+          await refetchTables();
+          if (activeTable) {
+            await refetchRows();
+          }
+        }}
         activeView={activeTab?.type === 'query' ? 'console' : activeTab?.type === 'erd' ? 'erd' : 'table'}
         onOpenQueryConsole={() => openQueryTab()}
         onOpenERD={() => openErdTab()}
@@ -453,15 +466,17 @@ function PebblebaseStudio() {
                       </div>
                     }
                   >
-                    <QueryConsole
-                      connection={activeConnection}
-                      tables={tables}
-                      initialQuery={t.state?.queryText}
-                      onQueryChange={(text) => updateActiveTabState({ queryText: text })}
-                      onNavigateToTable={(tName) => {
-                        openTableTab(tName);
-                      }}
-                    />
+                    <ErrorBoundary>
+                      <QueryConsole
+                        connection={activeConnection}
+                        tables={tables}
+                        initialQuery={t.state?.queryText}
+                        onQueryChange={handleQueryTextChange}
+                        onNavigateToTable={(tName) => {
+                          openTableTab(tName);
+                        }}
+                      />
+                    </ErrorBoundary>
                   </Suspense>
                 </div>
               ))}
@@ -545,7 +560,9 @@ function PebblebaseStudio() {
                     setPage(0);
                     updateActiveTabState({ filters: newFilters, page: 0 });
                   }}
-                  onRefresh={() => refetchRows()}
+                  onRefresh={async () => {
+                    await Promise.all([refetchRows(), refetchTables()]);
+                  }}
                   isReadOnly={Boolean(activeConnection?.read_only)}
                   onOpenQueryConsole={() => openQueryTab()}
                   onAddRow={() => {
@@ -726,12 +743,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthGuard>
-          <PebblebaseStudio />
-        </AuthGuard>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthGuard>
+            <PebblebaseStudio />
+          </AuthGuard>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
