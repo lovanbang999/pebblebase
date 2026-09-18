@@ -106,6 +106,9 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("DELETE /api/connections/{id}/saved-queries/{qid}", protect(http.HandlerFunc(s.deleteSavedQuery)))
 	mux.Handle("GET /api/connections/{id}/saved-queries/{qid}/export", protect(http.HandlerFunc(s.exportSavedQuery)))
 
+	// Query History (audit log, filtered by connection)
+	mux.Handle("GET /api/connections/{id}/query-history", protect(http.HandlerFunc(s.handleQueryHistory)))
+
 	// In-App Schema Migrations
 	mux.Handle("POST /api/connections/{id}/migrations", protect(http.HandlerFunc(s.executeMigration)))
 	mux.Handle("GET /api/connections/{id}/migrations", protect(http.HandlerFunc(s.listMigrations)))
