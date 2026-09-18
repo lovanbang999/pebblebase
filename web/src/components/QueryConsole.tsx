@@ -34,6 +34,7 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Search,
   CheckCircle2,
   AlertCircle,
@@ -43,14 +44,16 @@ import {
   BookOpen,
   Save,
   Star,
+  FileSearch,
 } from "lucide-react";
 import type {
   Connection,
   TableSchema,
   RawQueryResult,
   QueryHistoryItem,
+  ExplainResult,
 } from "../lib/types";
-import { executeRawQuery, createSavedQuery } from "../lib/api";
+import { executeRawQuery, createSavedQuery, explainQuery } from "../lib/api";
 
 export interface ConsoleTab {
   id: string;
@@ -59,6 +62,7 @@ export interface ConsoleTab {
   results: RawQueryResult | null;
   executionTime?: number;
   error?: string | null;
+  explainResult?: ExplainResult | null;
 }
 import QueryLibraryPanel from "./QueryLibraryPanel";
 import { Button } from "@/components/ui/button";
@@ -320,6 +324,119 @@ function formatLatency(ms?: number): string {
   return ms.toFixed(1); // e.g. "145.2"
 }
 
+const PlanTreeNode: FC<{
+  keyName?: string;
+  value: any;
+  depth?: number;
+  expandAll?: boolean | null;
+}> = ({ keyName, value, depth = 0, expandAll = null }) => {
+  const isObject = value !== null && typeof value === "object";
+  const isArray = Array.isArray(value);
+  const [isOpenState, setIsOpenState] = useState<boolean | null>(null);
+  const [prevExpandAll, setPrevExpandAll] = useState(expandAll);
+
+  if (prevExpandAll !== expandAll) {
+    setPrevExpandAll(expandAll);
+    setIsOpenState(null);
+  }
+
+  const isOpen =
+    isOpenState !== null
+      ? isOpenState
+      : expandAll !== null
+        ? expandAll
+        : depth < 2;
+
+  if (!isObject) {
+    let valueColor = "text-emerald-600 dark:text-emerald-400";
+    if (typeof value === "number") {
+      valueColor = "text-amber-600 dark:text-amber-400 font-semibold";
+    } else if (typeof value === "boolean") {
+      valueColor = "text-sky-600 dark:text-sky-400 font-semibold";
+    } else if (value === null) {
+      valueColor = "text-zinc-400 dark:text-zinc-500 italic";
+    }
+
+    return (
+      <div
+        className="flex items-baseline gap-2 py-0.5 font-mono text-xs hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30 rounded px-1"
+        style={{ paddingLeft: `${depth * 16}px` }}
+      >
+        {keyName && (
+          <span className="text-zinc-600 dark:text-zinc-400 shrink-0 font-medium">
+            {keyName}:
+          </span>
+        )}
+        <span className={cn("break-all select-text", valueColor)}>
+          {value === null
+            ? "null"
+            : typeof value === "string"
+              ? `"${value}"`
+              : String(value)}
+        </span>
+      </div>
+    );
+  }
+
+  const entries = isArray
+    ? value.map((v: any, i: number) => [String(i), v])
+    : Object.entries(value);
+  const count = entries.length;
+
+  return (
+    <div className="font-mono text-xs">
+      <div
+        onClick={() => setIsOpenState(!isOpen)}
+        className="flex items-center gap-1.5 py-0.5 hover:bg-zinc-100/70 dark:hover:bg-zinc-800/40 rounded px-1 cursor-pointer select-none group"
+        style={{ paddingLeft: `${depth * 16}px` }}
+      >
+        {isOpen ? (
+          <ChevronDown className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 shrink-0" />
+        ) : (
+          <ChevronRight className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 shrink-0" />
+        )}
+
+        {keyName && (
+          <span className="text-indigo-600 dark:text-indigo-400 font-medium shrink-0">
+            {keyName}:
+          </span>
+        )}
+
+        <span className="text-zinc-400 dark:text-zinc-500 text-[11px]">
+          {isArray ? `Array(${count})` : `{${count} fields}`}
+        </span>
+
+        {!isOpen && !isArray && value && (
+          <span className="text-[11px] text-zinc-500 dark:text-zinc-400 truncate ml-1 font-sans">
+            {String(
+              value["Node Type"] ||
+                value["type"] ||
+                value["table_name"] ||
+                value["stage"] ||
+                value["detail"] ||
+                "",
+            )}
+          </span>
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="border-l border-zinc-200/60 dark:border-zinc-800/60 ml-2">
+          {entries.map(([k, v]) => (
+            <PlanTreeNode
+              key={k}
+              keyName={isArray ? undefined : k}
+              value={v}
+              depth={depth + 1}
+              expandAll={expandAll}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface QueryConsoleProps {
   connection: Connection;
   tables: TableSchema[];
@@ -504,6 +621,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   const result = activeTab.results;
   const error = activeTab.error ?? null;
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+
+  // Execution Plan states
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [activeResultsTab, setActiveResultsTab] = useState<"results" | "plan">("results");
+  const [planExpandAll, setPlanExpandAll] = useState<boolean | null>(null);
+  const [copiedPlan, setCopiedPlan] = useState(false);
 
   // Tab management & close warning states
   const [closingTabId, setClosingTabId] = useState<string | null>(null);
@@ -813,6 +936,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       if (!trimmed || isRunning) return;
 
       setIsRunning(true);
+      setActiveResultsTab("results");
       const targetTabId = activeTab.id;
 
       setTabs((prev) =>
@@ -901,6 +1025,58 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     setShowLimitWarning(false);
     await executeQuery(newQuery);
   }, [query, handleQueryChange, executeQuery]);
+
+  // Explain Query handler
+  const handleExplain = useCallback(async () => {
+    const trimmed = query.trim();
+    if (!trimmed || isExplaining || isRunning) return;
+
+    setIsExplaining(true);
+    const targetTabId = activeTab.id;
+
+    // Clear previous errors
+    setTabs((prev) =>
+      prev.map((t) => (t.id === targetTabId ? { ...t, error: null } : t)),
+    );
+
+    try {
+      const res = await explainQuery(connection.id, trimmed);
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === targetTabId
+            ? {
+                ...t,
+                explainResult: res,
+                error: null,
+              }
+            : t,
+        ),
+      );
+      // Auto-switch to the plan tab to display the result
+      setActiveResultsTab("plan");
+      setPlanExpandAll(null);
+    } catch (err: any) {
+      const msg = err.message || "Failed to explain query";
+      setTabs((prev) =>
+        prev.map((t) => (t.id === targetTabId ? { ...t, error: msg } : t)),
+      );
+      setActiveResultsTab("plan");
+    } finally {
+      setIsExplaining(false);
+    }
+  }, [query, isExplaining, isRunning, activeTab.id, connection.id]);
+
+  // Copy Plan JSON
+  const handleCopyPlan = useCallback(() => {
+    if (!activeTab.explainResult?.plan) return;
+    navigator.clipboard.writeText(
+      typeof activeTab.explainResult.plan === "string"
+        ? activeTab.explainResult.plan
+        : JSON.stringify(activeTab.explainResult.plan, null, 2),
+    );
+    setCopiedPlan(true);
+    setTimeout(() => setCopiedPlan(false), 2000);
+  }, [activeTab.explainResult]);
 
   // Global shortcut: Cmd/Ctrl + Enter or F5 to run
   useEffect(() => {
@@ -1241,6 +1417,28 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             )}
           </Button>
 
+          {/* Explain Query CTA */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleExplain}
+            disabled={isExplaining || isRunning || !query.trim()}
+            title={t("console.explain.tooltip")}
+            className="h-7 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold gap-1.5 shadow-xs transition-all cursor-pointer"
+          >
+            {isExplaining ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>{t("console.explain.explaining")}</span>
+              </>
+            ) : (
+              <>
+                <FileSearch className="w-3.5 h-3.5" />
+                <span>{t("console.explain.button")}</span>
+              </>
+            )}
+          </Button>
+
           {/* Save Query — indigo gradient CTA */}
           <Button
             type="button"
@@ -1509,58 +1707,122 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           {/* Execution Metrics & Results Status Bar */}
           <div className="h-9 px-3 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 flex items-center justify-between text-xs font-mono text-zinc-600 dark:text-zinc-400 shrink-0 select-none">
             <div className="flex items-center gap-3">
-              {result && (
-                <>
-                  <div
-                    className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold cursor-help"
-                    title={
-                      result.round_trip_ms
-                        ? `Database query: ${formatLatency(result.execution_time_ms)}ms | Network round-trip: ${formatLatency(result.round_trip_ms)}ms`
-                        : `Database query: ${formatLatency(result.execution_time_ms)}ms`
-                    }
-                  >
-                    <Zap className="w-3 h-3 fill-emerald-500/20 text-emerald-600 dark:text-emerald-400" />
-                    <span>
-                      {t("console.latency", {
-                        ms: formatLatency(result.execution_time_ms),
-                      })}
-                    </span>
-                  </div>
-
-                  <span className="text-zinc-300 dark:text-zinc-700">|</span>
-
-                  {result.is_mutation ? (
-                    <span className="text-amber-700 dark:text-amber-400 font-medium">
-                      {t("console.rowsAffected", {
-                        count: result.rows_affected,
-                      })}
-                    </span>
-                  ) : (
-                    <span>
-                      {t("console.rowsReturned", { count: result.rows.length })}
+              {/* Tab Selector: Results vs Execution Plan */}
+              <div className="flex items-center gap-0.5 p-0.5 bg-zinc-200/70 dark:bg-zinc-800/80 rounded-md">
+                <button
+                  type="button"
+                  onClick={() => setActiveResultsTab("results")}
+                  className={cn(
+                    "px-2.5 py-0.5 rounded text-[11px] font-sans font-medium transition-colors cursor-pointer flex items-center gap-1.5",
+                    activeResultsTab === "results"
+                      ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200",
+                  )}
+                >
+                  <span>{t("console.explain.results_tab", "Results")}</span>
+                  {result && (
+                    <span className="px-1 py-0.2 text-[9px] font-mono bg-zinc-100 dark:bg-zinc-800/90 rounded text-zinc-700 dark:text-zinc-300">
+                      {result.is_mutation
+                        ? result.rows_affected
+                        : result.rows.length}
                     </span>
                   )}
+                </button>
 
-                  {result.columns && result.columns.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setActiveResultsTab("plan")}
+                  className={cn(
+                    "px-2.5 py-0.5 rounded text-[11px] font-sans font-medium transition-colors cursor-pointer flex items-center gap-1.5",
+                    activeResultsTab === "plan"
+                      ? "bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-xs"
+                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200",
+                  )}
+                >
+                  <FileSearch className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                  <span>{t("console.explain.plan", "Execution Plan")}</span>
+                  {activeTab.explainResult && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  )}
+                </button>
+              </div>
+
+              {activeResultsTab === "results" ? (
+                <>
+                  {result && (
                     <>
-                      <span className="text-zinc-300 dark:text-zinc-700">
-                        |
+                      <div
+                        className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold cursor-help"
+                        title={
+                          result.round_trip_ms
+                            ? `Database query: ${formatLatency(result.execution_time_ms)}ms | Network round-trip: ${formatLatency(result.round_trip_ms)}ms`
+                            : `Database query: ${formatLatency(result.execution_time_ms)}ms`
+                        }
+                      >
+                        <Zap className="w-3 h-3 fill-emerald-500/20 text-emerald-600 dark:text-emerald-400" />
+                        <span>
+                          {t("console.latency", {
+                            ms: formatLatency(result.execution_time_ms),
+                          })}
+                        </span>
+                      </div>
+
+                      <span className="text-zinc-300 dark:text-zinc-700">|</span>
+
+                      {result.is_mutation ? (
+                        <span className="text-amber-700 dark:text-amber-400 font-medium">
+                          {t("console.rowsAffected", {
+                            count: result.rows_affected,
+                          })}
+                        </span>
+                      ) : (
+                        <span>
+                          {t("console.rowsReturned", { count: result.rows.length })}
+                        </span>
+                      )}
+
+                      {result.columns && result.columns.length > 0 && (
+                        <>
+                          <span className="text-zinc-300 dark:text-zinc-700">
+                            |
+                          </span>
+                          <span>{result.columns.length} columns</span>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {!result && !error && !isRunning && (
+                    <span className="text-zinc-400 dark:text-zinc-500 italic text-[11px]">
+                      {t("console.emptyPrompt")}
+                    </span>
+                  )}
+                </>
+              ) : (
+                /* Plan tab header metrics */
+                <>
+                  {activeTab.explainResult && (
+                    <>
+                      <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
+                        <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                        <span>
+                          {activeTab.explainResult.execution_time_ms
+                            ? `${formatLatency(activeTab.explainResult.execution_time_ms)} ms`
+                            : "—"}
+                        </span>
+                      </div>
+                      <span className="text-zinc-300 dark:text-zinc-700">|</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">
+                        {activeTab.explainResult.format}
                       </span>
-                      <span>{result.columns.length} columns</span>
                     </>
                   )}
                 </>
               )}
-
-              {!result && !error && !isRunning && (
-                <span className="text-zinc-400 dark:text-zinc-500 italic text-[11px]">
-                  {t("console.emptyPrompt")}
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-2">
-              {result && result.rows.length > 0 && (
+              {activeResultsTab === "results" && result && result.rows.length > 0 && (
                 <>
                   {/* Quick Filter across results */}
                   <div className="relative flex items-center">
@@ -1619,186 +1881,372 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           {/* Results Content Area (Hidden when collapsed) */}
           {!isResultsCollapsed && (
             <div className="flex-1 overflow-auto custom-scrollbar p-3">
-              {/* Error Alert */}
-              {error && (
-                <Alert
-                  variant="destructive"
-                  className="border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300"
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
-                    {error}
-                  </AlertDescription>
-                </Alert>
-              )}
+              {activeResultsTab === "results" ? (
+                <>
+                  {/* Error Alert */}
+                  {error && (
+                    <Alert
+                      variant="destructive"
+                      className="border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300"
+                    >
+                      <AlertCircle className="w-4 h-4" />
+                      <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
+                        {error}
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-              {/* Mutation Success Notice */}
-              {result?.is_mutation && !error && (
-                <Alert className="border-emerald-300 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <AlertDescription className="font-mono text-xs">
-                    {t("console.mutationSuccess")} (
-                    {t("console.rowsAffected", {
-                      count: result.rows_affected,
-                    })}
-                    )
-                  </AlertDescription>
-                </Alert>
-              )}
+                  {/* Mutation Success Notice */}
+                  {result?.is_mutation && !error && (
+                    <Alert className="border-emerald-300 dark:border-emerald-900 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <AlertDescription className="font-mono text-xs">
+                        {t("console.mutationSuccess")} (
+                        {t("console.rowsAffected", {
+                          count: result.rows_affected,
+                        })}
+                        )
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
-              {/* Data Table View */}
-              {result && !result.is_mutation && displayedRows.length > 0 && (
-                <div
-                  ref={resultsContainerRef}
-                  className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-auto max-h-[calc(100vh-380px)] min-h-40 bg-white dark:bg-zinc-900/40"
-                >
-                  <Table className="w-full border-collapse text-left">
-                    <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-                      <TableRow>
-                        <TableHead className="w-12 text-center text-xs font-mono text-zinc-400">
-                          #
-                        </TableHead>
-                        {result.columns.map((col) => (
-                          <TableHead
-                            key={col}
-                            className="px-3 py-2 text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 border-r border-zinc-200/50 dark:border-zinc-800/50 last:border-r-0"
-                          >
-                            {col}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rowVirtualizer.getVirtualItems().length > 0 && (
-                        <>
-                          {rowVirtualizer.getVirtualItems()[0].start > 0 && (
-                            <tr>
-                              <td
-                                colSpan={result.columns.length + 1}
-                                style={{
-                                  height: `${rowVirtualizer.getVirtualItems()[0].start}px`,
-                                  padding: 0,
-                                  border: 0,
-                                }}
-                              />
-                            </tr>
-                          )}
-                          {rowVirtualizer
-                            .getVirtualItems()
-                            .map((virtualRow) => {
-                              const row = displayedRows[virtualRow.index];
-                              const idx = virtualRow.index;
-                              if (!row) return null;
-                              return (
-                                <TableRow
-                                  key={idx}
-                                  data-index={virtualRow.index}
-                                  ref={rowVirtualizer.measureElement}
-                                  className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors border-b border-zinc-100 dark:border-zinc-800/60"
-                                >
-                                  <TableCell className="text-center text-xs font-mono text-zinc-400 select-none bg-zinc-50/30 dark:bg-zinc-900/30">
-                                    {idx + 1}
-                                  </TableCell>
-                                  {result.columns.map((col) => {
-                                    const val = row[col];
-                                    const cellKey = `${idx}-${col}`;
-                                    const isCopied = copiedCell === cellKey;
-                                    return (
-                                      <TableCell
-                                        key={col}
-                                        onClick={() =>
-                                          copyToClipboard(
-                                            typeof val === "object"
-                                              ? JSON.stringify(val)
-                                              : String(val ?? ""),
-                                            cellKey,
-                                          )
-                                        }
-                                        title="Click to copy value"
-                                        className="px-3 py-2 text-xs font-mono relative group cursor-pointer border-r border-zinc-100 dark:border-zinc-800/60 last:border-r-0 max-w-xs truncate"
-                                      >
-                                        {val === null || val === undefined ? (
-                                          <span className="text-zinc-400 dark:text-zinc-600 italic">
-                                            NULL
-                                          </span>
-                                        ) : typeof val === "boolean" ? (
-                                          <Badge
-                                            variant="outline"
-                                            className={cn(
-                                              "px-1 py-0 text-[10px] font-mono font-medium",
-                                              val
-                                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                                                : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
-                                            )}
-                                          >
-                                            {String(val)}
-                                          </Badge>
-                                        ) : typeof val === "object" ? (
-                                          <span className="text-amber-700 dark:text-amber-300">
-                                            {JSON.stringify(val)}
-                                          </span>
-                                        ) : (
-                                          <span className="text-zinc-900 dark:text-zinc-100">
-                                            {String(val)}
-                                          </span>
-                                        )}
-
-                                        {isCopied && (
-                                          <span className="absolute right-1 top-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded font-sans flex items-center gap-0.5">
-                                            <Check className="w-2.5 h-2.5" />{" "}
-                                            copied
-                                          </span>
-                                        )}
+                  {/* Data Table View */}
+                  {result && !result.is_mutation && displayedRows.length > 0 && (
+                    <div
+                      ref={resultsContainerRef}
+                      className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-auto max-h-[calc(100vh-380px)] min-h-40 bg-white dark:bg-zinc-900/40"
+                    >
+                      <Table className="w-full border-collapse text-left">
+                        <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                          <TableRow>
+                            <TableHead className="w-12 text-center text-xs font-mono text-zinc-400">
+                              #
+                            </TableHead>
+                            {result.columns.map((col) => (
+                              <TableHead
+                                key={col}
+                                className="px-3 py-2 text-xs font-mono font-semibold text-zinc-700 dark:text-zinc-300 border-r border-zinc-200/50 dark:border-zinc-800/50 last:border-r-0"
+                              >
+                                {col}
+                              </TableHead>
+                            ))}
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {rowVirtualizer.getVirtualItems().length > 0 && (
+                            <>
+                              {rowVirtualizer.getVirtualItems()[0].start > 0 && (
+                                <tr>
+                                  <td
+                                    colSpan={result.columns.length + 1}
+                                    style={{
+                                      height: `${rowVirtualizer.getVirtualItems()[0].start}px`,
+                                      padding: 0,
+                                      border: 0,
+                                    }}
+                                  />
+                                </tr>
+                              )}
+                              {rowVirtualizer
+                                .getVirtualItems()
+                                .map((virtualRow) => {
+                                  const row = displayedRows[virtualRow.index];
+                                  const idx = virtualRow.index;
+                                  if (!row) return null;
+                                  return (
+                                    <TableRow
+                                      key={idx}
+                                      data-index={virtualRow.index}
+                                      ref={rowVirtualizer.measureElement}
+                                      className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 transition-colors border-b border-zinc-100 dark:border-zinc-800/60"
+                                    >
+                                      <TableCell className="text-center text-xs font-mono text-zinc-400 select-none bg-zinc-50/30 dark:bg-zinc-900/30">
+                                        {idx + 1}
                                       </TableCell>
-                                    );
-                                  })}
-                                </TableRow>
-                              );
-                            })}
-                          {rowVirtualizer.getTotalSize() -
-                            (rowVirtualizer.getVirtualItems()[
-                              rowVirtualizer.getVirtualItems().length - 1
-                            ]?.end ?? 0) >
-                            0 && (
-                            <tr>
-                              <td
-                                colSpan={result.columns.length + 1}
-                                style={{
-                                  height: `${
-                                    rowVirtualizer.getTotalSize() -
-                                    (rowVirtualizer.getVirtualItems()[
-                                      rowVirtualizer.getVirtualItems().length -
-                                        1
-                                    ]?.end ?? 0)
-                                  }px`,
-                                  padding: 0,
-                                  border: 0,
-                                }}
-                              />
-                            </tr>
+                                      {result.columns.map((col) => {
+                                        const val = row[col];
+                                        const cellKey = `${idx}-${col}`;
+                                        const isCopied = copiedCell === cellKey;
+                                        return (
+                                          <TableCell
+                                            key={col}
+                                            onClick={() =>
+                                              copyToClipboard(
+                                                typeof val === "object"
+                                                  ? JSON.stringify(val)
+                                                  : String(val ?? ""),
+                                                cellKey,
+                                              )
+                                            }
+                                            title="Click to copy value"
+                                            className="px-3 py-2 text-xs font-mono relative group cursor-pointer border-r border-zinc-100 dark:border-zinc-800/60 last:border-r-0 max-w-xs truncate"
+                                          >
+                                            {val === null || val === undefined ? (
+                                              <span className="text-zinc-400 dark:text-zinc-600 italic">
+                                                NULL
+                                              </span>
+                                            ) : typeof val === "boolean" ? (
+                                              <Badge
+                                                variant="outline"
+                                                className={cn(
+                                                  "px-1 py-0 text-[10px] font-mono font-medium",
+                                                  val
+                                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                                    : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+                                                )}
+                                              >
+                                                {String(val)}
+                                              </Badge>
+                                            ) : typeof val === "object" ? (
+                                              <span className="text-amber-700 dark:text-amber-300">
+                                                {JSON.stringify(val)}
+                                              </span>
+                                            ) : (
+                                              <span className="text-zinc-900 dark:text-zinc-100">
+                                                {String(val)}
+                                              </span>
+                                            )}
+
+                                            {isCopied && (
+                                              <span className="absolute right-1 top-1 bg-emerald-600 text-white text-[9px] px-1 py-0.2 rounded font-sans flex items-center gap-0.5">
+                                                <Check className="w-2.5 h-2.5" />{" "}
+                                                copied
+                                              </span>
+                                            )}
+                                          </TableCell>
+                                        );
+                                      })}
+                                    </TableRow>
+                                  );
+                                })}
+                              {rowVirtualizer.getTotalSize() -
+                                (rowVirtualizer.getVirtualItems()[
+                                  rowVirtualizer.getVirtualItems().length - 1
+                                ]?.end ?? 0) >
+                                0 && (
+                                <tr>
+                                  <td
+                                    colSpan={result.columns.length + 1}
+                                    style={{
+                                      height: `${
+                                        rowVirtualizer.getTotalSize() -
+                                        (rowVirtualizer.getVirtualItems()[
+                                          rowVirtualizer.getVirtualItems().length -
+                                            1
+                                        ]?.end ?? 0)
+                                      }px`,
+                                      padding: 0,
+                                      border: 0,
+                                    }}
+                                  />
+                                </tr>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    </TableBody>
-                  </Table>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+
+                  {result &&
+                    result.rows.length === 0 &&
+                    !result.is_mutation &&
+                    !error && (
+                      <div className="h-48 flex flex-col items-center justify-center text-center p-6">
+                        <CheckCircle2 className="w-8 h-8 text-zinc-400 mb-2 opacity-50" />
+                        <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                          {t("console.noResults")}
+                        </h3>
+                        <p className="text-xs text-zinc-500 mt-1">
+                          Query returned 0 rows in{" "}
+                          {formatLatency(result.execution_time_ms)}ms.
+                        </p>
+                      </div>
+                    )}
+                </>
+              ) : (
+                /* Execution Plan Tab */
+                <div className="space-y-3">
+                  {/* Plan Error Alert */}
+                  {error && (
+                    <Alert
+                      variant="destructive"
+                      className="border-rose-300 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300"
+                    >
+                      <AlertCircle className="w-4 h-4" />
+                      <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
+                        {error}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {activeTab.explainResult ? (
+                    <div className="space-y-3">
+                      {/* Metric Summary Cards */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        {/* Estimated Rows */}
+                        <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 shadow-xs">
+                          <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 dark:text-zinc-400 font-semibold">
+                            {t("console.explain.estimated_rows")}
+                          </div>
+                          <div className="mt-1 text-base font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                            {activeTab.explainResult.estimated_rows !== undefined
+                              ? activeTab.explainResult.estimated_rows.toLocaleString()
+                              : "—"}
+                          </div>
+                        </div>
+
+                        {/* Actual Rows */}
+                        <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 shadow-xs">
+                          <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 dark:text-zinc-400 font-semibold">
+                            {t("console.explain.actual_rows")}
+                          </div>
+                          <div className="mt-1 text-base font-mono font-bold text-zinc-900 dark:text-zinc-100">
+                            {activeTab.explainResult.actual_rows !== undefined
+                              ? activeTab.explainResult.actual_rows.toLocaleString()
+                              : "—"}
+                          </div>
+                        </div>
+
+                        {/* Execution Time */}
+                        <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 shadow-xs">
+                          <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 dark:text-zinc-400 font-semibold">
+                            {t("console.explain.execution_time")}
+                          </div>
+                          <div className="mt-1 text-base font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                            {activeTab.explainResult.execution_time_ms
+                              ? `${formatLatency(activeTab.explainResult.execution_time_ms)} ms`
+                              : "—"}
+                          </div>
+                        </div>
+
+                        {/* Index Used */}
+                        <div className="p-2.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/60 shadow-xs">
+                          <div className="text-[10px] uppercase font-mono tracking-wider text-zinc-500 dark:text-zinc-400 font-semibold">
+                            {t("console.explain.index_used")}
+                          </div>
+                          <div className="mt-1 flex items-center gap-1.5 truncate">
+                            {activeTab.explainResult.index_used ? (
+                              <Badge
+                                variant="outline"
+                                className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[11px] font-mono font-semibold truncate max-w-full"
+                                title={activeTab.explainResult.index_used}
+                              >
+                                {activeTab.explainResult.index_used}
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[11px] font-mono font-medium truncate"
+                              >
+                                {t("console.explain.no_index")}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Execution Plan Tree Container */}
+                      <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg bg-white dark:bg-zinc-950/60 overflow-hidden shadow-xs">
+                        <div className="px-3 py-2 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <FileSearch className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                            <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 font-mono">
+                              {t("console.explain.plan")}
+                            </span>
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] font-mono py-0 px-1.5 uppercase bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300"
+                            >
+                              {activeTab.explainResult.format}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPlanExpandAll(true)}
+                              className="h-6 px-2 text-[11px] font-mono text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
+                            >
+                              {t("console.explain.expand_all")}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setPlanExpandAll(false)}
+                              className="h-6 px-2 text-[11px] font-mono text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
+                            >
+                              {t("console.explain.collapse_all")}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCopyPlan}
+                              className="h-6 px-2 text-[11px] font-mono gap-1 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-800"
+                            >
+                              {copiedPlan ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-500" />
+                                  <span>{t("console.explain.copied")}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>{t("console.explain.copy_json")}</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="p-3 overflow-auto max-h-[calc(100vh-380px)] min-h-40 font-mono text-xs">
+                          <PlanTreeNode
+                            value={activeTab.explainResult.plan}
+                            expandAll={planExpandAll}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Empty State: No Execution Plan Yet */
+                    <div className="h-56 flex flex-col items-center justify-center text-center p-6 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg">
+                      <FileSearch className="w-9 h-9 text-zinc-400 mb-2.5 opacity-60" />
+                      <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                        {t("console.explain.no_plan_title", "No Execution Plan Yet")}
+                      </h3>
+                      <p className="text-xs text-zinc-500 mt-1 max-w-sm">
+                        {t(
+                          "console.explain.no_plan_desc",
+                          "Click the Explain button to analyze and visualize the query execution plan.",
+                        )}
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleExplain}
+                        disabled={isExplaining || isRunning || !query.trim()}
+                        className="mt-3.5 h-7 text-xs font-semibold gap-1.5 bg-amber-600 hover:bg-amber-500 text-white cursor-pointer"
+                      >
+                        {isExplaining ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>{t("console.explain.explaining")}</span>
+                          </>
+                        ) : (
+                          <>
+                            <FileSearch className="w-3.5 h-3.5" />
+                            <span>{t("console.explain.button")}</span>
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
-
-              {result &&
-                result.rows.length === 0 &&
-                !result.is_mutation &&
-                !error && (
-                  <div className="h-48 flex flex-col items-center justify-center text-center p-6">
-                    <CheckCircle2 className="w-8 h-8 text-zinc-400 mb-2 opacity-50" />
-                    <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                      {t("console.noResults")}
-                    </h3>
-                    <p className="text-xs text-zinc-500 mt-1">
-                      Query returned 0 rows in{" "}
-                      {formatLatency(result.execution_time_ms)}ms.
-                    </p>
-                  </div>
-                )}
             </div>
           )}
         </div>

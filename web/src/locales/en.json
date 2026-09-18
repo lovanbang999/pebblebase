@@ -299,6 +299,25 @@
       "rename": "Double-click to rename",
       "unsaved_warning": "This tab has unsaved query changes. Are you sure you want to close it?",
       "cancel": "Cancel"
+    },
+    "explain": {
+      "button": "Explain",
+      "tooltip": "Explain Query Execution Plan",
+      "plan": "Execution Plan",
+      "actual_rows": "Actual Rows",
+      "estimated_rows": "Estimated Rows",
+      "index_used": "Index Used",
+      "not_supported": "Query EXPLAIN is not supported for this database type or query statement.",
+      "results_tab": "Results",
+      "no_index": "None (Table Scan)",
+      "explaining": "Explaining...",
+      "execution_time": "Execution Time",
+      "expand_all": "Expand All",
+      "collapse_all": "Collapse All",
+      "copy_json": "Copy Plan JSON",
+      "copied": "Copied Plan!",
+      "no_plan_title": "No Execution Plan Yet",
+      "no_plan_desc": "Click Explain to analyze and visualize the query execution plan."
     }
   },
   "tabs": {

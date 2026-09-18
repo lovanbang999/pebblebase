@@ -299,6 +299,25 @@
       "rename": "Nhấp đúp để đổi tên",
       "unsaved_warning": "Thẻ này có thay đổi truy vấn chưa lưu. Bạn có chắc chắn muốn đóng không?",
       "cancel": "Hủy"
+    },
+    "explain": {
+      "button": "Phân tích",
+      "tooltip": "Phân tích kế hoạch thực thi câu truy vấn",
+      "plan": "Kế hoạch thực thi",
+      "actual_rows": "Số dòng thực tế",
+      "estimated_rows": "Số dòng ước tính",
+      "index_used": "Chỉ mục sử dụng",
+      "not_supported": "Tính năng EXPLAIN không được hỗ trợ cho loại cơ sở dữ liệu hoặc câu lệnh này.",
+      "results_tab": "Kết quả",
+      "no_index": "Không (Quét toàn bộ bảng)",
+      "explaining": "Đang phân tích...",
+      "execution_time": "Thời gian thực thi",
+      "expand_all": "Mở rộng tất cả",
+      "collapse_all": "Thu gọn tất cả",
+      "copy_json": "Sao chép JSON kế hoạch",
+      "copied": "Đã sao chép kế hoạch!",
+      "no_plan_title": "Chưa có kế hoạch thực thi",
+      "no_plan_desc": "Bấm Phân tích để phân tích và hiển thị trực quan kế hoạch thực thi cùng các chỉ số hiệu năng."
     }
   },
   "tabs": {

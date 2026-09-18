@@ -63,6 +63,22 @@ type RawRunner interface {
 	ExecuteRaw(ctx context.Context, query string) (RawQueryResult, error)
 }
 
+// ExplainResult holds the structured execution plan and key execution statistics.
+type ExplainResult struct {
+	Plan            any     `json:"plan"`
+	EstimatedRows   *int64  `json:"estimated_rows,omitempty"`
+	ActualRows      *int64  `json:"actual_rows,omitempty"`
+	ExecutionTimeMs float64 `json:"execution_time_ms,omitempty"`
+	IndexUsed       string  `json:"index_used,omitempty"`
+	Format          string  `json:"format,omitempty"`
+	Raw             string  `json:"raw,omitempty"`
+}
+
+// QueryExplainer is an optional interface implemented by database adapters capable of explaining queries.
+type QueryExplainer interface {
+	ExplainQuery(ctx context.Context, query string) (ExplainResult, error)
+}
+
 // StreamExporter is implemented by adapters supporting chunked row streaming for bulk exports.
 type StreamExporter interface {
 	StreamRows(ctx context.Context, table string, opts QueryOptions, onChunk func(columns []string, rows []map[string]any) error) error

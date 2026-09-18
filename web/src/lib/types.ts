@@ -84,6 +84,16 @@ export interface RawQueryResult {
   is_mutation: boolean;
 }
 
+export interface ExplainResult {
+  plan: any;
+  estimated_rows?: number;
+  actual_rows?: number;
+  execution_time_ms?: number;
+  index_used?: string;
+  format?: string;
+  raw?: string;
+}
+
 export interface QueryHistoryItem {
   id: string;
   query: string;
