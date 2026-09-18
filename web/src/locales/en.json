@@ -481,11 +481,14 @@
       "size": "Size",
       "columns": "columns",
       "filtered": "Filtered",
-      "estimated": "est.",
-      "pk": "PK"
+      "estimated": "est."
     }
   },
   "savedQuery": {
+    "folder": "Folder",
+    "folderPlaceholder": "e.g. reporting or reporting/finance",
+    "uncategorized": "Uncategorized",
+    "allFolders": "All Folders",
     "library": "Query Library",
     "save": "Save",
     "saveQuery": "Save Query",
@@ -523,6 +526,18 @@
       "load": "Load into editor",
       "executedAt": "Executed",
       "by": "by"
+    }
+  },
+  "library": {
+    "folder": "Folder",
+    "folder_new": "New Folder",
+    "folder_rename": "Rename Folder",
+    "folder_delete": "Delete Folder",
+    "tags": "Tags",
+    "tags_add": "Add Tag",
+    "filter_by_tag": "Filter by tag",
+    "filter": {
+      "by_tag": "Filter by tag"
     }
   },
   "erd": {

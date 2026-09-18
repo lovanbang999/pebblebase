@@ -208,6 +208,7 @@ export interface SavedQuery {
   title: string;
   query: string;
   tags: string[];
+  folder?: string;
   is_favorite: boolean;
   created_at: string;
   updated_at: string;
@@ -217,6 +218,7 @@ export interface SavedQueryInput {
   title: string;
   query: string;
   tags: string[];
+  folder?: string;
   is_favorite: boolean;
 }
 
@@ -224,6 +226,7 @@ export interface SavedQueryUpdateInput {
   title?: string;
   query?: string;
   tags?: string[];
+  folder?: string;
   is_favorite?: boolean;
 }
 

@@ -407,10 +407,11 @@ export async function fetchTableStats(
 
 export async function fetchSavedQueries(
   connId: string,
-  params: { tag?: string; search?: string } = {}
+  params: { tag?: string; folder?: string; search?: string } = {}
 ): Promise<SavedQuery[]> {
   const sp = new URLSearchParams();
   if (params.tag) sp.set('tag', params.tag);
+  if (params.folder) sp.set('folder', params.folder);
   if (params.search) sp.set('search', params.search);
   const qs = sp.toString();
   const res = await fetch(

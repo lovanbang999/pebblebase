@@ -486,6 +486,10 @@
     }
   },
   "savedQuery": {
+    "folder": "Thư mục",
+    "folderPlaceholder": "Vd: reporting hoặc reporting/finance",
+    "uncategorized": "Chưa phân loại",
+    "allFolders": "Tất cả thư mục",
     "library": "Thư viện Câu hỏi",
     "save": "Lưu",
     "saveQuery": "Lưu câu hỏi",
@@ -523,6 +527,18 @@
       "load": "Tải vào trình soạn thảo",
       "executedAt": "Đã thực thi",
       "by": "bởi"
+    }
+  },
+  "library": {
+    "folder": "Thư mục",
+    "folder_new": "Thư mục mới",
+    "folder_rename": "Đổi tên thư mục",
+    "folder_delete": "Xóa thư mục",
+    "tags": "Thẻ nhãn",
+    "tags_add": "Thêm thẻ",
+    "filter_by_tag": "Lọc theo thẻ",
+    "filter": {
+      "by_tag": "Lọc theo thẻ"
     }
   },
   "erd": {
