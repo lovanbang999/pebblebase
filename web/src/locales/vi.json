@@ -292,7 +292,14 @@
     "templateMongoAgg": "Pipeline Tổng hợp (Aggregate)",
     "rowsFilter": "Lọc kết quả...",
     "collapseResults": "Thu gọn kết quả",
-    "expandResults": "Mở rộng kết quả"
+    "expandResults": "Mở rộng kết quả",
+    "tab": {
+      "new": "Thẻ mới",
+      "close": "Đóng thẻ",
+      "rename": "Nhấp đúp để đổi tên",
+      "unsaved_warning": "Thẻ này có thay đổi truy vấn chưa lưu. Bạn có chắc chắn muốn đóng không?",
+      "cancel": "Hủy"
+    }
   },
   "tabs": {
     "newTab": "Tab mới",
