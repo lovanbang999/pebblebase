@@ -107,9 +107,22 @@ export const RowModal: FC<RowModalProps> = ({
   onDelete,
 }) => {
   const { t } = useTranslation();
-  const isEditing = Boolean(initialRow);
+  const isDuplicate = Boolean((initialRow as any)?._isDuplicate);
+  const isEditing = Boolean(initialRow) && !isDuplicate;
   const [formData, setFormData] = useState<Record<string, any>>(() => {
-    if (initialRow) return { ...initialRow };
+    if (initialRow) {
+      const data = { ...initialRow };
+      delete data._isDuplicate;
+      delete data._pb_id;
+      if (isDuplicate) {
+        table.columns.forEach((c) => {
+          if (c.is_primary_key) {
+            delete data[c.name];
+          }
+        });
+      }
+      return data;
+    }
     const defaults: Record<string, any> = {};
     table.columns.forEach((c) => {
       if (!c.is_primary_key) {
