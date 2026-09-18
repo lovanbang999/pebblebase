@@ -210,6 +210,13 @@
       "recordPreview": "Xem trước bản ghi"
     }
   },
+  "query": {
+    "warn": {
+      "no_limit": "Truy vấn này không có mệnh đề LIMIT. Nó có thể trả về số lượng bản ghi lớn và làm chậm giao diện.",
+      "run_anyway": "Vẫn chạy",
+      "add_limit": "Thêm LIMIT 100"
+    }
+  },
   "common": {
     "language": "Ngôn ngữ",
     "vietnamese": "Tiếng Việt",
