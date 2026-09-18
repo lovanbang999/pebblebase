@@ -210,6 +210,13 @@
       "recordPreview": "Record Preview"
     }
   },
+  "query": {
+    "warn": {
+      "no_limit": "This query has no LIMIT clause. It may return a large number of rows and slow down the UI.",
+      "run_anyway": "Run Anyway",
+      "add_limit": "Add LIMIT 100"
+    }
+  },
   "common": {
     "language": "Language",
     "vietnamese": "Tiếng Việt",

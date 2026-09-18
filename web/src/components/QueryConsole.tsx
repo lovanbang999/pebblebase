@@ -37,6 +37,7 @@ import {
   Search,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   X,
   BookOpen,
   Save,
@@ -368,13 +369,24 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   ]);
 
   const [query, setQuery] = useState(defaultQuery);
+  const [showLimitWarning, setShowLimitWarning] = useState(false);
+
+  const checkMissingLimit = useCallback((q: string): boolean => {
+    const trimmed = q.trim();
+    const isSelect = /^\s*(?:--[^\n]*\n|\/\*[\s\S]*?\*\/|\s)*SELECT\b/i.test(trimmed);
+    const hasLimit = /\bLIMIT\b/i.test(trimmed);
+    return isSelect && !hasLimit;
+  }, []);
 
   const handleQueryChange = useCallback(
     (newQuery: string) => {
       setQuery(newQuery);
       onQueryChange?.(newQuery);
+      setShowLimitWarning((prev) =>
+        prev && !checkMissingLimit(newQuery) ? false : prev,
+      );
     },
-    [onQueryChange],
+    [onQueryChange, checkMissingLimit],
   );
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<RawQueryResult | null>(null);
@@ -538,50 +550,84 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     }
   };
 
-  // Run Query handler
+  // Core execute query logic
+  const executeQuery = useCallback(
+    async (queryToRun: string) => {
+      const trimmed = queryToRun.trim();
+      if (!trimmed || isRunning) return;
+
+      setIsRunning(true);
+      setError(null);
+      const startClient = performance.now();
+
+      try {
+        const res = await executeRawQuery(connection.id, trimmed);
+        const clientDuration = performance.now() - startClient;
+        // If backend returned a precise time > 0, use it.
+        // If backend returned 0 (e.g. before server restart), use client elapsed time.
+        const exactTime =
+          res.execution_time_ms > 0
+            ? res.execution_time_ms
+            : Math.max(0.01, Number(clientDuration.toFixed(2)));
+
+        const enrichedResult: RawQueryResult = {
+          ...res,
+          execution_time_ms: exactTime,
+          round_trip_ms: Number(clientDuration.toFixed(2)),
+        };
+
+        setResult(enrichedResult);
+        saveHistory({
+          query: trimmed,
+          execution_time_ms: exactTime,
+          round_trip_ms: Number(clientDuration.toFixed(2)),
+          is_mutation: res.is_mutation,
+          row_count: res.rows.length,
+        });
+      } catch (err: any) {
+        const msg = err.message || "Execution error";
+        setError(msg);
+        saveHistory({
+          query: trimmed,
+          error: msg,
+        });
+      } finally {
+        setIsRunning(false);
+      }
+    },
+    [isRunning, connection.id, saveHistory],
+  );
+
+  // Run Query handler (validates LIMIT for SELECT queries)
   const handleRun = useCallback(async () => {
     const trimmed = query.trim();
     if (!trimmed || isRunning) return;
 
-    setIsRunning(true);
-    setError(null);
-    const startClient = performance.now();
-
-    try {
-      const res = await executeRawQuery(connection.id, trimmed);
-      const clientDuration = performance.now() - startClient;
-      // If backend returned a precise time > 0, use it.
-      // If backend returned 0 (e.g. before server restart), use client elapsed time.
-      const exactTime =
-        res.execution_time_ms > 0
-          ? res.execution_time_ms
-          : Math.max(0.01, Number(clientDuration.toFixed(2)));
-
-      const enrichedResult: RawQueryResult = {
-        ...res,
-        execution_time_ms: exactTime,
-        round_trip_ms: Number(clientDuration.toFixed(2)),
-      };
-
-      setResult(enrichedResult);
-      saveHistory({
-        query: trimmed,
-        execution_time_ms: exactTime,
-        round_trip_ms: Number(clientDuration.toFixed(2)),
-        is_mutation: res.is_mutation,
-        row_count: res.rows.length,
-      });
-    } catch (err: any) {
-      const msg = err.message || "Execution error";
-      setError(msg);
-      saveHistory({
-        query: trimmed,
-        error: msg,
-      });
-    } finally {
-      setIsRunning(false);
+    if (checkMissingLimit(trimmed)) {
+      setShowLimitWarning(true);
+      return;
     }
-  }, [query, isRunning, connection.id, saveHistory]);
+
+    setShowLimitWarning(false);
+    await executeQuery(trimmed);
+  }, [query, isRunning, checkMissingLimit, executeQuery]);
+
+  const handleRunAnyway = useCallback(async () => {
+    setShowLimitWarning(false);
+    await executeQuery(query);
+  }, [query, executeQuery]);
+
+  const handleAddLimit = useCallback(async () => {
+    let newQuery = query.trim();
+    if (newQuery.endsWith(";")) {
+      newQuery = newQuery.slice(0, -1).trim() + " LIMIT 100;";
+    } else {
+      newQuery = newQuery + " LIMIT 100";
+    }
+    handleQueryChange(newQuery);
+    setShowLimitWarning(false);
+    await executeQuery(newQuery);
+  }, [query, handleQueryChange, executeQuery]);
 
   // Global shortcut: Cmd/Ctrl + Enter or F5 to run
   useEffect(() => {
@@ -884,7 +930,10 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setQuery("")}
+            onClick={() => {
+              setQuery("");
+              setShowLimitWarning(false);
+            }}
             className="h-7 text-xs font-mono text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 inline-flex items-center justify-center gap-1.5"
           >
             <Trash2 className="size-3.5 shrink-0" />
@@ -980,6 +1029,49 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         <div className="px-3 py-1 bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/25 flex items-center gap-2 text-[11px] font-mono text-amber-800 dark:text-amber-300">
           <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
           <span>{t("console.readOnlyWarn")}</span>
+        </div>
+      )}
+
+      {/* Missing LIMIT Warning Banner */}
+      {showLimitWarning && (
+        <div
+          role="alert"
+          className="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-amber-900 dark:text-amber-200 animate-in fade-in slide-in-from-top-1"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertTriangle className="size-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="leading-snug">{t("query.warn.no_limit")}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRunAnyway}
+              disabled={isRunning}
+              className="h-6 text-[11px] font-medium border-amber-500/40 text-amber-900 dark:text-amber-200 hover:bg-amber-500/20 bg-transparent cursor-pointer"
+            >
+              {t("query.warn.run_anyway")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleAddLimit}
+              disabled={isRunning}
+              className="h-6 text-[11px] font-semibold bg-amber-600 hover:bg-amber-500 text-white shadow-2xs cursor-pointer"
+            >
+              {t("query.warn.add_limit")}
+            </Button>
+            <button
+              type="button"
+              onClick={() => setShowLimitWarning(false)}
+              className="p-0.5 rounded text-amber-700/60 dark:text-amber-400/60 hover:text-amber-900 dark:hover:text-amber-100 hover:bg-amber-500/15 transition-colors cursor-pointer"
+              aria-label="Dismiss warning"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
