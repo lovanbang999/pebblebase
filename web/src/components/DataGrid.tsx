@@ -62,15 +62,15 @@ import { EmptyState } from "./EmptyState";
 import { QuickStatsBar } from "./QuickStatsBar";
 
 const ImportModal = lazy(() =>
-  import("./ImportModal").then((m) => ({ default: m.ImportModal }))
+  import("./ImportModal").then((m) => ({ default: m.ImportModal })),
 );
 const SchemaInspector = lazy(() =>
-  import("./SchemaInspector").then((m) => ({ default: m.SchemaInspector }))
+  import("./SchemaInspector").then((m) => ({ default: m.SchemaInspector })),
 );
 const ColumnAnalyticsDrawer = lazy(() =>
   import("./ColumnAnalyticsDrawer").then((m) => ({
     default: m.ColumnAnalyticsDrawer,
-  }))
+  })),
 );
 import { Button } from "@/components/ui/button";
 import {
@@ -116,7 +116,7 @@ interface DataGridProps {
   onSortChange: (column: string, desc: boolean) => void;
   filters: FilterOption[];
   onFiltersChange: (filters: FilterOption[]) => void;
-  onRefresh: () => void;
+  onRefresh: () => void | Promise<void>;
   onAddRow: () => void;
   onEditRow: (row: Record<string, any>) => void;
   onDeleteRow: (row: Record<string, any>) => void;
@@ -561,7 +561,9 @@ const DocumentView: FC<DocumentViewProps> = ({
                       <span
                         className={cn(
                           "font-mono text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0 truncate self-start",
-                          isEditing ? "min-w-35 pt-0.75 px-2" : "min-w-30 px-3 py-px",
+                          isEditing
+                            ? "min-w-35 pt-0.75 px-2"
+                            : "min-w-30 px-3 py-px",
                         )}
                       >
                         {key}
@@ -589,11 +591,17 @@ const DocumentView: FC<DocumentViewProps> = ({
                               // Ctrl+Enter = insert newline
                               e.preventDefault();
                               const el = e.currentTarget;
-                              const start = el.selectionStart ?? currentVal.length;
+                              const start =
+                                el.selectionStart ?? currentVal.length;
                               const end = el.selectionEnd ?? currentVal.length;
                               const newVal =
-                                currentVal.slice(0, start) + "\n" + currentVal.slice(end);
-                              setEditingValues((prev) => ({ ...prev, [key]: newVal }));
+                                currentVal.slice(0, start) +
+                                "\n" +
+                                currentVal.slice(end);
+                              setEditingValues((prev) => ({
+                                ...prev,
+                                [key]: newVal,
+                              }));
                               setTimeout(() => {
                                 el.selectionStart = el.selectionEnd = start + 1;
                                 el.style.height = "auto";
@@ -622,12 +630,16 @@ const DocumentView: FC<DocumentViewProps> = ({
                         <span
                           className={cn(
                             "min-w-0 font-mono text-[11px] wrap-break-word flex-1",
-                            isEditing ? "px-2 py-px text-zinc-500 dark:text-zinc-500" : "px-2 py-px",
+                            isEditing
+                              ? "px-2 py-px text-zinc-500 dark:text-zinc-500"
+                              : "px-2 py-px",
                           )}
                         >
                           {isEditing ? (
                             // PK field shown as plain text in edit mode
-                            <span className="text-amber-700 dark:text-amber-400">{String(row[key] ?? "")}</span>
+                            <span className="text-amber-700 dark:text-amber-400">
+                              {String(row[key] ?? "")}
+                            </span>
                           ) : (
                             renderValue(key, row[key], row)
                           )}
@@ -771,6 +783,19 @@ export const DataGrid: FC<DataGridProps> = ({
   const [copiedNotification, setCopiedNotification] = useState<string | null>(
     null,
   );
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (isRefreshing || isLoading) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+      }, 500);
+    }
+  };
 
   // Close context menu on click outside, scroll, or Escape key
   useEffect(() => {
@@ -1592,7 +1617,10 @@ export const DataGrid: FC<DataGridProps> = ({
           )}
         </div>
 
-        <div data-tour="grid-toolbar" className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div
+          data-tour="grid-toolbar"
+          className="flex items-center gap-1.5 sm:gap-2 shrink-0"
+        >
           {activeSubView === "grid" ? (
             <>
               {/* Quick Search Input */}
@@ -1638,7 +1666,9 @@ export const DataGrid: FC<DataGridProps> = ({
                 title={t("datagrid.filterButton")}
               >
                 <FilterIcon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">{t("datagrid.filterButton")}</span>
+                <span className="hidden sm:inline">
+                  {t("datagrid.filterButton")}
+                </span>
                 {filters.length > 0 && (
                   <Badge className="w-4 h-4 p-0 rounded-full bg-emerald-500 text-white dark:text-zinc-950 text-[10px] font-bold flex items-center justify-center">
                     {filters.length}
@@ -1651,13 +1681,17 @@ export const DataGrid: FC<DataGridProps> = ({
                 type="button"
                 variant="outline"
                 size="icon-sm"
-                onClick={onRefresh}
-                disabled={isLoading}
+                onClick={handleRefresh}
+                disabled={isLoading || isRefreshing}
                 title={t("datagrid.reloadTableTooltip")}
-                className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white shrink-0"
+                className="border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 active:bg-zinc-200 dark:active:bg-zinc-700/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors shrink-0"
               >
                 <RefreshCw
-                  className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
+                  className={cn(
+                    "w-3.5 h-3.5 transition-colors",
+                    (isLoading || isRefreshing) &&
+                      "animate-spin text-indigo-600 dark:text-indigo-400",
+                  )}
                 />
               </Button>
 
@@ -1672,7 +1706,9 @@ export const DataGrid: FC<DataGridProps> = ({
                   className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 lg:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
                 >
                   <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="hidden xl:inline">{t("datagrid.openQueryConsole")}</span>
+                  <span className="hidden xl:inline">
+                    {t("datagrid.openQueryConsole")}
+                  </span>
                 </Button>
               )}
 
@@ -1689,7 +1725,9 @@ export const DataGrid: FC<DataGridProps> = ({
                         className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 lg:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
                       >
                         <Download className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                        <span className="hidden lg:inline">{t("datagrid.export")}</span>
+                        <span className="hidden lg:inline">
+                          {t("datagrid.export")}
+                        </span>
                         <ChevronDown className="w-3 h-3 text-zinc-400" />
                       </Button>
                     }
@@ -1729,7 +1767,9 @@ export const DataGrid: FC<DataGridProps> = ({
                   )}
                 >
                   <UploadCloud className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                  <span className="hidden xl:inline">{t("datagrid.importCsv")}</span>
+                  <span className="hidden xl:inline">
+                    {t("datagrid.importCsv")}
+                  </span>
                 </Button>
               )}
 
@@ -1768,20 +1808,26 @@ export const DataGrid: FC<DataGridProps> = ({
                   className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 sm:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
                 >
                   <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="hidden sm:inline">{t("datagrid.openQueryConsole")}</span>
+                  <span className="hidden sm:inline">
+                    {t("datagrid.openQueryConsole")}
+                  </span>
                 </Button>
               )}
               <Button
                 type="button"
                 variant="outline"
                 size="icon-sm"
-                onClick={onRefresh}
-                disabled={isLoading}
+                onClick={handleRefresh}
+                disabled={isLoading || isRefreshing}
                 title={t("datagrid.reloadTableTooltip")}
-                className="text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:white"
+                className="border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 active:bg-zinc-200 dark:active:bg-zinc-700/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors shrink-0"
               >
                 <RefreshCw
-                  className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
+                  className={cn(
+                    "w-3.5 h-3.5 transition-colors",
+                    (isLoading || isRefreshing) &&
+                      "animate-spin text-indigo-600 dark:text-indigo-400",
+                  )}
                 />
               </Button>
             </>
@@ -1958,30 +2004,101 @@ export const DataGrid: FC<DataGridProps> = ({
             data-tour="datagrid-view"
             className="flex-1 overflow-auto relative flex flex-col"
           >
-            {isLoading ? (
-              /* Loading Skeletons */
-              <div className="flex-1 overflow-hidden p-4 space-y-2 animate-in fade-in duration-200">
-                <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-zinc-50/50 dark:bg-zinc-900/20">
-                  <div className="h-10 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-100/70 dark:bg-zinc-900/60 px-4 flex items-center gap-4">
-                    <Skeleton className="h-3 w-6 rounded" />
-                    {table.columns.slice(0, 5).map((c) => (
-                      <Skeleton key={c.name} className="h-3.5 w-28 rounded" />
-                    ))}
-                  </div>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((rowIdx) => (
-                    <div
+            {isLoading || isRefreshing ? (
+              /* High-fidelity shadcn UI Table Skeleton */
+              <table className="w-full caption-bottom text-sm border-collapse text-left border-b border-zinc-200 dark:border-zinc-800 animate-in fade-in duration-150">
+                <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                  <TableRow>
+                    <TableHead className="w-12 px-3 py-2 text-xs font-mono font-medium text-zinc-400 not-last:border-r border-zinc-200 dark:border-zinc-800/80">
+                      #
+                    </TableHead>
+                    {table?.columns?.map((c) => (
+                      <TableHead
+                        key={c.name}
+                        className="px-3 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 not-last:border-r border-zinc-200 dark:border-zinc-800/80 whitespace-nowrap h-auto"
+                      >
+                        <div className="flex items-center gap-1.5 py-1">
+                          <Skeleton className="size-3.5 rounded shrink-0 bg-zinc-300/80 dark:bg-zinc-700/80" />
+                          <span className="font-mono text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                            {c.name}
+                          </span>
+                          <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 font-normal">
+                            {c.type}
+                          </span>
+                        </div>
+                      </TableHead>
+                    )) ??
+                      [1, 2, 3, 4, 5, 6].map((idx) => (
+                        <TableHead
+                          key={idx}
+                          className="px-3 py-2 not-last:border-r border-zinc-200 dark:border-zinc-800/80"
+                        >
+                          <Skeleton className="h-4 w-24 rounded" />
+                        </TableHead>
+                      ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-zinc-200 dark:divide-zinc-800/50">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((rowIdx) => (
+                    <TableRow
                       key={rowIdx}
-                      className="h-10 border-b border-zinc-200/60 dark:border-zinc-800/40 px-4 flex items-center gap-4"
+                      className="hover:bg-transparent h-9.25"
                     >
-                      <Skeleton className="h-3 w-6 rounded" />
-                      <Skeleton className="h-3 w-28 rounded" />
-                      <Skeleton className="h-3 w-40 rounded" />
-                      <Skeleton className="h-3 w-20 rounded" />
-                      <Skeleton className="h-3 w-32 rounded" />
-                    </div>
+                      <TableCell className="w-12 px-3 py-2 text-xs font-mono text-zinc-400 not-last:border-r border-zinc-200/80 dark:border-zinc-800/40">
+                        <Skeleton className="h-3 w-4 rounded bg-zinc-200/70 dark:bg-zinc-800/70" />
+                      </TableCell>
+                      {table?.columns?.map((c, cIdx) => {
+                        const isNumeric =
+                          /int|float|num|dec|serial|money/i.test(c.type);
+                        const isBool = /bool/i.test(c.type);
+                        const isDate = /date|time/i.test(c.type);
+                        const isPk = c.is_primary_key;
+
+                        return (
+                          <TableCell
+                            key={c.name}
+                            className="px-3 py-2 not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap"
+                          >
+                            {isPk ? (
+                              <div className="flex items-center gap-1.5">
+                                <Skeleton className="size-3 rounded-full bg-amber-400/40 dark:bg-amber-400/30 shrink-0" />
+                                <Skeleton className="h-3 w-8 rounded bg-zinc-200 dark:bg-zinc-800" />
+                              </div>
+                            ) : isBool ? (
+                              <Skeleton className="h-4 w-12 rounded-full bg-emerald-500/20 dark:bg-emerald-500/15" />
+                            ) : isDate ? (
+                              <Skeleton className="h-3 w-28 rounded bg-zinc-200/80 dark:bg-zinc-800/80" />
+                            ) : isNumeric ? (
+                              <Skeleton
+                                className="h-3 rounded bg-zinc-200/80 dark:bg-zinc-800/80"
+                                style={{
+                                  width: `${32 + ((rowIdx * 17 + cIdx * 13) % 40)}px`,
+                                }}
+                              />
+                            ) : (
+                              <Skeleton
+                                className="h-3 rounded bg-zinc-200/90 dark:bg-zinc-800/90"
+                                style={{
+                                  width: `${55 + ((rowIdx * 23 + cIdx * 31) % 110)}px`,
+                                  maxWidth: "85%",
+                                }}
+                              />
+                            )}
+                          </TableCell>
+                        );
+                      }) ??
+                        [1, 2, 3, 4, 5, 6].map((cIdx) => (
+                          <TableCell
+                            key={cIdx}
+                            className="px-3 py-2 not-last:border-r border-zinc-200/80 dark:border-zinc-800/40"
+                          >
+                            <Skeleton className="h-3.5 w-24 rounded" />
+                          </TableCell>
+                        ))}
+                    </TableRow>
                   ))}
-                </div>
-              </div>
+                </TableBody>
+              </table>
             ) : displayedRows.length === 0 ? (
               /* Empty States */
               <div className="flex-1 flex items-center justify-center p-8">
@@ -2109,7 +2226,10 @@ export const DataGrid: FC<DataGridProps> = ({
                                     mouseX: e.clientX,
                                     mouseY: e.clientY,
                                     row: row.original,
-                                    colName: cell.column.id.replace("_extra_", ""),
+                                    colName: cell.column.id.replace(
+                                      "_extra_",
+                                      "",
+                                    ),
                                     cellValue: cell.getValue(),
                                   });
                                 }}

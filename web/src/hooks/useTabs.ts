@@ -304,8 +304,18 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     (partial: Partial<StudioTabState>) => {
       if (!activeTabId) return;
 
-      setTabs((prev) =>
-        prev.map((t) => {
+      setTabs((prev) => {
+        const target = prev.find((t) => t.id === activeTabId);
+        if (!target) return prev;
+
+        const current = target.state || {};
+        const isChanged = Object.entries(partial).some(([key, val]) => {
+          return (current as Record<string, unknown>)[key] !== val;
+        });
+
+        if (!isChanged) return prev;
+
+        return prev.map((t) => {
           if (t.id === activeTabId) {
             return {
               ...t,
@@ -315,14 +325,14 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
                 filters: [],
                 sortBy: "",
                 sortDesc: false,
-                ...(t.state || {}),
+                ...current,
                 ...partial,
               },
             };
           }
           return t;
-        })
-      );
+        });
+      });
     },
     [activeTabId]
   );

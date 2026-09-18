@@ -204,6 +204,15 @@
     "retry": "Retry",
     "close": "Close"
   },
+  "errorBoundary": {
+    "defaultTitle": "Something went wrong in this view",
+    "defaultMessage": "An unexpected error occurred.",
+    "reloadView": "Reload View",
+    "appTitle": "Application Error",
+    "appMessage": "An unexpected error occurred in Pebblebase Studio. Please restart the app or reload.",
+    "queryConsoleTitle": "Query Console Error",
+    "queryConsoleMessage": "An error occurred while loading or displaying the Query Console."
+  },
   "app": {
     "failedToDelete": "Failed to delete record",
     "dismiss": "Dismiss",
