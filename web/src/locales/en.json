@@ -292,7 +292,14 @@
     "templateMongoAgg": "MongoDB Aggregation Pipeline",
     "rowsFilter": "Filter results...",
     "collapseResults": "Collapse Results",
-    "expandResults": "Expand Results"
+    "expandResults": "Expand Results",
+    "tab": {
+      "new": "New Tab",
+      "close": "Close Tab",
+      "rename": "Double-click to rename",
+      "unsaved_warning": "This tab has unsaved query changes. Are you sure you want to close it?",
+      "cancel": "Cancel"
+    }
   },
   "tabs": {
     "newTab": "New Tab",

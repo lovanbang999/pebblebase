@@ -39,6 +39,7 @@ import {
   AlertCircle,
   AlertTriangle,
   X,
+  Plus,
   BookOpen,
   Save,
   Star,
@@ -50,6 +51,15 @@ import type {
   QueryHistoryItem,
 } from "../lib/types";
 import { executeRawQuery, createSavedQuery } from "../lib/api";
+
+export interface ConsoleTab {
+  id: string;
+  label: string;
+  query: string;
+  results: RawQueryResult | null;
+  executionTime?: number;
+  error?: string | null;
+}
 import QueryLibraryPanel from "./QueryLibraryPanel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -368,8 +378,137 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     buildExampleQuery,
   ]);
 
-  const [query, setQuery] = useState(defaultQuery);
+  const tabsStorageKey = `pebblebase_query_tabs_${connection.id}`;
+
+  const [tabs, setTabs] = useState<ConsoleTab[]>(() => {
+    try {
+      const saved = sessionStorage.getItem(tabsStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed?.tabs) && parsed.tabs.length > 0) {
+          return parsed.tabs;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return [
+      {
+        id: "tab-1",
+        label: "Query 1",
+        query: defaultQuery,
+        results: null,
+        executionTime: undefined,
+        error: null,
+      },
+    ];
+  });
+
+  const [activeTabId, setActiveTabId] = useState<string>(() => {
+    try {
+      const saved = sessionStorage.getItem(tabsStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (
+          parsed?.activeTabId &&
+          parsed.tabs?.some((t: ConsoleTab) => t.id === parsed.activeTabId)
+        ) {
+          return parsed.activeTabId;
+        }
+        if (Array.isArray(parsed?.tabs) && parsed.tabs.length > 0) {
+          return parsed.tabs[0].id;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return "tab-1";
+  });
+
+  // Reload tabs when switching active connection
+  const prevConnIdRef = useRef(connection.id);
+  useEffect(() => {
+    if (prevConnIdRef.current !== connection.id) {
+      prevConnIdRef.current = connection.id;
+      try {
+        const saved = sessionStorage.getItem(tabsStorageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed?.tabs) && parsed.tabs.length > 0) {
+            setTabs(parsed.tabs);
+            setActiveTabId(
+              parsed.activeTabId &&
+                parsed.tabs.some((t: ConsoleTab) => t.id === parsed.activeTabId)
+                ? parsed.activeTabId
+                : parsed.tabs[0].id,
+            );
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
+      const initialTab: ConsoleTab = {
+        id: "tab-1",
+        label: "Query 1",
+        query: defaultQuery,
+        results: null,
+        executionTime: undefined,
+        error: null,
+      };
+      setTabs([initialTab]);
+      setActiveTabId("tab-1");
+    }
+  }, [connection.id, tabsStorageKey, defaultQuery]);
+
+  // Persist tabs and activeTabId to sessionStorage
+  useEffect(() => {
+    if (tabs.length === 0) return;
+    try {
+      sessionStorage.setItem(
+        tabsStorageKey,
+        JSON.stringify({ tabs, activeTabId }),
+      );
+    } catch {
+      // Handle quota exceeded (e.g., large query results)
+      try {
+        const lightweightTabs = tabs.map((t) => ({
+          ...t,
+          results: null,
+        }));
+        sessionStorage.setItem(
+          tabsStorageKey,
+          JSON.stringify({ tabs: lightweightTabs, activeTabId }),
+        );
+      } catch {
+        // ignore
+      }
+    }
+  }, [tabs, activeTabId, tabsStorageKey]);
+
+  const activeTab = useMemo(() => {
+    return (
+      tabs.find((t) => t.id === activeTabId) ||
+      tabs[0] || {
+        id: "tab-1",
+        label: "Query 1",
+        query: "",
+        results: null,
+        executionTime: undefined,
+        error: null,
+      }
+    );
+  }, [tabs, activeTabId]);
+
+  const query = activeTab.query;
+  const result = activeTab.results;
+  const error = activeTab.error ?? null;
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+
+  // Tab management & close warning states
+  const [closingTabId, setClosingTabId] = useState<string | null>(null);
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
 
   const checkMissingLimit = useCallback((q: string): boolean => {
     const trimmed = q.trim();
@@ -380,17 +519,132 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
   const handleQueryChange = useCallback(
     (newQuery: string) => {
-      setQuery(newQuery);
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === activeTab.id ? { ...t, query: newQuery } : t,
+        ),
+      );
       onQueryChange?.(newQuery);
       setShowLimitWarning((prev) =>
         prev && !checkMissingLimit(newQuery) ? false : prev,
       );
     },
-    [onQueryChange, checkMissingLimit],
+    [activeTab.id, onQueryChange, checkMissingLimit],
   );
+
+  const handleSelectTab = useCallback(
+    (tabId: string) => {
+      if (tabId !== activeTabId) {
+        setActiveTabId(tabId);
+        setResultFilter("");
+        setShowLimitWarning(false);
+      }
+    },
+    [activeTabId],
+  );
+
+  const handleNewTab = useCallback(() => {
+    if (tabs.length >= 8) return;
+
+    const newId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const existingNums = tabs
+      .map((t) => {
+        const m = t.label.match(/(?:Query|Tab)\s*(\d+)/i);
+        return m ? parseInt(m[1], 10) : 0;
+      })
+      .filter((n) => !isNaN(n));
+    const nextNum =
+      existingNums.length > 0 ? Math.max(...existingNums) + 1 : tabs.length + 1;
+    const newLabel = `Query ${nextNum}`;
+
+    const newTab: ConsoleTab = {
+      id: newId,
+      label: newLabel,
+      query: buildExampleQuery(connection.type, tables),
+      results: null,
+      executionTime: undefined,
+      error: null,
+    };
+
+    setTabs((prev) => [...prev, newTab]);
+    setActiveTabId(newId);
+    setResultFilter("");
+    setShowLimitWarning(false);
+  }, [tabs, connection.type, tables, buildExampleQuery]);
+
+  const handleConfirmCloseTab = useCallback(
+    (tabId: string) => {
+      setTabs((prev) => {
+        const remaining = prev.filter((t) => t.id !== tabId);
+        if (remaining.length === 0) {
+          const fallbackTab: ConsoleTab = {
+            id: `tab-${Date.now()}`,
+            label: "Query 1",
+            query: "",
+            results: null,
+            executionTime: undefined,
+            error: null,
+          };
+          setActiveTabId(fallbackTab.id);
+          return [fallbackTab];
+        }
+
+        if (activeTabId === tabId) {
+          const closedIndex = prev.findIndex((t) => t.id === tabId);
+          const nextTab =
+            remaining[closedIndex] ||
+            remaining[closedIndex - 1] ||
+            remaining[0];
+          setActiveTabId(nextTab.id);
+        }
+        return remaining;
+      });
+      setClosingTabId(null);
+      setResultFilter("");
+      setShowLimitWarning(false);
+    },
+    [activeTabId],
+  );
+
+  const handleRequestCloseTab = useCallback(
+    (e: React.MouseEvent, tabId: string) => {
+      e.stopPropagation();
+      const tabToClose = tabs.find((t) => t.id === tabId);
+      if (!tabToClose) return;
+
+      if (tabToClose.query.trim().length > 0) {
+        setClosingTabId(tabId);
+      } else {
+        handleConfirmCloseTab(tabId);
+      }
+    },
+    [tabs, handleConfirmCloseTab],
+  );
+
+  const handleStartRename = useCallback(
+    (tabId: string, currentLabel: string) => {
+      setEditingTabId(tabId);
+      setEditingLabel(currentLabel);
+    },
+    [],
+  );
+
+  const handleSaveRename = useCallback(() => {
+    if (!editingTabId) return;
+    const trimmed = editingLabel.trim();
+    if (trimmed) {
+      setTabs((prev) =>
+        prev.map((t) => (t.id === editingTabId ? { ...t, label: trimmed } : t)),
+      );
+    }
+    setEditingTabId(null);
+  }, [editingTabId, editingLabel]);
+
+  const handleCancelRename = useCallback(() => {
+    setEditingTabId(null);
+  }, []);
+
   const [isRunning, setIsRunning] = useState(false);
-  const [result, setResult] = useState<RawQueryResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [copiedCell, setCopiedCell] = useState<string | null>(null);
   const [resultFilter, setResultFilter] = useState("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -483,10 +737,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       !trimmed
     ) {
       const example = buildExampleQuery(connection.type, tables);
-      setQuery(example);
-      onQueryChange?.(example);
-      setResult(null);
-      setError(null);
+      handleQueryChange(example);
+      setTabs((prev) =>
+        prev.map((t) =>
+          t.id === activeTab.id ? { ...t, results: null, error: null } : t,
+        ),
+      );
     }
   }, [tables, connection.type, isMongo, buildExampleQuery, onQueryChange]);
 
@@ -557,7 +813,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       if (!trimmed || isRunning) return;
 
       setIsRunning(true);
-      setError(null);
+      const targetTabId = activeTab.id;
+
+      setTabs((prev) =>
+        prev.map((t) => (t.id === targetTabId ? { ...t, error: null } : t)),
+      );
       const startClient = performance.now();
 
       try {
@@ -576,7 +836,18 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           round_trip_ms: Number(clientDuration.toFixed(2)),
         };
 
-        setResult(enrichedResult);
+        setTabs((prev) =>
+          prev.map((t) =>
+            t.id === targetTabId
+              ? {
+                  ...t,
+                  results: enrichedResult,
+                  executionTime: exactTime,
+                  error: null,
+                }
+              : t,
+          ),
+        );
         saveHistory({
           query: trimmed,
           execution_time_ms: exactTime,
@@ -586,7 +857,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         });
       } catch (err: any) {
         const msg = err.message || "Execution error";
-        setError(msg);
+        setTabs((prev) =>
+          prev.map((t) => (t.id === targetTabId ? { ...t, error: msg } : t)),
+        );
         saveHistory({
           query: trimmed,
           error: msg,
@@ -595,7 +868,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         setIsRunning(false);
       }
     },
-    [isRunning, connection.id, saveHistory],
+    [isRunning, activeTab.id, connection.id, saveHistory],
   );
 
   // Run Query handler (validates LIMIT for SELECT queries)
@@ -931,7 +1204,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => {
-              setQuery("");
+              handleQueryChange("");
               setShowLimitWarning(false);
             }}
             className="h-7 text-xs font-mono text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 inline-flex items-center justify-center gap-1.5"
@@ -1090,6 +1363,104 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
         {/* Editor + Results column */}
         <div className="flex-1 flex flex-col overflow-hidden relative">
+          {/* Query Console Tab Bar */}
+          <div className="h-8.5 px-2 bg-zinc-100/90 dark:bg-zinc-900/90 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-1 select-none shrink-0 overflow-x-auto">
+            <div className="flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar py-0.5">
+              {tabs.map((tab) => {
+                const isActive = tab.id === activeTab.id;
+                const isEditing = editingTabId === tab.id;
+
+                return (
+                  <div
+                    key={tab.id}
+                    onClick={() => handleSelectTab(tab.id)}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      handleStartRename(tab.id, tab.label);
+                    }}
+                    className={cn(
+                      "group relative flex items-center gap-1.5 h-7 px-2.5 rounded-t text-xs font-mono transition-all cursor-pointer border-t border-x",
+                      isActive
+                        ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-medium border-t-2 border-t-emerald-500 border-x-zinc-200 dark:border-x-zinc-800 shadow-2xs z-1"
+                        : "bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 hover:text-zinc-800 dark:hover:text-zinc-200 border-transparent border-t-2 border-t-transparent",
+                    )}
+                    title={isEditing ? undefined : t("console.tab.rename")}
+                  >
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editingLabel}
+                        onChange={(e) => setEditingLabel(e.target.value)}
+                        onBlur={handleSaveRename}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleSaveRename();
+                          } else if (e.key === "Escape") {
+                            handleCancelRename();
+                          }
+                        }}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-24 h-4.5 px-1 py-0 text-xs font-mono bg-zinc-100 dark:bg-zinc-900 border border-emerald-500 rounded outline-hidden text-zinc-900 dark:text-zinc-100"
+                      />
+                    ) : (
+                      <span className="truncate max-w-32 select-none">
+                        {tab.label}
+                      </span>
+                    )}
+
+                    {/* Dot indicator if tab has returned rows */}
+                    {tab.results && tab.results.rows && tab.results.rows.length > 0 && (
+                      <span
+                        className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"
+                        title={`${tab.results.rows.length} rows`}
+                      />
+                    )}
+
+                    {/* Close Tab Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleRequestCloseTab(e, tab.id)}
+                      className={cn(
+                        "p-0.5 rounded-sm hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 transition-colors ml-0.5 cursor-pointer",
+                        isActive
+                          ? "opacity-100"
+                          : "opacity-0 group-hover:opacity-100",
+                      )}
+                      title={t("console.tab.close")}
+                    >
+                      <X className="size-3" />
+                    </button>
+                  </div>
+                );
+              })}
+
+              {/* Add New Tab Button (+) */}
+              {tabs.length < 8 && (
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        type="button"
+                        onClick={handleNewTab}
+                        className="flex items-center justify-center h-6 w-6 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors ml-0.5 cursor-pointer"
+                      >
+                        <Plus className="size-3.5" />
+                      </button>
+                    }
+                  />
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">{t("console.tab.new")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+
+            {/* Tab Counter */}
+            <div className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 shrink-0 pr-1">
+              {tabs.length}/8
+            </div>
+          </div>
           <div
             style={{
               height: isResultsCollapsed ? "100%" : `${editorHeight}px`,
@@ -1434,6 +1805,50 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       </div>
       {/* End: Editor + Results column + Library flex wrapper */}
 
+      {/* Unsaved Changes Tab Close Confirmation Dialog */}
+      <Dialog
+        open={Boolean(closingTabId)}
+        onOpenChange={(open) => !open && setClosingTabId(null)}
+      >
+        <DialogContent className="sm:max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-xl">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+              <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                {t("console.tab.close")}
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-xs text-zinc-600 dark:text-zinc-400 pt-2">
+              {t("console.tab.unsaved_warning")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setClosingTabId(null)}
+              className="text-xs h-7 font-medium"
+            >
+              {t("console.tab.cancel", "Cancel")}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (closingTabId) {
+                  handleConfirmCloseTab(closingTabId);
+                }
+              }}
+              className="text-xs h-7 font-semibold"
+            >
+              {t("console.tab.close")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Save Query Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
         <DialogContent className="bg-[#1c1d2e] border-white/10 text-white max-w-sm p-0 overflow-hidden">
@@ -1673,7 +2088,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setQuery(item.query);
+                        handleQueryChange(item.query);
                         setIsHistoryOpen(false);
                       }}
                       className="h-7 px-2.5 text-xs font-mono border-zinc-200 dark:border-zinc-800 text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 gap-1"

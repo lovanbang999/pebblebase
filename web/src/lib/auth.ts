@@ -34,8 +34,14 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, token, isDefaultPassword) =>
         set({ user, token, isDefaultPassword, isInitialized: true }),
 
-      clearAuth: () =>
-        set({ user: null, token: null, isDefaultPassword: false, isInitialized: true }),
+      clearAuth: () => {
+        try {
+          sessionStorage.clear();
+        } catch {
+          // ignore
+        }
+        set({ user: null, token: null, isDefaultPassword: false, isInitialized: true });
+      },
 
       setIsDefaultPassword: (v) => set({ isDefaultPassword: v }),
 
