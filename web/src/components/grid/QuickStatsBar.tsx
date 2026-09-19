@@ -9,6 +9,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import type { TableSchema, TableStats, ColumnSchema } from "@/lib/types";
+import { formatBytes } from "@/constants";
 
 interface QuickStatsBarProps {
   table: TableSchema;
@@ -16,18 +17,6 @@ interface QuickStatsBarProps {
   totalFilteredRows?: number;
   isFiltered?: boolean;
   onOpenAnalytics?: (col?: ColumnSchema) => void;
-}
-
-function formatBytes(bytes: number): string {
-  if (!bytes || bytes <= 0) return "—";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let size = bytes;
-  let unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex++;
-  }
-  return `${size.toFixed(1)} ${units[unitIndex]}`;
 }
 
 function formatNumber(num: number): string {

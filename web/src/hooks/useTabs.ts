@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import type { StudioTab, StudioTabState, TableSchema } from "../lib/types";
+import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
 
 interface UseTabsOptions {
   connectionId: string | null;
   tables: TableSchema[];
 }
 
-const getTabsStorageKey = (connId: string) => `pb_tabs_${connId}`;
-const getActiveTabStorageKey = (connId: string) => `pb_active_tab_${connId}`;
+const getTabsStorageKey = (connId: string) => STORAGE_KEYS.tabs(connId);
+const getActiveTabStorageKey = (connId: string) => STORAGE_KEYS.activeTab(connId);
 
 function loadStoredTabs(connectionId: string | null, tables: TableSchema[]): { tabs: StudioTab[]; activeTabId: string | null } {
   if (!connectionId) {
@@ -43,7 +44,7 @@ function loadStoredTabs(connectionId: string | null, tables: TableSchema[]): { t
       connectionId,
       state: {
         page: 0,
-        pageSize: 50,
+        pageSize: DEFAULT_PAGE_SIZE,
         filters: [],
         sortBy: "",
         sortDesc: false,
@@ -75,7 +76,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
   } else if (prevTablesCount === 0 && tables.length > 0) {
     setPrevTablesCount(tables.length);
     if (connectionId && tabs.length === 0) {
-      const savedTabsRaw = sessionStorage.getItem(`pb_tabs_${connectionId}`);
+      const savedTabsRaw = sessionStorage.getItem(STORAGE_KEYS.tabs(connectionId));
       if (!savedTabsRaw) {
         const firstTable = tables[0].name;
         const initialTab: StudioTab = {
@@ -86,7 +87,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
           connectionId,
           state: {
             page: 0,
-            pageSize: 50,
+            pageSize: DEFAULT_PAGE_SIZE,
             filters: [],
             sortBy: "",
             sortDesc: false,
@@ -135,7 +136,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
                       ...t,
                       state: {
                         page: 0,
-                        pageSize: 50,
+                        pageSize: DEFAULT_PAGE_SIZE,
                         filters: [],
                         sortBy: "",
                         sortDesc: false,
@@ -160,7 +161,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
         connectionId,
         state: {
           page: 0,
-          pageSize: 50,
+          pageSize: DEFAULT_PAGE_SIZE,
           filters: [],
           sortBy: "",
           sortDesc: false,
@@ -189,7 +190,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
         connectionId,
         state: {
           page: 0,
-          pageSize: 50,
+          pageSize: DEFAULT_PAGE_SIZE,
           filters: [],
           sortBy: "",
           sortDesc: false,
@@ -344,7 +345,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
               ...t,
               state: {
                 page: 0,
-                pageSize: 50,
+                pageSize: DEFAULT_PAGE_SIZE,
                 filters: [],
                 sortBy: "",
                 sortDesc: false,

@@ -55,6 +55,14 @@ import type {
   ExplainResult,
 } from "@/lib/types";
 import { executeRawQuery, createSavedQuery, explainQuery } from "@/lib/api";
+import {
+  STORAGE_KEYS,
+  DEFAULT_QUERY_LIMIT,
+  VIRTUALIZER_QUERY_ROW_HEIGHT,
+  VIRTUALIZER_OVERSCAN,
+  COPY_FEEDBACK_MS,
+  TOAST_DURATION_MS,
+} from "@/constants";
 import { PipelineBuilder } from "./PipelineBuilder";
 
 export interface ConsoleTab {
@@ -465,12 +473,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       const firstTable =
         tbls[0]?.name || (connType === "mongodb" ? "collection" : "records");
       if (connType === "mongodb") {
-        return `db.${firstTable}.find({}).limit(50)`;
+        return `db.${firstTable}.find({}).limit(${DEFAULT_QUERY_LIMIT})`;
       }
       if (connType === "mysql") {
-        return `SELECT * FROM \`${firstTable}\` LIMIT 50;`;
+        return `SELECT * FROM \`${firstTable}\` LIMIT ${DEFAULT_QUERY_LIMIT};`;
       }
-      return `SELECT * FROM "${firstTable}" LIMIT 50;`;
+      return `SELECT * FROM "${firstTable}" LIMIT ${DEFAULT_QUERY_LIMIT};`;
     },
     [],
   );
@@ -497,7 +505,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     buildExampleQuery,
   ]);
 
-  const tabsStorageKey = `pebblebase_query_tabs_${connection.id}`;
+  const tabsStorageKey = STORAGE_KEYS.queryTabs(connection.id);
 
   const [activeMode, setActiveMode] = useState<"console" | "pipeline">("console");
 
@@ -830,11 +838,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   const handleCopyHistory = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedHistoryId(id);
-    setTimeout(() => setCopiedHistoryId(null), 1500);
+    setTimeout(() => setCopiedHistoryId(null), COPY_FEEDBACK_MS);
   };
 
   // History State
-  const storageKey = `pebblebase_query_history_${connection.id}`;
+  const storageKey = STORAGE_KEYS.queryHistory(connection.id);
   const [history, setHistory] = useState<QueryHistoryItem[]>(() => {
     try {
       const saved = localStorage.getItem(storageKey);
@@ -939,7 +947,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       setLibRefreshKey((k) => k + 1);
       // Show a brief toast
       setSaveToast(true);
-      setTimeout(() => setSaveToast(false), 2500);
+      setTimeout(() => setSaveToast(false), TOAST_DURATION_MS);
     } catch {
       /* ignore */
     }
@@ -1284,14 +1292,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: displayedRows.length,
     getScrollElement: () => resultsContainerRef.current,
-    estimateSize: () => 36,
-    overscan: 10,
+    estimateSize: () => VIRTUALIZER_QUERY_ROW_HEIGHT,
+    overscan: VIRTUALIZER_OVERSCAN,
   });
 
   const copyToClipboard = (text: string, cellKey: string) => {
     navigator.clipboard.writeText(text);
     setCopiedCell(cellKey);
-    setTimeout(() => setCopiedCell(null), 1500);
+    setTimeout(() => setCopiedCell(null), COPY_FEEDBACK_MS);
   };
 
   const filteredHistory = useMemo(() => {

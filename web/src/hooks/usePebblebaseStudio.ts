@@ -12,6 +12,7 @@ import {
   updateRow,
   deleteRow,
 } from '../lib/api';
+import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
 
 export interface UsePebblebaseStudioOptions {
   isTableTabActive?: boolean;
@@ -35,13 +36,13 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
 
   // Theme state
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('pb_theme') as 'dark' | 'light') || 'dark';
+    return (localStorage.getItem(STORAGE_KEYS.THEME) as 'dark' | 'light') || 'dark';
   });
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
-    localStorage.setItem('pb_theme', nextTheme);
+    localStorage.setItem(STORAGE_KEYS.THEME, nextTheme);
     if (nextTheme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
@@ -51,7 +52,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
 
   // Data grid state
   const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [sortBy, setSortBy] = useState('');
   const [sortDesc, setSortDesc] = useState(false);
   const [filters, setFilters] = useState<FilterOption[]>([]);

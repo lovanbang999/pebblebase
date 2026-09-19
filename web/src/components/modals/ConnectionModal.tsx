@@ -32,6 +32,11 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  DATABASE_ENGINES,
+  DATABASE_ENVIRONMENTS,
+  getDefaultPort,
+} from "@/constants";
 
 interface ConnectionModalProps {
   isOpen: boolean;
@@ -40,75 +45,8 @@ interface ConnectionModalProps {
   cloneData?: Connection | null;
 }
 
-interface EnvironmentOption {
-  key: EnvironmentType;
-  label: string;
-  selectedClass: string;
-  dotClass: string;
-}
-
-const ENVIRONMENTS: EnvironmentOption[] = [
-  {
-    key: "local",
-    label: "Local",
-    selectedClass:
-      "text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/40 dark:border-emerald-500/40 ring-1 ring-emerald-500/30",
-    dotClass: "bg-emerald-500",
-  },
-  {
-    key: "development",
-    label: "Development",
-    selectedClass:
-      "text-amber-700 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/40 dark:border-amber-500/40 ring-1 ring-amber-500/30",
-    dotClass: "bg-amber-500",
-  },
-  {
-    key: "staging",
-    label: "Staging",
-    selectedClass:
-      "text-orange-700 dark:text-orange-300 bg-orange-500/10 dark:bg-orange-500/15 border-orange-500/40 dark:border-orange-500/40 ring-1 ring-orange-500/30",
-    dotClass: "bg-orange-500",
-  },
-  {
-    key: "production",
-    label: "Production",
-    selectedClass:
-      "text-rose-700 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/40 dark:border-rose-500/40 ring-1 ring-rose-500/30",
-    dotClass: "bg-rose-500",
-  },
-];
-
-const ENGINES: {
-  type: DatabaseType;
-  name: string;
-  category: string;
-  defaultPort: string;
-}[] = [
-  {
-    type: "postgres",
-    name: "PostgreSQL",
-    category: "Relational / SQL",
-    defaultPort: "5432",
-  },
-  {
-    type: "mysql",
-    name: "MySQL",
-    category: "Relational / SQL",
-    defaultPort: "3306",
-  },
-  {
-    type: "mongodb",
-    name: "MongoDB",
-    category: "Document Store / NoSQL",
-    defaultPort: "27017",
-  },
-  {
-    type: "sqlite",
-    name: "SQLite",
-    category: "Embedded / File",
-    defaultPort: "local-file",
-  },
-];
+const ENVIRONMENTS = DATABASE_ENVIRONMENTS;
+const ENGINES = DATABASE_ENGINES;
 
 export const ConnectionModal: FC<ConnectionModalProps> = ({
   isOpen,
@@ -135,12 +73,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   const [filepath, setFilepath] = useState(cloneData?.filepath || "");
   const [host, setHost] = useState(cloneData?.host || "localhost");
   const [port, setPort] = useState(
-    cloneData?.port ||
-      (cloneData?.type === "mysql"
-        ? "3306"
-        : cloneData?.type === "mongodb"
-          ? "27017"
-          : "5432"),
+    cloneData?.port || getDefaultPort(cloneData?.type || "postgres"),
   );
   const [dbName, setDbName] = useState(cloneData?.db_name || "pebble_test");
   const [user, setUser] = useState(cloneData?.user || "pebble");
@@ -193,14 +126,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   const handleDbTypeChange = (type: DatabaseType) => {
     setDbType(type);
     setTestResult(null);
-    const defaultPort =
-      type === "postgres"
-        ? "5432"
-        : type === "mysql"
-          ? "3306"
-          : type === "mongodb"
-            ? "27017"
-            : "file";
+    const defaultPort = getDefaultPort(type);
     setPort(defaultPort);
 
     if (!isNameCustom) {

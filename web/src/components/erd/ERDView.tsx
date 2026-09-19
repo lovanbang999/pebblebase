@@ -22,6 +22,14 @@ import { Loader2, Info } from "lucide-react";
 import { fetchERD } from "@/lib/api";
 import type { ERDResponse, TableSchema } from "@/lib/types";
 import { generateJoinQuery, generateMermaidERD } from "@/lib/erdUtils";
+import {
+  ERD_NODE_WIDTH,
+  ERD_NODE_ROW_HEIGHT,
+  ERD_NODE_HEADER_HEIGHT,
+  DAGRE_LAYOUT_CONFIG,
+  COPY_FEEDBACK_MS,
+  RESIZE_CHECK_MS,
+} from "@/constants";
 import TableNode, { type TableNodeType } from "./TableNode";
 import ERDToolbar from "./ERDToolbar";
 
@@ -35,10 +43,6 @@ interface ERDViewProps {
 const nodeTypes: NodeTypes = {
   tableNode: TableNode,
 };
-
-const NODE_WIDTH = 260;
-const NODE_ROW_HEIGHT = 28;
-const NODE_HEADER_HEIGHT = 46;
 
 interface LayoutCallbacks {
   onOpenTable: (tableName: string) => void;
@@ -59,10 +63,10 @@ function computeInitialLayout(
   dagreGraph.setDefaultEdgeLabel(() => ({}));
   dagreGraph.setGraph({
     rankdir: direction,
-    nodesep: 80,
-    ranksep: 120,
-    marginx: 40,
-    marginy: 40,
+    nodesep: DAGRE_LAYOUT_CONFIG.nodesep,
+    ranksep: DAGRE_LAYOUT_CONFIG.ranksep,
+    marginx: DAGRE_LAYOUT_CONFIG.marginx,
+    marginy: DAGRE_LAYOUT_CONFIG.marginy,
   });
 
   // Calculate table heights taking compact mode into account
@@ -73,8 +77,8 @@ function computeInitialLayout(
     const extraHeight =
       compactMode && cols.length < tbl.columns.length ? 26 : 0;
     const height =
-      NODE_HEADER_HEIGHT + cols.length * NODE_ROW_HEIGHT + extraHeight;
-    dagreGraph.setNode(tbl.name, { width: NODE_WIDTH, height });
+      ERD_NODE_HEADER_HEIGHT + cols.length * ERD_NODE_ROW_HEIGHT + extraHeight;
+    dagreGraph.setNode(tbl.name, { width: ERD_NODE_WIDTH, height });
   });
 
   // Add edges to Dagre
@@ -98,13 +102,13 @@ function computeInitialLayout(
     const extraHeight =
       compactMode && cols.length < tbl.columns.length ? 26 : 0;
     const height =
-      NODE_HEADER_HEIGHT + cols.length * NODE_ROW_HEIGHT + extraHeight;
+      ERD_NODE_HEADER_HEIGHT + cols.length * ERD_NODE_ROW_HEIGHT + extraHeight;
 
     return {
       id: tbl.name,
       type: "tableNode",
       position: {
-        x: nodeWithPos ? nodeWithPos.x - NODE_WIDTH / 2 : 0,
+        x: nodeWithPos ? nodeWithPos.x - ERD_NODE_WIDTH / 2 : 0,
         y: nodeWithPos ? nodeWithPos.y - height / 2 : 0,
       },
       data: {
@@ -240,7 +244,7 @@ function ERDCanvas({
     setIsDraggingNode(false);
     setTimeout(() => {
       isDraggingRef.current = false;
-    }, 100);
+    }, RESIZE_CHECK_MS);
   }, []);
 
   const handleHoverTable = useCallback((tableName: string | null) => {
@@ -556,7 +560,7 @@ function ERDCanvas({
     const mermaidCode = generateMermaidERD(data.tables, data.relations);
     navigator.clipboard.writeText(mermaidCode);
     setIsMermaidCopied(true);
-    setTimeout(() => setIsMermaidCopied(false), 2000);
+    setTimeout(() => setIsMermaidCopied(false), COPY_FEEDBACK_MS);
   };
 
   // Export diagram as high-resolution PNG (theme-aware with canvas dot grid)

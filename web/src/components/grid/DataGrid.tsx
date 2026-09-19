@@ -68,6 +68,12 @@ import {
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/common";
 import { QuickStatsBar } from "./QuickStatsBar";
+import {
+  PAGE_SIZE_OPTIONS,
+  VIRTUALIZER_ROW_HEIGHT,
+  VIRTUALIZER_OVERSCAN,
+  COPY_FEEDBACK_MS,
+} from "@/constants";
 
 const ImportModal = lazy(() =>
   import("@/components/modals/ImportModal").then((m) => ({ default: m.ImportModal })),
@@ -320,7 +326,7 @@ const DocumentView: FC<DocumentViewProps> = ({
   const handleCopyJson = (row: Record<string, any>, idx: number) => {
     navigator.clipboard.writeText(JSON.stringify(row, null, 2));
     setCopiedRow(idx);
-    setTimeout(() => setCopiedRow(null), 1500);
+    setTimeout(() => setCopiedRow(null), COPY_FEEDBACK_MS);
   };
 
   // All field keys for a given row (schema + dynamic)
@@ -1316,7 +1322,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       onClick={() => {
                         navigator.clipboard.writeText(col.name);
                         setCopiedCol(col.name);
-                        setTimeout(() => setCopiedCol(null), 1500);
+                        setTimeout(() => setCopiedCol(null), COPY_FEEDBACK_MS);
                       }}
                     >
                       {copiedCol === col.name ? (
@@ -1750,8 +1756,8 @@ export const DataGrid: FC<DataGridProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: tableRows.length,
     getScrollElement: () => tableContainerRef.current,
-    estimateSize: () => 37,
-    overscan: 10,
+    estimateSize: () => VIRTUALIZER_ROW_HEIGHT,
+    overscan: VIRTUALIZER_OVERSCAN,
     useFlushSync: false,
   });
 
@@ -2884,9 +2890,11 @@ export const DataGrid: FC<DataGridProps> = ({
                     <SelectValue placeholder={String(pageSize)} />
                   </SelectTrigger>
                   <SelectContent side="top" align="start" className="min-w-16">
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
+                    {PAGE_SIZE_OPTIONS.map((sizeOpt) => (
+                      <SelectItem key={sizeOpt} value={String(sizeOpt)}>
+                        {sizeOpt}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -3036,7 +3044,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       String(contextMenu.cellValue),
                     );
                     setCopiedNotification(t("datagrid.contextMenu.copied"));
-                    setTimeout(() => setCopiedNotification(null), 1500);
+                    setTimeout(() => setCopiedNotification(null), COPY_FEEDBACK_MS);
                     setContextMenu(null);
                   }}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
@@ -3078,7 +3086,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   JSON.stringify(contextMenu.row, null, 2),
                 );
                 setCopiedNotification(t("datagrid.contextMenu.copied"));
-                setTimeout(() => setCopiedNotification(null), 1500);
+                setTimeout(() => setCopiedNotification(null), COPY_FEEDBACK_MS);
                 setContextMenu(null);
               }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
@@ -3125,7 +3133,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   onClick={() => {
                     navigator.clipboard.writeText(contextMenu.colName);
                     setCopiedNotification(t("datagrid.contextMenu.copied"));
-                    setTimeout(() => setCopiedNotification(null), 1500);
+                    setTimeout(() => setCopiedNotification(null), COPY_FEEDBACK_MS);
                     setContextMenu(null);
                   }}
                   className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"

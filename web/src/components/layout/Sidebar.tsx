@@ -26,13 +26,20 @@ import {
   Pin,
   GitCompare,
 } from "lucide-react";
-import type { Connection, DatabaseType, TableSchema } from "@/lib/types";
+import type { Connection, TableSchema } from "@/lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "@/lib/platform";
 import { useAuthStore } from "@/lib/auth";
 import { apiLogout } from "@/lib/api";
 import packageJson from "../../../package.json";
 import { Button } from "@/components/ui/button";
 import { cn } from "cn";
+import {
+  DATABASE_ENGINES,
+  ENV_DOTS,
+  ENV_STYLES,
+  STORAGE_KEYS,
+  TOAST_DURATION_MS,
+} from "@/constants";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -98,73 +105,12 @@ interface SidebarProps {
   onOpenOnboarding?: () => void;
 }
 
-const ENGINE_CONFIG: { type: DatabaseType; label: string; badge: string }[] = [
-  {
-    type: "postgres",
-    label: "PostgreSQL",
-    badge:
-      "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
-  },
-  {
-    type: "mysql",
-    label: "MySQL",
-    badge:
-      "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  },
-  {
-    type: "mongodb",
-    label: "MongoDB",
-    badge:
-      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
-  },
-  {
-    type: "sqlite",
-    label: "SQLite",
-    badge: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
-  },
-];
-
-const ENV_DOTS: Record<string, string> = {
-  local: "bg-emerald-500 ring-emerald-500/20",
-  development: "bg-amber-500 ring-amber-500/20",
-  staging: "bg-orange-500 ring-orange-500/20",
-  production: "bg-rose-500 ring-rose-500/20",
-};
-
-const ENV_STYLES: Record<
-  string,
-  { bg: string; text: string; dot: string; border: string }
-> = {
-  local: {
-    bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
-    text: "text-emerald-700 dark:text-emerald-400",
-    dot: "bg-emerald-500",
-    border: "border-emerald-500/25",
-  },
-  development: {
-    bg: "bg-sky-500/10 dark:bg-sky-500/15",
-    text: "text-sky-700 dark:text-sky-400",
-    dot: "bg-sky-500",
-    border: "border-sky-500/25",
-  },
-  staging: {
-    bg: "bg-amber-500/10 dark:bg-amber-500/15",
-    text: "text-amber-700 dark:text-amber-400",
-    dot: "bg-amber-500",
-    border: "border-amber-500/25",
-  },
-  production: {
-    bg: "bg-rose-500/10 dark:bg-rose-500/15",
-    text: "text-rose-700 dark:text-rose-400",
-    dot: "bg-rose-500",
-    border: "border-rose-500/25",
-  },
-};
+const ENGINE_CONFIG = DATABASE_ENGINES;
 
 function getStoredPinnedTables(connectionId?: string): string[] {
   if (!connectionId) return [];
   try {
-    const raw = localStorage.getItem(`pebblebase:pinned:${connectionId}`);
+    const raw = localStorage.getItem(STORAGE_KEYS.pinnedTables(connectionId));
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
@@ -246,7 +192,7 @@ export default function Sidebar({
 
   useEffect(() => {
     if (!pinToast) return;
-    const timer = setTimeout(() => setPinToast(null), 3000);
+    const timer = setTimeout(() => setPinToast(null), TOAST_DURATION_MS);
     return () => clearTimeout(timer);
   }, [pinToast]);
 
@@ -267,7 +213,7 @@ export default function Sidebar({
       }
       try {
         localStorage.setItem(
-          `pebblebase:pinned:${connId}`,
+          STORAGE_KEYS.pinnedTables(connId),
           JSON.stringify(next),
         );
       } catch {
