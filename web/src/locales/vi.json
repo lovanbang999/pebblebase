@@ -88,7 +88,17 @@
     "copied": "Đã sao chép SQL vào bộ nhớ tạm",
     "run_in_console": "Chạy trong Console Đích",
     "search_tables": "Tìm kiếm bảng...",
-    "migration_warning": "Hãy kiểm tra kỹ các câu lệnh trước khi chạy trên cơ sở dữ liệu thực tế."
+    "migration_warning": "Hãy kiểm tra kỹ các câu lệnh trước khi chạy trên cơ sở dữ liệu thực tế.",
+    "failed_compare": "Không thể so sánh lược đồ cơ sở dữ liệu",
+    "column_changes": "{{count}} cột thay đổi",
+    "index_changes": "{{count}} chỉ mục thay đổi",
+    "no_tables_match": "Không có bảng nào khớp bộ lọc",
+    "no_schema_loaded": "Chưa có lược đồ nào được tải",
+    "all_synced_desc": "Tất cả các bảng, kiểu cột, ràng buộc null và chỉ mục phụ đều khớp giữa {{source}} và {{target}}.",
+    "select_table_to_view": "Chọn một bảng ở danh sách bên trái để xem chi tiết sai khác",
+    "columns_count": "{{count}} cột",
+    "indexes_count": "{{count}} chỉ mục",
+    "target_engine": "Hệ quản trị đích"
   },
   "datagrid": {
     "where": "WHERE",
@@ -121,12 +131,16 @@
     "browseFiles": "Chọn tệp",
     "fileSelected": "Tệp đã chọn:",
     "columnMappingTitle": "Ánh xạ cột dữ liệu",
+    "columnMapping": "Ánh xạ cột",
     "columnMappingDesc": "Khớp các cột từ tiêu đề CSV vào cột trong bảng dữ liệu. Cột bỏ qua hoặc không khớp sẽ không được nhập.",
     "csvColumn": "Cột CSV",
     "sampleValue": "Dữ liệu mẫu",
     "targetColumn": "Cột đích trong bảng",
+    "selectColumn": "Chọn cột...",
     "skipColumn": "(Bỏ qua cột này)",
     "previewRows": "Xem trước (tối đa {{count}} dòng đầu)",
+    "previewData": "Xem trước dữ liệu",
+    "columnsMapped": "Đã ánh xạ {{mapped}} trên {{total}} cột",
     "importButton": "Bắt đầu nhập dữ liệu",
     "importSuccessTitle": "Nhập dữ liệu thành công",
     "importSuccessDesc": "Đã thêm thành công {{count}} bản ghi trong {{duration}}ms.",
@@ -252,7 +266,8 @@
     "deleteRecord": "Xóa",
     "insertRecord": "Thêm bản ghi",
     "failedToSave": "Lưu bản ghi thất bại",
-    "failedToDelete": "Xóa bản ghi thất bại"
+    "failedToDelete": "Xóa bản ghi thất bại",
+    "defaultPrefix": "Mặc định: {{val}}"
   },
   "row": {
     "diff": {
@@ -283,7 +298,9 @@
     "error": "Lỗi",
     "loading": "Đang tải...",
     "retry": "Thử lại",
-    "close": "Đóng"
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "add": "Thêm"
   },
   "errorBoundary": {
     "defaultTitle": "Đã xảy ra lỗi trong chế độ xem này",

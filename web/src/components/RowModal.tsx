@@ -397,10 +397,12 @@ export const RowModal: FC<RowModalProps> = ({
                     }}
                   >
                     <SelectTrigger className="w-full h-8 text-xs font-mono">
-                      <SelectValue placeholder="(null / default)" />
+                      <SelectValue placeholder={t("rowModal.nullOrDefault")} />
                     </SelectTrigger>
                     <SelectContent side="bottom" align="start">
-                      <SelectItem value="null">(null / default)</SelectItem>
+                      <SelectItem value="null">
+                        {t("rowModal.nullOrDefault")}
+                      </SelectItem>
                       <SelectItem value="true">true</SelectItem>
                       <SelectItem value="false">false</SelectItem>
                     </SelectContent>
@@ -431,7 +433,9 @@ export const RowModal: FC<RowModalProps> = ({
                           ? t("rowModal.autoObjectId")
                           : t("rowModal.autoManualPk")
                         : col.default_value
-                          ? `Default: ${col.default_value}`
+                          ? t("rowModal.defaultPrefix", {
+                              val: col.default_value,
+                            })
                           : col.nullable
                             ? "NULL"
                             : ""
@@ -450,7 +454,9 @@ export const RowModal: FC<RowModalProps> = ({
                           ? t("rowModal.autoObjectId")
                           : t("rowModal.autoManualPk")
                         : col.default_value
-                          ? `Default: ${col.default_value}`
+                          ? t("rowModal.defaultPrefix", {
+                              val: col.default_value,
+                            })
                           : col.nullable
                             ? "NULL"
                             : ""
@@ -486,7 +492,7 @@ export const RowModal: FC<RowModalProps> = ({
                           variant="outline"
                           className="text-[9px] font-mono text-amber-700 dark:text-amber-400 px-1 py-0 h-4 font-normal"
                         >
-                          dynamic
+                          {t("datagrid.dynamicBadge")}
                         </Badge>
                       </label>
                       <Button
@@ -563,7 +569,7 @@ export const RowModal: FC<RowModalProps> = ({
                     onClick={() => setShowAddField(false)}
                     className="text-xs"
                   >
-                    Cancel
+                    {t("rowModal.cancel")}
                   </Button>
                   <Button
                     type="button"
@@ -572,7 +578,7 @@ export const RowModal: FC<RowModalProps> = ({
                     onClick={handleAddDynamicField}
                     className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium"
                   >
-                    Add
+                    {t("common.add")}
                   </Button>
                 </div>
               </div>
