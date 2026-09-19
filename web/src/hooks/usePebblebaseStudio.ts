@@ -13,7 +13,12 @@ import {
   deleteRow,
 } from '../lib/api';
 
-export function usePebblebaseStudio() {
+export interface UsePebblebaseStudioOptions {
+  isTableTabActive?: boolean;
+}
+
+export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
+  const { isTableTabActive = true } = options;
   const qc = useQueryClient();
   const { t } = useTranslation();
 
@@ -120,7 +125,7 @@ export function usePebblebaseStudio() {
         sort_desc: sortDesc,
         filters,
       }),
-    enabled: Boolean(activeConnection?.id && activeTable),
+    enabled: Boolean(activeConnection?.id && activeTable && isTableTabActive),
   });
 
   // 4. Mutations
