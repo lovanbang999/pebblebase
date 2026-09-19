@@ -21,6 +21,7 @@ import type {
   QueryHistoryEntry,
   SeedSQLRequest,
   SeedSQLResponse,
+  SchemaDiffResult,
 } from './types';
 import { getAuthHeaders, useAuthStore } from './auth';
 
@@ -584,5 +585,19 @@ export async function generateSeedSQL(
     },
   );
   return handleResponse<SeedSQLResponse>(res);
+}
+
+export async function fetchSchemaDiff(
+  fromConnId: string,
+  toConnId: string,
+): Promise<SchemaDiffResult> {
+  const sp = new URLSearchParams({
+    from: fromConnId,
+    to: toConnId,
+  });
+  const res = await fetch(`${BASE_URL}/diff?${sp.toString()}`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse<SchemaDiffResult>(res);
 }
 

@@ -29,6 +29,9 @@ const QueryConsole = lazy(() =>
   import('./components/QueryConsole').then((m) => ({ default: m.QueryConsole }))
 );
 const ERDView = lazy(() => import('./components/ERDView'));
+const SchemaDiff = lazy(() =>
+  import('./components/SchemaDiff').then((m) => ({ default: m.SchemaDiff }))
+);
 const AdminPanel = lazy(() =>
   import('./components/AdminPanel').then((m) => ({ default: m.AdminPanel }))
 );
@@ -142,6 +145,7 @@ function PebblebaseStudio() {
     openTableTab,
     openQueryTab,
     openErdTab,
+    openDiffTab,
     closeTab,
     closeOtherTabs,
     closeTabsToRight,
@@ -304,6 +308,9 @@ function PebblebaseStudio() {
       case 'open_erd':
         openErdTab();
         break;
+      case 'open_diff':
+        openDiffTab();
+        break;
       case 'open_migration':
         if (activeTableSchema) {
           openTableTab(activeTableSchema.name);
@@ -397,6 +404,7 @@ function PebblebaseStudio() {
         activeView={activeTab?.type === 'query' ? 'console' : activeTab?.type === 'erd' ? 'erd' : 'table'}
         onOpenQueryConsole={() => openQueryTab()}
         onOpenERD={() => openErdTab()}
+        onOpenDiff={() => openDiffTab()}
         onOpenAdminPanel={() => {
           setAdminPanelDefaultTab('users');
           setIsAdminPanelOpen(true);
@@ -506,6 +514,35 @@ function PebblebaseStudio() {
                         openTableTab(tName);
                       }}
                       onGenerateJoinQuery={(query, title) => {
+                        openQueryTab(query, title);
+                      }}
+                    />
+                  </Suspense>
+                </div>
+              ))}
+
+            {/* Schema Diff Views */}
+            {tabs
+              .filter((t) => t.type === 'diff')
+              .map((t) => (
+                <div
+                  key={t.id}
+                  className={cn(
+                    'flex-1 h-full flex flex-col overflow-hidden',
+                    activeTabId === t.id ? 'flex' : 'hidden'
+                  )}
+                >
+                  <Suspense
+                    fallback={
+                      <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
+                        Loading Schema Diff...
+                      </div>
+                    }
+                  >
+                    <SchemaDiff
+                      connections={connections}
+                      activeConnectionId={activeConnection?.id}
+                      onOpenQueryConsole={(query, title) => {
                         openQueryTab(query, title);
                       }}
                     />

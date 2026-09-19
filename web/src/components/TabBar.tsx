@@ -19,6 +19,7 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
+  GitCompare,
 } from "lucide-react";
 import type { StudioTab } from "../lib/types";
 import { Button } from "@/components/ui/button";
@@ -279,6 +280,17 @@ export const TabBar: FC<TabBarProps> = ({
               "w-3.5 h-3.5 shrink-0 transition-colors",
               isActive
                 ? "text-indigo-600 dark:text-indigo-400"
+                : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
+            )}
+          />
+        );
+      case "diff":
+        return (
+          <GitCompare
+            className={cn(
+              "w-3.5 h-3.5 shrink-0 transition-colors",
+              isActive
+                ? "text-cyan-600 dark:text-cyan-400"
                 : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
             )}
           />

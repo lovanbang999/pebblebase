@@ -110,7 +110,7 @@ export interface ImportResult {
   duration_ms: number;
 }
 
-export type TabType = 'table' | 'query' | 'ddl' | 'erd';
+export type TabType = 'table' | 'query' | 'ddl' | 'erd' | 'diff';
 
 export interface ERDResponse {
   tables: TableSchema[];
@@ -280,6 +280,58 @@ export interface SeedSQLResponse {
   count: number;
   tables_seeded: string[];
   sql: string;
+}
+
+export type DiffStatus = 'added' | 'removed' | 'modified' | 'unchanged';
+
+export interface DiffConnectionInfo {
+  id: string;
+  name: string;
+  engine: string;
+}
+
+export interface ColumnDiff {
+  name: string;
+  status: DiffStatus;
+  from_column?: ColumnSchema;
+  to_column?: ColumnSchema;
+  changes?: string[];
+}
+
+export interface IndexDiff {
+  name: string;
+  status: DiffStatus;
+  from_index?: TableIndexInfo;
+  to_index?: TableIndexInfo;
+  changes?: string[];
+}
+
+export interface TableDiff {
+  name: string;
+  status: DiffStatus;
+  columns: ColumnDiff[];
+  indexes: IndexDiff[];
+}
+
+export interface DiffSummary {
+  tables_added: number;
+  tables_removed: number;
+  tables_modified: number;
+  tables_unchanged: number;
+  columns_added: number;
+  columns_removed: number;
+  columns_modified: number;
+  indexes_added: number;
+  indexes_removed: number;
+  indexes_modified: number;
+}
+
+export interface SchemaDiffResult {
+  from_connection: DiffConnectionInfo;
+  to_connection: DiffConnectionInfo;
+  tables: TableDiff[];
+  summary: DiffSummary;
+  migration_sql: string;
 }
 
 

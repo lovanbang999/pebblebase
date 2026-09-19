@@ -93,9 +93,10 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/connections/{id}/tables/{table}/export", protect(http.HandlerFunc(s.exportTable)))
 	mux.Handle("POST /api/connections/{id}/tables/{table}/import", protect(http.HandlerFunc(s.importTable)))
 
-	// Schema DDL & Indexes inspection
+	// Schema DDL, Indexes & Diff
 	mux.Handle("GET /api/connections/{id}/tables/{table}/ddl", protect(http.HandlerFunc(s.getTableDDL)))
 	mux.Handle("POST /api/connections/{id}/seed", protect(http.HandlerFunc(s.generateSeedSQL)))
+	mux.Handle("GET /api/diff", protect(http.HandlerFunc(s.handleSchemaDiff)))
 
 	// Column Analytics & Table Statistics
 	mux.Handle("GET /api/connections/{id}/tables/{table}/aggregate", protect(http.HandlerFunc(s.handleAggregate)))
