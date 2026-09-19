@@ -199,10 +199,12 @@ export async function explainQuery(
   return handleResponse<ExplainResult>(res);
 }
 
+export type ExportFormat = 'csv' | 'json' | 'jsonl' | 'xlsx' | 'parquet';
+
 export function getTableExportUrl(
   connId: string,
   table: string,
-  format: 'csv' | 'json',
+  format: ExportFormat,
   params: RowQueryParams = {}
 ): string {
   const searchParams = new URLSearchParams();
@@ -223,7 +225,7 @@ export function getTableExportUrl(
 export async function exportTableData(
   connId: string,
   table: string,
-  format: 'csv' | 'json',
+  format: ExportFormat,
   params: RowQueryParams = {}
 ): Promise<Blob> {
   const url = getTableExportUrl(connId, table, format, params);

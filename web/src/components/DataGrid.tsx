@@ -43,6 +43,9 @@ import {
   UploadCloud,
   FileSpreadsheet,
   FileJson,
+  FileCode2,
+  Database,
+  Settings2,
   ChevronDown,
   FileCode,
   BarChart3,
@@ -57,7 +60,7 @@ import type {
   ColumnSchema,
   TableStats,
 } from "../lib/types";
-import { exportTableData, fetchTableStats } from "../lib/api";
+import { exportTableData, fetchTableStats, type ExportFormat } from "../lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
 import { QuickStatsBar } from "./QuickStatsBar";
@@ -769,6 +772,7 @@ export const DataGrid: FC<DataGridProps> = ({
     dbType === "mongodb" ? "document" : "table",
   );
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importModalMode, setImportModalMode] = useState<"import" | "export">("import");
   const [analyticsColumn, setAnalyticsColumn] = useState<ColumnSchema | null>(
     null,
   );
@@ -857,7 +861,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
   const [isExporting, setIsExporting] = useState(false);
 
-  const handleExport = async (format: "csv" | "json") => {
+  const handleExport = async (format: ExportFormat) => {
     if (!connId || isExporting) return;
     try {
       setIsExporting(true);
@@ -869,7 +873,7 @@ export const DataGrid: FC<DataGridProps> = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${table.name}.${format}`;
+      a.download = `${table.name}.${format === "xlsx" ? "xlsx" : format}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -1949,7 +1953,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   />
                   <DropdownMenuContent
                     align="end"
-                    className="w-44 text-xs font-mono"
+                    className="w-52 text-xs font-mono"
                   >
                     <DropdownMenuItem onClick={() => handleExport("csv")}>
                       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -1958,6 +1962,28 @@ export const DataGrid: FC<DataGridProps> = ({
                     <DropdownMenuItem onClick={() => handleExport("json")}>
                       <FileJson className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       <span>{t("datagrid.exportAsJson")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport("jsonl")}>
+                      <FileCode2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                      <span>{t("datagrid.exportAsJsonl")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                      <span>{t("datagrid.exportAsXlsx")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport("parquet")}>
+                      <Database className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>{t("datagrid.exportAsParquet")}</span>
+                    </DropdownMenuItem>
+                    <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setImportModalMode("export");
+                        setIsImportModalOpen(true);
+                      }}
+                    >
+                      <Settings2 className="w-3.5 h-3.5 text-zinc-500" />
+                      <span>{t("datagrid.exportOptions")}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -1969,7 +1995,10 @@ export const DataGrid: FC<DataGridProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsImportModalOpen(true)}
+                  onClick={() => {
+                    setImportModalMode("import");
+                    setIsImportModalOpen(true);
+                  }}
                   disabled={isReadOnly}
                   title={
                     isReadOnly
@@ -2577,6 +2606,11 @@ export const DataGrid: FC<DataGridProps> = ({
             onClose={() => setIsImportModalOpen(false)}
             connId={connId}
             table={table}
+            initialMode={importModalMode}
+            tableStats={tableStats}
+            filters={filters}
+            sortBy={sortBy}
+            sortDesc={sortDesc}
             onSuccess={() => {
               onRefresh();
             }}

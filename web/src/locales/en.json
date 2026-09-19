@@ -56,6 +56,10 @@
     "exportCsv": "Export CSV",
     "exportAsCsv": "Export as CSV",
     "exportAsJson": "Export as JSON",
+    "exportAsJsonl": "Export as JSONL",
+    "exportAsXlsx": "Export as Excel (.xlsx)",
+    "exportAsParquet": "Export as Parquet (.parquet)",
+    "exportOptions": "Export Options...",
     "importCsv": "Import CSV",
     "importing": "Importing...",
     "importModalTitle": "Import CSV into \"{{table}}\"",
@@ -690,6 +694,28 @@
         "tip": "Shortcut: Press / to jump directly to quick search."
       }
     }
+  },
+  "export": {
+    "title": "Export Table",
+    "desc": "Export records from \"{{table}}\" into various file formats with low memory overhead.",
+    "tabExport": "Export Data",
+    "tabImport": "Import CSV",
+    "format": {
+      "csv": "CSV (.csv)",
+      "json": "JSON (.json)",
+      "jsonl": "JSONL (.jsonl)",
+      "xlsx": "Excel (.xlsx)",
+      "parquet": "Parquet (.parquet)"
+    },
+    "formatLabel": "Export Format",
+    "selectFormat": "Select file format",
+    "estimatedSize": "Estimated file size",
+    "totalRows": "Total records",
+    "filteredRows": "Filtered records",
+    "downloadButton": "Download Export",
+    "exporting": "Exporting...",
+    "success": "Export completed successfully",
+    "error": "Failed to export data"
   },
   "titlebar": {
     "searchPlaceholder": "Search or run commands...",
