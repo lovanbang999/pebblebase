@@ -60,7 +60,11 @@ import type {
   ColumnSchema,
   TableStats,
 } from "../lib/types";
-import { exportTableData, fetchTableStats, type ExportFormat } from "../lib/api";
+import {
+  exportTableData,
+  fetchTableStats,
+  type ExportFormat,
+} from "../lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "./EmptyState";
 import { QuickStatsBar } from "./QuickStatsBar";
@@ -772,7 +776,9 @@ export const DataGrid: FC<DataGridProps> = ({
     dbType === "mongodb" ? "document" : "table",
   );
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importModalMode, setImportModalMode] = useState<"import" | "export">("import");
+  const [importModalMode, setImportModalMode] = useState<"import" | "export">(
+    "import",
+  );
   const [analyticsColumn, setAnalyticsColumn] = useState<ColumnSchema | null>(
     null,
   );
@@ -932,6 +938,118 @@ export const DataGrid: FC<DataGridProps> = ({
     setFilterCol(table.columns[0]?.name || "");
   }, [table]);
 
+  // Phase 33: Column-Level Inline Search (Ctrl+F)
+  const [openSearchCols, setOpenSearchCols] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [columnSearches, setColumnSearches] = useState<Record<string, string>>(
+    {},
+  );
+  const searchInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [hoveredCol, setHoveredCol] = useState<string | null>(null);
+
+  // Sync column searches with incoming filters prop
+  useEffect(() => {
+    const next: Record<string, string> = {};
+    filters.forEach((f) => {
+      if (f.operator === "contains") {
+        next[f.column] = f.value;
+      }
+    });
+    setColumnSearches(next);
+    setOpenSearchCols((prev) => {
+      const updated = { ...prev };
+      Object.keys(updated).forEach((k) => {
+        if (!next[k] && document.activeElement !== searchInputRefs.current[k]) {
+          delete updated[k];
+        }
+      });
+      return updated;
+    });
+  }, [filters]);
+
+  // Reset open column searches when switching tables
+  useEffect(() => {
+    setOpenSearchCols({});
+    setColumnSearches({});
+  }, [table.name]);
+
+  const handleOpenColumnSearch = useCallback((colName: string) => {
+    setOpenSearchCols((prev) => ({ ...prev, [colName]: true }));
+    setTimeout(() => {
+      const el = searchInputRefs.current[colName];
+      if (el) {
+        el.focus();
+        el.select();
+      }
+    }, 40);
+  }, []);
+
+  const handleCloseColumnSearch = useCallback((colName: string) => {
+    setOpenSearchCols((prev) => {
+      const next = { ...prev };
+      delete next[colName];
+      return next;
+    });
+  }, []);
+
+  const handleColumnSearchChange = useCallback(
+    (colName: string, val: string) => {
+      setColumnSearches((prev) => ({ ...prev, [colName]: val }));
+      const otherFilters = filters.filter(
+        (f) => !(f.column === colName && f.operator === "contains"),
+      );
+      if (val.trim() !== "") {
+        onFiltersChange([
+          ...otherFilters,
+          { column: colName, operator: "contains", value: val },
+        ]);
+      } else {
+        onFiltersChange(otherFilters);
+      }
+    },
+    [filters, onFiltersChange],
+  );
+
+  const handleClearColumnSearch = useCallback(
+    (colName: string) => {
+      setColumnSearches((prev) => {
+        const next = { ...prev };
+        delete next[colName];
+        return next;
+      });
+      handleCloseColumnSearch(colName);
+      const otherFilters = filters.filter(
+        (f) => !(f.column === colName && f.operator === "contains"),
+      );
+      onFiltersChange(otherFilters);
+    },
+    [filters, onFiltersChange, handleCloseColumnSearch],
+  );
+
+  const handleColumnSearchBlur = useCallback(
+    (colName: string) => {
+      if (!columnSearches[colName]?.trim()) {
+        handleCloseColumnSearch(colName);
+      }
+    },
+    [columnSearches, handleCloseColumnSearch],
+  );
+
+  const handleColumnSearchKeyDown = useCallback(
+    (colName: string, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        handleClearColumnSearch(colName);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    },
+    [handleClearColumnSearch],
+  );
+
   // Discover extra fields from rows that were not in sampled table.columns
   const extraColumns = useMemo(() => {
     const schemaColNames = new Set(table.columns.map((c) => c.name));
@@ -982,9 +1100,60 @@ export const DataGrid: FC<DataGridProps> = ({
         accessorKey: col.name,
         header: () => {
           const isSorted = sortBy === col.name;
+          const isSearchOpen = Boolean(openSearchCols[col.name]);
+          const activeSearchVal = columnSearches[col.name] ?? "";
+          const hasActiveFilter = Boolean(activeSearchVal.trim());
+
+          if (isSearchOpen) {
+            return (
+              <div
+                data-column-search="true"
+                className="flex items-center gap-1 py-0.5 w-full min-w-32.5"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <div className="relative flex-1 flex items-center">
+                  <Search className="w-3 h-3 text-emerald-500 absolute left-2 pointer-events-none shrink-0" />
+                  <input
+                    ref={(el) => {
+                      searchInputRefs.current[col.name] = el;
+                    }}
+                    type="text"
+                    autoFocus
+                    value={activeSearchVal}
+                    onChange={(e) =>
+                      handleColumnSearchChange(col.name, e.target.value)
+                    }
+                    onKeyDown={(e) => handleColumnSearchKeyDown(col.name, e)}
+                    onBlur={() => handleColumnSearchBlur(col.name)}
+                    placeholder={t("grid.column.search.placeholder", {
+                      column: col.name,
+                    })}
+                    className="h-6 w-full text-xs font-mono pl-7 pr-6 py-0.5 bg-white dark:bg-zinc-900 border border-emerald-500/80 dark:border-emerald-500/80 rounded text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    title={t("grid.column.search.clear")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearColumnSearch(col.name);
+                    }}
+                    className="absolute right-1 p-0.5 rounded text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div
               className="flex items-center justify-between gap-1.5 cursor-pointer select-none group py-1"
+              onMouseEnter={() => setHoveredCol(col.name)}
+              onMouseLeave={() =>
+                setHoveredCol((prev) => (prev === col.name ? null : prev))
+              }
               onClick={() => {
                 if (sortBy === col.name) {
                   if (sortDesc) {
@@ -1017,9 +1186,37 @@ export const DataGrid: FC<DataGridProps> = ({
                 >
                   {col.type}
                 </Badge>
+                {hasActiveFilter && (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] font-mono font-medium px-1 py-0 h-3.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                    title={`contains: ${activeSearchVal}`}
+                  >
+                    🔍
+                  </Badge>
+                )}
               </div>
 
               <div className="flex items-center gap-0.5">
+                {/* Inline Search Button (🔍) */}
+                <button
+                  type="button"
+                  title={`${t("grid.column.search.placeholder", { column: col.name })} (Ctrl+F)`}
+                  className={cn(
+                    "p-1 rounded transition-all cursor-pointer focus:outline-none",
+                    hasActiveFilter
+                      ? "text-emerald-500 dark:text-emerald-400 opacity-100 bg-emerald-500/10"
+                      : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 opacity-0 group-hover:opacity-100",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenColumnSearch(col.name);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <Search className="w-3 h-3" />
+                </button>
+
                 {/* Sort indicator */}
                 <div className="text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200">
                   {isSorted ? (
@@ -1059,6 +1256,18 @@ export const DataGrid: FC<DataGridProps> = ({
                     >
                       <BarChart3 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                       <span>{t("analytics.openAnalytics")}</span>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
+                      onClick={() => handleOpenColumnSearch(col.name)}
+                    >
+                      <Search className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <span>
+                        {t("grid.column.search.placeholder", {
+                          column: col.name,
+                        })}
+                      </span>
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800 my-1" />
@@ -1327,9 +1536,62 @@ export const DataGrid: FC<DataGridProps> = ({
         accessorKey: extraColName,
         header: () => {
           const isSorted = sortBy === extraColName;
+          const isSearchOpen = Boolean(openSearchCols[extraColName]);
+          const activeSearchVal = columnSearches[extraColName] ?? "";
+          const hasActiveFilter = Boolean(activeSearchVal.trim());
+
+          if (isSearchOpen) {
+            return (
+              <div
+                data-column-search="true"
+                className="flex items-center gap-1 py-0.5 w-full min-w-32.5"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <div className="relative flex-1 flex items-center">
+                  <Search className="w-3 h-3 text-amber-400 absolute left-2 pointer-events-none shrink-0" />
+                  <input
+                    ref={(el) => {
+                      searchInputRefs.current[extraColName] = el;
+                    }}
+                    type="text"
+                    autoFocus
+                    value={activeSearchVal}
+                    onChange={(e) =>
+                      handleColumnSearchChange(extraColName, e.target.value)
+                    }
+                    onKeyDown={(e) =>
+                      handleColumnSearchKeyDown(extraColName, e)
+                    }
+                    onBlur={() => handleColumnSearchBlur(extraColName)}
+                    placeholder={t("grid.column.search.placeholder", {
+                      column: extraColName,
+                    })}
+                    className="h-6 w-full text-xs font-mono pl-7 pr-6 py-0.5 bg-white dark:bg-zinc-900 border border-amber-500/80 dark:border-amber-500/80 rounded text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-sm"
+                  />
+                  <button
+                    type="button"
+                    title={t("grid.column.search.clear")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleClearColumnSearch(extraColName);
+                    }}
+                    className="absolute right-1 p-0.5 rounded text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div
               className="flex items-center justify-between gap-1.5 cursor-pointer select-none group py-1"
+              onMouseEnter={() => setHoveredCol(extraColName)}
+              onMouseLeave={() =>
+                setHoveredCol((prev) => (prev === extraColName ? null : prev))
+              }
               onClick={() => {
                 if (sortBy === extraColName) {
                   if (sortDesc) {
@@ -1352,17 +1614,47 @@ export const DataGrid: FC<DataGridProps> = ({
                 >
                   {t("datagrid.dynamicBadge")}
                 </Badge>
-              </div>
-              <div className="text-zinc-400 group-hover:text-zinc-200">
-                {isSorted ? (
-                  sortDesc ? (
-                    <ArrowDown className="w-3 h-3 text-emerald-400" />
-                  ) : (
-                    <ArrowUp className="w-3 h-3 text-emerald-400" />
-                  )
-                ) : (
-                  <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                {hasActiveFilter && (
+                  <Badge
+                    variant="outline"
+                    className="text-[9px] font-mono font-medium px-1 py-0 h-3.5 bg-amber-500/10 text-amber-400 border-amber-500/30"
+                    title={`contains: ${activeSearchVal}`}
+                  >
+                    🔍
+                  </Badge>
                 )}
+              </div>
+              <div className="flex items-center gap-0.5">
+                {/* Column Inline Search (🔍) */}
+                <button
+                  type="button"
+                  title={`${t("grid.column.search.placeholder", { column: extraColName })} (Ctrl+F)`}
+                  className={cn(
+                    "p-1 rounded transition-all cursor-pointer focus:outline-none",
+                    hasActiveFilter
+                      ? "text-amber-400 opacity-100 bg-amber-500/10"
+                      : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 opacity-0 group-hover:opacity-100",
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenColumnSearch(extraColName);
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <Search className="w-3 h-3" />
+                </button>
+
+                <div className="text-zinc-400 group-hover:text-zinc-200">
+                  {isSorted ? (
+                    sortDesc ? (
+                      <ArrowDown className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <ArrowUp className="w-3 h-3 text-emerald-400" />
+                    )
+                  ) : (
+                    <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -1433,6 +1725,13 @@ export const DataGrid: FC<DataGridProps> = ({
     t,
     editingCell,
     inlineValue,
+    openSearchCols,
+    columnSearches,
+    handleColumnSearchChange,
+    handleColumnSearchKeyDown,
+    handleColumnSearchBlur,
+    handleClearColumnSearch,
+    handleOpenColumnSearch,
   ]);
 
   // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
@@ -1540,9 +1839,23 @@ export const DataGrid: FC<DataGridProps> = ({
         (activeEl.tagName === "INPUT" ||
           activeEl.tagName === "TEXTAREA" ||
           activeEl.tagName === "SELECT") &&
-        !activeEl.closest("[data-cell-editing='true']");
+        !activeEl.closest("[data-cell-editing='true']") &&
+        !activeEl.closest("[data-column-search='true']");
 
       if (isSearchInput || isModalOrOutside) return;
+
+      // Ctrl+F / Cmd+F: Column-Level Inline Search
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        const targetCol =
+          focusedCell?.colName && focusedCell.colName !== "_row_index"
+            ? focusedCell.colName
+            : hoveredCol || table.columns[0]?.name;
+        if (targetCol) {
+          handleOpenColumnSearch(targetCol);
+        }
+        return;
+      }
 
       if (!focusedCell && displayedRows.length > 0) {
         if (
@@ -1569,9 +1882,7 @@ export const DataGrid: FC<DataGridProps> = ({
       if (!currentRow) return;
 
       const leafCols = reactTable.getVisibleLeafColumns();
-      const visibleColNames = leafCols.map((c) =>
-        c.id.replace("_extra_", ""),
-      );
+      const visibleColNames = leafCols.map((c) => c.id.replace("_extra_", ""));
       const currentColName = focusedCell.colName;
       let currentColIndex = visibleColNames.indexOf(currentColName);
       if (currentColIndex === -1) currentColIndex = 0;
@@ -1598,11 +1909,17 @@ export const DataGrid: FC<DataGridProps> = ({
         return;
       }
 
-      // 3. Escape: Cancel Edit Mode
+      // 3. Escape: Cancel Edit Mode or Clear Column Filter on Focused Cell
       if (e.key === "Escape") {
         if (editingCell) {
           e.preventDefault();
           setEditingCell(null);
+          return;
+        }
+        if (focusedCell?.colName && columnSearches[focusedCell.colName]) {
+          e.preventDefault();
+          handleClearColumnSearch(focusedCell.colName);
+          return;
         }
         return;
       }
@@ -1613,7 +1930,9 @@ export const DataGrid: FC<DataGridProps> = ({
         if (editingCell) {
           saveCellEdit(currentRow, editingCell.colName, true);
         } else {
-          const colSchema = table.columns.find((c) => c.name === currentColName);
+          const colSchema = table.columns.find(
+            (c) => c.name === currentColName,
+          );
           if (
             !isReadOnly &&
             !colSchema?.is_primary_key &&
@@ -1705,6 +2024,10 @@ export const DataGrid: FC<DataGridProps> = ({
     saveCellEdit,
     startEditingCell,
     rowVirtualizer,
+    hoveredCol,
+    handleOpenColumnSearch,
+    handleClearColumnSearch,
+    columnSearches,
   ]);
 
   const totalPages = Math.ceil(totalCount / pageSize) || 1;

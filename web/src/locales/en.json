@@ -38,6 +38,14 @@
       "max": "Maximum 10 tables can be pinned"
     }
   },
+  "grid": {
+    "column": {
+      "search": {
+        "placeholder": "Filter {{column}}…",
+        "clear": "Clear search (Esc)"
+      }
+    }
+  },
   "datagrid": {
     "where": "WHERE",
     "column": "Column",
