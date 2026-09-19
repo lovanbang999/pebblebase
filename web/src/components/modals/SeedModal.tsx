@@ -11,8 +11,8 @@ import {
   Layers,
   AlertCircle,
 } from "lucide-react";
-import { generateSeedSQL } from "../lib/api";
-import type { SeedSQLResponse } from "../lib/types";
+import { generateSeedSQL } from "@/lib/api";
+import type { SeedSQLResponse } from "@/lib/types";
 import {
   Dialog,
   DialogContent,

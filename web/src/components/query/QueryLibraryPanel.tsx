@@ -26,14 +26,14 @@ import type {
   SavedQuery,
   SavedQueryUpdateInput,
   QueryHistoryEntry,
-} from "../lib/types";
+} from "@/lib/types";
 import {
   fetchSavedQueries,
   updateSavedQuery,
   deleteSavedQuery,
   downloadSavedQuery,
   fetchQueryHistory,
-} from "../lib/api";
+} from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {

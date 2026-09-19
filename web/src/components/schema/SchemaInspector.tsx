@@ -17,10 +17,10 @@ import {
   Rocket,
   Sparkles,
 } from "lucide-react";
-import type { TableSchema } from "../lib/types";
-import { fetchTableDDL } from "../lib/api";
-import { MigrationRunner } from "./migration/MigrationRunner";
-import { SeedModal } from "./SeedModal";
+import type { TableSchema } from "@/lib/types";
+import { fetchTableDDL } from "@/lib/api";
+import { MigrationRunner } from "@/components/migration/MigrationRunner";
+import { SeedModal } from "@/components/modals/SeedModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";

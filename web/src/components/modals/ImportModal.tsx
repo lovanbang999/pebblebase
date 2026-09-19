@@ -22,8 +22,8 @@ import {
   FileJson,
   FileCode2,
 } from "lucide-react";
-import type { TableSchema, TableStats, FilterOption } from "../lib/types";
-import { importTableCSV, exportTableData, type ExportFormat } from "../lib/api";
+import type { TableSchema, TableStats, FilterOption } from "@/lib/types";
+import { importTableCSV, exportTableData, type ExportFormat } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";

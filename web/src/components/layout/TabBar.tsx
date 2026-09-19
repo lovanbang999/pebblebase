@@ -21,7 +21,7 @@ import {
   ChevronRight,
   GitCompare,
 } from "lucide-react";
-import type { StudioTab } from "../lib/types";
+import type { StudioTab } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,

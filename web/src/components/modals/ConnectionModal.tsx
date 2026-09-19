@@ -16,9 +16,9 @@ import type {
   EnvironmentType,
   Connection,
   ConnectionInput,
-} from "../lib/types";
+} from "@/lib/types";
 import { useTranslation } from "react-i18next";
-import { testConnection } from "../lib/api";
+import { testConnection } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

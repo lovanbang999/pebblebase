@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { LanguageSwitcher } from "./LanguageSwitcher";
-import { ThemeToggle } from "./ThemeToggle";
+import { LanguageSwitcher, ThemeToggle } from "@/components/common";
 import {
   Database,
   Table as TableIcon,
@@ -27,11 +26,11 @@ import {
   Pin,
   GitCompare,
 } from "lucide-react";
-import type { Connection, DatabaseType, TableSchema } from "../lib/types";
-import { SHORTCUTS, getShortcutTooltip } from "../lib/platform";
-import { useAuthStore } from "../lib/auth";
-import { apiLogout } from "../lib/api";
-import packageJson from "../../package.json";
+import type { Connection, DatabaseType, TableSchema } from "@/lib/types";
+import { SHORTCUTS, getShortcutTooltip } from "@/lib/platform";
+import { useAuthStore } from "@/lib/auth";
+import { apiLogout } from "@/lib/api";
+import packageJson from "../../../package.json";
 import { Button } from "@/components/ui/button";
 import { cn } from "cn";
 import { Input } from "@/components/ui/input";

@@ -2,10 +2,9 @@ import { useState, type FormEvent, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { apiLogin } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
-import packageJson from "../../package.json";
-import { LanguageSwitcher } from "./LanguageSwitcher";
-import { ThemeToggle } from "./ThemeToggle";
-import { DesktopTitleBar } from "./DesktopTitleBar";
+import packageJson from "../../../package.json";
+import { LanguageSwitcher, ThemeToggle } from "@/components/common";
+import { DesktopTitleBar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
