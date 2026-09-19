@@ -88,7 +88,17 @@
     "copied": "Copied SQL to clipboard",
     "run_in_console": "Run in Target Console",
     "search_tables": "Search tables...",
-    "migration_warning": "Review the statements before running against production databases."
+    "migration_warning": "Review the statements before running against production databases.",
+    "failed_compare": "Failed to compare schemas",
+    "column_changes": "{{count}} column changes",
+    "index_changes": "{{count}} index changes",
+    "no_tables_match": "No tables match filter",
+    "no_schema_loaded": "No schema loaded",
+    "all_synced_desc": "All tables, column types, nullability constraints, and secondary indexes match between {{source}} and {{target}}.",
+    "select_table_to_view": "Select a table on the left to view differences",
+    "columns_count": "{{count}} columns",
+    "indexes_count": "{{count}} indexes",
+    "target_engine": "Target engine"
   },
   "datagrid": {
     "where": "WHERE",
@@ -121,12 +131,16 @@
     "browseFiles": "Browse files",
     "fileSelected": "Selected file:",
     "columnMappingTitle": "Column Mapping",
+    "columnMapping": "Column Mapping",
     "columnMappingDesc": "Match CSV header columns to target table columns. Unmatched or skipped columns will not be inserted.",
     "csvColumn": "CSV Column",
     "sampleValue": "Sample Value",
     "targetColumn": "Target Column",
+    "selectColumn": "Select column...",
     "skipColumn": "(Skip column)",
     "previewRows": "Preview (first {{count}} rows)",
+    "previewData": "Data Preview",
+    "columnsMapped": "{{mapped}} of {{total}} mapped",
     "importButton": "Import Records",
     "importSuccessTitle": "Import Complete",
     "importSuccessDesc": "Successfully inserted {{count}} records in {{duration}}ms.",
@@ -252,7 +266,8 @@
     "deleteRecord": "Delete",
     "insertRecord": "Insert Record",
     "failedToSave": "Failed to save record",
-    "failedToDelete": "Failed to delete record"
+    "failedToDelete": "Failed to delete record",
+    "defaultPrefix": "Default: {{val}}"
   },
   "row": {
     "diff": {
@@ -283,7 +298,9 @@
     "error": "Error",
     "loading": "Loading...",
     "retry": "Retry",
-    "close": "Close"
+    "close": "Close",
+    "cancel": "Cancel",
+    "add": "Add"
   },
   "errorBoundary": {
     "defaultTitle": "Something went wrong in this view",
@@ -537,7 +554,8 @@
       "size": "Size",
       "columns": "columns",
       "filtered": "Filtered",
-      "estimated": "est."
+      "estimated": "est.",
+      "pk": "Primary Key"
     }
   },
   "savedQuery": {

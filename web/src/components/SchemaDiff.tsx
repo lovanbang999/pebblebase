@@ -117,7 +117,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
         setSelectedTable(null);
       }
     } catch (err: any) {
-      setError(err?.message || "Failed to compare schemas");
+      setError(err?.message || t("diff.failed_compare"));
     } finally {
       setIsLoading(false);
     }
@@ -331,14 +331,19 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
             </Badge>
 
             <span className="text-zinc-400 dark:text-zinc-600 font-mono text-[10px] ml-auto">
-              {diffResult.summary.columns_added +
-                diffResult.summary.columns_modified +
-                diffResult.summary.columns_removed}{" "}
-              column changes,{" "}
-              {diffResult.summary.indexes_added +
-                diffResult.summary.indexes_modified +
-                diffResult.summary.indexes_removed}{" "}
-              index changes
+              {t("diff.column_changes", {
+                count:
+                  diffResult.summary.columns_added +
+                  diffResult.summary.columns_modified +
+                  diffResult.summary.columns_removed,
+              })}
+              {", "}
+              {t("diff.index_changes", {
+                count:
+                  diffResult.summary.indexes_added +
+                  diffResult.summary.indexes_modified +
+                  diffResult.summary.indexes_removed,
+              })}
             </span>
           </div>
         )}
@@ -401,7 +406,9 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
           <div className="flex-1 overflow-y-auto p-1 divide-y divide-zinc-100 dark:divide-zinc-900/60">
             {filteredTables.length === 0 ? (
               <div className="p-6 text-center text-xs text-zinc-400 dark:text-zinc-500 font-mono">
-                {diffResult ? "No tables match filter" : "No schema loaded"}
+                {diffResult
+                  ? t("diff.no_tables_match")
+                  : t("diff.no_schema_loaded")}
               </div>
             ) : (
               filteredTables.map((tbl) => {
@@ -429,7 +436,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                           variant="outline"
                           className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[9px] px-1 py-0 h-4"
                         >
-                          + Added
+                          + {t("diff.added")}
                         </Badge>
                       )}
                       {tbl.status === "removed" && (
@@ -437,7 +444,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                           variant="outline"
                           className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30 text-[9px] px-1 py-0 h-4"
                         >
-                          - Removed
+                          - {t("diff.removed")}
                         </Badge>
                       )}
                       {tbl.status === "modified" && (
@@ -445,12 +452,12 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                           variant="outline"
                           className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[9px] px-1 py-0 h-4"
                         >
-                          ~ Modified
+                          ~ {t("diff.modified")}
                         </Badge>
                       )}
                       {tbl.status === "unchanged" && (
                         <span className="text-[10px] text-zinc-400 font-normal">
-                          OK
+                          {t("diff.unchanged")}
                         </span>
                       )}
                     </div>
@@ -483,21 +490,15 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                 {t("diff.no_differences")}
               </h3>
               <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-md font-mono mt-1">
-                All tables, column types, nullability constraints, and secondary
-                indexes match between{" "}
-                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                  {diffResult.from_connection.name}
-                </span>{" "}
-                and{" "}
-                <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-                  {diffResult.to_connection.name}
-                </span>
-                .
+                {t("diff.all_synced_desc", {
+                  source: diffResult.from_connection.name,
+                  target: diffResult.to_connection.name,
+                })}
               </p>
             </div>
           ) : !currentTableDiff ? (
             <div className="flex-1 flex items-center justify-center p-8 text-xs text-zinc-400 font-mono">
-              Select a table on the left to view differences
+              {t("diff.select_table_to_view")}
             </div>
           ) : (
             <div className="p-4 lg:p-6 space-y-6">
@@ -522,13 +523,18 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                         "bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/30",
                     )}
                   >
-                    {currentTableDiff.status.toUpperCase()}
+                    {t(`diff.${currentTableDiff.status}`).toUpperCase()}
                   </Badge>
                 </div>
 
                 <div className="text-xs text-zinc-400 font-mono">
-                  {currentTableDiff.columns?.length || 0} columns ·{" "}
-                  {currentTableDiff.indexes?.length || 0} indexes
+                  {t("diff.columns_count", {
+                    count: currentTableDiff.columns?.length || 0,
+                  })}{" "}
+                  ·{" "}
+                  {t("diff.indexes_count", {
+                    count: currentTableDiff.indexes?.length || 0,
+                  })}
                 </div>
               </div>
 
@@ -544,11 +550,11 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                   <div className="grid grid-cols-2 divide-x divide-zinc-200 dark:divide-zinc-800 bg-zinc-100 dark:bg-zinc-900 text-xs font-mono font-semibold py-2 px-3 text-zinc-700 dark:text-zinc-300">
                     <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
                       <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      {t("diff.source")}: {fromConnObj?.name || "Source"}
+                      {t("diff.source")}: {fromConnObj?.name || t("diff.source")}
                     </div>
                     <div className="pl-3 flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400">
                       <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                      {t("diff.target")}: {toConnObj?.name || "Target"}
+                      {t("diff.target")}: {toConnObj?.name || t("diff.target")}
                     </div>
                   </div>
 
@@ -740,7 +746,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                                 )}
                               </div>
                               <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                                Columns: ({cols})
+                                {t("diff.columns")}: ({cols})
                               </div>
                             </div>
 
@@ -767,7 +773,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                                   idx.status === "unchanged" && "text-zinc-400",
                                 )}
                               >
-                                {idx.status}
+                                {t(`diff.${idx.status}`)}
                               </Badge>
                             </div>
                           </div>
@@ -814,7 +820,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
           {/* Modal Footer Actions */}
           <div className="p-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between">
             <div className="text-xs text-zinc-500 font-mono">
-              Target engine:{" "}
+              {t("diff.target_engine")}:{" "}
               <span className="font-semibold uppercase">
                 {diffResult?.to_connection.engine}
               </span>

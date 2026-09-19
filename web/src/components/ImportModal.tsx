@@ -624,12 +624,12 @@ export const ImportModal: FC<ImportModalProps> = ({
                       {t("datagrid.columnMapping")}
                     </h4>
                     <span className="text-[11px] text-zinc-400">
-                      {
-                        Object.values(columnMappings).filter(
+                      {t("datagrid.columnsMapped", {
+                        mapped: Object.values(columnMappings).filter(
                           (v) => v && v !== "__skip__",
-                        ).length
-                      }{" "}
-                      of {csvHeaders.length} mapped
+                        ).length,
+                        total: csvHeaders.length,
+                      })}
                     </span>
                   </div>
 
