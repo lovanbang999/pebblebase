@@ -19,6 +19,7 @@ func (s *Server) listSavedQueries(w http.ResponseWriter, r *http.Request) {
 
 	params := savedquery.ListParams{
 		Tag:    r.URL.Query().Get("tag"),
+		Folder: r.URL.Query().Get("folder"),
 		Search: r.URL.Query().Get("search"),
 	}
 
@@ -35,6 +36,7 @@ type createSavedQueryRequest struct {
 	Title      string   `json:"title"`
 	Query      string   `json:"query"`
 	Tags       []string `json:"tags"`
+	Folder     string   `json:"folder"`
 	IsFavorite bool     `json:"is_favorite"`
 }
 
@@ -65,7 +67,7 @@ func (s *Server) createSavedQuery(w http.ResponseWriter, r *http.Request) {
 		userID = claims.UserID
 	}
 
-	sq, err := s.querySvc.Create(r.Context(), connID, userID, req.Title, req.Query, req.Tags, req.IsFavorite)
+	sq, err := s.querySvc.Create(r.Context(), connID, userID, req.Title, req.Query, req.Folder, req.Tags, req.IsFavorite)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, fmt.Sprintf("create saved query: %v", err))
 		return

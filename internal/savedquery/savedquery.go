@@ -21,6 +21,7 @@ type SavedQuery struct {
 	Title        string    `json:"title"`
 	Query        string    `json:"query"`
 	Tags         []string  `json:"tags"`
+	Folder       string    `json:"folder"`
 	IsFavorite   bool      `json:"is_favorite"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
@@ -31,12 +32,14 @@ type UpdateInput struct {
 	Title      *string   `json:"title"`
 	Query      *string   `json:"query"`
 	Tags       *[]string `json:"tags"`
+	Folder     *string   `json:"folder"`
 	IsFavorite *bool     `json:"is_favorite"`
 }
 
 // ListParams controls optional filtering for List.
 type ListParams struct {
 	Tag    string // filter by a single tag (empty = all)
+	Folder string // filter by folder path (empty = all)
 	Search string // substring match against title or query content
 }
 
@@ -63,16 +66,22 @@ func (s *Store) migrate() error {
 			title         TEXT NOT NULL,
 			query         TEXT NOT NULL,
 			tags          TEXT NOT NULL DEFAULT '[]',
+			folder        TEXT NOT NULL DEFAULT '',
 			is_favorite   INTEGER NOT NULL DEFAULT 0,
 			created_at    DATETIME NOT NULL,
 			updated_at    DATETIME NOT NULL
 		)
 	`)
-	return err
+	if err != nil {
+		return err
+	}
+	// Safe migration for existing SQLite DBs created before folder column was added
+	_, _ = s.db.Exec(`ALTER TABLE saved_queries ADD COLUMN folder TEXT NOT NULL DEFAULT ''`)
+	return nil
 }
 
 // Create inserts a new saved query and returns the persisted record.
-func (s *Store) Create(ctx context.Context, connID, userID, title, query string, tags []string, isFavorite bool) (SavedQuery, error) {
+func (s *Store) Create(ctx context.Context, connID, userID, title, query, folder string, tags []string, isFavorite bool) (SavedQuery, error) {
 	if tags == nil {
 		tags = []string{}
 	}
@@ -89,15 +98,16 @@ func (s *Store) Create(ctx context.Context, connID, userID, title, query string,
 		Title:        title,
 		Query:        query,
 		Tags:         tags,
+		Folder:       folder,
 		IsFavorite:   isFavorite,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
 
 	_, err = s.db.ExecContext(ctx,
-		`INSERT INTO saved_queries (id, connection_id, user_id, title, query, tags, is_favorite, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		sq.ID, sq.ConnectionID, sq.UserID, sq.Title, sq.Query, string(tagsJSON),
+		`INSERT INTO saved_queries (id, connection_id, user_id, title, query, tags, folder, is_favorite, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		sq.ID, sq.ConnectionID, sq.UserID, sq.Title, sq.Query, string(tagsJSON), sq.Folder,
 		boolToInt(sq.IsFavorite), sq.CreatedAt, sq.UpdatedAt,
 	)
 	if err != nil {
@@ -106,9 +116,9 @@ func (s *Store) Create(ctx context.Context, connID, userID, title, query string,
 	return sq, nil
 }
 
-// List returns all saved queries for a connection, with optional tag and search filtering.
+// List returns all saved queries for a connection, with optional tag, folder, and search filtering.
 func (s *Store) List(ctx context.Context, connID string, p ListParams) ([]SavedQuery, error) {
-	query := `SELECT id, connection_id, user_id, title, query, tags, is_favorite, created_at, updated_at
+	query := `SELECT id, connection_id, user_id, title, query, tags, folder, is_favorite, created_at, updated_at
 	          FROM saved_queries WHERE connection_id = ? ORDER BY is_favorite DESC, updated_at DESC`
 	rows, err := s.db.QueryContext(ctx, query, connID)
 	if err != nil {
@@ -128,11 +138,17 @@ func (s *Store) List(ctx context.Context, connID string, p ListParams) ([]SavedQ
 			continue
 		}
 
+		// Apply folder filter in-process (matches folder or subfolder prefix)
+		if p.Folder != "" && !strings.EqualFold(sq.Folder, p.Folder) && !strings.HasPrefix(strings.ToLower(sq.Folder), strings.ToLower(p.Folder)+"/") {
+			continue
+		}
+
 		// Apply search filter
 		if p.Search != "" {
 			lower := strings.ToLower(p.Search)
 			if !strings.Contains(strings.ToLower(sq.Title), lower) &&
-				!strings.Contains(strings.ToLower(sq.Query), lower) {
+				!strings.Contains(strings.ToLower(sq.Query), lower) &&
+				!strings.Contains(strings.ToLower(sq.Folder), lower) {
 				continue
 			}
 		}
@@ -148,7 +164,7 @@ func (s *Store) List(ctx context.Context, connID string, p ListParams) ([]SavedQ
 // GetByID returns a single saved query by ID.
 func (s *Store) GetByID(ctx context.Context, id string) (SavedQuery, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, connection_id, user_id, title, query, tags, is_favorite, created_at, updated_at
+		`SELECT id, connection_id, user_id, title, query, tags, folder, is_favorite, created_at, updated_at
 		 FROM saved_queries WHERE id = ?`, id)
 	sq, err := scanRow(row)
 	if err == sql.ErrNoRows {
@@ -173,6 +189,9 @@ func (s *Store) Update(ctx context.Context, id string, input UpdateInput) (Saved
 	if input.Tags != nil {
 		sq.Tags = *input.Tags
 	}
+	if input.Folder != nil {
+		sq.Folder = *input.Folder
+	}
 	if input.IsFavorite != nil {
 		sq.IsFavorite = *input.IsFavorite
 	}
@@ -184,8 +203,8 @@ func (s *Store) Update(ctx context.Context, id string, input UpdateInput) (Saved
 	}
 
 	_, err = s.db.ExecContext(ctx,
-		`UPDATE saved_queries SET title=?, query=?, tags=?, is_favorite=?, updated_at=? WHERE id=?`,
-		sq.Title, sq.Query, string(tagsJSON), boolToInt(sq.IsFavorite), sq.UpdatedAt, sq.ID,
+		`UPDATE saved_queries SET title=?, query=?, tags=?, folder=?, is_favorite=?, updated_at=? WHERE id=?`,
+		sq.Title, sq.Query, string(tagsJSON), sq.Folder, boolToInt(sq.IsFavorite), sq.UpdatedAt, sq.ID,
 	)
 	if err != nil {
 		return SavedQuery{}, fmt.Errorf("savedquery update: %w", err)
@@ -220,7 +239,7 @@ func scanRow(s scanner) (SavedQuery, error) {
 	var isFav int
 	if err := s.Scan(
 		&sq.ID, &sq.ConnectionID, &sq.UserID, &sq.Title, &sq.Query,
-		&tagsJSON, &isFav, &sq.CreatedAt, &sq.UpdatedAt,
+		&tagsJSON, &sq.Folder, &isFav, &sq.CreatedAt, &sq.UpdatedAt,
 	); err != nil {
 		return SavedQuery{}, fmt.Errorf("savedquery scan: %w", err)
 	}

@@ -56,6 +56,10 @@
     "exportCsv": "Xuất CSV",
     "exportAsCsv": "Xuất dạng CSV",
     "exportAsJson": "Xuất dạng JSON",
+    "exportAsJsonl": "Xuất dạng JSONL",
+    "exportAsXlsx": "Xuất dạng Excel (.xlsx)",
+    "exportAsParquet": "Xuất dạng Parquet (.parquet)",
+    "exportOptions": "Tùy chọn xuất...",
     "importCsv": "Nhập CSV",
     "importing": "Đang nhập dữ liệu...",
     "importModalTitle": "Nhập dữ liệu CSV vào bảng \"{{table}}\"",
@@ -486,6 +490,10 @@
     }
   },
   "savedQuery": {
+    "folder": "Thư mục",
+    "folderPlaceholder": "Vd: reporting hoặc reporting/finance",
+    "uncategorized": "Chưa phân loại",
+    "allFolders": "Tất cả thư mục",
     "library": "Thư viện Câu hỏi",
     "save": "Lưu",
     "saveQuery": "Lưu câu hỏi",
@@ -523,6 +531,18 @@
       "load": "Tải vào trình soạn thảo",
       "executedAt": "Đã thực thi",
       "by": "bởi"
+    }
+  },
+  "library": {
+    "folder": "Thư mục",
+    "folder_new": "Thư mục mới",
+    "folder_rename": "Đổi tên thư mục",
+    "folder_delete": "Xóa thư mục",
+    "tags": "Thẻ nhãn",
+    "tags_add": "Thêm thẻ",
+    "filter_by_tag": "Lọc theo thẻ",
+    "filter": {
+      "by_tag": "Lọc theo thẻ"
     }
   },
   "erd": {
@@ -675,6 +695,28 @@
         "tip": "Phím tắt: Nhấn phím / để kích hoạt nhanh thanh tìm kiếm."
       }
     }
+  },
+  "export": {
+    "title": "Xuất Dữ Liệu Bảng",
+    "desc": "Xuất bản ghi từ bảng \"{{table}}\" sang nhiều định dạng tệp khác nhau với hiệu năng cao và tiết kiệm bộ nhớ.",
+    "tabExport": "Xuất Dữ Liệu",
+    "tabImport": "Nhập CSV",
+    "format": {
+      "csv": "CSV (.csv)",
+      "json": "JSON (.json)",
+      "jsonl": "JSONL (.jsonl)",
+      "xlsx": "Excel (.xlsx)",
+      "parquet": "Parquet (.parquet)"
+    },
+    "formatLabel": "Định dạng tệp xuất",
+    "selectFormat": "Chọn định dạng tệp",
+    "estimatedSize": "Ước tính dung lượng tệp",
+    "totalRows": "Tổng số bản ghi",
+    "filteredRows": "Bản ghi sau khi lọc",
+    "downloadButton": "Tải Xuống Dữ Liệu",
+    "exporting": "Đang xuất dữ liệu...",
+    "success": "Xuất dữ liệu thành công",
+    "error": "Xuất dữ liệu thất bại"
   },
   "titlebar": {
     "searchPlaceholder": "Tìm kiếm hoặc chạy lệnh...",

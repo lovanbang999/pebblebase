@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"bufio"
 	"bytes"
 	"database/sql"
 	"encoding/csv"
@@ -13,6 +14,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/parquet-go/parquet-go"
+	"github.com/xuri/excelize/v2"
 )
 
 func TestExport_CSV_Streaming(t *testing.T) {
@@ -146,6 +150,229 @@ func TestExport_JSON_Streaming(t *testing.T) {
 	}
 	if items[0]["title"] != "Book" {
 		t.Errorf("expected item 0 title 'Book', got %v", items[0]["title"])
+	}
+}
+
+func TestExport_JSONL_Streaming(t *testing.T) {
+	mux, _ := setupTestServer(t)
+
+	dbFile := filepath.Join(t.TempDir(), "export_jsonl_test.db")
+	db, err := sql.Open("sqlite", dbFile)
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	_, err = db.Exec(`
+		CREATE TABLE items (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, price REAL);
+		INSERT INTO items (title, price) VALUES ('Book', 15.50), ('Pen', 2.00);
+	`)
+	db.Close()
+	if err != nil {
+		t.Fatalf("seed sqlite: %v", err)
+	}
+
+	body, _ := json.Marshal(map[string]any{
+		"name":          "Export JSONL Conn",
+		"type":          "sqlite",
+		"filepath":      dbFile,
+		"save_password": true,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	var connResp struct{ ID string `json:"id"` }
+	_ = json.NewDecoder(rec.Body).Decode(&connResp)
+
+	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/items/export?format=jsonl", connResp.ID), nil)
+	exportRec := httptest.NewRecorder()
+	mux.ServeHTTP(exportRec, exportReq)
+
+	if exportRec.Code != http.StatusOK {
+		t.Fatalf("export jsonl failed with status %d: %s", exportRec.Code, exportRec.Body.String())
+	}
+	if ct := exportRec.Header().Get("Content-Type"); !strings.Contains(ct, "application/x-ndjson") {
+		t.Errorf("expected Content-Type application/x-ndjson, got %q", ct)
+	}
+	if cd := exportRec.Header().Get("Content-Disposition"); !strings.Contains(cd, "items.jsonl") {
+		t.Errorf("expected Content-Disposition with items.jsonl, got %q", cd)
+	}
+
+	scanner := bufio.NewScanner(exportRec.Body)
+	var lines []string
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line != "" {
+			lines = append(lines, line)
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		t.Fatalf("scan jsonl: %v", err)
+	}
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 jsonl lines, got %d", len(lines))
+	}
+
+	var firstRow map[string]any
+	if err := json.Unmarshal([]byte(lines[0]), &firstRow); err != nil {
+		t.Fatalf("parse first jsonl line: %v", err)
+	}
+	if firstRow["title"] != "Book" {
+		t.Errorf("expected first line title 'Book', got %v", firstRow["title"])
+	}
+}
+
+func TestExport_Excel_Streaming(t *testing.T) {
+	mux, _ := setupTestServer(t)
+
+	dbFile := filepath.Join(t.TempDir(), "export_excel_test.db")
+	db, err := sql.Open("sqlite", dbFile)
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	_, err = db.Exec(`
+		CREATE TABLE products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, price REAL, active BOOLEAN);
+		INSERT INTO products (name, price, active) VALUES ('Keyboard', 89.99, 1), ('Mouse', 24.50, 0);
+	`)
+	db.Close()
+	if err != nil {
+		t.Fatalf("seed sqlite: %v", err)
+	}
+
+	body, _ := json.Marshal(map[string]any{
+		"name":          "Export Excel Conn",
+		"type":          "sqlite",
+		"filepath":      dbFile,
+		"save_password": true,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	var connResp struct{ ID string `json:"id"` }
+	_ = json.NewDecoder(rec.Body).Decode(&connResp)
+
+	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/products/export?format=xlsx", connResp.ID), nil)
+	exportRec := httptest.NewRecorder()
+	mux.ServeHTTP(exportRec, exportReq)
+
+	if exportRec.Code != http.StatusOK {
+		t.Fatalf("export excel failed with status %d: %s", exportRec.Code, exportRec.Body.String())
+	}
+	if ct := exportRec.Header().Get("Content-Type"); !strings.Contains(ct, "spreadsheetml.sheet") {
+		t.Errorf("expected Content-Type spreadsheetml.sheet, got %q", ct)
+	}
+	if cd := exportRec.Header().Get("Content-Disposition"); !strings.Contains(cd, "products.xlsx") {
+		t.Errorf("expected Content-Disposition with products.xlsx, got %q", cd)
+	}
+
+	// Verify using excelize.OpenReader
+	excelFile, err := excelize.OpenReader(bytes.NewReader(exportRec.Body.Bytes()))
+	if err != nil {
+		t.Fatalf("open exported excel: %v", err)
+	}
+	defer excelFile.Close()
+
+	rows, err := excelFile.GetRows("Sheet1")
+	if err != nil {
+		t.Fatalf("get rows from Sheet1: %v", err)
+	}
+	if len(rows) != 3 { // 1 header + 2 data rows
+		t.Fatalf("expected 3 excel rows (1 header + 2 data), got %d", len(rows))
+	}
+	expectedHeaders := []string{"id", "name", "price", "active"}
+	for i, h := range expectedHeaders {
+		if rows[0][i] != h {
+			t.Errorf("col %d header: expected %q, got %q", i, h, rows[0][i])
+		}
+	}
+	if rows[1][1] != "Keyboard" {
+		t.Errorf("expected row 1 name 'Keyboard', got %q", rows[1][1])
+	}
+}
+
+func TestExport_Parquet_Streaming(t *testing.T) {
+	mux, _ := setupTestServer(t)
+
+	dbFile := filepath.Join(t.TempDir(), "export_parquet_test.db")
+	db, err := sql.Open("sqlite", dbFile)
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	_, err = db.Exec(`
+		CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT);
+		INSERT INTO users (name, email) VALUES ('Alice', 'alice@example.com'), ('Bob', 'bob@example.com');
+	`)
+	db.Close()
+	if err != nil {
+		t.Fatalf("seed sqlite: %v", err)
+	}
+
+	body, _ := json.Marshal(map[string]any{
+		"name":          "Export Parquet Conn",
+		"type":          "sqlite",
+		"filepath":      dbFile,
+		"save_password": true,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	var connResp struct{ ID string `json:"id"` }
+	_ = json.NewDecoder(rec.Body).Decode(&connResp)
+
+	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/users/export?format=parquet", connResp.ID), nil)
+	exportRec := httptest.NewRecorder()
+	mux.ServeHTTP(exportRec, exportReq)
+
+	if exportRec.Code != http.StatusOK {
+		t.Fatalf("export parquet failed with status %d: %s", exportRec.Code, exportRec.Body.String())
+	}
+	if ct := exportRec.Header().Get("Content-Type"); !strings.Contains(ct, "parquet") {
+		t.Errorf("expected Content-Type parquet, got %q", ct)
+	}
+	if cd := exportRec.Header().Get("Content-Disposition"); !strings.Contains(cd, "users.parquet") {
+		t.Errorf("expected Content-Disposition with users.parquet, got %q", cd)
+	}
+
+	// Verify using parquet.NewReader
+	pReader := parquet.NewReader(bytes.NewReader(exportRec.Body.Bytes()))
+	if pReader.NumRows() != 2 {
+		t.Fatalf("expected 2 parquet rows, got %d", pReader.NumRows())
+	}
+}
+
+func TestExport_UnsupportedFormat(t *testing.T) {
+	mux, _ := setupTestServer(t)
+
+	dbFile := filepath.Join(t.TempDir(), "export_unsupported_test.db")
+	db, err := sql.Open("sqlite", dbFile)
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	_, err = db.Exec(`CREATE TABLE t (id INTEGER PRIMARY KEY);`)
+	db.Close()
+	if err != nil {
+		t.Fatalf("seed sqlite: %v", err)
+	}
+
+	body, _ := json.Marshal(map[string]any{
+		"name":          "Export Conn",
+		"type":          "sqlite",
+		"filepath":      dbFile,
+		"save_password": true,
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	var connResp struct{ ID string `json:"id"` }
+	_ = json.NewDecoder(rec.Body).Decode(&connResp)
+
+	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/t/export?format=unknown_fmt", connResp.ID), nil)
+	exportRec := httptest.NewRecorder()
+	mux.ServeHTTP(exportRec, exportReq)
+
+	if exportRec.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for unsupported format, got %d: %s", exportRec.Code, exportRec.Body.String())
+	}
+	if !strings.Contains(exportRec.Body.String(), "unsupported export format") {
+		t.Errorf("expected unsupported export format error message, got %s", exportRec.Body.String())
 	}
 }
 

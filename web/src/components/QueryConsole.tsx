@@ -778,6 +778,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [saveTitle, setSaveTitle] = useState("");
+  const [saveFolder, setSaveFolder] = useState("");
   const [saveTags, setSaveTags] = useState("");
   const [saveIsFavorite, setSaveIsFavorite] = useState(false);
   const [libRefreshKey, setLibRefreshKey] = useState(0);
@@ -913,11 +914,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       await createSavedQuery(connection.id, {
         title: saveTitle.trim(),
         query: trimmed,
+        folder: saveFolder.trim(),
         tags,
         is_favorite: saveIsFavorite,
       });
       setIsSaveDialogOpen(false);
       setSaveTitle("");
+      setSaveFolder("");
       setSaveTags("");
       setSaveIsFavorite(false);
       setLibRefreshKey((k) => k + 1);
@@ -2337,6 +2340,20 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                            focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/40"
                 onKeyDown={(e) => e.key === "Enter" && handleSaveQuery()}
                 autoFocus
+              />
+            </div>
+
+            {/* Folder field */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
+                {t("savedQuery.folder")}
+              </label>
+              <Input
+                value={saveFolder}
+                onChange={(e) => setSaveFolder(e.target.value)}
+                placeholder={t("savedQuery.folderPlaceholder")}
+                className="bg-white/6 border-white/10 text-white text-sm placeholder:text-white/25
+                           focus-visible:ring-1 focus-visible:ring-indigo-500/60 focus-visible:border-indigo-500/40"
               />
             </div>
 

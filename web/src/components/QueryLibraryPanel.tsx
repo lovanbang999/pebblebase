@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Star,
@@ -19,6 +19,8 @@ import {
   Library,
   History,
   Terminal,
+  Folder,
+  FolderOpen,
 } from "lucide-react";
 import type {
   SavedQuery,
@@ -306,12 +308,14 @@ export default function QueryLibraryPanel({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTagFilter, setActiveTagFilter] = useState<string>("__all__");
+  const [activeFolderFilter, setActiveFolderFilter] = useState<string>("__all__");
   const [favoritesOpen, setFavoritesOpen] = useState(true);
-  const [allOpen, setAllOpen] = useState(true);
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SavedQuery | null>(null);
   const [editTarget, setEditTarget] = useState<SavedQuery | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editFolder, setEditFolder] = useState("");
   const [editTags, setEditTags] = useState("");
   const [contextMenu, setContextMenu] = useState<{
     query: SavedQuery;
@@ -328,6 +332,7 @@ export default function QueryLibraryPanel({
       const data = await fetchSavedQueries(connectionId, {
         search: searchTerm || undefined,
         tag: activeTagFilter !== "__all__" ? activeTagFilter : undefined,
+        folder: activeFolderFilter !== "__all__" ? activeFolderFilter : undefined,
       });
       setQueries(data);
     } catch {
@@ -335,7 +340,7 @@ export default function QueryLibraryPanel({
     } finally {
       setLoading(false);
     }
-  }, [connectionId, searchTerm, activeTagFilter]);
+  }, [connectionId, searchTerm, activeTagFilter, activeFolderFilter]);
 
   useEffect(() => {
     load();
@@ -355,17 +360,53 @@ export default function QueryLibraryPanel({
     return () => document.removeEventListener("mousedown", handler);
   }, [contextMenu]);
 
-  // Derive unique tags from ALL queries (unfiltered)
+  // Derive unique tags and folders from ALL queries (unfiltered)
   const [allQueries, setAllQueries] = useState<SavedQuery[]>([]);
   useEffect(() => {
     fetchSavedQueries(connectionId)
       .then(setAllQueries)
       .catch(() => {});
   }, [connectionId, refreshTrigger]);
-  const allTags = Array.from(new Set(allQueries.flatMap((q) => q.tags))).sort();
+
+  const allTags = useMemo(
+    () => Array.from(new Set(allQueries.flatMap((q) => q.tags))).sort(),
+    [allQueries],
+  );
+
+  const allFolders = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          allQueries.map((q) => q.folder?.trim()).filter((f): f is string => Boolean(f)),
+        ),
+      ).sort(),
+    [allQueries],
+  );
 
   const favorites = queries.filter((q) => q.is_favorite);
   const nonFavorites = queries.filter((q) => !q.is_favorite);
+
+  // Group non-favorite queries by folder path
+  const folderMap = useMemo(() => {
+    const map = new Map<string, SavedQuery[]>();
+    nonFavorites.forEach((q) => {
+      const folderName = q.folder?.trim() || "";
+      if (!map.has(folderName)) {
+        map.set(folderName, []);
+      }
+      map.get(folderName)!.push(q);
+    });
+    return map;
+  }, [nonFavorites]);
+
+  const toggleFolder = (folderName: string) => {
+    setOpenFolders((prev) => ({
+      ...prev,
+      [folderName]: prev[folderName] === undefined ? false : !prev[folderName],
+    }));
+  };
+
+  const isFolderOpen = (folderName: string) => openFolders[folderName] !== false;
 
   // Actions
   const toggleFavorite = async (q: SavedQuery) => {
@@ -399,6 +440,7 @@ export default function QueryLibraryPanel({
   const openEdit = (q: SavedQuery) => {
     setEditTarget(q);
     setEditTitle(q.title);
+    setEditFolder(q.folder || "");
     setEditTags(q.tags.join(", "));
     setContextMenu(null);
   };
@@ -412,6 +454,7 @@ export default function QueryLibraryPanel({
     try {
       await updateSavedQuery(connectionId, editTarget.id, {
         title: editTitle,
+        folder: editFolder.trim(),
         tags,
       } as SavedQueryUpdateInput);
       setEditTarget(null);
@@ -435,7 +478,7 @@ export default function QueryLibraryPanel({
     setContextMenu({ query: q, x: e.clientX, y: e.clientY });
   };
 
-  // Query card
+  // Query card item
   const renderQueryItem = (q: SavedQuery) => (
     <div
       key={q.id}
@@ -454,9 +497,17 @@ export default function QueryLibraryPanel({
           <Star className="w-3 h-3 mt-0.5 shrink-0 fill-yellow-400 text-yellow-400" />
         )}
         <div className="flex-1 min-w-0">
-          <span className="block truncate text-[12.5px] font-semibold text-white/85 leading-tight">
-            {q.title}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="block truncate text-[12.5px] font-semibold text-white/85 leading-tight">
+              {q.title}
+            </span>
+            {q.folder && (
+              <span className="inline-flex items-center gap-0.5 text-[9px] font-mono text-indigo-300/60 bg-indigo-500/10 px-1 py-0.2 rounded border border-indigo-500/20 shrink-0">
+                <Folder className="w-2.5 h-2.5 text-indigo-400" />
+                {q.folder}
+              </span>
+            )}
+          </div>
           <span className="block truncate text-[10px] text-white/30 font-mono mt-0.5 leading-tight">
             {queryPreview(q.query)}
           </span>
@@ -540,20 +591,24 @@ export default function QueryLibraryPanel({
     label,
     count,
     accent,
+    icon: IconComponent,
   }: {
     open: boolean;
     onToggle: () => void;
     label: string;
     count: number;
-    accent?: "yellow" | "default";
+    accent?: "yellow" | "indigo" | "default";
+    icon?: any;
   }) => (
     <button
       onClick={onToggle}
       className={cn(
-        "flex items-center gap-1.5 w-full px-3 py-1.5 transition-colors",
+        "flex items-center gap-1.5 w-full px-3 py-1.5 transition-colors cursor-pointer",
         accent === "yellow"
           ? "text-yellow-400/60 hover:text-yellow-400"
-          : "text-white/25 hover:text-white/50",
+          : accent === "indigo"
+            ? "text-indigo-300/80 hover:text-indigo-300"
+            : "text-white/25 hover:text-white/50",
       )}
     >
       {open ? (
@@ -561,16 +616,18 @@ export default function QueryLibraryPanel({
       ) : (
         <ChevronRight className="w-3 h-3" />
       )}
-      {accent === "yellow" && <Star className="w-3 h-3 fill-current" />}
-      <span className="text-[10px] font-bold uppercase tracking-widest">
+      {IconComponent && <IconComponent className="w-3 h-3 fill-current shrink-0" />}
+      <span className="text-[10px] font-bold uppercase tracking-widest truncate">
         {label}
       </span>
       <span
         className={cn(
-          "ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full",
+          "ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0",
           accent === "yellow"
             ? "bg-yellow-400/15 text-yellow-400/70"
-            : "bg-white/8 text-white/30",
+            : accent === "indigo"
+              ? "bg-indigo-500/15 text-indigo-300"
+              : "bg-white/8 text-white/30",
         )}
       >
         {count}
@@ -609,7 +666,7 @@ export default function QueryLibraryPanel({
           <button
             onClick={() => setActiveTab("library")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-semibold transition-all",
+              "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-semibold transition-all cursor-pointer",
               activeTab === "library"
                 ? "bg-indigo-500/20 text-indigo-300 border-r border-white/8"
                 : "text-white/30 hover:text-white/60 hover:bg-white/5 border-r border-white/8",
@@ -621,7 +678,7 @@ export default function QueryLibraryPanel({
           <button
             onClick={() => setActiveTab("history")}
             className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-semibold transition-all",
+              "flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[10px] font-semibold transition-all cursor-pointer",
               activeTab === "history"
                 ? "bg-violet-500/20 text-violet-300"
                 : "text-white/30 hover:text-white/60 hover:bg-white/5",
@@ -642,7 +699,7 @@ export default function QueryLibraryPanel({
       ) : (
         <>
           {/* Search */}
-          <div className="px-2.5 py-2 border-b border-white/5">
+          <div className="px-2.5 py-2 border-b border-white/5 space-y-2">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/25 pointer-events-none" />
               <Input
@@ -667,42 +724,89 @@ export default function QueryLibraryPanel({
             </div>
           </div>
 
-          {/* Tag filter chips */}
-          {allTags.length > 0 && (
-            <div className="flex flex-wrap gap-1 px-2.5 py-1.5 border-b border-white/5">
-              <button
-                onClick={() => setActiveTagFilter("__all__")}
-                className={cn(
-                  "px-2 py-0.5 rounded-full text-[9px] font-bold border transition-all",
-                  activeTagFilter === "__all__"
-                    ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40 shadow-sm shadow-indigo-500/10"
-                    : "bg-white/5 text-white/35 border-white/10 hover:bg-white/10 hover:text-white/50",
-                )}
-              >
-                All
-              </button>
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() =>
-                    setActiveTagFilter(
-                      activeTagFilter === tag ? "__all__" : tag,
-                    )
-                  }
-                  className={cn(
-                    "px-2 py-0.5 rounded-full text-[9px] font-bold border transition-all",
-                    activeTagFilter === tag
-                      ? cn(getTagColor(tag), "ring-1 ring-current/30")
-                      : "bg-white/5 text-white/35 border-white/10 hover:bg-white/10 hover:text-white/50",
-                  )}
-                >
-                  #{tag}
-                </button>
-              ))}
+          {/* Folder & Tag filter chips */}
+          {(allFolders.length > 0 || allTags.length > 0) && (
+            <div className="flex flex-col gap-1.5 px-2.5 py-2 border-b border-white/5">
+              {/* Folder filter dropdown / chips */}
+              {allFolders.length > 0 && (
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                  <span className="text-[9px] font-mono text-white/30 shrink-0 uppercase tracking-wider">
+                    Folder:
+                  </span>
+                  <button
+                    onClick={() => setActiveFolderFilter("__all__")}
+                    className={cn(
+                      "px-2 py-0.5 rounded text-[9px] font-mono border transition-all shrink-0 cursor-pointer",
+                      activeFolderFilter === "__all__"
+                        ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40 font-bold"
+                        : "bg-white/5 text-white/35 border-white/10 hover:bg-white/10 hover:text-white/50",
+                    )}
+                  >
+                    All
+                  </button>
+                  {allFolders.map((fName) => (
+                    <button
+                      key={fName}
+                      onClick={() =>
+                        setActiveFolderFilter(
+                          activeFolderFilter === fName ? "__all__" : fName,
+                        )
+                      }
+                      className={cn(
+                        "inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-mono border transition-all shrink-0 cursor-pointer",
+                        activeFolderFilter === fName
+                          ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40 font-bold"
+                          : "bg-white/5 text-white/35 border-white/10 hover:bg-white/10 hover:text-white/50",
+                      )}
+                    >
+                      <Folder className="w-2.5 h-2.5 text-indigo-400" />
+                      {fName}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Tag filter chips */}
+              {allTags.length > 0 && (
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar py-0.5">
+                  <span className="text-[9px] font-mono text-white/30 shrink-0 uppercase tracking-wider">
+                    Tag:
+                  </span>
+                  <button
+                    onClick={() => setActiveTagFilter("__all__")}
+                    className={cn(
+                      "px-2 py-0.5 rounded-full text-[9px] font-bold border transition-all shrink-0 cursor-pointer",
+                      activeTagFilter === "__all__"
+                        ? "bg-indigo-500/25 text-indigo-300 border-indigo-500/40 shadow-sm shadow-indigo-500/10"
+                        : "bg-white/5 text-white/35 border-white/10 hover:bg-white/10 hover:text-white/50",
+                    )}
+                  >
+                    All
+                  </button>
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() =>
+                        setActiveTagFilter(
+                          activeTagFilter === tag ? "__all__" : tag,
+                        )
+                      }
+                      className={cn(
+                        "px-2 py-0.5 rounded-full text-[9px] font-bold border transition-all shrink-0 cursor-pointer",
+                        activeTagFilter === tag
+                          ? cn(getTagColor(tag), "ring-1 ring-current/30")
+                          : "bg-white/5 text-white/35 border-white/10 hover:bg-white/10 hover:text-white/50",
+                      )}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* Query list */}
+          {/* Query list / Folder Tree */}
           <div className="flex-1 overflow-y-auto">
             {queries.length === 0 && !loading && (
               <div className="flex flex-col items-center justify-center gap-3 h-full px-4 py-10 text-center">
@@ -716,19 +820,20 @@ export default function QueryLibraryPanel({
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs font-semibold text-white/40">
-                    {searchTerm || activeTagFilter !== "__all__"
+                    {searchTerm || activeTagFilter !== "__all__" || activeFolderFilter !== "__all__"
                       ? "No matching queries"
                       : t("savedQuery.noSaved")}
                   </p>
                   <p className="text-[10px] text-white/20 leading-relaxed max-w-40">
-                    {searchTerm || activeTagFilter !== "__all__"
-                      ? "Try adjusting your search or tag filter."
+                    {searchTerm || activeTagFilter !== "__all__" || activeFolderFilter !== "__all__"
+                      ? "Try adjusting your search, folder, or tag filter."
                       : t("savedQuery.noSavedDesc")}
                   </p>
                 </div>
               </div>
             )}
 
+            {/* Favorites Section */}
             {favorites.length > 0 && (
               <div className="mt-1">
                 <SectionHeader
@@ -737,6 +842,7 @@ export default function QueryLibraryPanel({
                   label={t("savedQuery.favorites")}
                   count={favorites.length}
                   accent="yellow"
+                  icon={Star}
                 />
                 {favoritesOpen && <div>{favorites.map(renderQueryItem)}</div>}
               </div>
@@ -746,15 +852,35 @@ export default function QueryLibraryPanel({
               <div className="h-px bg-white/5 mx-3 my-1" />
             )}
 
+            {/* Collapsible Folder Tree */}
             {nonFavorites.length > 0 && (
               <div className={favorites.length === 0 ? "mt-1" : ""}>
-                <SectionHeader
-                  open={allOpen}
-                  onToggle={() => setAllOpen((v) => !v)}
-                  label={t("savedQuery.all")}
-                  count={nonFavorites.length}
-                />
-                {allOpen && <div>{nonFavorites.map(renderQueryItem)}</div>}
+                {Array.from(folderMap.entries()).map(([folderName, folderQueries]) => {
+                  const isUncategorized = !folderName;
+                  const displayLabel = isUncategorized
+                    ? t("savedQuery.uncategorized", "Uncategorized")
+                    : folderName;
+                  const isOpen = isFolderOpen(folderName);
+                  const FolderIconComponent = isOpen ? FolderOpen : Folder;
+
+                  return (
+                    <div key={folderName || "__uncategorized__"} className="mb-1">
+                      <SectionHeader
+                        open={isOpen}
+                        onToggle={() => toggleFolder(folderName)}
+                        label={displayLabel}
+                        count={folderQueries.length}
+                        accent={isUncategorized ? "default" : "indigo"}
+                        icon={isUncategorized ? undefined : FolderIconComponent}
+                      />
+                      {isOpen && (
+                        <div className={isUncategorized ? "" : "pl-2 border-l border-white/5 ml-3"}>
+                          {folderQueries.map(renderQueryItem)}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -816,7 +942,7 @@ export default function QueryLibraryPanel({
             <button
               key={i}
               onClick={item.onClick}
-              className="flex items-center gap-2.5 w-full px-3 py-2 text-[12px] text-white/75 hover:bg-indigo-500/10 hover:text-white transition-colors"
+              className="flex items-center gap-2.5 w-full px-3 py-2 text-[12px] text-white/75 hover:bg-indigo-500/10 hover:text-white transition-colors cursor-pointer"
             >
               {item.icon}
               {item.label}
@@ -830,7 +956,7 @@ export default function QueryLibraryPanel({
               setDeleteTarget(contextMenu.query);
               setContextMenu(null);
             }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-[12px] text-red-400/80 hover:bg-red-500/10 hover:text-red-300 transition-colors"
+            className="flex items-center gap-2.5 w-full px-3 py-2 text-[12px] text-red-400/80 hover:bg-red-500/10 hover:text-red-300 transition-colors cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
             {t("savedQuery.deleteQuery")}
@@ -902,6 +1028,21 @@ export default function QueryLibraryPanel({
                 onKeyDown={(e) => e.key === "Enter" && saveEdit()}
               />
             </div>
+
+            {/* Folder Input */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">
+                {t("savedQuery.folder", "Folder")}
+              </label>
+              <Input
+                value={editFolder}
+                onChange={(e) => setEditFolder(e.target.value)}
+                placeholder={t("savedQuery.folderPlaceholder")}
+                className="bg-white/5 border-white/10 text-white text-sm placeholder:text-white/25 focus-visible:ring-1 focus-visible:ring-indigo-500/50 font-mono"
+              />
+            </div>
+
+            {/* Tags Input with Autocomplete Chips */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">
                 {t("savedQuery.tags")}
@@ -910,11 +1051,45 @@ export default function QueryLibraryPanel({
                 value={editTags}
                 onChange={(e) => setEditTags(e.target.value)}
                 placeholder={t("savedQuery.tagsPlaceholder")}
-                className="bg-white/5 border-white/10 text-white text-sm placeholder:text-white/25 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
+                className="bg-white/5 border-white/10 text-white text-sm placeholder:text-white/25 focus-visible:ring-1 focus-visible:ring-indigo-500/50 font-mono"
               />
               <p className="text-[9px] text-white/25">
                 Separate tags with commas
               </p>
+              {allTags.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {allTags.map((tName) => {
+                    const currentTags = editTags
+                      .split(",")
+                      .map((t) => t.trim())
+                      .filter(Boolean);
+                    const isSelected = currentTags.includes(tName);
+                    return (
+                      <button
+                        key={tName}
+                        type="button"
+                        onClick={() => {
+                          if (isSelected) {
+                            setEditTags(
+                              currentTags.filter((t) => t !== tName).join(", "),
+                            );
+                          } else {
+                            setEditTags([...currentTags, tName].join(", "));
+                          }
+                        }}
+                        className={cn(
+                          "px-1.5 py-0.5 rounded text-[9px] font-mono border transition-all cursor-pointer",
+                          isSelected
+                            ? "bg-indigo-500/30 border-indigo-400 text-indigo-200 font-bold"
+                            : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10",
+                        )}
+                      >
+                        +#{tName}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
           <div className="flex justify-end gap-2 mt-4">
@@ -930,7 +1105,7 @@ export default function QueryLibraryPanel({
               size="sm"
               onClick={saveEdit}
               disabled={!editTitle.trim()}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs gap-1.5"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs gap-1.5 shadow-sm shadow-indigo-500/20"
             >
               <Check className="w-3.5 h-3.5" />
               {t("savedQuery.save")}

@@ -199,10 +199,12 @@ export async function explainQuery(
   return handleResponse<ExplainResult>(res);
 }
 
+export type ExportFormat = 'csv' | 'json' | 'jsonl' | 'xlsx' | 'parquet';
+
 export function getTableExportUrl(
   connId: string,
   table: string,
-  format: 'csv' | 'json',
+  format: ExportFormat,
   params: RowQueryParams = {}
 ): string {
   const searchParams = new URLSearchParams();
@@ -223,7 +225,7 @@ export function getTableExportUrl(
 export async function exportTableData(
   connId: string,
   table: string,
-  format: 'csv' | 'json',
+  format: ExportFormat,
   params: RowQueryParams = {}
 ): Promise<Blob> {
   const url = getTableExportUrl(connId, table, format, params);
@@ -407,10 +409,11 @@ export async function fetchTableStats(
 
 export async function fetchSavedQueries(
   connId: string,
-  params: { tag?: string; search?: string } = {}
+  params: { tag?: string; folder?: string; search?: string } = {}
 ): Promise<SavedQuery[]> {
   const sp = new URLSearchParams();
   if (params.tag) sp.set('tag', params.tag);
+  if (params.folder) sp.set('folder', params.folder);
   if (params.search) sp.set('search', params.search);
   const qs = sp.toString();
   const res = await fetch(
