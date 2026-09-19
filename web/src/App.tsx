@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cn } from 'cn';
-import type { Connection, SavedQuery } from './lib/types';
+import type { Connection, SavedQuery, FilterOption } from './lib/types';
 import Sidebar from './components/Sidebar';
 import { TabBar } from './components/TabBar';
 import { DataGrid } from './components/DataGrid';
@@ -77,9 +77,11 @@ function PebblebaseStudio() {
   const [isSpotlightTourActive, setIsSpotlightTourActive] = useState(false);
 
   // Check first-time login for onboarding tour
+  // Check first-time login for onboarding tour (depend on userId rather than full user object)
   useEffect(() => {
-    if (!currentUser) return;
-    const storageKey = `pebblebase_onboarding_completed_${currentUser.id || 'guest'}`;
+    const userId = currentUser?.id;
+    if (!userId) return;
+    const storageKey = `pebblebase_onboarding_completed_${userId}`;
     const hasCompleted = localStorage.getItem(storageKey);
     if (!hasCompleted) {
       const timer = setTimeout(() => {
@@ -87,7 +89,9 @@ function PebblebaseStudio() {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [currentUser]);
+  }, [currentUser?.id]);
+
+  const [isTableTabActive, setIsTableTabActive] = useState(true);
 
   const {
     theme,
@@ -135,7 +139,7 @@ function PebblebaseStudio() {
     handleDeleteRowDirectly,
     deleteRowMutation,
     getWhereCondition,
-  } = usePebblebaseStudio();
+  } = usePebblebaseStudio({ isTableTabActive });
 
   const {
     tabs,
@@ -162,14 +166,18 @@ function PebblebaseStudio() {
   useEffect(() => {
     if (!activeTab) {
       activeTabIdRef.current = null;
+      setIsTableTabActive((prev) => (prev !== false ? false : prev));
       return;
     }
+    const isTable = activeTab.type === 'table';
+    setIsTableTabActive((prev) => (prev !== isTable ? isTable : prev));
+
     if (activeTabIdRef.current === activeTab.id) {
       return;
     }
     activeTabIdRef.current = activeTab.id;
 
-    if (activeTab.type === 'table' && activeTab.tableName) {
+    if (isTable && activeTab.tableName) {
       setUserSelectedTable(activeTab.tableName);
       if (activeTab.state) {
         setPage(activeTab.state.page ?? 0);
@@ -196,63 +204,75 @@ function PebblebaseStudio() {
     [updateActiveTabState]
   );
 
-  // Alt + Q and Alt + E shortcuts to toggle or open query console / ERD tab
+  // Keep stable refs for tabs and activeTab so keyboard listener never rebinds unnecessarily
+  const tabsRef = useRef(tabs);
+  const activeTabRef = useRef(activeTab);
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    tabsRef.current = tabs;
+    activeTabRef.current = activeTab;
+  }, [tabs, activeTab]);
+
+  // Consolidated global keyboard shortcuts (Alt+Q, Alt+E, Cmd/Ctrl+K, Desktop shortcuts)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      const currentActiveTab = activeTabRef.current;
+      const currentTabs = tabsRef.current;
+
+      // Cmd+K / Ctrl+K: Command Palette
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+        return;
+      }
+
+      // Alt+Q: Toggle / Open Query Console
       if (e.altKey && (e.key === 'q' || e.key === 'Q')) {
         e.preventDefault();
-        if (activeTab?.type === 'query') {
-          const tableTab = tabs.find((t) => t.type === 'table');
+        if (currentActiveTab?.type === 'query') {
+          const tableTab = currentTabs.find((t) => t.type === 'table');
           if (tableTab) {
             setActiveTabId(tableTab.id);
           }
         } else {
           openQueryTab();
         }
-      } else if (e.altKey && (e.key === 'e' || e.key === 'E')) {
+        return;
+      }
+
+      // Alt+E: Toggle / Open ERD
+      if (e.altKey && (e.key === 'e' || e.key === 'E')) {
         e.preventDefault();
-        if (activeTab?.type === 'erd') {
-          const tableTab = tabs.find((t) => t.type === 'table');
+        if (currentActiveTab?.type === 'erd') {
+          const tableTab = currentTabs.find((t) => t.type === 'table');
           if (tableTab) {
             setActiveTabId(tableTab.id);
           }
         } else {
           openErdTab();
         }
+        return;
       }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, tabs, openQueryTab, openErdTab, setActiveTabId]);
 
-  // Cmd+K / Ctrl+K Command Palette trigger
-  useEffect(() => {
-    const handleCmdK = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleCmdK);
-    return () => window.removeEventListener('keydown', handleCmdK);
-  }, []);
-
-  // Desktop shortcuts: Ctrl+Q to quit application, F11 to toggle fullscreen
-  useEffect(() => {
-    const handleDesktopShortcuts = (e: KeyboardEvent) => {
+      // Desktop: Ctrl+Q to quit
       if ((e.metaKey || e.ctrlKey) && (e.key === 'q' || e.key === 'Q')) {
         if (isDesktopApp()) {
           e.preventDefault();
           quitDesktopApp();
         }
-      } else if (e.key === 'F11') {
+        return;
+      }
+
+      // Desktop / Web: F11 fullscreen
+      if (e.key === 'F11') {
         e.preventDefault();
         toggleFullscreen();
+        return;
       }
     };
-    window.addEventListener('keydown', handleDesktopShortcuts);
-    return () => window.removeEventListener('keydown', handleDesktopShortcuts);
-  }, []);
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [openQueryTab, openErdTab, setActiveTabId]);
 
   // Fetch saved queries for current connection
   useEffect(() => {
@@ -265,7 +285,7 @@ function PebblebaseStudio() {
       .catch(() => setSavedQueries([]));
   }, [activeConnection?.id]);
 
-  const handleOpenTableWithRecent = (tableName: string, openInNewTab?: boolean) => {
+  const handleOpenTableWithRecent = useCallback((tableName: string, openInNewTab?: boolean) => {
     openTableTab(tableName, openInNewTab);
     const updated = addRecentItem({
       id: tableName,
@@ -274,9 +294,9 @@ function PebblebaseStudio() {
       subtitle: activeConnection ? `${activeConnection.name}` : undefined,
     });
     setRecentItems(updated);
-  };
+  }, [openTableTab, activeConnection]);
 
-  const handleSelectConnectionWithRecent = (conn: Connection) => {
+  const handleSelectConnectionWithRecent = useCallback((conn: Connection) => {
     setUserSelectedConnectionId(conn.id);
     setUserSelectedTable(null);
     setBannerError(null);
@@ -287,9 +307,9 @@ function PebblebaseStudio() {
       subtitle: conn.type.toUpperCase(),
     });
     setRecentItems(updated);
-  };
+  }, [setUserSelectedConnectionId, setUserSelectedTable, setBannerError]);
 
-  const handleSelectSavedQueryWithRecent = (sq: SavedQuery) => {
+  const handleSelectSavedQueryWithRecent = useCallback((sq: SavedQuery) => {
     openQueryTab(sq.query, sq.title);
     const updated = addRecentItem({
       id: sq.id,
@@ -298,9 +318,9 @@ function PebblebaseStudio() {
       subtitle: sq.query.slice(0, 35),
     });
     setRecentItems(updated);
-  };
+  }, [openQueryTab]);
 
-  const handlePaletteAction = (actionId: CommandActionId) => {
+  const handlePaletteAction = useCallback((actionId: CommandActionId) => {
     switch (actionId) {
       case 'open_query_console':
         openQueryTab();
@@ -358,7 +378,137 @@ function PebblebaseStudio() {
         useAuthStore.getState().clearAuth();
         break;
     }
-  };
+  }, [openQueryTab, openErdTab, openDiffTab, openTableTab, activeTableSchema, tables, activeConnection, activeTable, toggleTheme]);
+
+  // Sidebar stable callbacks
+  const handleCloneConnection = useCallback((conn: Connection) => {
+    setCloningConnection(conn);
+    setIsConnModalOpen(true);
+  }, [setCloningConnection, setIsConnModalOpen]);
+
+  const handleOpenNewConnection = useCallback(() => {
+    setCloningConnection(null);
+    setIsConnModalOpen(true);
+  }, [setCloningConnection, setIsConnModalOpen]);
+
+  const handleRefreshTables = useCallback(async () => {
+    await refetchTables();
+    if (activeTable) {
+      await refetchRows();
+    }
+  }, [refetchTables, refetchRows, activeTable]);
+
+  const handleOpenAdminPanel = useCallback(() => {
+    setAdminPanelDefaultTab('users');
+    setIsAdminPanelOpen(true);
+  }, []);
+
+  const handleOpenChangePassword = useCallback(() => {
+    setAdminPanelDefaultTab('password');
+    setIsAdminPanelOpen(true);
+  }, []);
+
+  const handleOpenCommandPalette = useCallback(() => {
+    setIsCommandPaletteOpen(true);
+  }, []);
+
+  const handleOpenOnboarding = useCallback(() => {
+    setIsOnboardingWelcomeOpen(true);
+  }, []);
+
+  // DataGrid stable callbacks
+  const handlePageChange = useCallback((newPage: number) => {
+    setPage(newPage);
+    updateActiveTabState({ page: newPage });
+  }, [setPage, updateActiveTabState]);
+
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    setPageSize(newSize);
+    setPage(0);
+    updateActiveTabState({ pageSize: newSize, page: 0 });
+  }, [setPageSize, setPage, updateActiveTabState]);
+
+  const handleSortChange = useCallback((col: string, desc: boolean) => {
+    setSortBy(col);
+    setSortDesc(desc);
+    setPage(0);
+    updateActiveTabState({ sortBy: col, sortDesc: desc, page: 0 });
+  }, [setSortBy, setSortDesc, setPage, updateActiveTabState]);
+
+  const handleFiltersChange = useCallback((newFilters: FilterOption[]) => {
+    setFilters(newFilters);
+    setPage(0);
+    updateActiveTabState({ filters: newFilters, page: 0 });
+  }, [setFilters, setPage, updateActiveTabState]);
+
+  const handleRefreshGrid = useCallback(async () => {
+    await Promise.all([refetchRows(), refetchTables()]);
+  }, [refetchRows, refetchTables]);
+
+  const handleAddRow = useCallback(() => {
+    if (activeConnection?.read_only) return;
+    setEditingRow(null);
+    setIsRowModalOpen(true);
+  }, [activeConnection?.read_only, setEditingRow, setIsRowModalOpen]);
+
+  const handleEditRow = useCallback((row: Record<string, unknown>) => {
+    if (activeConnection?.read_only) return;
+    setEditingRow(row);
+    setIsRowModalOpen(true);
+  }, [activeConnection?.read_only, setEditingRow, setIsRowModalOpen]);
+
+  const handleDuplicateRow = useCallback((row: Record<string, unknown>) => {
+    if (activeConnection?.read_only) return;
+    setEditingRow({ ...row, _isDuplicate: true });
+    setIsRowModalOpen(true);
+  }, [activeConnection?.read_only, setEditingRow, setIsRowModalOpen]);
+
+  const handleDeleteRowAction = useCallback((row: Record<string, unknown>) => {
+    if (activeConnection?.read_only) return;
+    handleDeleteRowDirectly(row);
+  }, [activeConnection?.read_only, handleDeleteRowDirectly]);
+
+  const handleSaveCellAction = useCallback(async (row: Record<string, unknown>, colName: string, newVal: unknown) => {
+    if (activeConnection?.read_only) return;
+    await handleSaveCell(row, colName, newVal);
+  }, [activeConnection?.read_only, handleSaveCell]);
+
+  const handleNavigateRelation = useCallback((targetTable: string, targetColumn: string, value: unknown) => {
+    openTableTab(targetTable, false, {
+      filters: [{ column: targetColumn, operator: 'eq', value: String(value) }],
+      page: 0,
+    });
+  }, [openTableTab]);
+
+  const handleNavigateToTable = useCallback((tName: string) => {
+    openTableTab(tName);
+  }, [openTableTab]);
+
+  // Derived memoized values
+  const selectedTable = useMemo(
+    () => (activeTab?.type === 'table' ? activeTab.tableName || null : null),
+    [activeTab?.type, activeTab?.tableName]
+  );
+
+  const activeView = useMemo(
+    () => (activeTab?.type === 'query' ? 'console' : activeTab?.type === 'erd' ? 'erd' : 'table'),
+    [activeTab?.type]
+  );
+
+  const queryTabs = useMemo(
+    () => tabs.filter((t) => t.type === 'query' && Boolean(activeConnection)),
+    [tabs, activeConnection]
+  );
+
+  const erdTabs = useMemo(
+    () => tabs.filter((t) => t.type === 'erd' && Boolean(activeConnection)),
+    [tabs, activeConnection]
+  );
+
+  const diffTabs = useMemo(
+    () => tabs.filter((t) => t.type === 'diff'),
+    [tabs]
+  );
 
   return (
     <div
@@ -372,60 +522,40 @@ function PebblebaseStudio() {
       <DesktopTitleBar
         activeConnectionName={activeConnection?.name}
         activeDatabaseType={activeConnection?.type}
-        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+        onOpenCommandPalette={handleOpenCommandPalette}
       />
       <SidebarProvider defaultOpen={true} className="flex-1 w-full overflow-hidden min-h-0">
         {/* Left Sidebar */}
         <Sidebar
-        theme={theme}
-        onToggleTheme={toggleTheme}
-        connections={connections}
-        selectedConnection={activeConnection}
-        onSelectConnection={handleSelectConnectionWithRecent}
-        onDeleteConnection={handleDeleteConnection}
-        onCloneConnection={(conn: Connection) => {
-          setCloningConnection(conn);
-          setIsConnModalOpen(true);
-        }}
-        onOpenNewConnection={() => {
-          setCloningConnection(null);
-          setIsConnModalOpen(true);
-        }}
-        tables={tables}
-        selectedTable={activeTab?.type === 'table' ? activeTab.tableName || null : null}
-        onSelectTable={handleOpenTableWithRecent}
-        isLoadingTables={isLoadingTables}
-        onRefreshTables={async () => {
-          await refetchTables();
-          if (activeTable) {
-            await refetchRows();
-          }
-        }}
-        activeView={activeTab?.type === 'query' ? 'console' : activeTab?.type === 'erd' ? 'erd' : 'table'}
-        onOpenQueryConsole={() => openQueryTab()}
-        onOpenERD={() => openErdTab()}
-        onOpenDiff={() => openDiffTab()}
-        onOpenAdminPanel={() => {
-          setAdminPanelDefaultTab('users');
-          setIsAdminPanelOpen(true);
-        }}
-        onOpenChangePassword={() => {
-          setAdminPanelDefaultTab('password');
-          setIsAdminPanelOpen(true);
-        }}
-        onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
-        onOpenOnboarding={() => setIsOnboardingWelcomeOpen(true)}
-      />
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          connections={connections}
+          selectedConnection={activeConnection}
+          onSelectConnection={handleSelectConnectionWithRecent}
+          onDeleteConnection={handleDeleteConnection}
+          onCloneConnection={handleCloneConnection}
+          onOpenNewConnection={handleOpenNewConnection}
+          tables={tables}
+          selectedTable={selectedTable}
+          onSelectTable={handleOpenTableWithRecent}
+          isLoadingTables={isLoadingTables}
+          onRefreshTables={handleRefreshTables}
+          activeView={activeView}
+          onOpenQueryConsole={openQueryTab}
+          onOpenERD={openErdTab}
+          onOpenDiff={openDiffTab}
+          onOpenAdminPanel={handleOpenAdminPanel}
+          onOpenChangePassword={handleOpenChangePassword}
+          onOpenCommandPalette={handleOpenCommandPalette}
+          onOpenOnboarding={handleOpenOnboarding}
+        />
 
       {/* Main Content Pane */}
       <SidebarInset className="flex-1 flex flex-col h-full overflow-hidden bg-zinc-50/50 dark:bg-zinc-950">
         {/* Default password warning banner */}
         {isDefaultPassword && (
           <DefaultPasswordBanner
-            onChangePassword={() => {
-              setAdminPanelDefaultTab('password');
-              setIsAdminPanelOpen(true);
-            }}
+            onChangePassword={handleOpenChangePassword}
           />
         )}
 
@@ -439,7 +569,7 @@ function PebblebaseStudio() {
             onCloseOtherTabs={closeOtherTabs}
             onCloseTabsToRight={closeTabsToRight}
             onDuplicateTab={duplicateTab}
-            onNewQueryTab={() => openQueryTab()}
+            onNewQueryTab={openQueryTab}
           />
         )}
 
@@ -449,106 +579,89 @@ function PebblebaseStudio() {
         {/* Dynamic Main Views */}
         {connections.length === 0 && !isLoadingConnections ? (
           <WelcomeScreen
-            onOpenNewConnection={() => {
-              setCloningConnection(null);
-              setIsConnModalOpen(true);
-            }}
+            onOpenNewConnection={handleOpenNewConnection}
           />
         ) : (
           <>
             {/* Open Query Tabs (Preserved in DOM with visibility toggle for instant switching) */}
-            {tabs
-              .filter((t) => t.type === 'query' && activeConnection)
-              .map((t) => (
-                <div
-                  key={t.id}
-                  className={cn(
-                    'flex-1 h-full flex flex-col overflow-hidden',
-                    activeTabId === t.id ? 'flex' : 'hidden'
-                  )}
+            {queryTabs.map((t) => (
+              <div
+                key={t.id}
+                className={cn(
+                  'flex-1 h-full flex flex-col overflow-hidden',
+                  activeTabId === t.id ? 'flex' : 'hidden'
+                )}
+              >
+                <Suspense
+                  fallback={
+                    <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
+                      Loading Query Console...
+                    </div>
+                  }
                 >
-                  <Suspense
-                    fallback={
-                      <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
-                        Loading Query Console...
-                      </div>
-                    }
-                  >
-                    <ErrorBoundary>
-                      <QueryConsole
-                        connection={activeConnection}
-                        tables={tables}
-                        initialQuery={t.state?.queryText}
-                        onQueryChange={handleQueryTextChange}
-                        onNavigateToTable={(tName) => {
-                          openTableTab(tName);
-                        }}
-                      />
-                    </ErrorBoundary>
-                  </Suspense>
-                </div>
-              ))}
+                  <ErrorBoundary>
+                    <QueryConsole
+                      connection={activeConnection!}
+                      tables={tables}
+                      initialQuery={t.state?.queryText}
+                      onQueryChange={handleQueryTextChange}
+                      onNavigateToTable={handleNavigateToTable}
+                    />
+                  </ErrorBoundary>
+                </Suspense>
+              </div>
+            ))}
 
             {/* Open ERD Tabs (Preserved in DOM with visibility toggle) */}
-            {tabs
-              .filter((t) => t.type === 'erd' && activeConnection)
-              .map((t) => (
-                <div
-                  key={t.id}
-                  className={cn(
-                    'flex-1 h-full flex flex-col overflow-hidden',
-                    activeTabId === t.id ? 'flex' : 'hidden'
-                  )}
+            {erdTabs.map((t) => (
+              <div
+                key={t.id}
+                className={cn(
+                  'flex-1 h-full flex flex-col overflow-hidden',
+                  activeTabId === t.id ? 'flex' : 'hidden'
+                )}
+              >
+                <Suspense
+                  fallback={
+                    <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
+                      Loading ERD Diagram...
+                    </div>
+                  }
                 >
-                  <Suspense
-                    fallback={
-                      <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
-                        Loading ERD Diagram...
-                      </div>
-                    }
-                  >
-                    <ERDView
-                      connectionId={activeConnection.id}
-                      connectionName={activeConnection.name}
-                      onOpenTable={(tName) => {
-                        openTableTab(tName);
-                      }}
-                      onGenerateJoinQuery={(query, title) => {
-                        openQueryTab(query, title);
-                      }}
-                    />
-                  </Suspense>
-                </div>
-              ))}
+                  <ERDView
+                    connectionId={activeConnection!.id}
+                    connectionName={activeConnection!.name}
+                    onOpenTable={handleNavigateToTable}
+                    onGenerateJoinQuery={openQueryTab}
+                  />
+                </Suspense>
+              </div>
+            ))}
 
             {/* Schema Diff Views */}
-            {tabs
-              .filter((t) => t.type === 'diff')
-              .map((t) => (
-                <div
-                  key={t.id}
-                  className={cn(
-                    'flex-1 h-full flex flex-col overflow-hidden',
-                    activeTabId === t.id ? 'flex' : 'hidden'
-                  )}
+            {diffTabs.map((t) => (
+              <div
+                key={t.id}
+                className={cn(
+                  'flex-1 h-full flex flex-col overflow-hidden',
+                  activeTabId === t.id ? 'flex' : 'hidden'
+                )}
+              >
+                <Suspense
+                  fallback={
+                    <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
+                      Loading Schema Diff...
+                    </div>
+                  }
                 >
-                  <Suspense
-                    fallback={
-                      <div className="flex-1 flex items-center justify-center text-xs font-mono text-zinc-500">
-                        Loading Schema Diff...
-                      </div>
-                    }
-                  >
-                    <SchemaDiff
-                      connections={connections}
-                      activeConnectionId={activeConnection?.id}
-                      onOpenQueryConsole={(query, title) => {
-                        openQueryTab(query, title);
-                      }}
-                    />
-                  </Suspense>
-                </div>
-              ))}
+                  <SchemaDiff
+                    connections={connections}
+                    activeConnectionId={activeConnection?.id}
+                    onOpenQueryConsole={openQueryTab}
+                  />
+                </Suspense>
+              </div>
+            ))}
 
             {/* Table Data View (Preserved when switching to/from console/ERD) */}
             <div
@@ -561,7 +674,7 @@ function PebblebaseStudio() {
                 <EmptyTableScreen
                   connectionName={activeConnection?.name}
                   hasTables={tables.length > 0}
-                  onReintrospect={() => refetchTables()}
+                  onReintrospect={refetchTables}
                 />
               ) : (
                 <DataGrid
@@ -574,63 +687,22 @@ function PebblebaseStudio() {
                   isLoading={isLoadingRows}
                   page={page}
                   pageSize={pageSize}
-                  onPageChange={(newPage) => {
-                    setPage(newPage);
-                    updateActiveTabState({ page: newPage });
-                  }}
-                  onPageSizeChange={(newSize) => {
-                    setPageSize(newSize);
-                    setPage(0);
-                    updateActiveTabState({ pageSize: newSize, page: 0 });
-                  }}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={handlePageSizeChange}
                   sortBy={sortBy}
                   sortDesc={sortDesc}
-                  onSortChange={(col, desc) => {
-                    setSortBy(col);
-                    setSortDesc(desc);
-                    setPage(0);
-                    updateActiveTabState({ sortBy: col, sortDesc: desc, page: 0 });
-                  }}
+                  onSortChange={handleSortChange}
                   filters={filters}
-                  onFiltersChange={(newFilters) => {
-                    setFilters(newFilters);
-                    setPage(0);
-                    updateActiveTabState({ filters: newFilters, page: 0 });
-                  }}
-                  onRefresh={async () => {
-                    await Promise.all([refetchRows(), refetchTables()]);
-                  }}
+                  onFiltersChange={handleFiltersChange}
+                  onRefresh={handleRefreshGrid}
                   isReadOnly={Boolean(activeConnection?.read_only)}
-                  onOpenQueryConsole={(query, title) => openQueryTab(query, title)}
-                  onAddRow={() => {
-                    if (activeConnection?.read_only) return;
-                    setEditingRow(null);
-                    setIsRowModalOpen(true);
-                  }}
-                  onEditRow={(row) => {
-                    if (activeConnection?.read_only) return;
-                    setEditingRow(row);
-                    setIsRowModalOpen(true);
-                  }}
-                  onDuplicateRow={(row) => {
-                    if (activeConnection?.read_only) return;
-                    setEditingRow({ ...row, _isDuplicate: true });
-                    setIsRowModalOpen(true);
-                  }}
-                  onDeleteRow={(row) => {
-                    if (activeConnection?.read_only) return;
-                    handleDeleteRowDirectly(row);
-                  }}
-                  onSaveCell={async (row, colName, newVal) => {
-                    if (activeConnection?.read_only) return;
-                    await handleSaveCell(row, colName, newVal);
-                  }}
-                  onNavigateRelation={(targetTable, targetColumn, value) => {
-                    openTableTab(targetTable, false, {
-                      filters: [{ column: targetColumn, operator: 'eq', value: String(value) }],
-                      page: 0,
-                    });
-                  }}
+                  onOpenQueryConsole={openQueryTab}
+                  onAddRow={handleAddRow}
+                  onEditRow={handleEditRow}
+                  onDuplicateRow={handleDuplicateRow}
+                  onDeleteRow={handleDeleteRowAction}
+                  onSaveCell={handleSaveCellAction}
+                  onNavigateRelation={handleNavigateRelation}
                 />
               )}
             </div>
@@ -658,7 +730,7 @@ function PebblebaseStudio() {
       {activeTableSchema && isRowModalOpen && (
         <Suspense fallback={null}>
           <RowModal
-            key={editingRow ? JSON.stringify(editingRow) : 'new-row'}
+            key={editingRow ? String((editingRow as Record<string, unknown>).id ?? (editingRow as Record<string, unknown>)._id ?? 'editing-row') : 'new-row'}
             isOpen={isRowModalOpen}
             onClose={() => {
               setIsRowModalOpen(false);
