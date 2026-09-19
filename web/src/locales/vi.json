@@ -38,6 +38,14 @@
       "max": "Chỉ có thể ghim tối đa 10 bảng"
     }
   },
+  "grid": {
+    "column": {
+      "search": {
+        "placeholder": "Lọc {{column}}…",
+        "clear": "Xóa tìm kiếm (Esc)"
+      }
+    }
+  },
   "datagrid": {
     "where": "WHERE",
     "column": "Cột",
