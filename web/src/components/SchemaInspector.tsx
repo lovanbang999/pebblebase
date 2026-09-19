@@ -15,10 +15,12 @@ import {
   ShieldAlert,
   ArrowRight,
   Rocket,
+  Sparkles,
 } from "lucide-react";
 import type { TableSchema } from "../lib/types";
 import { fetchTableDDL } from "../lib/api";
 import { MigrationRunner } from "./migration/MigrationRunner";
+import { SeedModal } from "./SeedModal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -46,6 +48,7 @@ interface SchemaInspectorProps {
     targetColumn: string,
     value: unknown,
   ) => void;
+  onOpenQueryConsole?: (query?: string, title?: string) => void;
 }
 
 export const SchemaInspector: FC<SchemaInspectorProps> = ({
@@ -53,9 +56,11 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
   table,
   isReadOnly = false,
   onNavigateRelation,
+  onOpenQueryConsole,
 }) => {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState<"schema" | "migration">(
     "schema",
   );
@@ -229,6 +234,19 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                 />
                 <TooltipContent side="bottom">Refresh DDL</TooltipContent>
               </Tooltip>
+
+              {data?.engine !== "mongodb" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsSeedModalOpen(true)}
+                  className="h-8 px-2.5 font-mono text-xs gap-1.5 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>{t("seed.title")}</span>
+                </Button>
+              )}
 
               <Button
                 type="button"
@@ -589,6 +607,15 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
           </div>
         </>
       )}
+
+      <SeedModal
+        isOpen={isSeedModalOpen}
+        onClose={() => setIsSeedModalOpen(false)}
+        connId={connId}
+        tableName={table.name}
+        engine={data?.engine}
+        onRunInConsole={onOpenQueryConsole}
+      />
     </div>
   );
 };

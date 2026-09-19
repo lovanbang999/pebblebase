@@ -140,7 +140,7 @@ interface DataGridProps {
     value: any,
   ) => void;
   isReadOnly?: boolean;
-  onOpenQueryConsole?: () => void;
+  onOpenQueryConsole?: (query?: string, title?: string) => void;
   connId?: string;
   dbType?: "postgres" | "mysql" | "mongodb" | "sqlite";
 }
@@ -2243,7 +2243,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={onOpenQueryConsole}
+                  onClick={() => onOpenQueryConsole?.()}
                   title={t("datagrid.openQueryConsole")}
                   className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 lg:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
                 >
@@ -2370,7 +2370,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={onOpenQueryConsole}
+                  onClick={() => onOpenQueryConsole?.()}
                   title={t("datagrid.openQueryConsole")}
                   className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 sm:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
                 >
@@ -2415,6 +2415,7 @@ export const DataGrid: FC<DataGridProps> = ({
             table={table}
             isReadOnly={isReadOnly}
             onNavigateRelation={onNavigateRelation}
+            onOpenQueryConsole={onOpenQueryConsole}
           />
         </Suspense>
       ) : (
