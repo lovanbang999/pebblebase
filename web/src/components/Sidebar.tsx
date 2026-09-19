@@ -25,6 +25,7 @@ import {
   Workflow,
   HelpCircle,
   Pin,
+  GitCompare,
 } from "lucide-react";
 import type { Connection, DatabaseType, TableSchema } from "../lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "../lib/platform";
@@ -91,6 +92,7 @@ interface SidebarProps {
   activeView?: "table" | "console" | "erd";
   onOpenQueryConsole?: () => void;
   onOpenERD?: () => void;
+  onOpenDiff?: () => void;
   onOpenAdminPanel?: () => void;
   onOpenChangePassword?: () => void;
   onOpenCommandPalette?: () => void;
@@ -192,6 +194,7 @@ export default function Sidebar({
   activeView = "table",
   onOpenQueryConsole,
   onOpenERD,
+  onOpenDiff,
   onOpenAdminPanel,
   onOpenChangePassword,
   onOpenCommandPalette,
@@ -694,8 +697,8 @@ export default function Sidebar({
 
       {/* Tables Explorer Content */}
       <SidebarContent className="gap-0">
-        {/* Navigation Quick Actions (Query Console & ERD Diagram) */}
-        {selectedConnection && (onOpenQueryConsole || onOpenERD) && (
+        {/* Navigation Quick Actions (Query Console, ERD & Schema Diff) */}
+        {selectedConnection && (onOpenQueryConsole || onOpenERD || onOpenDiff) && (
           <div className="p-2 pb-1.5 space-y-1 border-b border-sidebar-border">
             {onOpenQueryConsole && (
               <Button
@@ -748,6 +751,24 @@ export default function Sidebar({
                 <kbd className="text-[9px] font-mono text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 leading-none group-data-[collapsible=icon]:hidden translate-y-px">
                   {SHORTCUTS.erd}
                 </kbd>
+              </Button>
+            )}
+
+            {onOpenDiff && selectedConnection.type !== "mongodb" && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={onOpenDiff}
+                title={t("diff.title")}
+                className="w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
+              >
+                <div className="flex items-center gap-2 truncate leading-none">
+                  <GitCompare className="size-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" />
+                  <span className="truncate group-data-[collapsible=icon]:hidden leading-none translate-y-px">
+                    {t("diff.title")}
+                  </span>
+                </div>
               </Button>
             )}
           </div>

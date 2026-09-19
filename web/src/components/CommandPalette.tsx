@@ -14,6 +14,7 @@ import {
   FileSpreadsheet,
   FileCode,
   Sparkles,
+  GitCompare,
 } from "lucide-react";
 import type { Connection, TableSchema, SavedQuery } from "../lib/types";
 import type { RecentItem } from "../lib/recentItems";
@@ -23,6 +24,7 @@ import { cn } from "cn";
 export type CommandActionId =
   | "open_query_console"
   | "open_erd"
+  | "open_diff"
   | "open_migration"
   | "export_csv"
   | "export_json"
@@ -104,6 +106,14 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         subtitle: "Alt+E",
         icon: Workflow,
         action: () => onTriggerAction("open_erd"),
+      },
+      {
+        id: "action_open_diff",
+        type: "action",
+        title: t("diff.title", "Schema Diff"),
+        subtitle: t("diff.subtitle", "Compare schemas between two databases"),
+        icon: GitCompare,
+        action: () => onTriggerAction("open_diff"),
       },
       {
         id: "action_open_migration",

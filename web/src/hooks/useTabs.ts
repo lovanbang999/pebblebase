@@ -226,6 +226,29 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     setActiveTabId(newTab.id);
   }, [connectionId, tabs]);
 
+  // Open a Schema Diff tab
+  const openDiffTab = useCallback(() => {
+    if (!connectionId) return;
+
+    const existing = tabs.find(
+      (t) => t.connectionId === connectionId && t.type === "diff"
+    );
+    if (existing) {
+      setActiveTabId(existing.id);
+      return;
+    }
+
+    const newTab: StudioTab = {
+      id: `tab_diff_${connectionId}`,
+      type: "diff",
+      title: "Schema Diff",
+      connectionId,
+    };
+
+    setTabs((prev) => [...prev, newTab]);
+    setActiveTabId(newTab.id);
+  }, [connectionId, tabs]);
+
   // Close a specific tab
   const closeTab = useCallback(
     (tabId: string) => {
@@ -347,6 +370,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     openTableTab,
     openQueryTab,
     openErdTab,
+    openDiffTab,
     closeTab,
     closeOtherTabs,
     closeTabsToRight,
