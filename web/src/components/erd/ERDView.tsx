@@ -19,11 +19,11 @@ import dagre from "dagre";
 import { toPng } from "html-to-image";
 import { useTranslation } from "react-i18next";
 import { Loader2, Info } from "lucide-react";
-import { fetchERD } from "../lib/api";
-import type { ERDResponse, TableSchema } from "../lib/types";
-import { generateJoinQuery, generateMermaidERD } from "../lib/erdUtils";
-import TableNode, { type TableNodeType } from "./erd/TableNode";
-import ERDToolbar from "./erd/ERDToolbar";
+import { fetchERD } from "@/lib/api";
+import type { ERDResponse, TableSchema } from "@/lib/types";
+import { generateJoinQuery, generateMermaidERD } from "@/lib/erdUtils";
+import TableNode, { type TableNodeType } from "./TableNode";
+import ERDToolbar from "./ERDToolbar";
 
 interface ERDViewProps {
   connectionId: string;

@@ -16,9 +16,9 @@ import {
   Sparkles,
   GitCompare,
 } from "lucide-react";
-import type { Connection, TableSchema, SavedQuery } from "../lib/types";
-import type { RecentItem } from "../lib/recentItems";
-import { SHORTCUTS } from "../lib/platform";
+import type { Connection, TableSchema, SavedQuery } from "@/lib/types";
+import type { RecentItem } from "@/lib/recentItems";
+import { SHORTCUTS } from "@/lib/platform";
 import { cn } from "cn";
 
 export type CommandActionId =

@@ -2,18 +2,12 @@ import { useEffect, useRef, useState, useCallback, useMemo, lazy, Suspense } fro
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cn } from 'cn';
 import type { Connection, SavedQuery, FilterOption } from './lib/types';
-import Sidebar from './components/Sidebar';
-import { TabBar } from './components/TabBar';
-import { DataGrid } from './components/DataGrid';
-import { ErrorBanner } from './components/ErrorBanner';
-import { WelcomeScreen } from './components/WelcomeScreen';
-import { EmptyTableScreen } from './components/EmptyTableScreen';
-import { DeleteRowDialog } from './components/DeleteRowDialog';
-import { LoginScreen } from './components/LoginScreen';
-import { SplashScreen } from './components/SplashScreen';
-import { DesktopTitleBar } from './components/DesktopTitleBar';
-import { DefaultPasswordBanner } from './components/DefaultPasswordBanner';
-import { CommandPalette, type CommandActionId } from './components/CommandPalette';
+import Sidebar from '@/components/layout/Sidebar';
+import { TabBar, DesktopTitleBar, CommandPalette, type CommandActionId } from '@/components/layout';
+import { DataGrid, EmptyTableScreen } from '@/components/grid';
+import { ErrorBanner, WelcomeScreen, SplashScreen, ErrorBoundary } from '@/components/common';
+import { DeleteRowDialog } from '@/components/modals';
+import { LoginScreen, DefaultPasswordBanner } from '@/components/auth';
 import { getRecentItems, addRecentItem, clearRecentItems, type RecentItem } from './lib/recentItems';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -22,27 +16,26 @@ import { useTabs } from './hooks/useTabs';
 import { useAuthStore } from './lib/auth';
 import { fetchMe, fetchSavedQueries, exportTableData, apiLogout } from './lib/api';
 import { isDesktopApp, quitDesktopApp, toggleFullscreen } from './lib/platform';
-import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy-loaded heavy modules for fast desktop startup and minimal initial memory
 const QueryConsole = lazy(() =>
-  import('./components/QueryConsole').then((m) => ({ default: m.QueryConsole }))
+  import('@/components/query/QueryConsole').then((m) => ({ default: m.QueryConsole }))
 );
-const ERDView = lazy(() => import('./components/ERDView'));
+const ERDView = lazy(() => import('@/components/erd/ERDView'));
 const SchemaDiff = lazy(() =>
-  import('./components/SchemaDiff').then((m) => ({ default: m.SchemaDiff }))
+  import('@/components/schema/SchemaDiff').then((m) => ({ default: m.SchemaDiff }))
 );
 const AdminPanel = lazy(() =>
-  import('./components/AdminPanel').then((m) => ({ default: m.AdminPanel }))
+  import('@/components/auth/AdminPanel').then((m) => ({ default: m.AdminPanel }))
 );
 const ConnectionModal = lazy(() =>
-  import('./components/ConnectionModal').then((m) => ({ default: m.ConnectionModal }))
+  import('@/components/modals/ConnectionModal').then((m) => ({ default: m.ConnectionModal }))
 );
 const RowModal = lazy(() =>
-  import('./components/RowModal').then((m) => ({ default: m.RowModal }))
+  import('@/components/modals/RowModal').then((m) => ({ default: m.RowModal }))
 );
 const OnboardingTour = lazy(() =>
-  import('./components/onboarding/OnboardingTour').then((m) => ({ default: m.OnboardingTour }))
+  import('@/components/onboarding/OnboardingTour').then((m) => ({ default: m.OnboardingTour }))
 );
 
 const queryClient = new QueryClient({

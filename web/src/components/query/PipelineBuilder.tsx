@@ -31,8 +31,8 @@ import {
   Terminal,
   Code2,
 } from "lucide-react";
-import type { Connection, TableSchema, RawQueryResult } from "../lib/types";
-import { executeRawQuery } from "../lib/api";
+import type { Connection, TableSchema, RawQueryResult } from "@/lib/types";
+import { executeRawQuery } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

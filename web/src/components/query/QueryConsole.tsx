@@ -17,7 +17,7 @@ import {
   type CompletionContext,
   type CompletionResult,
 } from "@codemirror/autocomplete";
-import { SHORTCUTS, getShortcutTooltip } from "../lib/platform";
+import { SHORTCUTS, getShortcutTooltip } from "@/lib/platform";
 import {
   Play,
   Loader2,
@@ -53,8 +53,8 @@ import type {
   RawQueryResult,
   QueryHistoryItem,
   ExplainResult,
-} from "../lib/types";
-import { executeRawQuery, createSavedQuery, explainQuery } from "../lib/api";
+} from "@/lib/types";
+import { executeRawQuery, createSavedQuery, explainQuery } from "@/lib/api";
 import { PipelineBuilder } from "./PipelineBuilder";
 
 export interface ConsoleTab {

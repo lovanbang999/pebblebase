@@ -8,7 +8,7 @@ import {
   CheckCircle2,
   BarChart3,
 } from "lucide-react";
-import type { TableSchema, TableStats, ColumnSchema } from "../lib/types";
+import type { TableSchema, TableStats, ColumnSchema } from "@/lib/types";
 
 interface QuickStatsBarProps {
   table: TableSchema;

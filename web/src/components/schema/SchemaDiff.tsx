@@ -19,8 +19,8 @@ import {
   Key,
   Layers,
 } from "lucide-react";
-import type { Connection, SchemaDiffResult, DiffStatus } from "../lib/types";
-import { fetchSchemaDiff } from "../lib/api";
+import type { Connection, SchemaDiffResult, DiffStatus } from "@/lib/types";
+import { fetchSchemaDiff } from "@/lib/api";
 import {
   Dialog,
   DialogContent,

@@ -1,7 +1,7 @@
 import { useState, useMemo, type FC, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Save, Trash2, Key, AlertCircle, Loader2, Plus } from "lucide-react";
-import type { TableSchema, ColumnSchema } from "../lib/types";
+import type { TableSchema, ColumnSchema } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";

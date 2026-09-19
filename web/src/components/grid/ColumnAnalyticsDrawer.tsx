@@ -31,8 +31,8 @@ import {
   AreaChart,
   Area,
 } from "recharts";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,9 +41,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuGroup,
-} from "./ui/dropdown-menu";
-import { fetchAggregate } from "../lib/api";
-import type { ColumnSchema, FilterOption, AggregateResult } from "../lib/types";
+} from "@/components/ui/dropdown-menu";
+import { fetchAggregate } from "@/lib/api";
+import type { ColumnSchema, FilterOption, AggregateResult } from "@/lib/types";
 
 interface ColumnAnalyticsDrawerProps {
   isOpen: boolean;

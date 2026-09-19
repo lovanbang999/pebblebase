@@ -59,21 +59,21 @@ import type {
   FilterOption,
   ColumnSchema,
   TableStats,
-} from "../lib/types";
+} from "@/lib/types";
 import {
   exportTableData,
   fetchTableStats,
   type ExportFormat,
-} from "../lib/api";
+} from "@/lib/api";
 import { useTranslation } from "react-i18next";
-import { EmptyState } from "./EmptyState";
+import { EmptyState } from "@/components/common";
 import { QuickStatsBar } from "./QuickStatsBar";
 
 const ImportModal = lazy(() =>
-  import("./ImportModal").then((m) => ({ default: m.ImportModal })),
+  import("@/components/modals/ImportModal").then((m) => ({ default: m.ImportModal })),
 );
 const SchemaInspector = lazy(() =>
-  import("./SchemaInspector").then((m) => ({ default: m.SchemaInspector })),
+  import("@/components/schema/SchemaInspector").then((m) => ({ default: m.SchemaInspector })),
 );
 const ColumnAnalyticsDrawer = lazy(() =>
   import("./ColumnAnalyticsDrawer").then((m) => ({
