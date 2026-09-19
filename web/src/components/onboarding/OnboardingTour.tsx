@@ -11,7 +11,8 @@ import {
   Check,
   Lightbulb,
 } from "lucide-react";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
+import { STORAGE_KEYS } from "@/constants";
 
 export interface OnboardingTourProps {
   userId?: string;
@@ -81,7 +82,7 @@ export function OnboardingTour({
   const [dontShowAgain, setDontShowAgain] = useState(true);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
 
-  const storageKey = `pebblebase_onboarding_completed_${userId}`;
+  const storageKey = STORAGE_KEYS.onboarding(userId);
 
   // Mark completion in localStorage
   const markCompleted = useCallback(() => {

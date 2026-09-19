@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { generateSeedSQL } from "@/lib/api";
 import type { SeedSQLResponse } from "@/lib/types";
+import { SEED_CONFIG, COPY_FEEDBACK_MS } from "@/constants";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +44,7 @@ export const SeedModal: FC<SeedModalProps> = ({
   onRunInConsole,
 }) => {
   const { t } = useTranslation();
-  const [count, setCount] = useState<number>(10);
+  const [count, setCount] = useState<number>(SEED_CONFIG.DEFAULT_COUNT);
   const [isGenerating, setIsGenerating] = useState(false);
   const [seedResult, setSeedResult] = useState<SeedSQLResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export const SeedModal: FC<SeedModalProps> = ({
       setError(null);
       const res = await generateSeedSQL(connId, {
         table: tableName,
-        count: Math.max(1, Math.min(count, 500)),
+        count: Math.max(SEED_CONFIG.MIN_COUNT, Math.min(count, SEED_CONFIG.MAX_COUNT)),
       });
       setSeedResult(res);
     } catch (err: unknown) {
@@ -89,7 +90,7 @@ export const SeedModal: FC<SeedModalProps> = ({
     if (!seedResult?.sql) return;
     navigator.clipboard.writeText(seedResult.sql);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
   };
 
   const handleRunConsole = () => {
@@ -140,12 +141,16 @@ export const SeedModal: FC<SeedModalProps> = ({
               <Input
                 id="seed-count"
                 type="number"
-                min={1}
-                max={500}
+                min={SEED_CONFIG.MIN_COUNT}
+                max={SEED_CONFIG.MAX_COUNT}
                 value={count}
                 onChange={(e) => {
                   const val = parseInt(e.target.value, 10);
-                  setCount(isNaN(val) ? 1 : Math.max(1, Math.min(val, 500)));
+                  setCount(
+                    isNaN(val)
+                      ? SEED_CONFIG.MIN_COUNT
+                      : Math.max(SEED_CONFIG.MIN_COUNT, Math.min(val, SEED_CONFIG.MAX_COUNT)),
+                  );
                 }}
                 className="w-24 h-8 text-xs font-mono"
               />

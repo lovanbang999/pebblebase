@@ -7,6 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Sun, Moon } from "lucide-react";
+import { STORAGE_KEYS } from "@/constants";
 
 interface ThemeToggleProps {
   theme?: "dark" | "light";
@@ -28,7 +29,7 @@ export function ThemeToggle({
         ? "dark"
         : "light";
     }
-    return (localStorage.getItem("pb_theme") as "dark" | "light") || "dark";
+    return (localStorage.getItem(STORAGE_KEYS.THEME) as "dark" | "light") || "dark";
   });
 
   const currentTheme = externalTheme ?? internalTheme;
@@ -39,7 +40,7 @@ export function ThemeToggle({
     } else {
       const nextTheme = currentTheme === "dark" ? "light" : "dark";
       setInternalTheme(nextTheme);
-      localStorage.setItem("pb_theme", nextTheme);
+      localStorage.setItem(STORAGE_KEYS.THEME, nextTheme);
       if (nextTheme === "dark") {
         document.documentElement.classList.add("dark");
       } else {

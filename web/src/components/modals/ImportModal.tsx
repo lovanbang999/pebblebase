@@ -42,6 +42,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "cn";
+import {
+  formatBytes,
+  EXPORT_SIZE_MULTIPLIERS,
+  ESTIMATED_BYTES_PER_ROW,
+} from "@/constants";
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -56,18 +61,6 @@ interface ImportModalProps {
   sortDesc?: boolean;
 }
 
-function formatBytes(bytes: number): string {
-  if (!bytes || bytes <= 0) return "—";
-  const units = ["B", "KB", "MB", "GB", "TB"];
-  let size = bytes;
-  let unitIndex = 0;
-  while (size >= 1024 && unitIndex < units.length - 1) {
-    size /= 1024;
-    unitIndex++;
-  }
-  return `${size.toFixed(1)} ${units[unitIndex]}`;
-}
-
 function getEstimatedSize(
   format: ExportFormat,
   stats?: TableStats | null,
@@ -77,19 +70,11 @@ function getEstimatedSize(
 
   let baseBytes = rawBytes;
   if (baseBytes <= 0 && totalRows > 0) {
-    baseBytes = totalRows * 120;
+    baseBytes = totalRows * ESTIMATED_BYTES_PER_ROW;
   }
   if (baseBytes <= 0) return "—";
 
-  const multipliers: Record<ExportFormat, number> = {
-    parquet: 0.25,
-    xlsx: 0.4,
-    csv: 0.9,
-    jsonl: 1.1,
-    json: 1.3,
-  };
-
-  const estimated = baseBytes * (multipliers[format] || 1.0);
+  const estimated = baseBytes * (EXPORT_SIZE_MULTIPLIERS[format] || 1.0);
   return formatBytes(estimated);
 }
 

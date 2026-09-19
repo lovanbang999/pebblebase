@@ -6,8 +6,9 @@ export interface RecentItem {
   timestamp: number;
 }
 
-const STORAGE_KEY = 'pebblebase_recent_items';
-const MAX_RECENT_ITEMS = 10;
+import { STORAGE_KEYS, MAX_RECENT_ITEMS } from "@/constants";
+
+const STORAGE_KEY = STORAGE_KEYS.RECENT_ITEMS;
 
 export function getRecentItems(): RecentItem[] {
   try {

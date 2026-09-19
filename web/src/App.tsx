@@ -16,6 +16,7 @@ import { useTabs } from './hooks/useTabs';
 import { useAuthStore } from './lib/auth';
 import { fetchMe, fetchSavedQueries, exportTableData, apiLogout } from './lib/api';
 import { isDesktopApp, quitDesktopApp, toggleFullscreen } from './lib/platform';
+import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from '@/constants';
 
 // Lazy-loaded heavy modules for fast desktop startup and minimal initial memory
 const QueryConsole = lazy(() =>
@@ -74,7 +75,7 @@ function PebblebaseStudio() {
   useEffect(() => {
     const userId = currentUser?.id;
     if (!userId) return;
-    const storageKey = `pebblebase_onboarding_completed_${userId}`;
+    const storageKey = STORAGE_KEYS.onboarding(userId);
     const hasCompleted = localStorage.getItem(storageKey);
     if (!hasCompleted) {
       const timer = setTimeout(() => {
@@ -174,7 +175,7 @@ function PebblebaseStudio() {
       setUserSelectedTable(activeTab.tableName);
       if (activeTab.state) {
         setPage(activeTab.state.page ?? 0);
-        setPageSize(activeTab.state.pageSize ?? 50);
+        setPageSize(activeTab.state.pageSize ?? DEFAULT_PAGE_SIZE);
         setSortBy(activeTab.state.sortBy ?? '');
         setSortDesc(activeTab.state.sortDesc ?? false);
         setFilters(activeTab.state.filters ?? []);
