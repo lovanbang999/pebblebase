@@ -46,6 +46,19 @@
       }
     }
   },
+  "seed": {
+    "title": "Generate Seed SQL",
+    "count": "Row Count",
+    "generate": "Generate Seed SQL",
+    "preview": "Generated SQL Preview",
+    "run": "Run in Console",
+    "copy": "Copy SQL",
+    "copied": "Copied to clipboard",
+    "generating": "Generating seed data...",
+    "tablesIncluded": "Tables seeded in dependency order:",
+    "description": "Generate realistic test data fixtures respecting foreign-key dependency order.",
+    "countHelp": "Number of records to generate for target table (1–500)."
+  },
   "datagrid": {
     "where": "WHERE",
     "column": "Column",

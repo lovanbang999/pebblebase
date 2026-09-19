@@ -270,3 +270,16 @@ export interface ExecuteMigrationInput {
   dry_run?: boolean;
 }
 
+export interface SeedSQLRequest {
+  table: string;
+  count?: number;
+}
+
+export interface SeedSQLResponse {
+  table: string;
+  count: number;
+  tables_seeded: string[];
+  sql: string;
+}
+
+

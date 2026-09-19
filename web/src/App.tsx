@@ -564,7 +564,7 @@ function PebblebaseStudio() {
                     await Promise.all([refetchRows(), refetchTables()]);
                   }}
                   isReadOnly={Boolean(activeConnection?.read_only)}
-                  onOpenQueryConsole={() => openQueryTab()}
+                  onOpenQueryConsole={(query, title) => openQueryTab(query, title)}
                   onAddRow={() => {
                     if (activeConnection?.read_only) return;
                     setEditingRow(null);

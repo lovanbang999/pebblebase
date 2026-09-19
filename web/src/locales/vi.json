@@ -46,6 +46,19 @@
       }
     }
   },
+  "seed": {
+    "title": "Tạo dữ liệu mẫu SQL",
+    "count": "Số lượng dòng",
+    "generate": "Tạo dữ liệu mẫu SQL",
+    "preview": "Xem trước mã SQL tạo dữ liệu",
+    "run": "Chạy trong Console",
+    "copy": "Sao chép SQL",
+    "copied": "Đã sao chép vào bộ nhớ tạm",
+    "generating": "Đang tạo dữ liệu mẫu...",
+    "tablesIncluded": "Các bảng theo thứ tự phụ thuộc:",
+    "description": "Tạo dữ liệu mẫu thực tế tuân thủ thứ tự ràng buộc khóa ngoại.",
+    "countHelp": "Số lượng bản ghi cần tạo cho bảng đích (1–500)."
+  },
   "datagrid": {
     "where": "WHERE",
     "column": "Cột",

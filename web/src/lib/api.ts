@@ -19,6 +19,8 @@ import type {
   MigrationHistoryResponse,
   ExecuteMigrationInput,
   QueryHistoryEntry,
+  SeedSQLRequest,
+  SeedSQLResponse,
 } from './types';
 import { getAuthHeaders, useAuthStore } from './auth';
 
@@ -565,3 +567,22 @@ export async function rollbackMigration(
   );
   return handleResponse<MigrationResult>(res);
 }
+
+export async function generateSeedSQL(
+  connId: string,
+  req: SeedSQLRequest,
+): Promise<SeedSQLResponse> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connId)}/seed`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify(req),
+    },
+  );
+  return handleResponse<SeedSQLResponse>(res);
+}
+
