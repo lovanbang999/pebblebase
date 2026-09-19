@@ -45,6 +45,7 @@ import {
   Save,
   Star,
   FileSearch,
+  Layers,
 } from "lucide-react";
 import type {
   Connection,
@@ -54,6 +55,7 @@ import type {
   ExplainResult,
 } from "../lib/types";
 import { executeRawQuery, createSavedQuery, explainQuery } from "../lib/api";
+import { PipelineBuilder } from "./PipelineBuilder";
 
 export interface ConsoleTab {
   id: string;
@@ -497,6 +499,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
   const tabsStorageKey = `pebblebase_query_tabs_${connection.id}`;
 
+  const [activeMode, setActiveMode] = useState<"console" | "pipeline">("console");
+
+  // Keep activeMode consistent if dialect changes
+  useEffect(() => {
+    if (!isMongo && activeMode === "pipeline") {
+      setActiveMode("console");
+    }
+  }, [isMongo, activeMode]);
+
   const [tabs, setTabs] = useState<ConsoleTab[]>(() => {
     try {
       const saved = sessionStorage.getItem(tabsStorageKey);
@@ -657,6 +668,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
   const handleSelectTab = useCallback(
     (tabId: string) => {
+      setActiveMode("console");
       if (tabId !== activeTabId) {
         setActiveTabId(tabId);
         setResultFilter("");
@@ -667,6 +679,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   );
 
   const handleNewTab = useCallback(() => {
+    setActiveMode("console");
     if (tabs.length >= 8) return;
 
     const newId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -1319,6 +1332,37 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             {connection.type}
           </Badge>
 
+          {isMongo && (
+            <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/60 ml-2">
+              <button
+                type="button"
+                onClick={() => setActiveMode("console")}
+                className={cn(
+                  "px-2 py-0.5 text-xs font-mono rounded transition-all flex items-center gap-1 cursor-pointer",
+                  activeMode === "console"
+                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-2xs font-semibold"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200",
+                )}
+              >
+                <Terminal className="size-3" />
+                <span>Console</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveMode("pipeline")}
+                className={cn(
+                  "px-2 py-0.5 text-xs font-mono rounded transition-all flex items-center gap-1 cursor-pointer",
+                  activeMode === "pipeline"
+                    ? "bg-white dark:bg-zinc-900 text-emerald-600 dark:text-emerald-400 shadow-2xs font-semibold"
+                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200",
+                )}
+              >
+                <Layers className="size-3 text-emerald-500" />
+                <span>{t("pipeline.title")}</span>
+              </button>
+            </div>
+          )}
+
           {connection.read_only && (
             <Badge
               variant="outline"
@@ -1568,7 +1612,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           <div className="h-8.5 px-2 bg-zinc-100/90 dark:bg-zinc-900/90 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-1 select-none shrink-0 overflow-x-auto">
             <div className="flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar py-0.5">
               {tabs.map((tab) => {
-                const isActive = tab.id === activeTab.id;
+                const isActive = activeMode === "console" && tab.id === activeTab.id;
                 const isEditing = editingTabId === tab.id;
 
                 return (
@@ -1655,6 +1699,23 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   </TooltipContent>
                 </Tooltip>
               )}
+
+              {/* MongoDB Pipeline Builder Tab */}
+              {isMongo && (
+                <div
+                  onClick={() => setActiveMode("pipeline")}
+                  className={cn(
+                    "group relative flex items-center gap-1.5 h-7 px-2.5 rounded-t text-xs font-mono transition-all cursor-pointer border-t border-x ml-1.5",
+                    activeMode === "pipeline"
+                      ? "bg-white dark:bg-zinc-950 text-emerald-600 dark:text-emerald-400 font-semibold border-t-2 border-t-emerald-500 border-x-zinc-200 dark:border-x-zinc-800 shadow-2xs z-1"
+                      : "bg-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50 hover:text-zinc-800 dark:hover:text-zinc-200 border-transparent border-t-2 border-t-transparent",
+                  )}
+                  title={t("pipeline.title")}
+                >
+                  <Layers className="size-3.5 text-emerald-500" />
+                  <span className="truncate select-none">{t("pipeline.title")}</span>
+                </div>
+              )}
             </div>
 
             {/* Tab Counter */}
@@ -1662,8 +1723,19 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               {tabs.length}/8
             </div>
           </div>
-          <div
-            style={{
+          {isMongo && activeMode === "pipeline" ? (
+            <PipelineBuilder
+              connection={connection}
+              tables={tables}
+              onOpenInConsole={(generatedQuery) => {
+                handleQueryChange(generatedQuery);
+                setActiveMode("console");
+              }}
+            />
+          ) : (
+            <>
+              <div
+                style={{
               height: isResultsCollapsed ? "100%" : `${editorHeight}px`,
             }}
             className={cn(
@@ -2251,6 +2323,8 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                 </div>
               )}
             </div>
+          )}
+            </>
           )}
         </div>
       </div>
