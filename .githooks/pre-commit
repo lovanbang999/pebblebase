@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+# Auto-format staged web frontend files (TypeScript, TSX, CSS, JSON, HTML)
+if git diff --cached --name-only | grep -E '^web/src/.*\.(ts|tsx|css|json|html)$' > /dev/null; then
+  echo "Auto-formatting staged web files with Prettier & lint-staged..."
+  (cd web && npx lint-staged)
+fi
+
+# Auto-format staged Go files if any
+if git diff --cached --name-only | grep -E '\.go$' > /dev/null; then
+  echo "Auto-formatting staged Go files with gofmt..."
+  for file in $(git diff --cached --name-only | grep -E '\.go$'); do
+    if [ -f "$file" ]; then
+      gofmt -w "$file"
+      git add "$file"
+    fi
+  done
+fi
