@@ -1511,7 +1511,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               setIsSaveDialogOpen(true);
             }}
             disabled={!query.trim()}
-            className="h-7 gap-1.5 border-0 bg-indigo-600/90 text-xs font-semibold text-white shadow-sm shadow-indigo-500/20 transition-all hover:bg-indigo-500 disabled:opacity-40"
+            className="h-7 gap-1.5 border-0 bg-emerald-600 text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-500 disabled:opacity-40"
           >
             <Save className="h-3 w-3" />
             <span>{t("savedQuery.save")}</span>
@@ -1525,12 +1525,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             className={cn(
               "h-7 gap-1.5 border text-xs font-semibold transition-all",
               isLibraryOpen
-                ? "border-indigo-500/30 bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25"
-                : "border-zinc-200 bg-transparent text-zinc-500 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800",
+                ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:text-emerald-400"
+                : "border-zinc-200 bg-transparent text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800",
             )}
           >
             <BookOpen
-              className={cn("h-3 w-3", isLibraryOpen ? "text-indigo-400" : "")}
+              className={cn(
+                "h-3 w-3",
+                isLibraryOpen ? "text-emerald-600 dark:text-emerald-400" : "",
+              )}
             />
             <span>{t("savedQuery.library")}</span>
           </Button>
@@ -1539,13 +1542,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
       {/* Save toast — bottom-right floating */}
       {saveToast && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border border-indigo-500/30 bg-[#1c1d2e] px-4 py-2.5 text-xs font-semibold text-white shadow-2xl shadow-black/40">
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-indigo-500/20">
-            <CheckCircle2 className="h-3.5 w-3.5 text-indigo-400" />
+        <div className="animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-900 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/15">
+            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div>
-            <p className="text-white/90">{t("savedQuery.saved")}</p>
-            <p className="text-[10px] font-normal text-white/40">
+            <p className="text-zinc-900 dark:text-zinc-100">
+              {t("savedQuery.saved")}
+            </p>
+            <p className="text-[10px] font-normal text-zinc-500 dark:text-zinc-400">
               {t("savedQuery.saveSuccess")}
             </p>
           </div>
@@ -1607,7 +1612,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       <div className="flex flex-1 overflow-hidden">
         {/* Query Library Panel */}
         {isLibraryOpen && (
-          <div className="w-60 shrink-0 overflow-hidden border-r border-zinc-200 dark:border-zinc-800">
+          <div className="w-72 shrink-0 overflow-hidden border-r border-zinc-200 dark:border-zinc-800">
             <QueryLibraryPanel
               connectionId={connection.id}
               onLoadQuery={(q) => handleQueryChange(q)}
@@ -1785,12 +1790,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                 <div
                   onMouseDown={handleMouseDownResizer}
                   className={cn(
-                    "group relative z-10 flex h-2 w-full shrink-0 cursor-row-resize items-center justify-center bg-zinc-200/80 transition-colors select-none hover:bg-indigo-500/40 dark:bg-zinc-800/80 dark:hover:bg-indigo-500/50",
-                    isDragging && "bg-indigo-500/60 dark:bg-indigo-500/60",
+                    "group relative z-10 flex h-2 w-full shrink-0 cursor-row-resize items-center justify-center bg-zinc-200/80 transition-colors select-none hover:bg-emerald-500/40 dark:bg-zinc-800/80 dark:hover:bg-emerald-500/50",
+                    isDragging && "bg-emerald-500/60 dark:bg-emerald-500/60",
                   )}
                   title="Drag up or down to resize editor and results panel"
                 >
-                  <div className="h-1 w-10 rounded-full bg-zinc-400/80 transition-colors group-hover:bg-indigo-500 dark:bg-zinc-600/80" />
+                  <div className="h-1 w-10 rounded-full bg-zinc-400/80 transition-colors group-hover:bg-emerald-500 dark:bg-zinc-600/80" />
                 </div>
               )}
 
@@ -2420,25 +2425,25 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
       {/* Save Query Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-        <DialogContent className="max-w-sm overflow-hidden border-white/10 bg-[#1c1d2e] p-0 text-white">
+        <DialogContent className="max-w-sm overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 text-zinc-900 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
           {/* Dialog header with gradient */}
-          <div className="border-b border-white/6 bg-linear-to-b from-indigo-500/8 to-transparent px-5 pt-5 pb-4">
+          <div className="border-b border-zinc-200 bg-zinc-50/75 px-5 pt-5 pb-4 dark:border-zinc-800 dark:bg-zinc-900/50">
             <div className="mb-1 flex items-center gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-indigo-500/30 bg-indigo-500/20">
-                <Save className="h-4 w-4 text-indigo-400" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-emerald-500/30 bg-emerald-500/15">
+                <Save className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <DialogTitle className="text-sm leading-tight font-semibold text-white">
+                <DialogTitle className="text-sm leading-tight font-semibold text-zinc-900 dark:text-zinc-100">
                   {t("savedQuery.saveQuery")}
                 </DialogTitle>
-                <DialogDescription className="mt-0.5 text-[10px] text-white/35">
+                <DialogDescription className="mt-0.5 text-[10px] text-zinc-500 dark:text-zinc-400">
                   Save to your personal query library
                 </DialogDescription>
               </div>
             </div>
 
             {/* SQL snippet preview */}
-            <div className="mt-3 truncate rounded-md border border-white/6 bg-black/20 px-2.5 py-2 font-mono text-[10px] text-white/35">
+            <div className="mt-3 truncate rounded-md border border-zinc-200 bg-zinc-100/80 px-2.5 py-2 font-mono text-[10px] text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
               {query.trim().split("\n")[0]?.slice(0, 60) ?? ""}
               {(query.trim().split("\n")[0]?.length ?? 0) > 60 ? "…" : ""}
             </div>
@@ -2447,14 +2452,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           <div className="space-y-4 px-5 py-4">
             {/* Title field */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold tracking-wider text-white/40 uppercase">
-                {t("savedQuery.title")} <span className="text-red-400">*</span>
+              <label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                {t("savedQuery.title")} <span className="text-red-500">*</span>
               </label>
               <Input
                 value={saveTitle}
                 onChange={(e) => setSaveTitle(e.target.value)}
                 placeholder={t("savedQuery.titlePlaceholder")}
-                className="border-white/10 bg-white/6 text-sm text-white placeholder:text-white/25 focus-visible:border-indigo-500/40 focus-visible:ring-1 focus-visible:ring-indigo-500/60"
+                className="border-zinc-200 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:border-emerald-500 focus-visible:ring-1 focus-visible:ring-emerald-500/40 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                 onKeyDown={(e) => e.key === "Enter" && handleSaveQuery()}
                 autoFocus
               />
@@ -2462,29 +2467,29 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
             {/* Folder field */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold tracking-wider text-white/40 uppercase">
+              <label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                 {t("savedQuery.folder")}
               </label>
               <Input
                 value={saveFolder}
                 onChange={(e) => setSaveFolder(e.target.value)}
                 placeholder={t("savedQuery.folderPlaceholder")}
-                className="border-white/10 bg-white/6 text-sm text-white placeholder:text-white/25 focus-visible:border-indigo-500/40 focus-visible:ring-1 focus-visible:ring-indigo-500/60"
+                className="border-zinc-200 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:border-emerald-500 focus-visible:ring-1 focus-visible:ring-emerald-500/40 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
             </div>
 
             {/* Tags field */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold tracking-wider text-white/40 uppercase">
+              <label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                 {t("savedQuery.tags")}
               </label>
               <Input
                 value={saveTags}
                 onChange={(e) => setSaveTags(e.target.value)}
                 placeholder={t("savedQuery.tagsPlaceholder")}
-                className="border-white/10 bg-white/6 text-sm text-white placeholder:text-white/25 focus-visible:border-indigo-500/40 focus-visible:ring-1 focus-visible:ring-indigo-500/60"
+                className="border-zinc-200 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:border-emerald-500 focus-visible:ring-1 focus-visible:ring-emerald-500/40 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
-              <p className="text-[9px] text-white/20">
+              <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
                 Separate multiple tags with commas
               </p>
             </div>
@@ -2494,34 +2499,34 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               type="button"
               onClick={() => setSaveIsFavorite((v) => !v)}
               className={cn(
-                "flex w-full items-center gap-2.5 rounded-md border px-3 py-2 text-left transition-all",
+                "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-all",
                 saveIsFavorite
-                  ? "border-yellow-400/25 bg-yellow-400/10 text-yellow-300"
-                  : "border-white/8 bg-white/4 text-white/40 hover:bg-white/8 hover:text-white/60",
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                  : "border-zinc-200 bg-zinc-50/50 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
               )}
             >
               <Star
                 className={cn(
                   "h-3.5 w-3.5 shrink-0",
-                  saveIsFavorite ? "fill-yellow-400 text-yellow-400" : "",
+                  saveIsFavorite ? "fill-amber-500 text-amber-500" : "",
                 )}
               />
               <span className="text-xs font-medium">
                 {t("savedQuery.favorite")}
               </span>
-              <span className="ml-auto text-[9px] opacity-60">
+              <span className="ml-auto text-[10px] opacity-70">
                 {saveIsFavorite ? "Starred" : "Click to star"}
               </span>
             </button>
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-2 px-5 pb-5">
+          <div className="flex justify-end gap-2 border-t border-zinc-200 bg-zinc-50/50 px-5 py-3.5 dark:border-zinc-800 dark:bg-zinc-900/50">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setIsSaveDialogOpen(false)}
-              className="text-xs text-white/50 hover:bg-white/10 hover:text-white"
+              className="border-zinc-200 text-xs text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               {t("savedQuery.cancel")}
             </Button>
@@ -2529,7 +2534,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               size="sm"
               onClick={handleSaveQuery}
               disabled={!saveTitle.trim()}
-              className="gap-1.5 bg-indigo-600 text-xs text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-500 disabled:opacity-40"
+              className="gap-1.5 bg-emerald-600 text-xs text-white shadow-xs hover:bg-emerald-500 disabled:opacity-40"
             >
               <Save className="h-3.5 w-3.5" />
               {t("savedQuery.save")}

@@ -139,6 +139,20 @@
     -webkit-font-smoothing: subpixel-antialiased;
     text-rendering: optimizeLegibility;
   }
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  input[type="button"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="submit"]:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input[type="button"]:disabled,
+  input[type="reset"]:disabled,
+  input[type="submit"]:disabled {
+    cursor: not-allowed;
+  }
 }
 
 /* Modern sleek custom scrollbar for all browsers */
