@@ -57,6 +57,8 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
   const [sortDesc, setSortDesc] = useState(false);
   const [filters, setFilters] = useState<FilterOption[]>([]);
   const [bannerError, setBannerError] = useState<string | null>(null);
+  const [dismissedError, setDismissedError] = useState<string | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // 1. Fetch Connections
   const {
@@ -90,6 +92,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     setUserSelectedConnectionId(connId);
     setUserSelectedTable(null);
     setBannerError(null);
+    setDismissedError(null);
   };
 
   const handleSelectTable = (tblName: string) => {
@@ -99,6 +102,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     setSortDesc(false);
     setFilters([]);
     setBannerError(null);
+    setDismissedError(null);
   };
 
   // 3. Fetch Rows
@@ -251,10 +255,31 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     }
   };
 
-  const activeErrorMessage =
+  const rawErrorMessage =
     bannerError ||
     (tablesError instanceof Error ? tablesError.message : null) ||
     (rowsError instanceof Error ? rowsError.message : null);
+
+  const activeErrorMessage =
+    rawErrorMessage && rawErrorMessage !== dismissedError ? rawErrorMessage : null;
+
+  const handleDismissBanner = () => {
+    setBannerError(null);
+    if (rawErrorMessage) {
+      setDismissedError(rawErrorMessage);
+    }
+  };
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    setBannerError(null);
+    setDismissedError(null);
+    try {
+      await qc.refetchQueries({ type: 'active' });
+    } finally {
+      setIsRetrying(false);
+    }
+  };
 
   return {
     // State
@@ -287,6 +312,9 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     setFilters,
     activeErrorMessage,
     setBannerError,
+    handleDismissBanner,
+    handleRetry,
+    isRetrying,
 
     // Modals
     isConnModalOpen,

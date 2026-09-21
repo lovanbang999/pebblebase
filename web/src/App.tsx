@@ -115,6 +115,9 @@ function PebblebaseStudio() {
     setFilters,
     activeErrorMessage,
     setBannerError,
+    handleDismissBanner,
+    handleRetry,
+    isRetrying,
     isConnModalOpen,
     setIsConnModalOpen,
     cloningConnection,
@@ -568,7 +571,12 @@ function PebblebaseStudio() {
         )}
 
         {/* Error notification banner */}
-        <ErrorBanner message={activeErrorMessage} onDismiss={() => setBannerError(null)} />
+        <ErrorBanner
+          message={activeErrorMessage}
+          onDismiss={handleDismissBanner}
+          onRetry={handleRetry}
+          isRetrying={isRetrying}
+        />
 
         {/* Dynamic Main Views */}
         {connections.length === 0 && !isLoadingConnections ? (
