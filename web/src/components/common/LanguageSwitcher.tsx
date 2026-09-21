@@ -6,7 +6,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Globe } from "lucide-react";
 
 interface LanguageSwitcherProps {
@@ -33,7 +37,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
                   type="button"
                   variant="ghost"
                   size={compact ? "icon-xs" : "xs"}
-                  className="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 flex items-center justify-center gap-1 font-mono text-[10px] font-semibold tracking-wider h-6 px-1.5"
+                  className="flex h-6 items-center justify-center gap-1 px-1.5 font-mono text-[10px] font-semibold tracking-wider text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
                 >
                   <Globe className="size-3.5 text-emerald-600 dark:text-emerald-400" />
                   {!compact && <span className="uppercase">{currentLang}</span>}
@@ -47,13 +51,13 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
       <DropdownMenuContent
         align="end"
         side="bottom"
-        className="w-36 p-1 bg-popover border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-xl"
+        className="bg-popover w-36 rounded-lg border border-zinc-200 p-1 shadow-xl dark:border-zinc-800"
       >
         <DropdownMenuItem
           onClick={() => handleLanguageChange("vi")}
-          className={`flex items-center justify-between text-xs font-mono cursor-pointer py-1.5 px-2 rounded-md ${
+          className={`flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs ${
             currentLang === "vi"
-              ? "text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10"
+              ? "bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
               : ""
           }`}
         >
@@ -66,9 +70,9 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
 
         <DropdownMenuItem
           onClick={() => handleLanguageChange("en")}
-          className={`flex items-center justify-between text-xs font-mono cursor-pointer py-1.5 px-2 rounded-md ${
+          className={`flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs ${
             currentLang === "en"
-              ? "text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10"
+              ? "bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
               : ""
           }`}
         >

@@ -24,30 +24,30 @@ export const EmptyState: FC<EmptyStateProps> = ({
   secondaryAction,
 }) => {
   return (
-    <div className="flex flex-col items-center justify-center p-8 text-center max-w-sm mx-auto my-auto animate-in fade-in duration-200">
-      <div className="w-12 h-12 rounded-xl bg-zinc-100 border border-zinc-200 dark:bg-zinc-900/80 dark:border-zinc-800/80 flex items-center justify-center mb-3 shadow-xs dark:shadow-inner dark:shadow-black/40">
-        <Icon className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
+    <div className="animate-in fade-in mx-auto my-auto flex max-w-sm flex-col items-center justify-center p-8 text-center duration-200">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 shadow-xs dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:shadow-inner dark:shadow-black/40">
+        <Icon className="h-6 w-6 text-zinc-500 dark:text-zinc-400" />
       </div>
 
-      <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 font-mono tracking-tight">
+      <h3 className="font-mono text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
         {title}
       </h3>
 
       {description && (
-        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 font-mono leading-relaxed">
+        <p className="mt-1 font-mono text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
           {description}
         </p>
       )}
 
       {(action || secondaryAction) && (
-        <div className="flex items-center gap-2 mt-4">
+        <div className="mt-4 flex items-center gap-2">
           {secondaryAction && (
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={secondaryAction.onClick}
-              className="text-xs font-mono"
+              className="font-mono text-xs"
             >
               {secondaryAction.label}
             </Button>
@@ -58,9 +58,9 @@ export const EmptyState: FC<EmptyStateProps> = ({
               type="button"
               size="sm"
               onClick={action.onClick}
-              className="text-xs font-mono bg-emerald-600 hover:bg-emerald-500 text-white"
+              className="bg-emerald-600 font-mono text-xs text-white hover:bg-emerald-500"
             >
-              {action.icon && <action.icon className="w-3.5 h-3.5" />}
+              {action.icon && <action.icon className="h-3.5 w-3.5" />}
               {action.label}
             </Button>
           )}

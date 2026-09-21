@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-export type AuthRole = 'admin' | 'viewer';
+export type AuthRole = "admin" | "viewer";
 
 export interface AuthUser {
   id: string;
@@ -40,7 +40,12 @@ export const useAuthStore = create<AuthState>()(
         } catch {
           // ignore
         }
-        set({ user: null, token: null, isDefaultPassword: false, isInitialized: true });
+        set({
+          user: null,
+          token: null,
+          isDefaultPassword: false,
+          isInitialized: true,
+        });
       },
 
       setIsDefaultPassword: (v) => set({ isDefaultPassword: v }),
@@ -48,10 +53,10 @@ export const useAuthStore = create<AuthState>()(
       setInitialized: () => set({ isInitialized: true }),
     }),
     {
-      name: 'pebblebase-auth',
+      name: "pebblebase-auth",
       partialize: (state) => ({ token: state.token }),
-    }
-  )
+    },
+  ),
 );
 
 /** Returns Authorization header object when a token is available. */
@@ -63,5 +68,5 @@ export function getAuthHeaders(): Record<string, string> {
 
 /** Returns true when the current user has admin role. */
 export function isAdmin(): boolean {
-  return useAuthStore.getState().user?.role === 'admin';
+  return useAuthStore.getState().user?.role === "admin";
 }

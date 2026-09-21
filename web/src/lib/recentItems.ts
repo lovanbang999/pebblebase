@@ -1,6 +1,6 @@
 export interface RecentItem {
   id: string;
-  type: 'table' | 'query' | 'connection';
+  type: "table" | "query" | "connection";
   title: string;
   subtitle?: string;
   timestamp: number;
@@ -22,11 +22,13 @@ export function getRecentItems(): RecentItem[] {
   }
 }
 
-export function addRecentItem(item: Omit<RecentItem, 'timestamp'>): RecentItem[] {
+export function addRecentItem(
+  item: Omit<RecentItem, "timestamp">,
+): RecentItem[] {
   try {
     const current = getRecentItems();
     const filtered = current.filter(
-      (r) => !(r.type === item.type && r.id === item.id)
+      (r) => !(r.type === item.type && r.id === item.id),
     );
     const newItem: RecentItem = {
       ...item,

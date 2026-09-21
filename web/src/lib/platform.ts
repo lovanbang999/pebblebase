@@ -9,16 +9,14 @@ export const isMac =
         (navigator as any).userAgentData?.platform ||
           navigator.platform ||
           navigator.userAgent ||
-          ""
+          "",
       )
     : false;
 
 export const isDesktop =
   typeof window !== "undefined" &&
   Boolean(
-    (window as any).runtime ||
-      (window as any).go ||
-      (window as any).wails
+    (window as any).runtime || (window as any).go || (window as any).wails,
   );
 
 /**
@@ -28,9 +26,7 @@ export function isDesktopApp(): boolean {
   return (
     typeof window !== "undefined" &&
     Boolean(
-      (window as any).runtime ||
-        (window as any).go ||
-        (window as any).wails
+      (window as any).runtime || (window as any).go || (window as any).wails,
     )
   );
 }
@@ -187,7 +183,13 @@ export function getShortcutSymbol(): string {
  * Returns accessible tooltip description for shortcuts.
  */
 export function getShortcutTooltip(
-  action: "runQuery" | "queryConsole" | "erd" | "commandPalette" | "quit" | "fullscreen"
+  action:
+    | "runQuery"
+    | "queryConsole"
+    | "erd"
+    | "commandPalette"
+    | "quit"
+    | "fullscreen",
 ): string {
   if (action === "runQuery") {
     return isMac ? "Run Query (⌘↵)" : "Run Query (Ctrl+↵ / F5)";
@@ -209,4 +211,3 @@ export function getShortcutTooltip(
   }
   return "";
 }
-

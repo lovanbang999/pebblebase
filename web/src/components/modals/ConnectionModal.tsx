@@ -216,14 +216,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-2xl rounded-xl">
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 shadow-2xl sm:max-w-xl dark:border-zinc-800 dark:bg-zinc-950">
         {/* Header */}
-        <DialogHeader className="px-5 py-4 border-b border-zinc-200/80 dark:border-zinc-800/80 bg-zinc-50/70 dark:bg-zinc-900/50 flex flex-row items-center gap-3 space-y-0">
-          <div className="p-2 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shrink-0">
+        <DialogHeader className="flex flex-row items-center gap-3 space-y-0 border-b border-zinc-200/80 bg-zinc-50/70 px-5 py-4 dark:border-zinc-800/80 dark:bg-zinc-900/50">
+          <div className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
             {cloneData ? (
-              <Copy className="w-4 h-4" />
+              <Copy className="h-4 w-4" />
             ) : (
-              <Database className="w-4 h-4" />
+              <Database className="h-4 w-4" />
             )}
           </div>
           <div className="flex-1">
@@ -236,7 +236,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               {cloneData && (
                 <Badge
                   variant="outline"
-                  className="text-[10px] uppercase font-mono px-1.5 py-0 h-4 border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15"
+                  className="h-4 border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] text-emerald-600 uppercase dark:bg-emerald-500/15 dark:text-emerald-400"
                 >
                   {t("connection.badgeDuplicating")}
                 </Badge>
@@ -252,19 +252,19 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
 
         <form
           onSubmit={handleSubmit}
-          className="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar"
+          className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-5"
         >
           {/* Step 1: DB Engine Driver Cards */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">
+            <div className="mb-2 flex items-center justify-between">
+              <label className="text-xs font-semibold tracking-wider text-zinc-600 uppercase dark:text-zinc-300">
                 {t("connection.driver")}
               </label>
-              <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
+              <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500">
                 {t("connection.selectDriverHelp")}
               </span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
               {ENGINES.map((engine) => {
                 const isSelected = dbType === engine.type;
                 return (
@@ -272,40 +272,40 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     key={engine.type}
                     type="button"
                     onClick={() => handleDbTypeChange(engine.type)}
-                    className={`group p-3 rounded-lg border text-left flex flex-col justify-between transition-all cursor-pointer relative ${
+                    className={`group relative flex cursor-pointer flex-col justify-between rounded-lg border p-3 text-left transition-all ${
                       isSelected
-                        ? "border-emerald-500/90 dark:border-emerald-500 bg-emerald-500/10 dark:bg-emerald-500/15 ring-1 ring-emerald-500/50 shadow-xs"
-                        : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/50 text-zinc-600 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-100/80 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                        ? "border-emerald-500/90 bg-emerald-500/10 shadow-xs ring-1 ring-emerald-500/50 dark:border-emerald-500 dark:bg-emerald-500/15"
+                        : "border-zinc-200 bg-zinc-50/60 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                     }`}
                   >
-                    <div className="flex items-center justify-between w-full mb-1">
+                    <div className="mb-1 flex w-full items-center justify-between">
                       <span
-                        className={`font-semibold text-xs transition-colors ${
+                        className={`text-xs font-semibold transition-colors ${
                           isSelected
                             ? "text-emerald-900 dark:text-emerald-300"
-                            : "text-zinc-900 dark:text-zinc-200 group-hover:text-zinc-950 dark:group-hover:text-white"
+                            : "text-zinc-900 group-hover:text-zinc-950 dark:text-zinc-200 dark:group-hover:text-white"
                         }`}
                       >
                         {engine.name}
                       </span>
                       {isSelected && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50" />
+                        <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-xs shadow-emerald-500/50" />
                       )}
                     </div>
                     <span
-                      className={`text-[10px] block mb-2 leading-tight transition-colors ${
+                      className={`mb-2 block text-[10px] leading-tight transition-colors ${
                         isSelected
                           ? "text-emerald-700/80 dark:text-emerald-400/80"
-                          : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-300"
+                          : "text-zinc-500 group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-300"
                       }`}
                     >
                       {engine.category}
                     </span>
                     <span
-                      className={`text-[10px] font-mono transition-colors ${
+                      className={`font-mono text-[10px] transition-colors ${
                         isSelected
                           ? "text-emerald-600/70 dark:text-emerald-400/70"
-                          : "text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-400"
+                          : "text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-400"
                       }`}
                     >
                       :{engine.defaultPort}
@@ -318,8 +318,8 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
 
           {/* Environment Picker */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 uppercase tracking-wider">
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="text-xs font-semibold tracking-wider text-zinc-600 uppercase dark:text-zinc-300">
                 {t("connection.envTier")}
               </label>
               <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
@@ -334,14 +334,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     key={env.key}
                     type="button"
                     onClick={() => handleEnvironmentChange(env.key)}
-                    className={`py-1.5 px-2 rounded-md border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-all ${
                       isSelected
                         ? `${env.selectedClass} font-semibold shadow-xs`
-                        : "border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700"
+                        : "border-zinc-200 bg-zinc-50/50 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                     }`}
                   >
                     <span
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${env.dotClass}`}
+                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${env.dotClass}`}
                     />
                     <span>{env.label}</span>
                   </button>
@@ -352,7 +352,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
 
           {/* Connection Name */}
           <div>
-            <div className="flex items-center justify-between mb-1">
+            <div className="mb-1 flex items-center justify-between">
               <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 {t("connection.displayName")}
               </label>
@@ -363,7 +363,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     setIsNameCustom(false);
                     setName(generateDefaultName(dbType, dbName, environment));
                   }}
-                  className="text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer font-mono"
+                  className="cursor-pointer font-mono text-[10px] text-emerald-600 hover:underline dark:text-emerald-400"
                 >
                   {t("connection.resetAutoName")}
                 </button>
@@ -378,19 +378,19 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               }}
               placeholder="e.g. Analytics DB (PostgreSQL - staging)"
               required
-              className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+              className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
             />
           </div>
 
           {/* Mode Switcher (Form Parameters vs Connection URL) */}
-          <div className="grid grid-cols-2 p-1 rounded-lg bg-zinc-100/90 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800/80 gap-1 mb-3">
+          <div className="mb-3 grid grid-cols-2 gap-1 rounded-lg border border-zinc-200 bg-zinc-100/90 p-1 dark:border-zinc-800/80 dark:bg-zinc-900/80">
             <button
               type="button"
               onClick={() => setMode("form")}
-              className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
+              className={`flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 mode === "form"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-100"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
               }`}
             >
               <Server className="size-3.5 shrink-0" />
@@ -399,10 +399,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             <button
               type="button"
               onClick={() => setMode("url")}
-              className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
+              className={`flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                 mode === "url"
-                  ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
-                  : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+                  ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-100"
+                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
               }`}
             >
               <Terminal className="size-3.5 shrink-0" />
@@ -414,11 +414,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             dbType === "sqlite" ? (
               <div className="space-y-3">
                 <div>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="mb-1 flex items-center justify-between">
                     <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                       {t("connection.filepath")}
                     </label>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                    <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
                       .db / .sqlite / .sqlite3
                     </span>
                   </div>
@@ -428,9 +428,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     onChange={(e) => handleFilepathChange(e.target.value)}
                     required
                     placeholder="/absolute/path/to/database.db or ./app.db"
-                    className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                    className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                   />
-                  <p className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-1.5 leading-normal">
+                  <p className="mt-1.5 text-[11px] leading-normal text-zinc-400 dark:text-zinc-500">
                     {t("connection.sqliteFilePathHelp")}
                   </p>
                 </div>
@@ -439,7 +439,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               <div className="space-y-3">
                 <div className="grid grid-cols-3 gap-3">
                   <div className="col-span-2">
-                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                    <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
                       {t("connection.hostAddress")}
                     </label>
                     <Input
@@ -448,11 +448,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       onChange={(e) => setHost(e.target.value)}
                       required
                       placeholder="localhost"
-                      className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                    <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
                       {t("connection.port")}
                     </label>
                     <Input
@@ -461,17 +461,17 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       onChange={(e) => setPort(e.target.value)}
                       required
                       placeholder="5432"
-                      className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="mb-1 flex items-center justify-between">
                     <label className="text-xs text-zinc-600 dark:text-zinc-400">
                       {t("connection.database")}
                     </label>
-                    <span className="text-[10px] text-zinc-400 dark:text-zinc-500 font-mono">
+                    <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
                       {t("connection.targetSchema")}
                     </span>
                   </div>
@@ -481,13 +481,13 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     onChange={(e) => handleDbNameChange(e.target.value)}
                     required
                     placeholder="database_name"
-                    className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                    className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                    <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
                       {t("connection.user")}
                     </label>
                     <Input
@@ -495,11 +495,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       value={user}
                       onChange={(e) => setUser(e.target.value)}
                       placeholder="username"
-                      className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+                    <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
                       {t("connection.password")}
                     </label>
                     <Input
@@ -507,7 +507,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="text-xs font-mono bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                      className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                     />
                   </div>
                 </div>
@@ -515,7 +515,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             )
           ) : (
             <div>
-              <label className="block text-xs text-zinc-600 dark:text-zinc-400 mb-1">
+              <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
                 {t("connection.rawUrl")}
               </label>
               <Textarea
@@ -532,7 +532,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                         ? "mongodb://pebble:pebble@localhost:27017/pebble_test?authSource=admin"
                         : "file:/path/to/database.db"
                 }
-                className="text-xs font-mono resize-none bg-white dark:bg-zinc-900/60 border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100"
+                className="resize-none border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
               />
             </div>
           )}
@@ -548,10 +548,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               />
               <label
                 htmlFor="savePassword"
-                className="text-xs text-zinc-700 dark:text-zinc-300 flex flex-col cursor-pointer"
+                className="flex cursor-pointer flex-col text-xs text-zinc-700 dark:text-zinc-300"
               >
-                <span className="font-medium flex items-center gap-1">
-                  <Lock className="w-3 h-3 text-zinc-500 dark:text-zinc-400" />{" "}
+                <span className="flex items-center gap-1 font-medium">
+                  <Lock className="h-3 w-3 text-zinc-500 dark:text-zinc-400" />{" "}
                   {t("connection.savePasswordSecurely")}
                 </span>
                 <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -562,25 +562,25 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           )}
 
           {/* Read-Only Protection Switch */}
-          <div className="flex items-start justify-between p-3 rounded-lg border border-amber-500/30 bg-amber-500/5 dark:bg-amber-500/10">
+          <div className="flex items-start justify-between rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 dark:bg-amber-500/10">
             <div className="flex items-start gap-2.5 pr-2">
-              <Shield className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+              <Shield className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <div>
                 <div className="flex items-center gap-2">
                   <label
                     htmlFor="readOnlyMode"
-                    className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 cursor-pointer"
+                    className="cursor-pointer text-xs font-semibold text-zinc-900 dark:text-zinc-100"
                   >
                     {t("connection.readOnly")}
                   </label>
                   <Badge
                     variant="outline"
-                    className="text-[10px] font-mono px-1.5 py-0 h-4 border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10"
+                    className="h-4 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 font-mono text-[10px] text-amber-700 dark:text-amber-400"
                   >
                     {t("connection.readOnlyBadge")}
                   </Badge>
                 </div>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 leading-normal">
+                <p className="mt-0.5 text-[11px] leading-normal text-zinc-500 dark:text-zinc-400">
                   {t("connection.readOnlyHelp")}
                 </p>
               </div>
@@ -589,7 +589,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               id="readOnlyMode"
               checked={readOnly}
               onCheckedChange={(checked) => setReadOnly(Boolean(checked))}
-              className="mt-0.5 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600 dark:data-[state=checked]:bg-amber-500 dark:data-[state=checked]:border-amber-500"
+              className="mt-0.5 data-[state=checked]:border-amber-600 data-[state=checked]:bg-amber-600 dark:data-[state=checked]:border-amber-500 dark:data-[state=checked]:bg-amber-500"
             />
           </div>
 
@@ -598,17 +598,17 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             <Alert
               className={`text-xs ${
                 testResult.ok
-                  ? "border-emerald-200 dark:border-emerald-800/50 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300"
-                  : "border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-300"
+                  : "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300"
               }`}
               variant={testResult.ok ? "default" : "destructive"}
             >
               {testResult.ok ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
               ) : (
-                <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
               )}
-              <AlertDescription className="break-all font-mono text-xs">
+              <AlertDescription className="font-mono text-xs break-all">
                 {testResult.message}
               </AlertDescription>
             </Alert>
@@ -617,33 +617,33 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           {submitError && (
             <Alert
               variant="destructive"
-              className="text-xs border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 text-rose-800 dark:text-rose-300"
+              className="border-rose-200 bg-rose-50 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300"
             >
-              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-              <AlertDescription className="break-all font-mono text-xs">
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+              <AlertDescription className="font-mono text-xs break-all">
                 {submitError}
               </AlertDescription>
             </Alert>
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-3 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between border-t border-zinc-200 pt-3 dark:border-zinc-800">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleTest}
               disabled={testing || submitting}
-              className="text-xs font-medium gap-1.5 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300"
+              className="gap-1.5 border-zinc-200 bg-white text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
             >
               {testing ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   {t("connection.testing")}
                 </>
               ) : (
                 <>
-                  <Radio className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
+                  <Radio className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
                   {t("connection.testConnection")}
                 </>
               )}
@@ -664,11 +664,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 type="submit"
                 size="sm"
                 disabled={submitting || testing}
-                className="bg-emerald-600 hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white text-xs font-medium gap-1.5"
+                className="gap-1.5 bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400"
               >
                 {submitting ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     {t("common.loading")}
                   </>
                 ) : (

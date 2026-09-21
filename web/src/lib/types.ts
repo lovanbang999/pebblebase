@@ -1,5 +1,6 @@
-export type DatabaseType = 'postgres' | 'mysql' | 'mongodb' | 'sqlite';
-export type EnvironmentType = 'local' | 'development' | 'staging' | 'production';
+export type DatabaseType = "postgres" | "mysql" | "mongodb" | "sqlite";
+export type EnvironmentType =
+  "local" | "development" | "staging" | "production";
 
 export interface Connection {
   id: string;
@@ -19,7 +20,7 @@ export interface Connection {
 export interface ConnectionInput {
   name: string;
   type: DatabaseType;
-  mode: 'form' | 'url';
+  mode: "form" | "url";
   host?: string;
   port?: string;
   user?: string;
@@ -43,7 +44,7 @@ export interface ColumnSchema {
 
 export interface RelationSchema {
   name: string;
-  type: 'one_to_one' | 'one_to_many' | 'many_to_many';
+  type: "one_to_one" | "one_to_many" | "many_to_many";
   from_table: string;
   from_column: string;
   to_table: string;
@@ -58,7 +59,7 @@ export interface TableSchema {
 
 export interface FilterOption {
   column: string;
-  operator: 'eq' | 'neq' | 'gt' | 'lt' | 'contains';
+  operator: "eq" | "neq" | "gt" | "lt" | "contains";
   value: string;
 }
 
@@ -110,7 +111,7 @@ export interface ImportResult {
   duration_ms: number;
 }
 
-export type TabType = 'table' | 'query' | 'ddl' | 'erd' | 'diff';
+export type TabType = "table" | "query" | "ddl" | "erd" | "diff";
 
 export interface ERDResponse {
   tables: TableSchema[];
@@ -150,11 +151,11 @@ export interface TableDDLResponse {
 }
 
 export type AuditAction =
-  | 'login'
-  | 'query_execute'
-  | 'row_mutate'
-  | 'schema_change'
-  | 'connection_create';
+  | "login"
+  | "query_execute"
+  | "row_mutate"
+  | "schema_change"
+  | "connection_create";
 
 export interface AuditEntry {
   id: string;
@@ -173,8 +174,8 @@ export interface QueryHistoryEntry {
   user_id: string;
   username: string;
   action: AuditAction;
-  resource: string;   // connection name
-  detail: string;     // SQL text
+  resource: string; // connection name
+  detail: string; // SQL text
   ip: string;
   created_at: string;
 }
@@ -282,7 +283,7 @@ export interface SeedSQLResponse {
   sql: string;
 }
 
-export type DiffStatus = 'added' | 'removed' | 'modified' | 'unchanged';
+export type DiffStatus = "added" | "removed" | "modified" | "unchanged";
 
 export interface DiffConnectionInfo {
   id: string;
@@ -333,5 +334,3 @@ export interface SchemaDiffResult {
   summary: DiffSummary;
   migration_sql: string;
 }
-
-

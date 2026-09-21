@@ -43,8 +43,7 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     label: "SQLite",
     category: "Embedded / File",
     defaultPort: "local-file",
-    badge:
-      "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
+    badge: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
   },
 ];
 

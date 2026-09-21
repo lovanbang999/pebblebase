@@ -30,9 +30,9 @@ const ErrorFallbackView: FC<ErrorFallbackViewProps> = ({
   const { t } = useTranslation();
 
   return (
-    <div className="flex-1 h-full w-full flex flex-col items-center justify-center p-6 bg-zinc-50/60 dark:bg-zinc-950 text-center select-none">
-      <div className="max-w-md w-full p-6 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xl space-y-4">
-        <div className="mx-auto size-12 rounded-full bg-rose-500/10 dark:bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
+    <div className="flex h-full w-full flex-1 flex-col items-center justify-center bg-zinc-50/60 p-6 text-center select-none dark:bg-zinc-950">
+      <div className="w-full max-w-md space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400">
           <AlertTriangle className="size-6" />
         </div>
 
@@ -44,7 +44,7 @@ const ErrorFallbackView: FC<ErrorFallbackViewProps> = ({
                 "Something went wrong in this view",
               )}
           </h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono wrap-break-word leading-relaxed">
+          <p className="font-mono text-xs leading-relaxed wrap-break-word text-zinc-500 dark:text-zinc-400">
             {errorMessage ||
               fallbackMessage ||
               t(
@@ -54,11 +54,11 @@ const ErrorFallbackView: FC<ErrorFallbackViewProps> = ({
           </p>
         </div>
 
-        <div className="pt-2 flex justify-center gap-2">
+        <div className="flex justify-center gap-2 pt-2">
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium font-mono text-white bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 transition-colors shadow-xs cursor-pointer"
+            className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 font-mono text-xs font-medium text-white shadow-xs transition-colors hover:bg-indigo-500 active:bg-indigo-700"
           >
             <RefreshCw className="size-3.5" />
             <span>{t("errorBoundary.reloadView", "Reload View")}</span>

@@ -29,7 +29,9 @@ export function ThemeToggle({
         ? "dark"
         : "light";
     }
-    return (localStorage.getItem(STORAGE_KEYS.THEME) as "dark" | "light") || "dark";
+    return (
+      (localStorage.getItem(STORAGE_KEYS.THEME) as "dark" | "light") || "dark"
+    );
   });
 
   const currentTheme = externalTheme ?? internalTheme;
@@ -58,7 +60,7 @@ export function ThemeToggle({
             variant="ghost"
             size="icon-xs"
             onClick={handleToggle}
-            className={`size-6 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800 rounded cursor-pointer transition-colors ${
+            className={`size-6 cursor-pointer rounded text-zinc-500 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 ${
               className ?? ""
             }`}
           >

@@ -98,7 +98,7 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
     <header
       style={dragStyle}
       onDoubleClick={handleToggleMaximize}
-      className="relative h-9.5 w-full shrink-0 bg-zinc-100/90 dark:bg-zinc-950/95 border-b border-zinc-200/80 dark:border-border/40 select-none flex items-center justify-between px-3 z-50 text-xs transition-colors"
+      className="dark:border-border/40 relative z-50 flex h-9.5 w-full shrink-0 items-center justify-between border-b border-zinc-200/80 bg-zinc-100/90 px-3 text-xs transition-colors select-none dark:bg-zinc-950/95"
     >
       {/* Left: Brand Identity & Active Connection */}
       <div className="flex items-center gap-3">
@@ -106,11 +106,11 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
           <img
             src="/favicon.svg"
             alt="Pebblebase Logo"
-            className="w-4 h-4 object-contain pointer-events-none"
+            className="pointer-events-none h-4 w-4 object-contain"
           />
-          <span className="font-semibold text-zinc-800 dark:text-zinc-100 tracking-tight text-xs flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">
             Pebblebase Studio
-            <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 dark:border-emerald-500/20 px-1 py-0.2 rounded leading-none">
+            <span className="py-0.2 rounded border border-emerald-500/30 bg-emerald-500/10 px-1 font-mono text-[10px] leading-none text-emerald-700 dark:border-emerald-500/20 dark:text-emerald-400">
               v0.1.1
             </span>
           </span>
@@ -119,14 +119,14 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
         {activeConnectionName && (
           <div
             style={noDragStyle}
-            className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/90 dark:bg-zinc-900/90 border border-zinc-200/90 dark:border-zinc-800 text-[11px] text-zinc-700 dark:text-zinc-300 shadow-2xs"
+            className="hidden items-center gap-1.5 rounded-full border border-zinc-200/90 bg-white/90 px-2 py-0.5 text-[11px] text-zinc-700 shadow-2xs sm:flex dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-300"
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-medium text-zinc-800 dark:text-zinc-200 truncate max-w-40">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            <span className="max-w-40 truncate font-medium text-zinc-800 dark:text-zinc-200">
               {activeConnectionName}
             </span>
             {activeDatabaseType && (
-              <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-mono">
+              <span className="font-mono text-[10px] text-zinc-400 uppercase dark:text-zinc-500">
                 {activeDatabaseType}
               </span>
             )}
@@ -136,20 +136,20 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
 
       {/* Center: Quick Search / Command Palette Trigger (Mathematically Centered in Titlebar) */}
       {onOpenCommandPalette && (
-        <div className="absolute left-1/2 -translate-x-1/2 w-64 sm:w-72 md:w-80 max-w-[calc(100vw-420px)] pointer-events-none">
+        <div className="pointer-events-none absolute left-1/2 w-64 max-w-[calc(100vw-420px)] -translate-x-1/2 sm:w-72 md:w-80">
           <button
             type="button"
             style={noDragStyle}
             onClick={onOpenCommandPalette}
-            className="w-full h-6.5 flex items-center justify-between px-2.5 rounded-md bg-white/80 hover:bg-white dark:bg-zinc-900/80 dark:hover:bg-zinc-800/80 border border-zinc-200/90 hover:border-zinc-300 dark:border-zinc-800/80 dark:hover:border-zinc-700/80 text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 text-[11px] shadow-2xs transition-colors group cursor-pointer pointer-events-auto"
+            className="group pointer-events-auto flex h-6.5 w-full cursor-pointer items-center justify-between rounded-md border border-zinc-200/90 bg-white/80 px-2.5 text-[11px] text-zinc-500 shadow-2xs transition-colors hover:border-zinc-300 hover:bg-white hover:text-zinc-800 dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:text-zinc-400 dark:hover:border-zinc-700/80 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200"
           >
             <span className="flex items-center gap-1.5 truncate">
-              <Search className="w-3 h-3 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300 shrink-0" />
+              <Search className="h-3 w-3 shrink-0 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300" />
               <span className="truncate">
                 {t("titlebar.searchPlaceholder", "Search or run commands...")}
               </span>
             </span>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.2 text-[9px] font-mono bg-zinc-100 dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700/80 rounded text-zinc-500 dark:text-zinc-400 shrink-0">
+            <kbd className="py-0.2 hidden shrink-0 rounded border border-zinc-200/80 bg-zinc-100 px-1.5 font-mono text-[9px] text-zinc-500 sm:inline-block dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-400">
               Ctrl K
             </kbd>
           </button>
@@ -163,18 +163,18 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
           <button
             type="button"
             onClick={handleMinimize}
-            className="w-8 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/80 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
             title={t("titlebar.minimize", "Minimize")}
             aria-label="Minimize Window"
           >
-            <Minus className="w-3.5 h-3.5" />
+            <Minus className="h-3.5 w-3.5" />
           </button>
 
           {/* Maximize / Restore */}
           <button
             type="button"
             onClick={handleToggleMaximize}
-            className="w-8 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-900 hover:bg-zinc-200/80 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800/80 transition-colors cursor-pointer"
+            className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
             title={
               isMaximized
                 ? t("titlebar.restore", "Restore")
@@ -183,9 +183,9 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
             aria-label="Maximize or Restore Window"
           >
             {isMaximized ? (
-              <Copy className="w-3 h-3 rotate-180" />
+              <Copy className="h-3 w-3 rotate-180" />
             ) : (
-              <Square className="w-3 h-3" />
+              <Square className="h-3 w-3" />
             )}
           </button>
 
@@ -193,11 +193,11 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
           <button
             type="button"
             onClick={handleClose}
-            className="w-8 h-6 flex items-center justify-center rounded text-zinc-500 hover:text-white hover:bg-red-600 dark:text-zinc-400 dark:hover:text-white dark:hover:bg-red-600 transition-colors cursor-pointer"
+            className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-red-600 hover:text-white dark:text-zinc-400 dark:hover:bg-red-600 dark:hover:text-white"
             title={t("titlebar.close", "Close")}
             aria-label="Close Window"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

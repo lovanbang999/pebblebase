@@ -368,17 +368,17 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 sm:pt-24 bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      className="animate-in fade-in fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 pt-16 backdrop-blur-xs duration-150 sm:pt-24"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-150"
+        className="animate-in zoom-in-95 flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl duration-150 dark:border-zinc-800 dark:bg-zinc-900"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
         {/* Search Header Input */}
-        <div className="flex items-center px-4 py-3 border-b border-zinc-200 dark:border-zinc-800 gap-3">
-          <Search className="w-5 h-5 text-zinc-400 shrink-0" />
+        <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <Search className="h-5 w-5 shrink-0 text-zinc-400" />
           <input
             ref={inputRef}
             type="text"
@@ -388,9 +388,9 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
               "palette.placeholder",
               "Type a command or search...",
             )}
-            className="flex-1 bg-transparent text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none text-base font-sans"
+            className="flex-1 bg-transparent font-sans text-base text-zinc-900 placeholder-zinc-400 focus:outline-none dark:text-zinc-100"
           />
-          <span className="text-[11px] font-medium text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded border border-zinc-200 dark:border-zinc-700 font-mono">
+          <span className="rounded border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-[11px] font-medium text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800">
             ESC
           </span>
         </div>
@@ -398,10 +398,10 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         {/* Results List */}
         <div
           ref={listRef}
-          className="flex-1 overflow-y-auto p-2 space-y-4 font-sans"
+          className="flex-1 space-y-4 overflow-y-auto p-2 font-sans"
         >
           {flatItems.length === 0 ? (
-            <div className="py-12 text-center text-zinc-400 text-sm">
+            <div className="py-12 text-center text-sm text-zinc-400">
               {t(
                 "palette.noResults",
                 "No matching commands or entities found.",
@@ -411,7 +411,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
             allItems.map((group) => {
               return (
                 <div key={group.groupKey} className="space-y-1">
-                  <div className="px-3 py-1 text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">
+                  <div className="px-3 py-1 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
                     {group.groupLabel}
                   </div>
                   {group.items.map((item) => {
@@ -429,16 +429,16 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                         }}
                         onMouseEnter={() => setSelectedIndex(currentIndex)}
                         className={cn(
-                          "flex items-center justify-between px-3 py-2.5 rounded-lg cursor-pointer transition-colors text-sm",
+                          "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
                           isSelected
-                            ? "bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 font-medium"
-                            : "text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800/60",
+                            ? "bg-indigo-600/10 font-medium text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
+                            : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800/60",
                         )}
                       >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
                           <IconComp
                             className={cn(
-                              "w-4 h-4 shrink-0",
+                              "h-4 w-4 shrink-0",
                               isSelected
                                 ? "text-indigo-600 dark:text-indigo-400"
                                 : "text-zinc-400",
@@ -446,13 +446,13 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                           />
                           <span className="truncate">{item.title}</span>
                           {item.subtitle && (
-                            <span className="text-xs text-zinc-400 truncate max-w-50">
+                            <span className="max-w-50 truncate text-xs text-zinc-400">
                               {item.subtitle}
                             </span>
                           )}
                         </div>
                         {isSelected && (
-                          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-mono">
+                          <span className="rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">
                             ↵ Enter
                           </span>
                         )}
@@ -466,18 +466,18 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         </div>
 
         {/* Footer info bar */}
-        <div className="px-4 py-2 bg-zinc-50 dark:bg-zinc-950/80 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-400">
+        <div className="flex items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 py-2 text-xs text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/80">
           <div className="flex items-center gap-2">
             <span>Navigation:</span>
-            <span className="font-mono bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[10px] text-zinc-600 dark:text-zinc-300">
+            <span className="rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
               ↑↓
             </span>
             <span>Select:</span>
-            <span className="font-mono bg-zinc-200 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[10px] text-zinc-600 dark:text-zinc-300">
+            <span className="rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
               ↵
             </span>
           </div>
-          <div className="hidden sm:block text-[11px]">
+          <div className="hidden text-[11px] sm:block">
             {t("palette.shortcutHint", "Press Cmd+K or Ctrl+K anytime")} (
             {SHORTCUTS.mod}K)
           </div>
