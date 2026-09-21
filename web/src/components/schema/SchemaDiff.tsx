@@ -31,6 +31,20 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "cn";
 
 interface SchemaDiffProps {
@@ -199,57 +213,80 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Connection Selectors */}
           <div className="flex flex-wrap items-center gap-2 text-xs">
-            <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-2 py-1 shadow-sm">
+            {/* Source Connection */}
+            <div className="flex items-center gap-1.5">
               <span className="font-semibold text-emerald-600 dark:text-emerald-400 font-mono text-[11px] shrink-0">
                 {t("diff.source")}:
               </span>
-              <select
-                className="bg-transparent text-zinc-800 dark:text-zinc-200 font-medium focus:outline-none cursor-pointer text-xs"
+              <Select
                 value={fromId}
-                onChange={(e) => setFromId(e.target.value)}
+                onValueChange={(val) => {
+                  if (typeof val === "string") setFromId(val);
+                }}
               >
-                {relationalConnections.map((c) => (
-                  <option
-                    key={`from-${c.id}`}
-                    value={c.id}
-                    className="dark:bg-zinc-900"
-                  >
-                    {c.name} ({c.type})
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-7 text-xs font-mono min-w-44 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer shadow-2xs">
+                  <SelectValue placeholder={t("diff.source")} />
+                </SelectTrigger>
+                <SelectContent side="bottom" align="start">
+                  {relationalConnections.map((c) => (
+                    <SelectItem
+                      key={`from-${c.id}`}
+                      value={c.id}
+                      className="text-xs font-mono"
+                    >
+                      {c.name} ({c.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={handleSwap}
-              title={t("diff.swap")}
-              className="h-7 w-7 p-0 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 rounded-full"
-            >
-              <ArrowLeftRight className="w-3.5 h-3.5" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSwap}
+                    aria-label={t("diff.swap")}
+                    className="size-7 p-0 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 rounded-full cursor-pointer shrink-0"
+                  >
+                    <ArrowLeftRight className="size-3.5" />
+                  </Button>
+                }
+              />
+              <TooltipContent side="bottom">
+                {t("diff.swap")}
+              </TooltipContent>
+            </Tooltip>
 
-            <div className="flex items-center gap-1.5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md px-2 py-1 shadow-sm">
+            {/* Target Connection */}
+            <div className="flex items-center gap-1.5">
               <span className="font-semibold text-indigo-600 dark:text-indigo-400 font-mono text-[11px] shrink-0">
                 {t("diff.target")}:
               </span>
-              <select
-                className="bg-transparent text-zinc-800 dark:text-zinc-200 font-medium focus:outline-none cursor-pointer text-xs"
+              <Select
                 value={toId}
-                onChange={(e) => setToId(e.target.value)}
+                onValueChange={(val) => {
+                  if (typeof val === "string") setToId(val);
+                }}
               >
-                {relationalConnections.map((c) => (
-                  <option
-                    key={`to-${c.id}`}
-                    value={c.id}
-                    className="dark:bg-zinc-900"
-                  >
-                    {c.name} ({c.type})
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-7 text-xs font-mono min-w-44 bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 cursor-pointer shadow-2xs">
+                  <SelectValue placeholder={t("diff.target")} />
+                </SelectTrigger>
+                <SelectContent side="bottom" align="start">
+                  {relationalConnections.map((c) => (
+                    <SelectItem
+                      key={`to-${c.id}`}
+                      value={c.id}
+                      className="text-xs font-mono"
+                    >
+                      {c.name} ({c.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <Button
@@ -257,10 +294,10 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
               size="sm"
               onClick={runCompare}
               disabled={isLoading || !fromId || !toId || fromId === toId}
-              className="h-7 px-3 text-xs bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 gap-1.5 shadow-sm font-medium"
+              className="h-7 px-3 text-xs bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:text-white gap-1.5 shadow-2xs font-medium cursor-pointer disabled:opacity-50 transition-colors"
             >
               <RefreshCw
-                className={cn("w-3.5 h-3.5", isLoading && "animate-spin")}
+                className={cn("size-3.5", isLoading && "animate-spin")}
               />
               {isLoading ? t("diff.comparing") : t("diff.compare")}
             </Button>
@@ -374,37 +411,48 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1 text-[11px] font-mono">
-              <button
-                type="button"
-                onClick={() => setStatusFilter("all")}
-                className={cn(
-                  "px-2 py-0.5 rounded cursor-pointer transition-colors",
-                  statusFilter === "all"
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
-                )}
-              >
-                {t("diff.filter_all")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setStatusFilter("diffs")}
-                className={cn(
-                  "px-2 py-0.5 rounded cursor-pointer transition-colors",
-                  statusFilter === "diffs"
-                    ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold"
-                    : "text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200",
-                )}
-              >
-                {t("diff.filter_diff")}
-              </button>
-            </div>
+            <Tabs
+              value={statusFilter}
+              onValueChange={(val) => {
+                if (val === "all" || val === "diffs") {
+                  setStatusFilter(val);
+                }
+              }}
+              className="w-full"
+            >
+              <TabsList className="w-full h-7 p-0.5 bg-zinc-200/60 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md grid grid-cols-2 text-[11px] font-mono">
+                <TabsTrigger
+                  value="all"
+                  className="h-6 text-[11px] font-mono cursor-pointer transition-all data-active:bg-white dark:data-active:bg-zinc-800 data-active:text-zinc-900 dark:data-active:text-zinc-100 data-active:shadow-2xs"
+                >
+                  {t("diff.filter_all")}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="diffs"
+                  className="h-6 text-[11px] font-mono cursor-pointer transition-all data-active:bg-white dark:data-active:bg-zinc-800 data-active:text-zinc-900 dark:data-active:text-zinc-100 data-active:shadow-2xs"
+                >
+                  {t("diff.filter_diff")}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
           {/* Tables List */}
           <div className="flex-1 overflow-y-auto p-1 divide-y divide-zinc-100 dark:divide-zinc-900/60">
-            {filteredTables.length === 0 ? (
+            {isLoading ? (
+              <div className="p-2 space-y-2">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 p-2 rounded-md bg-zinc-100/50 dark:bg-zinc-900/50"
+                  >
+                    <Skeleton className="size-3.5 rounded" />
+                    <Skeleton className="h-3.5 flex-1 rounded" />
+                    <Skeleton className="h-4 w-12 rounded" />
+                  </div>
+                ))}
+              </div>
+            ) : filteredTables.length === 0 ? (
               <div className="p-6 text-center text-xs text-zinc-400 dark:text-zinc-500 font-mono">
                 {diffResult
                   ? t("diff.no_tables_match")
@@ -470,13 +518,44 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
 
         {/* Right Side: Side-by-side Table Columns Diff */}
         <div className="flex-1 overflow-y-auto flex flex-col bg-white dark:bg-zinc-950">
-          {!diffResult ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-zinc-400 dark:text-zinc-600">
-              <GitCompare className="w-12 h-12 stroke-1 mb-3 text-zinc-300 dark:text-zinc-700" />
-              <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1">
+          {isLoading ? (
+            <div className="p-6 space-y-6">
+              <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="size-5 rounded" />
+                  <Skeleton className="h-5 w-40 rounded" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+                <Skeleton className="h-4 w-32 rounded" />
+              </div>
+              <div className="space-y-3">
+                <Skeleton className="h-4 w-28 rounded" />
+                <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden">
+                  <div className="grid grid-cols-2 p-3 bg-zinc-100 dark:bg-zinc-900 gap-4">
+                    <Skeleton className="h-4 w-36 rounded" />
+                    <Skeleton className="h-4 w-36 rounded" />
+                  </div>
+                  <div className="p-4 space-y-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="grid grid-cols-2 gap-4 py-2 border-b border-zinc-100 dark:border-zinc-900"
+                      >
+                        <Skeleton className="h-4 w-44 rounded" />
+                        <Skeleton className="h-4 w-44 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : !diffResult ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-zinc-400 dark:text-zinc-600 select-none">
+              <GitCompare className="size-12 stroke-1 mb-3 text-zinc-300 dark:text-zinc-700" />
+              <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 mb-1 font-mono">
                 {t("diff.title")}
               </h3>
-              <p className="text-xs max-w-sm">{t("diff.subtitle")}</p>
+              <p className="text-xs max-w-sm font-mono">{t("diff.subtitle")}</p>
             </div>
           ) : diffResult.summary.tables_added === 0 &&
             diffResult.summary.tables_removed === 0 &&

@@ -651,7 +651,7 @@ export default function Sidebar({
                 data-tour="nav-query-console"
                 variant={activeView === "console" ? "secondary" : "ghost"}
                 size="sm"
-                onClick={onOpenQueryConsole}
+                onClick={() => onOpenQueryConsole?.()}
                 title={getShortcutTooltip("queryConsole")}
                 className={cn(
                   "w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
@@ -678,7 +678,7 @@ export default function Sidebar({
                 data-tour="nav-erd"
                 variant={activeView === "erd" ? "secondary" : "ghost"}
                 size="sm"
-                onClick={onOpenERD}
+                onClick={() => onOpenERD?.()}
                 title={getShortcutTooltip("erd")}
                 className={cn(
                   "w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center",
@@ -704,7 +704,7 @@ export default function Sidebar({
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={onOpenDiff}
+                onClick={() => onOpenDiff?.()}
                 title={t("diff.title")}
                 className="w-full justify-between h-8 px-2 font-mono text-xs cursor-pointer group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
               >

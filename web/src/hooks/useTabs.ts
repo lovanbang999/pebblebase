@@ -104,7 +104,11 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     if (!connectionId) return;
 
     if (tabs.length > 0) {
-      sessionStorage.setItem(getTabsStorageKey(connectionId), JSON.stringify(tabs));
+      try {
+        sessionStorage.setItem(getTabsStorageKey(connectionId), JSON.stringify(tabs));
+      } catch (err) {
+        console.warn("Failed to serialize tabs to sessionStorage:", err);
+      }
     } else {
       sessionStorage.removeItem(getTabsStorageKey(connectionId));
     }
@@ -119,7 +123,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
   // Open or switch to a table tab
   const openTableTab = useCallback(
     (tableName: string, openInNewTab = false, initialState?: Partial<StudioTabState>) => {
-      if (!connectionId) return;
+      if (!connectionId || typeof tableName !== "string") return;
 
       if (!openInNewTab) {
         // If existing tab matches tableName, activate it
@@ -181,7 +185,12 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
       if (!connectionId) return;
 
       const queryTabs = tabs.filter((t) => t.type === "query");
-      const title = customTitle || `Console ${queryTabs.length + 1}`;
+      const title =
+        typeof customTitle === "string" && customTitle.trim()
+          ? customTitle
+          : `Console ${queryTabs.length + 1}`;
+      const queryText =
+        typeof initialQuery === "string" ? initialQuery : undefined;
 
       const newTab: StudioTab = {
         id: `tab_query_${Date.now()}`,
@@ -194,7 +203,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
           filters: [],
           sortBy: "",
           sortDesc: false,
-          queryText: initialQuery,
+          queryText,
         },
       };
 
@@ -361,6 +370,31 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     [activeTabId]
   );
 
+  // Reorder tabs by moving a tab from sourceIndex to destinationIndex
+  const reorderTabs = useCallback(
+    (sourceIndex: number, destinationIndex: number) => {
+      if (sourceIndex === destinationIndex) return;
+
+      setTabs((prev) => {
+        if (
+          sourceIndex < 0 ||
+          sourceIndex >= prev.length ||
+          destinationIndex < 0 ||
+          destinationIndex >= prev.length
+        ) {
+          return prev;
+        }
+
+        const next = [...prev];
+        const [movedTab] = next.splice(sourceIndex, 1);
+        if (!movedTab) return prev;
+        next.splice(destinationIndex, 0, movedTab);
+        return next;
+      });
+    },
+    []
+  );
+
   const activeTab = tabs.find((t) => t.id === activeTabId) || null;
 
   return {
@@ -376,6 +410,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     closeOtherTabs,
     closeTabsToRight,
     duplicateTab,
+    reorderTabs,
     updateActiveTabState,
   };
 }

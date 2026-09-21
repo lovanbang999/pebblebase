@@ -485,7 +485,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
   // Validate if initialQuery matches current dialect
   const isValidInitialQuery = useMemo(() => {
-    if (!initialQuery) return false;
+    if (typeof initialQuery !== "string" || !initialQuery.trim()) return false;
     const trimmed = initialQuery.trim();
     if (isMongo) {
       return trimmed.startsWith("db.") || trimmed.startsWith("{");
