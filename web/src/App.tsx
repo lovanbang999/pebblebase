@@ -151,6 +151,7 @@ function PebblebaseStudio() {
     closeOtherTabs,
     closeTabsToRight,
     duplicateTab,
+    reorderTabs,
     updateActiveTabState,
   } = useTabs({
     connectionId: activeConnection?.id || null,
@@ -567,6 +568,7 @@ function PebblebaseStudio() {
             onCloseTabsToRight={closeTabsToRight}
             onDuplicateTab={duplicateTab}
             onNewQueryTab={openQueryTab}
+            onReorderTabs={reorderTabs}
           />
         )}
 

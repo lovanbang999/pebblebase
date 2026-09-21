@@ -3,8 +3,10 @@ import {
   useEffect,
   useRef,
   useCallback,
+  Fragment,
   type FC,
   type MouseEvent,
+  type DragEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -39,6 +41,7 @@ interface TabBarProps {
   onCloseTabsToRight: (tabId: string) => void;
   onDuplicateTab: (tabId: string) => void;
   onNewQueryTab: () => void;
+  onReorderTabs?: (sourceIndex: number, destinationIndex: number) => void;
 }
 
 interface ContextMenuState {
@@ -56,11 +59,14 @@ export const TabBar: FC<TabBarProps> = ({
   onCloseTabsToRight,
   onDuplicateTab,
   onNewQueryTab,
+  onReorderTabs,
 }) => {
   const { t } = useTranslation();
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -238,6 +244,83 @@ export const TabBar: FC<TabBarProps> = ({
     }
   };
 
+  // Auto-scroll when dragging near container boundaries
+  const handleDragAutoScroll = useCallback(
+    (clientX: number) => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const edgeThreshold = 40;
+      if (clientX < rect.left + edgeThreshold) {
+        el.scrollLeft -= 8;
+        checkScroll();
+      } else if (clientX > rect.right - edgeThreshold) {
+        el.scrollLeft += 8;
+        checkScroll();
+      }
+    },
+    [checkScroll],
+  );
+
+  const handleTabDragStart = (
+    e: DragEvent<HTMLDivElement>,
+    index: number,
+    tabId: string,
+  ) => {
+    setDraggedIndex(index);
+    setDropTargetIndex(null);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", tabId);
+  };
+
+  const handleTabDragOver = (
+    e: DragEvent<HTMLDivElement>,
+    index: number,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "move";
+
+    handleDragAutoScroll(e.clientX);
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isRightHalf = e.clientX > rect.left + rect.width / 2;
+    setDropTargetIndex(isRightHalf ? index + 1 : index);
+  };
+
+  const handleContainerDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+
+    handleDragAutoScroll(e.clientX);
+
+    // If dragging over empty area past all tabs, target the end
+    setDropTargetIndex(tabs.length);
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (draggedIndex !== null && dropTargetIndex !== null && onReorderTabs) {
+      let finalDestination = dropTargetIndex;
+      if (draggedIndex < finalDestination) {
+        finalDestination -= 1;
+      }
+      if (draggedIndex !== finalDestination) {
+        onReorderTabs(draggedIndex, finalDestination);
+      }
+    }
+
+    setDraggedIndex(null);
+    setDropTargetIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDropTargetIndex(null);
+  };
+
   const getTabIcon = (tab: StudioTab, isActive: boolean) => {
     switch (tab.type) {
       case "table":
@@ -367,69 +450,98 @@ export const TabBar: FC<TabBarProps> = ({
       {/* Scrollable Tab Strip */}
       <div
         ref={scrollContainerRef}
+        onDragOver={handleContainerDragOver}
+        onDrop={handleDrop}
         className="flex items-center gap-0.5 overflow-x-auto overflow-y-hidden no-scrollbar h-full pt-1 flex-1"
       >
-        {tabs.map((tab) => {
+        {tabs.map((tab, index) => {
           const isActive = tab.id === activeTabId;
+          const isDragging = draggedIndex === index;
+          const showDropIndicatorBefore =
+            draggedIndex !== null &&
+            dropTargetIndex === index &&
+            dropTargetIndex !== draggedIndex &&
+            dropTargetIndex !== draggedIndex + 1;
 
           return (
-            <div
-              key={tab.id}
-              data-tab-id={tab.id}
-              onClick={() => onSelectTab(tab.id)}
-              onContextMenu={(e) => handleContextMenu(e, tab.id)}
-              onMouseDown={(e) => handleMouseDown(e, tab.id)}
-              className={cn(
-                "group relative flex items-center gap-2 h-8 px-3 rounded-t-lg font-mono text-xs cursor-pointer transition-all duration-150 border-t-2 max-w-50 shrink-0 select-none wails-no-drag",
-                isActive
-                  ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 border-t-emerald-500 border-x border-zinc-200 dark:border-zinc-800 font-medium shadow-xs"
-                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40 border-t-transparent border-x border-transparent",
+            <Fragment key={tab.id}>
+              {showDropIndicatorBefore && (
+                <div className="w-0.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] -mx-0.5 z-30 shrink-0 pointer-events-none self-center animate-in fade-in duration-100" />
               )}
-              style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
-            >
-              {getTabIcon(tab, isActive)}
-
-              <span
-                className="truncate flex-1 min-w-0 font-medium"
-                title={
-                  tab.type === "table"
-                    ? t("tabs.tableTabTooltip", {
-                        name: tab.tableName || tab.title,
-                      })
-                    : tab.type === "erd"
-                      ? t("erd.title")
-                      : t("tabs.queryTabTooltip")
-                }
+              <div
+                data-tab-id={tab.id}
+                draggable
+                onDragStart={(e) => handleTabDragStart(e, index, tab.id)}
+                onDragOver={(e) => handleTabDragOver(e, index)}
+                onDrop={handleDrop}
+                onDragEnd={handleDragEnd}
+                onClick={() => onSelectTab(tab.id)}
+                onContextMenu={(e) => handleContextMenu(e, tab.id)}
+                onMouseDown={(e) => handleMouseDown(e, tab.id)}
+                className={cn(
+                  "group relative flex items-center gap-2 h-8 px-3 rounded-t-lg font-mono text-xs cursor-pointer transition-all duration-150 border-t-2 max-w-50 shrink-0 select-none wails-no-drag",
+                  isActive
+                    ? "bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50 border-t-emerald-500 border-x border-zinc-200 dark:border-zinc-800 font-medium shadow-xs"
+                    : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/50 dark:hover:bg-zinc-800/40 border-t-transparent border-x border-transparent",
+                  isDragging &&
+                    "opacity-50 scale-[0.98] border-dashed border-zinc-400 dark:border-zinc-600",
+                )}
+                style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
-                {tab.type === "erd" ? t("erd.title") : tab.title}
-              </span>
+                {getTabIcon(tab, isActive)}
 
-              {/* Close Button */}
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onCloseTab(tab.id);
-                      }}
-                      className={cn(
-                        "w-4 h-4 rounded flex items-center justify-center transition-opacity shrink-0 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200 dark:hover:text-zinc-100 dark:hover:bg-zinc-800",
-                        isActive
-                          ? "opacity-100"
-                          : "opacity-0 group-hover:opacity-100",
-                      )}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                <span
+                  className="truncate flex-1 min-w-0 font-medium"
+                  title={
+                    tab.type === "table"
+                      ? t("tabs.tableTabTooltip", {
+                          name: tab.tableName || tab.title,
+                        })
+                      : tab.type === "erd"
+                        ? t("erd.title")
+                        : t("tabs.queryTabTooltip")
                   }
-                />
-                <TooltipContent side="bottom">{t("tabs.close")}</TooltipContent>
-              </Tooltip>
-            </div>
+                >
+                  {tab.type === "erd" ? t("erd.title") : tab.title}
+                </span>
+
+                {/* Close Button */}
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        type="button"
+                        draggable={false}
+                        onDragStart={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCloseTab(tab.id);
+                        }}
+                        className={cn(
+                          "w-4 h-4 rounded flex items-center justify-center transition-opacity shrink-0 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200 dark:hover:text-zinc-100 dark:hover:bg-zinc-800",
+                          isActive
+                            ? "opacity-100"
+                            : "opacity-0 group-hover:opacity-100",
+                        )}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    }
+                  />
+                  <TooltipContent side="bottom">{t("tabs.close")}</TooltipContent>
+                </Tooltip>
+              </div>
+            </Fragment>
           );
         })}
+
+        {/* Drop indicator after the last tab */}
+        {draggedIndex !== null &&
+          dropTargetIndex === tabs.length &&
+          dropTargetIndex !== draggedIndex &&
+          dropTargetIndex !== draggedIndex + 1 && (
+            <div className="w-0.5 h-6 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)] -mx-0.5 z-30 shrink-0 pointer-events-none self-center animate-in fade-in duration-100" />
+          )}
 
         {/* Plus Button to open new Query Tab */}
         <Tooltip>
@@ -439,7 +551,9 @@ export const TabBar: FC<TabBarProps> = ({
                 type="button"
                 variant="ghost"
                 size="icon-xs"
-                onClick={onNewQueryTab}
+                draggable={false}
+                onDragStart={(e) => e.stopPropagation()}
+                onClick={() => onNewQueryTab()}
                 className="w-7 h-7 ml-1 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/50 shrink-0 cursor-pointer wails-no-drag"
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
