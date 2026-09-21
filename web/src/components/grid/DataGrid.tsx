@@ -60,11 +60,7 @@ import type {
   ColumnSchema,
   TableStats,
 } from "@/lib/types";
-import {
-  exportTableData,
-  fetchTableStats,
-  type ExportFormat,
-} from "@/lib/api";
+import { exportTableData, fetchTableStats, type ExportFormat } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/common";
 import { QuickStatsBar } from "./QuickStatsBar";
@@ -76,10 +72,14 @@ import {
 } from "@/constants";
 
 const ImportModal = lazy(() =>
-  import("@/components/modals/ImportModal").then((m) => ({ default: m.ImportModal })),
+  import("@/components/modals/ImportModal").then((m) => ({
+    default: m.ImportModal,
+  })),
 );
 const SchemaInspector = lazy(() =>
-  import("@/components/schema/SchemaInspector").then((m) => ({ default: m.SchemaInspector })),
+  import("@/components/schema/SchemaInspector").then((m) => ({
+    default: m.SchemaInspector,
+  })),
 );
 const ColumnAnalyticsDrawer = lazy(() =>
   import("./ColumnAnalyticsDrawer").then((m) => ({
@@ -341,12 +341,12 @@ const DocumentView: FC<DocumentViewProps> = ({
   const renderValue = (key: string, val: any, _row: Record<string, any>) => {
     if (val === undefined) {
       return (
-        <span className="text-zinc-500 italic text-[11px] select-none">—</span>
+        <span className="text-[11px] text-zinc-500 italic select-none">—</span>
       );
     }
     if (val === null) {
       return (
-        <span className="text-zinc-500 italic text-[11px] font-mono">null</span>
+        <span className="font-mono text-[11px] text-zinc-500 italic">null</span>
       );
     }
 
@@ -360,10 +360,10 @@ const DocumentView: FC<DocumentViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigateRelation(rel.to_table, rel.to_column, val)}
-            className="inline-flex items-center gap-1 font-mono text-[11px] text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
+            className="inline-flex cursor-pointer items-center gap-1 font-mono text-[11px] text-sky-600 hover:underline dark:text-sky-400"
           >
             {String(val)}
-            <ArrowUpRight className="w-3 h-3 shrink-0" />
+            <ArrowUpRight className="h-3 w-3 shrink-0" />
           </button>
         );
       }
@@ -373,10 +373,10 @@ const DocumentView: FC<DocumentViewProps> = ({
       return (
         <span
           className={cn(
-            "font-mono text-[11px] font-semibold px-1.5 py-px rounded border",
+            "rounded border px-1.5 py-px font-mono text-[11px] font-semibold",
             val
-              ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50"
-              : "text-zinc-600 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-transparent",
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-400"
+              : "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-transparent dark:bg-zinc-800 dark:text-zinc-400",
           )}
         >
           {String(val)}
@@ -389,7 +389,7 @@ const DocumentView: FC<DocumentViewProps> = ({
       const isLong = json.length > 80;
       return (
         <span
-          className="font-mono text-[11px] text-amber-700 dark:text-amber-300/90 break-all cursor-help"
+          className="cursor-help font-mono text-[11px] break-all text-amber-700 dark:text-amber-300/90"
           title={JSON.stringify(val, null, 2)}
         >
           {isLong ? json.slice(0, 80) + "…" : json}
@@ -432,7 +432,7 @@ const DocumentView: FC<DocumentViewProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto p-3 space-y-2 bg-white dark:bg-zinc-950">
+    <div className="flex-1 space-y-2 overflow-auto bg-white p-3 dark:bg-zinc-950">
       {rows.map((row, globalIdx) => {
         const rowNumber = page * pageSize + globalIdx + 1;
         const keys = allFieldKeys(row);
@@ -450,10 +450,10 @@ const DocumentView: FC<DocumentViewProps> = ({
           <div
             key={globalIdx}
             className={cn(
-              "group border rounded-lg bg-white dark:bg-zinc-900 overflow-hidden transition-colors",
+              "group overflow-hidden rounded-lg border bg-white transition-colors dark:bg-zinc-900",
               editingDocIdx === globalIdx
-                ? "border-emerald-500/60 dark:border-emerald-500/40 ring-1 ring-emerald-500/20"
-                : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700",
+                ? "border-emerald-500/60 ring-1 ring-emerald-500/20 dark:border-emerald-500/40"
+                : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700",
             )}
             onDoubleClick={() => {
               if (!isReadOnly && editingDocIdx !== globalIdx)
@@ -461,15 +461,15 @@ const DocumentView: FC<DocumentViewProps> = ({
             }}
           >
             {/* Card Header: row# + primary key + actions */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/70">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-[11px] font-mono text-zinc-400 dark:text-zinc-600 shrink-0 select-none w-6 text-right">
+            <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/70 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/70">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="w-6 shrink-0 text-right font-mono text-[11px] text-zinc-400 select-none dark:text-zinc-600">
                   {rowNumber}
                 </span>
-                <span className="text-[11px] font-mono text-zinc-500 dark:text-zinc-500 shrink-0">
+                <span className="shrink-0 font-mono text-[11px] text-zinc-500 dark:text-zinc-500">
                   {pkKey}:
                 </span>
-                <span className="font-mono text-[11px] font-semibold text-amber-700 dark:text-amber-400 truncate">
+                <span className="truncate font-mono text-[11px] font-semibold text-amber-700 dark:text-amber-400">
                   {pkVal !== undefined && pkVal !== null ? (
                     String(pkVal)
                   ) : (
@@ -477,7 +477,7 @@ const DocumentView: FC<DocumentViewProps> = ({
                   )}
                 </span>
                 {editingDocIdx === globalIdx && (
-                  <span className="ml-1 text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/50 px-1.5 py-px rounded select-none">
+                  <span className="ml-1 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-px font-mono text-[10px] text-emerald-600 select-none dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-400">
                     editing
                   </span>
                 )}
@@ -485,9 +485,9 @@ const DocumentView: FC<DocumentViewProps> = ({
 
               {/* Per-card actions — hidden when editing */}
               {editingDocIdx !== globalIdx && (
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   {!isReadOnly && (
-                    <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-600 mr-1 select-none hidden group-hover:inline">
+                    <span className="mr-1 hidden font-mono text-[10px] text-zinc-400 select-none group-hover:inline dark:text-zinc-600">
                       double-click to edit
                     </span>
                   )}
@@ -495,12 +495,12 @@ const DocumentView: FC<DocumentViewProps> = ({
                     type="button"
                     onClick={() => handleCopyJson(row, globalIdx)}
                     title={t("datagrid.documentView.copyJson")}
-                    className="p-1 rounded text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    className="cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
                   >
                     {copiedRow === globalIdx ? (
-                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <Check className="h-3.5 w-3.5 text-emerald-500" />
                     ) : (
-                      <Copy className="w-3.5 h-3.5" />
+                      <Copy className="h-3.5 w-3.5" />
                     )}
                   </button>
                   <button
@@ -509,12 +509,12 @@ const DocumentView: FC<DocumentViewProps> = ({
                     disabled={isReadOnly}
                     title={t("datagrid.editRecordTooltip")}
                     className={cn(
-                      "p-1 rounded text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer",
+                      "cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-600 dark:hover:bg-zinc-800 dark:hover:text-emerald-400",
                       isReadOnly &&
-                        "opacity-40 cursor-not-allowed pointer-events-none",
+                        "pointer-events-none cursor-not-allowed opacity-40",
                     )}
                   >
-                    <Edit2 className="w-3.5 h-3.5" />
+                    <Edit2 className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
@@ -522,12 +522,12 @@ const DocumentView: FC<DocumentViewProps> = ({
                     disabled={isReadOnly}
                     title={t("datagrid.deleteRecordTooltip")}
                     className={cn(
-                      "p-1 rounded text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer",
+                      "cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400",
                       isReadOnly &&
-                        "opacity-40 cursor-not-allowed pointer-events-none",
+                        "pointer-events-none cursor-not-allowed opacity-40",
                     )}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </div>
               )}
@@ -559,7 +559,7 @@ const DocumentView: FC<DocumentViewProps> = ({
                     <div
                       key={key}
                       className={cn(
-                        "flex items-center gap-0 min-w-0 border-l-2 transition-colors",
+                        "flex min-w-0 items-center gap-0 border-l-2 transition-colors",
                         isEditing && isDirty
                           ? "border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/10"
                           : "border-l-transparent",
@@ -567,7 +567,7 @@ const DocumentView: FC<DocumentViewProps> = ({
                     >
                       {/* Line number */}
                       {isEditing && (
-                        <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-600 shrink-0 w-8 text-right pr-2 select-none self-start pt-0.75">
+                        <span className="w-8 shrink-0 self-start pt-0.75 pr-2 text-right font-mono text-[10px] text-zinc-400 select-none dark:text-zinc-600">
                           {fieldLineNum}
                         </span>
                       )}
@@ -575,15 +575,15 @@ const DocumentView: FC<DocumentViewProps> = ({
                       {/* Field name */}
                       <span
                         className={cn(
-                          "font-mono text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0 truncate self-start",
+                          "shrink-0 self-start truncate font-mono text-[11px] text-zinc-500 dark:text-zinc-400",
                           isEditing
-                            ? "min-w-35 pt-0.75 px-2"
+                            ? "min-w-35 px-2 pt-0.75"
                             : "min-w-30 px-3 py-px",
                         )}
                       >
                         {key}
                       </span>
-                      <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-600 shrink-0 self-start pt-0.75">
+                      <span className="shrink-0 self-start pt-0.75 font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
                         :
                       </span>
 
@@ -632,10 +632,10 @@ const DocumentView: FC<DocumentViewProps> = ({
                             }
                           }}
                           className={cn(
-                            "flex-1 min-w-0 font-mono text-[11px] bg-transparent border-0 border-b px-2 py-px resize-none overflow-hidden text-zinc-900 dark:text-zinc-100 focus:outline-none transition-colors leading-5",
+                            "min-w-0 flex-1 resize-none overflow-hidden border-0 border-b bg-transparent px-2 py-px font-mono text-[11px] leading-5 text-zinc-900 transition-colors focus:outline-none dark:text-zinc-100",
                             isDirty
                               ? "border-b-emerald-500 dark:border-b-emerald-400"
-                              : "border-b-zinc-200 dark:border-b-zinc-700 focus:border-b-zinc-400 dark:focus:border-b-zinc-500",
+                              : "border-b-zinc-200 focus:border-b-zinc-400 dark:border-b-zinc-700 dark:focus:border-b-zinc-500",
                           )}
                           autoFocus={
                             key === visibleKeys.filter((k) => k !== pkKey)[0]
@@ -644,7 +644,7 @@ const DocumentView: FC<DocumentViewProps> = ({
                       ) : (
                         <span
                           className={cn(
-                            "min-w-0 font-mono text-[11px] wrap-break-word flex-1",
+                            "min-w-0 flex-1 font-mono text-[11px] wrap-break-word",
                             isEditing
                               ? "px-2 py-px text-zinc-500 dark:text-zinc-500"
                               : "px-2 py-px",
@@ -664,10 +664,10 @@ const DocumentView: FC<DocumentViewProps> = ({
                       {/* Type label (Compass-style, right side) */}
                       <span
                         className={cn(
-                          "font-mono text-[10px] shrink-0 pl-2 self-start pt-0.75",
+                          "shrink-0 self-start pt-0.75 pl-2 font-mono text-[10px]",
                           isEditing
-                            ? "text-zinc-400 dark:text-zinc-500 pr-3 min-w-14 text-right"
-                            : "text-zinc-300 dark:text-zinc-700 pr-3 min-w-14 text-right",
+                            ? "min-w-14 pr-3 text-right text-zinc-400 dark:text-zinc-500"
+                            : "min-w-14 pr-3 text-right text-zinc-300 dark:text-zinc-700",
                         )}
                       >
                         {typeLabel}
@@ -681,16 +681,16 @@ const DocumentView: FC<DocumentViewProps> = ({
                 <button
                   type="button"
                   onClick={() => toggleExpand(globalIdx)}
-                  className="mt-1.5 ml-3 flex items-center gap-1 text-[11px] font-mono text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors cursor-pointer select-none"
+                  className="mt-1.5 ml-3 flex cursor-pointer items-center gap-1 font-mono text-[11px] text-zinc-400 transition-colors select-none hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
                 >
                   {isExpanded ? (
                     <>
-                      <ChevronUpIcon className="w-3.5 h-3.5" />
+                      <ChevronUpIcon className="h-3.5 w-3.5" />
                       {t("datagrid.documentView.collapse")}
                     </>
                   ) : (
                     <>
-                      <ChevronDownIcon className="w-3.5 h-3.5" />
+                      <ChevronDownIcon className="h-3.5 w-3.5" />
                       {t("datagrid.documentView.expand")} (+{keys.length - 15}{" "}
                       fields)
                     </>
@@ -703,17 +703,17 @@ const DocumentView: FC<DocumentViewProps> = ({
             {editingDocIdx === globalIdx && (
               <div
                 className={cn(
-                  "flex items-center justify-between px-3 py-2 border-t transition-colors",
+                  "flex items-center justify-between border-t px-3 py-2 transition-colors",
                   isDocModified(row)
-                    ? "border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30"
-                    : "border-zinc-100 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60",
+                    ? "border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30"
+                    : "border-zinc-100 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/60",
                 )}
               >
                 <span
                   className={cn(
-                    "text-[11px] font-mono transition-opacity",
+                    "font-mono text-[11px] transition-opacity",
                     isDocModified(row)
-                      ? "text-amber-700 dark:text-amber-400 opacity-100"
+                      ? "text-amber-700 opacity-100 dark:text-amber-400"
                       : "opacity-0 select-none",
                   )}
                 >
@@ -723,7 +723,7 @@ const DocumentView: FC<DocumentViewProps> = ({
                   <button
                     type="button"
                     onClick={cancelEdit}
-                    className="px-3 py-1.5 text-[11px] font-mono font-medium rounded border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer uppercase tracking-wide"
+                    className="cursor-pointer rounded border border-zinc-300 bg-white px-3 py-1.5 font-mono text-[11px] font-medium tracking-wide text-zinc-700 uppercase transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   >
                     Cancel
                   </button>
@@ -732,10 +732,10 @@ const DocumentView: FC<DocumentViewProps> = ({
                     disabled={isSaving || !onSaveCell || !isDocModified(row)}
                     onClick={() => handleUpdate(row)}
                     className={cn(
-                      "px-3 py-1.5 text-[11px] font-mono font-semibold rounded border transition-colors uppercase tracking-wide",
+                      "rounded border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wide uppercase transition-colors",
                       isSaving || !onSaveCell || !isDocModified(row)
-                        ? "border-zinc-200 dark:border-zinc-700 text-zinc-400 bg-zinc-100 dark:bg-zinc-800 cursor-not-allowed"
-                        : "border-emerald-500 text-white bg-emerald-600 hover:bg-emerald-500 cursor-pointer",
+                        ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+                        : "cursor-pointer border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-500",
                     )}
                   >
                     {isSaving ? "Saving..." : "Update"}
@@ -1092,7 +1092,7 @@ export const DataGrid: FC<DataGridProps> = ({
         header: "#",
         size: 50,
         cell: (info) => (
-          <span className="text-zinc-500 font-mono text-[11px] select-none">
+          <span className="font-mono text-[11px] text-zinc-500 select-none">
             {page * pageSize + info.row.index + 1}
           </span>
         ),
@@ -1114,12 +1114,12 @@ export const DataGrid: FC<DataGridProps> = ({
             return (
               <div
                 data-column-search="true"
-                className="flex items-center gap-1 py-0.5 w-full min-w-32.5"
+                className="flex w-full min-w-32.5 items-center gap-1 py-0.5"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <div className="relative flex-1 flex items-center">
-                  <Search className="w-3 h-3 text-emerald-500 absolute left-2 pointer-events-none shrink-0" />
+                <div className="relative flex flex-1 items-center">
+                  <Search className="pointer-events-none absolute left-2 h-3 w-3 shrink-0 text-emerald-500" />
                   <input
                     ref={(el) => {
                       searchInputRefs.current[col.name] = el;
@@ -1135,7 +1135,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     placeholder={t("grid.column.search.placeholder", {
                       column: col.name,
                     })}
-                    className="h-6 w-full text-xs font-mono pl-7 pr-6 py-0.5 bg-white dark:bg-zinc-900 border border-emerald-500/80 dark:border-emerald-500/80 rounded text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-sm"
+                    className="h-6 w-full rounded border border-emerald-500/80 bg-white py-0.5 pr-6 pl-7 font-mono text-xs text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:ring-1 focus:ring-emerald-500 focus:outline-none dark:border-emerald-500/80 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                   />
                   <button
                     type="button"
@@ -1144,9 +1144,9 @@ export const DataGrid: FC<DataGridProps> = ({
                       e.stopPropagation();
                       handleClearColumnSearch(col.name);
                     }}
-                    className="absolute right-1 p-0.5 rounded text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    className="absolute right-1 cursor-pointer rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-rose-500 dark:hover:bg-zinc-800 dark:hover:text-rose-400"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="h-3 w-3" />
                   </button>
                 </div>
               </div>
@@ -1155,7 +1155,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
           return (
             <div
-              className="flex items-center justify-between gap-1.5 cursor-pointer select-none group py-1"
+              className="group flex cursor-pointer items-center justify-between gap-1.5 py-1 select-none"
               onMouseEnter={() => setHoveredCol(col.name)}
               onMouseLeave={() =>
                 setHoveredCol((prev) => (prev === col.name ? null : prev))
@@ -1175,27 +1175,27 @@ export const DataGrid: FC<DataGridProps> = ({
               <div className="flex items-center gap-1.5 truncate">
                 {col.is_primary_key && (
                   <span title={t("datagrid.primaryKey")}>
-                    <Key className="w-3 h-3 text-amber-400 shrink-0" />
+                    <Key className="h-3 w-3 shrink-0 text-amber-400" />
                   </span>
                 )}
                 {col.is_foreign_key && (
                   <span title={t("datagrid.foreignKey")}>
-                    <Layers className="w-3 h-3 text-sky-400 shrink-0" />
+                    <Layers className="h-3 w-3 shrink-0 text-sky-400" />
                   </span>
                 )}
-                <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-200 truncate">
+                <span className="truncate font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-200">
                   {col.name}
                 </span>
                 <Badge
                   variant="outline"
-                  className="text-[10px] font-mono text-zinc-600 dark:text-zinc-400 font-normal px-1 py-0 h-4 bg-zinc-200/60 dark:bg-zinc-800/80 border-zinc-300/60 dark:border-transparent"
+                  className="h-4 border-zinc-300/60 bg-zinc-200/60 px-1 py-0 font-mono text-[10px] font-normal text-zinc-600 dark:border-transparent dark:bg-zinc-800/80 dark:text-zinc-400"
                 >
                   {col.type}
                 </Badge>
                 {hasActiveFilter && (
                   <Badge
                     variant="outline"
-                    className="text-[9px] font-mono font-medium px-1 py-0 h-3.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                    className="h-3.5 border-emerald-500/30 bg-emerald-500/10 px-1 py-0 font-mono text-[9px] font-medium text-emerald-600 dark:text-emerald-400"
                     title={`contains: ${activeSearchVal}`}
                   >
                     🔍
@@ -1209,10 +1209,10 @@ export const DataGrid: FC<DataGridProps> = ({
                   type="button"
                   title={`${t("grid.column.search.placeholder", { column: col.name })} (Ctrl+F)`}
                   className={cn(
-                    "p-1 rounded transition-all cursor-pointer focus:outline-none",
+                    "cursor-pointer rounded p-1 transition-all focus:outline-none",
                     hasActiveFilter
-                      ? "text-emerald-500 dark:text-emerald-400 opacity-100 bg-emerald-500/10"
-                      : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 opacity-0 group-hover:opacity-100",
+                      ? "bg-emerald-500/10 text-emerald-500 opacity-100 dark:text-emerald-400"
+                      : "text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100",
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1220,19 +1220,19 @@ export const DataGrid: FC<DataGridProps> = ({
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
-                  <Search className="w-3 h-3" />
+                  <Search className="h-3 w-3" />
                 </button>
 
                 {/* Sort indicator */}
                 <div className="text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200">
                   {isSorted ? (
                     sortDesc ? (
-                      <ArrowDown className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
+                      <ArrowDown className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
                     ) : (
-                      <ArrowUp className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
+                      <ArrowUp className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
                     )
                   ) : (
-                    <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
                   )}
                 </div>
 
@@ -1243,32 +1243,32 @@ export const DataGrid: FC<DataGridProps> = ({
                       <button
                         type="button"
                         title={t("analytics.columnMenu")}
-                        className="p-1 rounded text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 opacity-0 group-hover:opacity-100 data-popup-open:opacity-100 transition-opacity cursor-pointer focus:outline-none"
+                        className="cursor-pointer rounded p-1 text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-zinc-200 hover:text-zinc-900 focus:outline-none data-popup-open:opacity-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                         onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
                       >
-                        <MoreVertical className="w-3.5 h-3.5" />
+                        <MoreVertical className="h-3.5 w-3.5" />
                       </button>
                     }
                   />
                   <DropdownMenuContent
                     align="end"
-                    className="w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 shadow-xl p-1 z-50"
+                    className="z-50 w-48 border border-zinc-200 bg-white p-1 text-zinc-900 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-500/15 cursor-pointer rounded"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-indigo-700 hover:bg-indigo-50 hover:text-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-500/15 dark:hover:text-indigo-200"
                       onClick={() => setAnalyticsColumn(col)}
                     >
-                      <BarChart3 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                      <BarChart3 className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
                       <span>{t("analytics.openAnalytics")}</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                       onClick={() => handleOpenColumnSearch(col.name)}
                     >
-                      <Search className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <Search className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                       <span>
                         {t("grid.column.search.placeholder", {
                           column: col.name,
@@ -1276,49 +1276,49 @@ export const DataGrid: FC<DataGridProps> = ({
                       </span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800 my-1" />
+                    <DropdownMenuSeparator className="my-1 bg-zinc-200 dark:bg-zinc-800" />
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                       onClick={() => onSortChange(col.name, false)}
                     >
-                      <ArrowUp className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <ArrowUp className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                       <span>{t("analytics.sortAsc")}</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                       onClick={() => onSortChange(col.name, true)}
                     >
-                      <ArrowDown className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <ArrowDown className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                       <span>{t("analytics.sortDesc")}</span>
                     </DropdownMenuItem>
 
                     {isSorted && (
                       <DropdownMenuItem
-                        className="flex items-center gap-2 px-2 py-1.5 text-xs text-amber-700 dark:text-amber-400/90 hover:text-amber-900 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-500/10 cursor-pointer rounded"
+                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-amber-700 hover:bg-amber-50 hover:text-amber-900 dark:text-amber-400/90 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
                         onClick={() => onSortChange("", false)}
                       >
-                        <RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <RotateCcw className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
                         <span>{t("analytics.clearSort")}</span>
                       </DropdownMenuItem>
                     )}
 
-                    <DropdownMenuSeparator className="bg-zinc-200 dark:bg-zinc-800 my-1" />
+                    <DropdownMenuSeparator className="my-1 bg-zinc-200 dark:bg-zinc-800" />
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                       onClick={() => {
                         setFilterCol(col.name);
                         setShowFilterBuilder(true);
                       }}
                     >
-                      <FilterIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      <FilterIcon className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                       <span>{t("analytics.filterByColumn")}</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="flex items-center gap-2 px-2 py-1.5 text-xs text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer rounded"
+                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                       onClick={() => {
                         navigator.clipboard.writeText(col.name);
                         setCopiedCol(col.name);
@@ -1326,9 +1326,9 @@ export const DataGrid: FC<DataGridProps> = ({
                       }}
                     >
                       {copiedCol === col.name ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
                       ) : (
-                        <Copy className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <Copy className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                       )}
                       <span>
                         {copiedCol === col.name
@@ -1370,7 +1370,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       }
                     }}
                     onBlur={() => saveCellEdit(row, col.name)}
-                    className="h-7 text-xs font-mono"
+                    className="h-7 font-mono text-xs"
                   />
                 </div>
               );
@@ -1389,7 +1389,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       }
                     }}
                   >
-                    <SelectTrigger className="w-full h-7 text-xs font-mono">
+                    <SelectTrigger className="h-7 w-full font-mono text-xs">
                       <SelectValue placeholder="(null)" />
                     </SelectTrigger>
                     <SelectContent side="bottom" align="start">
@@ -1419,7 +1419,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     }
                   }}
                   onBlur={() => saveCellEdit(row, col.name)}
-                  className="h-7 text-xs font-mono"
+                  className="h-7 font-mono text-xs"
                 />
               </div>
             );
@@ -1429,7 +1429,7 @@ export const DataGrid: FC<DataGridProps> = ({
             if (val === undefined) {
               return (
                 <span
-                  className="text-zinc-600 italic text-[11px] font-mono select-none"
+                  className="font-mono text-[11px] text-zinc-600 italic select-none"
                   title={t("datagrid.fieldNotSet")}
                 >
                   —
@@ -1438,7 +1438,7 @@ export const DataGrid: FC<DataGridProps> = ({
             }
             if (val === null) {
               return (
-                <span className="text-zinc-500 italic text-[11px] font-mono">
+                <span className="font-mono text-[11px] text-zinc-500 italic">
                   NULL
                 </span>
               );
@@ -1456,7 +1456,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       e.stopPropagation();
                       onNavigateRelation(rel.to_table, rel.to_column, val);
                     }}
-                    className="inline-flex items-center gap-1 font-mono text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline group/fk text-left px-1.5 py-0.5 rounded bg-sky-50 dark:bg-sky-950/20 hover:bg-sky-100 dark:hover:bg-sky-950/50 border border-sky-200 dark:border-sky-800/30 transition-colors cursor-pointer"
+                    className="group/fk inline-flex cursor-pointer items-center gap-1 rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-left font-mono text-xs text-sky-600 transition-colors hover:bg-sky-100 hover:text-sky-700 hover:underline dark:border-sky-800/30 dark:bg-sky-950/20 dark:text-sky-400 dark:hover:bg-sky-950/50 dark:hover:text-sky-300"
                     title={t("datagrid.navigateToRelation", {
                       table: rel.to_table,
                       column: rel.to_column,
@@ -1464,7 +1464,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     })}
                   >
                     <span className="font-semibold">{String(val)}</span>
-                    <ArrowUpRight className="w-3 h-3 opacity-70 group-hover/fk:opacity-100 group-hover/fk:translate-x-0.5 group-hover/fk:-translate-y-0.5 transition-all shrink-0" />
+                    <ArrowUpRight className="h-3 w-3 shrink-0 opacity-70 transition-all group-hover/fk:translate-x-0.5 group-hover/fk:-translate-y-0.5 group-hover/fk:opacity-100" />
                   </button>
                 );
               }
@@ -1474,10 +1474,10 @@ export const DataGrid: FC<DataGridProps> = ({
               return (
                 <Badge
                   variant={val ? "default" : "secondary"}
-                  className={`px-1.5 py-0 h-4 text-[10px] font-mono font-medium ${
+                  className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
                     val
-                      ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60"
-                      : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-transparent"
+                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-400"
+                      : "border border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-transparent dark:bg-zinc-800 dark:text-zinc-400"
                   }`}
                 >
                   {String(val)}
@@ -1488,7 +1488,7 @@ export const DataGrid: FC<DataGridProps> = ({
             if (typeof val === "object") {
               return (
                 <span
-                  className="font-mono text-xs text-amber-700 dark:text-amber-300/90 truncate block max-w-xs cursor-help"
+                  className="block max-w-xs cursor-help truncate font-mono text-xs text-amber-700 dark:text-amber-300/90"
                   title={JSON.stringify(val, null, 2)}
                 >
                   {JSON.stringify(val)}
@@ -1499,7 +1499,7 @@ export const DataGrid: FC<DataGridProps> = ({
             if (col.is_primary_key) {
               return (
                 <div className="flex items-center gap-1.5">
-                  <Key className="w-3 h-3 text-amber-500 dark:text-amber-400/80 shrink-0" />
+                  <Key className="h-3 w-3 shrink-0 text-amber-500 dark:text-amber-400/80" />
                   <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                     {String(val)}
                   </span>
@@ -1508,7 +1508,7 @@ export const DataGrid: FC<DataGridProps> = ({
             }
 
             return (
-              <span className="font-mono text-xs text-zinc-800 dark:text-zinc-300 truncate block">
+              <span className="block truncate font-mono text-xs text-zinc-800 dark:text-zinc-300">
                 {String(val)}
               </span>
             );
@@ -1526,7 +1526,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 e.stopPropagation();
                 startEditingCell(row, col.name, rowIndex);
               }}
-              className="w-full h-full cursor-pointer hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50 rounded px-1.5 py-1 -mx-1.5 -my-1 transition-colors flex items-center justify-between group/cell"
+              className="group/cell -mx-1.5 -my-1 flex h-full w-full cursor-pointer items-center justify-between rounded px-1.5 py-1 transition-colors hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
             >
               <div className="flex-1 truncate">{renderContent()}</div>
             </div>
@@ -1550,12 +1550,12 @@ export const DataGrid: FC<DataGridProps> = ({
             return (
               <div
                 data-column-search="true"
-                className="flex items-center gap-1 py-0.5 w-full min-w-32.5"
+                className="flex w-full min-w-32.5 items-center gap-1 py-0.5"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <div className="relative flex-1 flex items-center">
-                  <Search className="w-3 h-3 text-amber-400 absolute left-2 pointer-events-none shrink-0" />
+                <div className="relative flex flex-1 items-center">
+                  <Search className="pointer-events-none absolute left-2 h-3 w-3 shrink-0 text-amber-400" />
                   <input
                     ref={(el) => {
                       searchInputRefs.current[extraColName] = el;
@@ -1573,7 +1573,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     placeholder={t("grid.column.search.placeholder", {
                       column: extraColName,
                     })}
-                    className="h-6 w-full text-xs font-mono pl-7 pr-6 py-0.5 bg-white dark:bg-zinc-900 border border-amber-500/80 dark:border-amber-500/80 rounded text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-amber-500 shadow-sm"
+                    className="h-6 w-full rounded border border-amber-500/80 bg-white py-0.5 pr-6 pl-7 font-mono text-xs text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-amber-500/80 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                   />
                   <button
                     type="button"
@@ -1582,9 +1582,9 @@ export const DataGrid: FC<DataGridProps> = ({
                       e.stopPropagation();
                       handleClearColumnSearch(extraColName);
                     }}
-                    className="absolute right-1 p-0.5 rounded text-zinc-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                    className="absolute right-1 cursor-pointer rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-rose-500 dark:hover:bg-zinc-800 dark:hover:text-rose-400"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="h-3 w-3" />
                   </button>
                 </div>
               </div>
@@ -1593,7 +1593,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
           return (
             <div
-              className="flex items-center justify-between gap-1.5 cursor-pointer select-none group py-1"
+              className="group flex cursor-pointer items-center justify-between gap-1.5 py-1 select-none"
               onMouseEnter={() => setHoveredCol(extraColName)}
               onMouseLeave={() =>
                 setHoveredCol((prev) => (prev === extraColName ? null : prev))
@@ -1611,19 +1611,19 @@ export const DataGrid: FC<DataGridProps> = ({
               }}
             >
               <div className="flex items-center gap-1.5 truncate">
-                <span className="font-mono text-xs font-semibold text-amber-200/90 truncate">
+                <span className="truncate font-mono text-xs font-semibold text-amber-200/90">
                   {extraColName}
                 </span>
                 <Badge
                   variant="outline"
-                  className="text-[9px] font-mono text-amber-400/90 font-normal px-1 py-0 h-4 bg-amber-950/50 border-amber-800/40"
+                  className="h-4 border-amber-800/40 bg-amber-950/50 px-1 py-0 font-mono text-[9px] font-normal text-amber-400/90"
                 >
                   {t("datagrid.dynamicBadge")}
                 </Badge>
                 {hasActiveFilter && (
                   <Badge
                     variant="outline"
-                    className="text-[9px] font-mono font-medium px-1 py-0 h-3.5 bg-amber-500/10 text-amber-400 border-amber-500/30"
+                    className="h-3.5 border-amber-500/30 bg-amber-500/10 px-1 py-0 font-mono text-[9px] font-medium text-amber-400"
                     title={`contains: ${activeSearchVal}`}
                   >
                     🔍
@@ -1636,10 +1636,10 @@ export const DataGrid: FC<DataGridProps> = ({
                   type="button"
                   title={`${t("grid.column.search.placeholder", { column: extraColName })} (Ctrl+F)`}
                   className={cn(
-                    "p-1 rounded transition-all cursor-pointer focus:outline-none",
+                    "cursor-pointer rounded p-1 transition-all focus:outline-none",
                     hasActiveFilter
-                      ? "text-amber-400 opacity-100 bg-amber-500/10"
-                      : "text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-200 dark:hover:bg-zinc-800 opacity-0 group-hover:opacity-100",
+                      ? "bg-amber-500/10 text-amber-400 opacity-100"
+                      : "text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100",
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1647,18 +1647,18 @@ export const DataGrid: FC<DataGridProps> = ({
                   }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
-                  <Search className="w-3 h-3" />
+                  <Search className="h-3 w-3" />
                 </button>
 
                 <div className="text-zinc-400 group-hover:text-zinc-200">
                   {isSorted ? (
                     sortDesc ? (
-                      <ArrowDown className="w-3 h-3 text-emerald-400" />
+                      <ArrowDown className="h-3 w-3 text-emerald-400" />
                     ) : (
-                      <ArrowUp className="w-3 h-3 text-emerald-400" />
+                      <ArrowUp className="h-3 w-3 text-emerald-400" />
                     )
                   ) : (
-                    <ArrowUpDown className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
                   )}
                 </div>
               </div>
@@ -1670,7 +1670,7 @@ export const DataGrid: FC<DataGridProps> = ({
           if (val === undefined) {
             return (
               <span
-                className="text-zinc-600 italic text-[11px] font-mono select-none"
+                className="font-mono text-[11px] text-zinc-600 italic select-none"
                 title={t("datagrid.fieldNotSet")}
               >
                 —
@@ -1679,7 +1679,7 @@ export const DataGrid: FC<DataGridProps> = ({
           }
           if (val === null) {
             return (
-              <span className="text-zinc-500 italic text-[11px] font-mono">
+              <span className="font-mono text-[11px] text-zinc-500 italic">
                 NULL
               </span>
             );
@@ -1688,10 +1688,10 @@ export const DataGrid: FC<DataGridProps> = ({
             return (
               <Badge
                 variant={val ? "default" : "secondary"}
-                className={`px-1.5 py-0 h-4 text-[10px] font-mono font-medium ${
+                className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
                   val
-                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60"
-                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-transparent"
+                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-400"
+                    : "border border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-transparent dark:bg-zinc-800 dark:text-zinc-400"
                 }`}
               >
                 {String(val)}
@@ -1701,7 +1701,7 @@ export const DataGrid: FC<DataGridProps> = ({
           if (typeof val === "object") {
             return (
               <span
-                className="font-mono text-xs text-amber-700 dark:text-amber-300/90 truncate block max-w-xs cursor-help"
+                className="block max-w-xs cursor-help truncate font-mono text-xs text-amber-700 dark:text-amber-300/90"
                 title={JSON.stringify(val, null, 2)}
               >
                 {JSON.stringify(val)}
@@ -1709,7 +1709,7 @@ export const DataGrid: FC<DataGridProps> = ({
             );
           }
           return (
-            <span className="font-mono text-xs text-zinc-800 dark:text-zinc-300 truncate block">
+            <span className="block truncate font-mono text-xs text-zinc-800 dark:text-zinc-300">
               {String(val)}
             </span>
           );
@@ -2055,57 +2055,57 @@ export const DataGrid: FC<DataGridProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-white dark:bg-zinc-950 overflow-hidden transition-colors">
+    <div className="flex h-full flex-1 flex-col overflow-hidden bg-white transition-colors dark:bg-zinc-950">
       {/* Top Action Bar */}
-      <div className="h-11 px-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between gap-3 bg-white dark:bg-zinc-900/30">
-        <div className="flex items-center gap-2.5 h-full">
-          <SidebarTrigger className="-ml-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 cursor-pointer shrink-0" />
+      <div className="flex h-11 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/30">
+        <div className="flex h-full items-center gap-2.5">
+          <SidebarTrigger className="-ml-1 shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
           <Separator
             orientation="vertical"
-            className="h-4 bg-zinc-200 dark:bg-zinc-800 self-center"
+            className="h-4 self-center bg-zinc-200 dark:bg-zinc-800"
           />
-          <div className="flex items-center gap-2 min-w-0">
-            <TableIcon className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-            <h2 className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-28 sm:max-w-44 md:max-w-none">
+          <div className="flex min-w-0 items-center gap-2">
+            <TableIcon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="max-w-28 truncate font-mono text-sm font-semibold text-zinc-900 sm:max-w-44 md:max-w-none dark:text-zinc-100">
               {table.name}
             </h2>
           </div>
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-mono hidden md:inline whitespace-nowrap">
+          <span className="hidden font-mono text-xs whitespace-nowrap text-zinc-500 md:inline dark:text-zinc-400">
             {totalCount.toLocaleString()}{" "}
             {totalCount === 1 ? "record" : "records"}
           </span>
 
           <Separator
             orientation="vertical"
-            className="h-4 bg-zinc-200 dark:bg-zinc-800 mx-1 self-center hidden md:inline-block"
+            className="mx-1 hidden h-4 self-center bg-zinc-200 md:inline-block dark:bg-zinc-800"
           />
 
           {/* Sub-view switcher: [ Data Grid ] | [ Schema & DDL ] */}
-          <div className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/60 shrink-0">
+          <div className="flex shrink-0 items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80">
             <button
               type="button"
               onClick={() => setActiveSubView("grid")}
               className={cn(
-                "px-2 sm:px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
+                "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all sm:px-2.5",
                 activeSubView === "grid"
-                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                  ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                   : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
               )}
             >
-              <TableIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <TableIcon className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span className="hidden sm:inline">{t("schema.dataGrid")}</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveSubView("schema")}
               className={cn(
-                "px-2 sm:px-2.5 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
+                "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all sm:px-2.5",
                 activeSubView === "schema"
-                  ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                  ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                   : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
               )}
             >
-              <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <FileCode className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
               <span className="hidden sm:inline">{t("schema.schemaDdl")}</span>
             </button>
           </div>
@@ -2113,34 +2113,34 @@ export const DataGrid: FC<DataGridProps> = ({
           {/* View Mode toggle: Table | Document — MongoDB only */}
           {activeSubView === "grid" && dbType === "mongodb" && (
             <div
-              className="flex items-center bg-zinc-100 dark:bg-zinc-800/80 p-0.5 rounded-md border border-zinc-200 dark:border-zinc-700/60"
+              className="flex items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80"
               title={t("datagrid.viewMode.toggleTooltip")}
             >
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
                 className={cn(
-                  "px-2 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
+                  "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all",
                   viewMode === "table"
-                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                    ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                     : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
                 )}
                 title={t("datagrid.viewMode.table")}
               >
-                <TableIcon className="w-3.5 h-3.5" />
+                <TableIcon className="h-3.5 w-3.5" />
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("document")}
                 className={cn(
-                  "px-2 py-1 text-xs font-mono font-medium rounded flex items-center gap-1.5 transition-all",
+                  "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all",
                   viewMode === "document"
-                    ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                    ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                     : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
                 )}
                 title={t("datagrid.viewMode.document")}
               >
-                <LayoutList className="w-3.5 h-3.5" />
+                <LayoutList className="h-3.5 w-3.5" />
               </button>
             </div>
           )}
@@ -2148,17 +2148,17 @@ export const DataGrid: FC<DataGridProps> = ({
           {isReadOnly && (
             <Badge
               variant="outline"
-              className="text-[11px] font-mono px-2 py-0.5 border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/10 gap-1 select-none font-medium"
+              className="gap-1 border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] font-medium text-amber-700 select-none dark:text-amber-400"
               title={t("datagrid.readOnlyBanner")}
             >
-              <ShieldAlert className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+              <ShieldAlert className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
               <span>{t("connection.readOnlyBadge")}</span>
             </Badge>
           )}
           {activeSubView === "grid" && displayedRows.length !== rows.length && (
             <Badge
               variant="outline"
-              className="text-[11px] text-amber-700 dark:text-amber-400/90 font-mono bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/40 px-1.5 py-0 h-auto font-normal"
+              className="h-auto border-amber-200 bg-amber-50 px-1.5 py-0 font-mono text-[11px] font-normal text-amber-700 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-400/90"
             >
               {t("datagrid.showingMatches", { count: displayedRows.length })}
             </Badge>
@@ -2167,20 +2167,20 @@ export const DataGrid: FC<DataGridProps> = ({
 
         <div
           data-tour="grid-toolbar"
-          className="flex items-center gap-1.5 sm:gap-2 shrink-0"
+          className="flex shrink-0 items-center gap-1.5 sm:gap-2"
         >
           {activeSubView === "grid" ? (
             <>
               {/* Quick Search Input */}
               <div className="relative flex items-center">
-                <Search className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 absolute left-2.5 pointer-events-none" />
+                <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
                 <Input
                   ref={quickSearchInputRef}
                   type="text"
                   value={quickSearch}
                   onChange={(e) => setQuickSearch(e.target.value)}
                   placeholder={`${t("datagrid.searchPlaceholder")} (/)`}
-                  className="pl-8 pr-7 h-8 text-xs font-mono w-28 sm:w-36 md:w-44 lg:w-52 focus:w-44 sm:focus:w-52 transition-all"
+                  className="h-8 w-28 pr-7 pl-8 font-mono text-xs transition-all focus:w-44 sm:w-36 sm:focus:w-52 md:w-44 lg:w-52"
                 />
                 {quickSearch && (
                   <Button
@@ -2188,10 +2188,10 @@ export const DataGrid: FC<DataGridProps> = ({
                     variant="ghost"
                     size="icon-xs"
                     onClick={() => setQuickSearch("")}
-                    className="absolute right-1 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 h-6 w-6"
+                    className="absolute right-1 h-6 w-6 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                     title={t("datagrid.clearSearchTooltip")}
                   >
-                    <X className="w-3 h-3" />
+                    <X className="h-3 w-3" />
                   </Button>
                 )}
               </div>
@@ -2207,18 +2207,18 @@ export const DataGrid: FC<DataGridProps> = ({
                 size="sm"
                 onClick={() => setShowFilterBuilder(!showFilterBuilder)}
                 className={cn(
-                  "text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 sm:px-3",
+                  "gap-1 px-2 font-mono text-xs font-medium sm:gap-1.5 sm:px-3",
                   (filters.length > 0 || showFilterBuilder) &&
-                    "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/50 text-emerald-800 dark:text-emerald-300",
+                    "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/50 dark:bg-emerald-950/40 dark:text-emerald-300",
                 )}
                 title={t("datagrid.filterButton")}
               >
-                <FilterIcon className="w-3.5 h-3.5" />
+                <FilterIcon className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">
                   {t("datagrid.filterButton")}
                 </span>
                 {filters.length > 0 && (
-                  <Badge className="w-4 h-4 p-0 rounded-full bg-emerald-500 text-white dark:text-zinc-950 text-[10px] font-bold flex items-center justify-center">
+                  <Badge className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 p-0 text-[10px] font-bold text-white dark:text-zinc-950">
                     {filters.length}
                   </Badge>
                 )}
@@ -2232,11 +2232,11 @@ export const DataGrid: FC<DataGridProps> = ({
                 onClick={handleRefresh}
                 disabled={isLoading || isRefreshing}
                 title={t("datagrid.reloadTableTooltip")}
-                className="border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 active:bg-zinc-200 dark:active:bg-zinc-700/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors shrink-0"
+                className="shrink-0 border-zinc-200 text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-950 active:bg-zinc-200 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100 dark:active:bg-zinc-700/80"
               >
                 <RefreshCw
                   className={cn(
-                    "w-3.5 h-3.5 transition-colors",
+                    "h-3.5 w-3.5 transition-colors",
                     (isLoading || isRefreshing) &&
                       "animate-spin text-indigo-600 dark:text-indigo-400",
                   )}
@@ -2251,9 +2251,9 @@ export const DataGrid: FC<DataGridProps> = ({
                   size="sm"
                   onClick={() => onOpenQueryConsole?.()}
                   title={t("datagrid.openQueryConsole")}
-                  className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 lg:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
+                  className="shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 lg:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white"
                 >
-                  <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <Terminal className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   <span className="hidden xl:inline">
                     {t("datagrid.openQueryConsole")}
                   </span>
@@ -2270,48 +2270,48 @@ export const DataGrid: FC<DataGridProps> = ({
                         variant="outline"
                         size="sm"
                         title={t("datagrid.export")}
-                        className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 lg:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
+                        className="shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 lg:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white"
                       >
-                        <Download className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                        <Download className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
                         <span className="hidden lg:inline">
                           {t("datagrid.export")}
                         </span>
-                        <ChevronDown className="w-3 h-3 text-zinc-400" />
+                        <ChevronDown className="h-3 w-3 text-zinc-400" />
                       </Button>
                     }
                   />
                   <DropdownMenuContent
                     align="end"
-                    className="w-52 text-xs font-mono"
+                    className="w-52 font-mono text-xs"
                   >
                     <DropdownMenuItem onClick={() => handleExport("csv")}>
-                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>{t("datagrid.exportAsCsv")}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleExport("json")}>
-                      <FileJson className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <FileJson className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                       <span>{t("datagrid.exportAsJson")}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleExport("jsonl")}>
-                      <FileCode2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
+                      <FileCode2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
                       <span>{t("datagrid.exportAsJsonl")}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleExport("xlsx")}>
-                      <FileSpreadsheet className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                      <FileSpreadsheet className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
                       <span>{t("datagrid.exportAsXlsx")}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleExport("parquet")}>
-                      <Database className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <Database className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                       <span>{t("datagrid.exportAsParquet")}</span>
                     </DropdownMenuItem>
-                    <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-1" />
+                    <div className="my-1 h-px bg-zinc-200 dark:bg-zinc-800" />
                     <DropdownMenuItem
                       onClick={() => {
                         setImportModalMode("export");
                         setIsImportModalOpen(true);
                       }}
                     >
-                      <Settings2 className="w-3.5 h-3.5 text-zinc-500" />
+                      <Settings2 className="h-3.5 w-3.5 text-zinc-500" />
                       <span>{t("datagrid.exportOptions")}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -2335,11 +2335,11 @@ export const DataGrid: FC<DataGridProps> = ({
                       : t("datagrid.importCsv")
                   }
                   className={cn(
-                    "text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 xl:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0",
+                    "shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 xl:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white",
                     isReadOnly && "cursor-not-allowed opacity-60",
                   )}
                 >
-                  <UploadCloud className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                  <UploadCloud className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
                   <span className="hidden xl:inline">
                     {t("datagrid.importCsv")}
                   </span>
@@ -2358,13 +2358,13 @@ export const DataGrid: FC<DataGridProps> = ({
                     : t("datagrid.addRow")
                 }
                 className={cn(
-                  "text-xs font-semibold gap-1 sm:gap-1.5 px-2.5 sm:px-3 shadow-xs transition-colors shrink-0",
+                  "shrink-0 gap-1 px-2.5 text-xs font-semibold shadow-xs transition-colors sm:gap-1.5 sm:px-3",
                   isReadOnly
-                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 border border-zinc-200 dark:border-zinc-700 cursor-not-allowed opacity-60"
-                    : "bg-emerald-600 hover:bg-emerald-500 text-white",
+                    ? "cursor-not-allowed border border-zinc-200 bg-zinc-100 text-zinc-400 opacity-60 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
+                    : "bg-emerald-600 text-white hover:bg-emerald-500",
                 )}
               >
-                <Plus className="w-3.5 h-3.5 shrink-0" />
+                <Plus className="h-3.5 w-3.5 shrink-0" />
                 <span>{t("datagrid.addRow")}</span>
               </Button>
             </>
@@ -2378,9 +2378,9 @@ export const DataGrid: FC<DataGridProps> = ({
                   size="sm"
                   onClick={() => onOpenQueryConsole?.()}
                   title={t("datagrid.openQueryConsole")}
-                  className="text-xs font-mono font-medium gap-1 sm:gap-1.5 px-2 sm:px-3 border-zinc-200 dark:border-zinc-800 text-zinc-700 dark:text-zinc-300 hover:text-zinc-950 dark:hover:text-white shrink-0"
+                  className="shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 sm:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white"
                 >
-                  <Terminal className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <Terminal className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                   <span className="hidden sm:inline">
                     {t("datagrid.openQueryConsole")}
                   </span>
@@ -2393,11 +2393,11 @@ export const DataGrid: FC<DataGridProps> = ({
                 onClick={handleRefresh}
                 disabled={isLoading || isRefreshing}
                 title={t("datagrid.reloadTableTooltip")}
-                className="border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-950 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 active:bg-zinc-200 dark:active:bg-zinc-700/80 hover:border-zinc-300 dark:hover:border-zinc-700 transition-colors shrink-0"
+                className="shrink-0 border-zinc-200 text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-950 active:bg-zinc-200 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100 dark:active:bg-zinc-700/80"
               >
                 <RefreshCw
                   className={cn(
-                    "w-3.5 h-3.5 transition-colors",
+                    "h-3.5 w-3.5 transition-colors",
                     (isLoading || isRefreshing) &&
                       "animate-spin text-indigo-600 dark:text-indigo-400",
                   )}
@@ -2411,7 +2411,7 @@ export const DataGrid: FC<DataGridProps> = ({
       {activeSubView === "schema" ? (
         <Suspense
           fallback={
-            <div className="p-8 text-center text-xs text-zinc-500 font-mono">
+            <div className="p-8 text-center font-mono text-xs text-zinc-500">
               Loading Schema...
             </div>
           }
@@ -2439,16 +2439,16 @@ export const DataGrid: FC<DataGridProps> = ({
 
           {/* Read-Only Safety Banner */}
           {isReadOnly && (
-            <div className="px-3 py-1.5 bg-amber-500/10 dark:bg-amber-500/15 border-b border-amber-500/30 flex items-center justify-between text-xs font-mono text-amber-800 dark:text-amber-300">
+            <div className="flex items-center justify-between border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-xs text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
               <div className="flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                 <span className="font-medium">
                   {t("datagrid.readOnlyBanner")}
                 </span>
               </div>
               <Badge
                 variant="outline"
-                className="text-[10px] uppercase font-bold border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-500/20"
+                className="border-amber-500/40 bg-amber-500/20 text-[10px] font-bold text-amber-700 uppercase dark:text-amber-400"
               >
                 {t("connection.readOnlyBadge")}
               </Badge>
@@ -2457,11 +2457,11 @@ export const DataGrid: FC<DataGridProps> = ({
 
           {/* Filter Builder & Active Filter Chips */}
           {(showFilterBuilder || filters.length > 0) && (
-            <div className="p-3 border-b border-zinc-200 dark:border-zinc-800/80 bg-zinc-50 dark:bg-zinc-900/40 space-y-2">
+            <div className="space-y-2 border-b border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800/80 dark:bg-zinc-900/40">
               {showFilterBuilder && (
                 <form
                   onSubmit={handleAddFilter}
-                  className="flex items-center gap-2 flex-wrap text-xs font-mono"
+                  className="flex flex-wrap items-center gap-2 font-mono text-xs"
                 >
                   <span className="text-zinc-500 dark:text-zinc-400">
                     {t("datagrid.where")}
@@ -2472,7 +2472,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       if (typeof val === "string") setFilterCol(val);
                     }}
                   >
-                    <SelectTrigger className="h-7 text-xs font-mono min-w-32">
+                    <SelectTrigger className="h-7 min-w-32 font-mono text-xs">
                       <SelectValue placeholder={t("datagrid.column")} />
                     </SelectTrigger>
                     <SelectContent side="bottom" align="start">
@@ -2495,7 +2495,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       if (typeof val === "string") setFilterOp(val as any);
                     }}
                   >
-                    <SelectTrigger className="h-7 text-xs font-mono min-w-24">
+                    <SelectTrigger className="h-7 min-w-24 font-mono text-xs">
                       <SelectValue placeholder={t("datagrid.operator")} />
                     </SelectTrigger>
                     <SelectContent side="bottom" align="start">
@@ -2512,7 +2512,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     value={filterVal}
                     onChange={(e) => setFilterVal(e.target.value)}
                     placeholder={t("datagrid.valuePlaceholder")}
-                    className="h-7 text-xs font-mono w-44"
+                    className="h-7 w-44 font-mono text-xs"
                   />
 
                   <Button
@@ -2528,15 +2528,15 @@ export const DataGrid: FC<DataGridProps> = ({
 
               {/* Active chips */}
               {filters.length > 0 && (
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  <span className="text-[11px] text-zinc-500 dark:text-zinc-400 uppercase font-mono tracking-wider mr-1">
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="mr-1 font-mono text-[11px] tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                     {t("datagrid.activeFilters")}
                   </span>
                   {filters.map((f, i) => (
                     <Badge
                       key={i}
                       variant="outline"
-                      className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-xs font-mono font-normal"
+                      className="inline-flex items-center gap-1.5 border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono text-xs font-normal text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300"
                     >
                       <span className="font-semibold text-emerald-900 dark:text-emerald-200">
                         {f.column}
@@ -2544,7 +2544,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       <span className="text-emerald-600 dark:text-zinc-400">
                         {f.operator}
                       </span>
-                      <span className="text-emerald-800 dark:text-zinc-200 font-medium">
+                      <span className="font-medium text-emerald-800 dark:text-zinc-200">
                         {f.value}
                       </span>
                       <Button
@@ -2552,9 +2552,9 @@ export const DataGrid: FC<DataGridProps> = ({
                         variant="ghost"
                         size="icon-xs"
                         onClick={() => handleRemoveFilter(i)}
-                        className="h-4 w-4 p-0 hover:text-rose-500 text-current ml-0.5"
+                        className="ml-0.5 h-4 w-4 p-0 text-current hover:text-rose-500"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="h-3 w-3" />
                       </Button>
                     </Badge>
                   ))}
@@ -2563,7 +2563,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     variant="link"
                     size="sm"
                     onClick={() => onFiltersChange([])}
-                    className="h-auto p-0 text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 ml-2 underline"
+                    className="ml-2 h-auto p-0 text-[11px] text-zinc-500 underline hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
                   >
                     {t("datagrid.clearAll")}
                   </Button>
@@ -2576,27 +2576,27 @@ export const DataGrid: FC<DataGridProps> = ({
           <div
             ref={tableContainerRef}
             data-tour="datagrid-view"
-            className="flex-1 overflow-auto relative flex flex-col"
+            className="relative flex flex-1 flex-col overflow-auto"
           >
             {isLoading || isRefreshing ? (
               /* High-fidelity shadcn UI Table Skeleton */
-              <table className="w-full caption-bottom text-sm border-collapse text-left border-b border-zinc-200 dark:border-zinc-800 animate-in fade-in duration-150">
-                <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+              <table className="animate-in fade-in w-full caption-bottom border-collapse border-b border-zinc-200 text-left text-sm duration-150 dark:border-zinc-800">
+                <TableHeader className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
                   <TableRow>
-                    <TableHead className="w-12 px-3 py-2 text-xs font-mono font-medium text-zinc-400 not-last:border-r border-zinc-200 dark:border-zinc-800/80">
+                    <TableHead className="w-12 border-zinc-200 px-3 py-2 font-mono text-xs font-medium text-zinc-400 not-last:border-r dark:border-zinc-800/80">
                       #
                     </TableHead>
                     {table?.columns?.map((c) => (
                       <TableHead
                         key={c.name}
-                        className="px-3 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 not-last:border-r border-zinc-200 dark:border-zinc-800/80 whitespace-nowrap h-auto"
+                        className="h-auto border-zinc-200 px-3 py-2 text-xs font-medium whitespace-nowrap text-zinc-600 not-last:border-r dark:border-zinc-800/80 dark:text-zinc-400"
                       >
                         <div className="flex items-center gap-1.5 py-1">
-                          <Skeleton className="size-3.5 rounded shrink-0 bg-zinc-300/80 dark:bg-zinc-700/80" />
+                          <Skeleton className="size-3.5 shrink-0 rounded bg-zinc-300/80 dark:bg-zinc-700/80" />
                           <span className="font-mono text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                             {c.name}
                           </span>
-                          <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-500 font-normal">
+                          <span className="font-mono text-[10px] font-normal text-zinc-400 dark:text-zinc-500">
                             {c.type}
                           </span>
                         </div>
@@ -2605,7 +2605,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       [1, 2, 3, 4, 5, 6].map((idx) => (
                         <TableHead
                           key={idx}
-                          className="px-3 py-2 not-last:border-r border-zinc-200 dark:border-zinc-800/80"
+                          className="border-zinc-200 px-3 py-2 not-last:border-r dark:border-zinc-800/80"
                         >
                           <Skeleton className="h-4 w-24 rounded" />
                         </TableHead>
@@ -2616,9 +2616,9 @@ export const DataGrid: FC<DataGridProps> = ({
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((rowIdx) => (
                     <TableRow
                       key={rowIdx}
-                      className="hover:bg-transparent h-9.25"
+                      className="h-9.25 hover:bg-transparent"
                     >
-                      <TableCell className="w-12 px-3 py-2 text-xs font-mono text-zinc-400 not-last:border-r border-zinc-200/80 dark:border-zinc-800/40">
+                      <TableCell className="w-12 border-zinc-200/80 px-3 py-2 font-mono text-xs text-zinc-400 not-last:border-r dark:border-zinc-800/40">
                         <Skeleton className="h-3 w-4 rounded bg-zinc-200/70 dark:bg-zinc-800/70" />
                       </TableCell>
                       {table?.columns?.map((c, cIdx) => {
@@ -2631,11 +2631,11 @@ export const DataGrid: FC<DataGridProps> = ({
                         return (
                           <TableCell
                             key={c.name}
-                            className="px-3 py-2 not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap"
+                            className="border-zinc-200/80 px-3 py-2 whitespace-nowrap not-last:border-r dark:border-zinc-800/40"
                           >
                             {isPk ? (
                               <div className="flex items-center gap-1.5">
-                                <Skeleton className="size-3 rounded-full bg-amber-400/40 dark:bg-amber-400/30 shrink-0" />
+                                <Skeleton className="size-3 shrink-0 rounded-full bg-amber-400/40 dark:bg-amber-400/30" />
                                 <Skeleton className="h-3 w-8 rounded bg-zinc-200 dark:bg-zinc-800" />
                               </div>
                             ) : isBool ? (
@@ -2664,7 +2664,7 @@ export const DataGrid: FC<DataGridProps> = ({
                         [1, 2, 3, 4, 5, 6].map((cIdx) => (
                           <TableCell
                             key={cIdx}
-                            className="px-3 py-2 not-last:border-r border-zinc-200/80 dark:border-zinc-800/40"
+                            className="border-zinc-200/80 px-3 py-2 not-last:border-r dark:border-zinc-800/40"
                           >
                             <Skeleton className="h-3.5 w-24 rounded" />
                           </TableCell>
@@ -2675,7 +2675,7 @@ export const DataGrid: FC<DataGridProps> = ({
               </table>
             ) : displayedRows.length === 0 ? (
               /* Empty States */
-              <div className="flex-1 flex items-center justify-center p-8">
+              <div className="flex flex-1 items-center justify-center p-8">
                 {quickSearch ? (
                   <EmptyState
                     icon={Search}
@@ -2734,15 +2734,15 @@ export const DataGrid: FC<DataGridProps> = ({
               />
             ) : (
               /* Data Table */
-              <table className="w-full caption-bottom text-sm border-collapse text-left border-b border-zinc-200 dark:border-zinc-800">
-                <TableHeader className="sticky top-0 z-10 bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+              <table className="w-full caption-bottom border-collapse border-b border-zinc-200 text-left text-sm dark:border-zinc-800">
+                <TableHeader className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
                   {reactTable.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => (
                         <TableHead
                           key={header.id}
                           style={{ width: header.getSize() }}
-                          className="px-3 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 not-last:border-r border-zinc-200 dark:border-zinc-800/80 whitespace-nowrap h-auto"
+                          className="h-auto border-zinc-200 px-3 py-2 text-xs font-medium whitespace-nowrap text-zinc-600 not-last:border-r dark:border-zinc-800/80 dark:text-zinc-400"
                         >
                           {flexRender(
                             header.column.columnDef.header,
@@ -2777,7 +2777,7 @@ export const DataGrid: FC<DataGridProps> = ({
                             key={row.id}
                             data-index={virtualRow.index}
                             ref={rowVirtualizer.measureElement}
-                            className="hover:bg-zinc-50 dark:hover:bg-zinc-900/60 transition-colors group"
+                            className="group transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
                             onContextMenu={(e) => {
                               e.preventDefault();
                               setContextMenu({
@@ -2816,9 +2816,9 @@ export const DataGrid: FC<DataGridProps> = ({
                                     });
                                   }}
                                   className={cn(
-                                    "px-3 py-2 text-xs not-last:border-r border-zinc-200/80 dark:border-zinc-800/40 whitespace-nowrap max-w-sm truncate text-zinc-800 dark:text-zinc-200 outline-none transition-all",
+                                    "max-w-sm truncate border-zinc-200/80 px-3 py-2 text-xs whitespace-nowrap text-zinc-800 transition-all outline-none not-last:border-r dark:border-zinc-800/40 dark:text-zinc-200",
                                     isCellFocused &&
-                                      "ring-2 ring-emerald-500 dark:ring-emerald-400 ring-inset bg-emerald-500/10 dark:bg-emerald-500/20 z-20 relative font-medium",
+                                      "relative z-20 bg-emerald-500/10 font-medium ring-2 ring-emerald-500 ring-inset dark:bg-emerald-500/20 dark:ring-emerald-400",
                                   )}
                                   onContextMenu={(e) => {
                                     e.preventDefault();
@@ -2871,14 +2871,14 @@ export const DataGrid: FC<DataGridProps> = ({
           </div>
 
           {/* Pagination Footer */}
-          <div className="h-11 px-3 sm:px-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-900/40 flex items-center justify-between gap-2 text-xs font-mono text-zinc-500 dark:text-zinc-400 min-w-0">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="flex h-11 min-w-0 items-center justify-between gap-2 border-t border-zinc-200 bg-zinc-50/80 px-3 font-mono text-xs text-zinc-500 sm:px-4 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <span className="truncate">
                 {totalCount === 0
                   ? `0 ${t("datagrid.records")}`
                   : `${t("datagrid.showing")} ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} ${t("datagrid.of")} ${totalCount}`}
               </span>
-              <div className="hidden sm:flex items-center gap-1.5 ml-1 sm:ml-2 shrink-0">
+              <div className="ml-1 hidden shrink-0 items-center gap-1.5 sm:ml-2 sm:flex">
                 <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   {t("datagrid.perPage")}
                 </span>
@@ -2886,7 +2886,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   value={String(pageSize)}
                   onValueChange={(val) => val && onPageSizeChange(Number(val))}
                 >
-                  <SelectTrigger className="h-6 w-16 px-2 py-0 text-xs font-mono">
+                  <SelectTrigger className="h-6 w-16 px-2 py-0 font-mono text-xs">
                     <SelectValue placeholder={String(pageSize)} />
                   </SelectTrigger>
                   <SelectContent side="top" align="start" className="min-w-16">
@@ -2900,8 +2900,8 @@ export const DataGrid: FC<DataGridProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-[11px] text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="text-[11px] whitespace-nowrap text-zinc-500 dark:text-zinc-400">
                 {t("datagrid.page")} {page + 1} {t("datagrid.of")} {totalPages}
               </span>
               <div className="flex items-center gap-1">
@@ -2913,7 +2913,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   onClick={() => onPageChange(page - 1)}
                   className="text-zinc-700 dark:text-zinc-300"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   type="button"
@@ -2923,7 +2923,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   onClick={() => onPageChange(page + 1)}
                   className="text-zinc-700 dark:text-zinc-300"
                 >
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -2973,11 +2973,11 @@ export const DataGrid: FC<DataGridProps> = ({
             left: `${Math.min(contextMenu.mouseX, window.innerWidth - 230)}px`,
             top: `${Math.min(contextMenu.mouseY, window.innerHeight - 280)}px`,
           }}
-          className="z-50 w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-2xl p-1 text-xs font-mono animate-in fade-in-50 zoom-in-95 duration-100"
+          className="animate-in fade-in-50 zoom-in-95 z-50 w-56 rounded-lg border border-zinc-200 bg-white p-1 font-mono text-xs shadow-2xl duration-100 dark:border-zinc-800 dark:bg-zinc-900"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 border-b border-zinc-100 dark:border-zinc-800/80 flex items-center justify-between">
+          <div className="flex items-center justify-between border-b border-zinc-100 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 dark:border-zinc-800/80 dark:text-zinc-400">
             <span className="truncate">
               {contextMenu.colName &&
               contextMenu.colName !== "_actions" &&
@@ -2987,7 +2987,7 @@ export const DataGrid: FC<DataGridProps> = ({
             </span>
             <Badge
               variant="outline"
-              className="text-[9px] px-1 py-0 h-4 font-normal"
+              className="h-4 px-1 py-0 text-[9px] font-normal"
             >
               Right-Click
             </Badge>
@@ -3003,12 +3003,12 @@ export const DataGrid: FC<DataGridProps> = ({
                 setContextMenu(null);
               }}
               className={cn(
-                "w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer",
+                "flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
                 isReadOnly &&
-                  "opacity-50 cursor-not-allowed hover:bg-transparent",
+                  "cursor-not-allowed opacity-50 hover:bg-transparent",
               )}
             >
-              <Edit2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <Edit2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <span>{t("datagrid.contextMenu.editRecord")}</span>
             </button>
 
@@ -3021,12 +3021,12 @@ export const DataGrid: FC<DataGridProps> = ({
                 setContextMenu(null);
               }}
               className={cn(
-                "w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-colors cursor-pointer",
+                "flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40",
                 isReadOnly &&
-                  "opacity-50 cursor-not-allowed hover:bg-transparent",
+                  "cursor-not-allowed opacity-50 hover:bg-transparent",
               )}
             >
-              <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+              <Trash2 className="h-3.5 w-3.5 shrink-0 text-rose-500" />
               <span>{t("datagrid.contextMenu.deleteRecord")}</span>
             </button>
           </div>
@@ -3044,12 +3044,15 @@ export const DataGrid: FC<DataGridProps> = ({
                       String(contextMenu.cellValue),
                     );
                     setCopiedNotification(t("datagrid.contextMenu.copied"));
-                    setTimeout(() => setCopiedNotification(null), COPY_FEEDBACK_MS);
+                    setTimeout(
+                      () => setCopiedNotification(null),
+                      COPY_FEEDBACK_MS,
+                    );
                     setContextMenu(null);
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
-                  <Copy className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <Copy className="h-3.5 w-3.5 shrink-0 text-blue-500" />
                   <span>{t("datagrid.contextMenu.copyCellValue")}</span>
                 </button>
               )}
@@ -3071,9 +3074,9 @@ export const DataGrid: FC<DataGridProps> = ({
                     ]);
                     setContextMenu(null);
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
-                  <FilterIcon className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <FilterIcon className="h-3.5 w-3.5 shrink-0 text-amber-500" />
                   <span>{t("datagrid.contextMenu.filterByValue")}</span>
                 </button>
               )}
@@ -3089,9 +3092,9 @@ export const DataGrid: FC<DataGridProps> = ({
                 setTimeout(() => setCopiedNotification(null), COPY_FEEDBACK_MS);
                 setContextMenu(null);
               }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+              className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
             >
-              <FileJson className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+              <FileJson className="h-3.5 w-3.5 shrink-0 text-purple-500" />
               <span>{t("datagrid.contextMenu.copyRowJson")}</span>
             </button>
 
@@ -3113,9 +3116,9 @@ export const DataGrid: FC<DataGridProps> = ({
                     );
                     setContextMenu(null);
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-950/40 rounded transition-colors cursor-pointer"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-sky-600 transition-colors hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/40"
                 >
-                  <ArrowUpRight className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                  <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-sky-500" />
                   <span className="truncate">
                     {t("datagrid.contextMenu.navigateToRelation")} (
                     {rel.to_table})
@@ -3133,12 +3136,15 @@ export const DataGrid: FC<DataGridProps> = ({
                   onClick={() => {
                     navigator.clipboard.writeText(contextMenu.colName);
                     setCopiedNotification(t("datagrid.contextMenu.copied"));
-                    setTimeout(() => setCopiedNotification(null), COPY_FEEDBACK_MS);
+                    setTimeout(
+                      () => setCopiedNotification(null),
+                      COPY_FEEDBACK_MS,
+                    );
                     setContextMenu(null);
                   }}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 text-left text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded transition-colors cursor-pointer"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
                 >
-                  <Copy className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                  <Copy className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
                   <span>{t("datagrid.contextMenu.copyColumnName")}</span>
                 </button>
               )}
@@ -3148,8 +3154,8 @@ export const DataGrid: FC<DataGridProps> = ({
 
       {/* Copied Toast Notification */}
       {copiedNotification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-3.5 py-2 rounded-md shadow-lg text-xs font-mono flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <Check className="w-4 h-4 shrink-0" />
+        <div className="animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 flex items-center gap-2 rounded-md bg-emerald-600 px-3.5 py-2 font-mono text-xs text-white shadow-lg duration-150">
+          <Check className="h-4 w-4 shrink-0" />
           <span>{copiedNotification}</span>
         </div>
       )}

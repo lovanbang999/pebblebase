@@ -3,8 +3,10 @@ import { Plus, Minus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "cn";
 
-export interface NumberInputProps
-  extends Omit<React.ComponentProps<typeof Input>, "onChange" | "value"> {
+export interface NumberInputProps extends Omit<
+  React.ComponentProps<typeof Input>,
+  "onChange" | "value"
+> {
   value?: string | number;
   onChange?: (value: string, e?: React.ChangeEvent<HTMLInputElement>) => void;
   step?: number | string;
@@ -71,7 +73,9 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     );
 
     const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-    const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+    const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(
+      null,
+    );
 
     const stopStepper = React.useCallback(() => {
       if (timerRef.current) clearTimeout(timerRef.current);
@@ -98,7 +102,7 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
     return (
       <div
         className={cn(
-          "flex h-8 w-full min-w-0 items-center rounded-lg border border-input bg-transparent transition-colors outline-none focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 dark:bg-input/30",
+          "border-input focus-within:border-ring focus-within:ring-ring/50 dark:bg-input/30 flex h-8 w-full min-w-0 items-center rounded-lg border bg-transparent transition-colors outline-none focus-within:ring-3 disabled:pointer-events-none disabled:opacity-50",
           className,
         )}
       >
@@ -112,10 +116,10 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
           disabled={disabled}
           placeholder={placeholder}
           onChange={(e) => onChange?.(e.target.value, e)}
-          className="h-full w-full min-w-0 flex-1 bg-transparent px-2.5 py-1 text-xs font-mono outline-none border-none text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="text-foreground placeholder:text-muted-foreground h-full w-full min-w-0 flex-1 [appearance:textfield] border-none bg-transparent px-2.5 py-1 font-mono text-xs outline-none disabled:cursor-not-allowed [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           {...props}
         />
-        <div className="flex h-full items-center shrink-0 border-l border-input/60 divide-x divide-input/60">
+        <div className="border-input/60 divide-input/60 flex h-full shrink-0 items-center divide-x border-l">
           <button
             type="button"
             tabIndex={-1}
@@ -123,10 +127,10 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             onMouseDown={() => startStepper("down")}
             onMouseUp={stopStepper}
             onMouseLeave={stopStepper}
-            className="h-full w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors disabled:opacity-30 disabled:pointer-events-none cursor-pointer active:bg-muted"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/30 active:bg-muted flex h-full w-7 cursor-pointer items-center justify-center transition-colors disabled:pointer-events-none disabled:opacity-30"
             title="Decrease (-)"
           >
-            <Minus className="w-3.5 h-3.5" />
+            <Minus className="h-3.5 w-3.5" />
           </button>
           <button
             type="button"
@@ -135,10 +139,10 @@ export const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(
             onMouseDown={() => startStepper("up")}
             onMouseUp={stopStepper}
             onMouseLeave={stopStepper}
-            className="h-full w-7 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/30 transition-colors disabled:opacity-30 disabled:pointer-events-none cursor-pointer active:bg-muted"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/30 active:bg-muted flex h-full w-7 cursor-pointer items-center justify-center transition-colors disabled:pointer-events-none disabled:opacity-30"
             title="Increase (+)"
           >
-            <Plus className="w-3.5 h-3.5" />
+            <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>

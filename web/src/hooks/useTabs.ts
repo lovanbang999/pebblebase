@@ -8,15 +8,21 @@ interface UseTabsOptions {
 }
 
 const getTabsStorageKey = (connId: string) => STORAGE_KEYS.tabs(connId);
-const getActiveTabStorageKey = (connId: string) => STORAGE_KEYS.activeTab(connId);
+const getActiveTabStorageKey = (connId: string) =>
+  STORAGE_KEYS.activeTab(connId);
 
-function loadStoredTabs(connectionId: string | null, tables: TableSchema[]): { tabs: StudioTab[]; activeTabId: string | null } {
+function loadStoredTabs(
+  connectionId: string | null,
+  tables: TableSchema[],
+): { tabs: StudioTab[]; activeTabId: string | null } {
   if (!connectionId) {
     return { tabs: [], activeTabId: null };
   }
 
   const savedTabsRaw = sessionStorage.getItem(getTabsStorageKey(connectionId));
-  const savedActiveRaw = sessionStorage.getItem(getActiveTabStorageKey(connectionId));
+  const savedActiveRaw = sessionStorage.getItem(
+    getActiveTabStorageKey(connectionId),
+  );
 
   if (savedTabsRaw) {
     try {
@@ -61,8 +67,12 @@ function loadStoredTabs(connectionId: string | null, tables: TableSchema[]): { t
 
 export function useTabs({ connectionId, tables }: UseTabsOptions) {
   const [prevConnId, setPrevConnId] = useState<string | null>(connectionId);
-  const [tabs, setTabs] = useState<StudioTab[]>(() => loadStoredTabs(connectionId, tables).tabs);
-  const [activeTabId, setActiveTabId] = useState<string | null>(() => loadStoredTabs(connectionId, tables).activeTabId);
+  const [tabs, setTabs] = useState<StudioTab[]>(
+    () => loadStoredTabs(connectionId, tables).tabs,
+  );
+  const [activeTabId, setActiveTabId] = useState<string | null>(
+    () => loadStoredTabs(connectionId, tables).activeTabId,
+  );
 
   const [prevTablesCount, setPrevTablesCount] = useState<number>(tables.length);
 
@@ -76,7 +86,9 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
   } else if (prevTablesCount === 0 && tables.length > 0) {
     setPrevTablesCount(tables.length);
     if (connectionId && tabs.length === 0) {
-      const savedTabsRaw = sessionStorage.getItem(STORAGE_KEYS.tabs(connectionId));
+      const savedTabsRaw = sessionStorage.getItem(
+        STORAGE_KEYS.tabs(connectionId),
+      );
       if (!savedTabsRaw) {
         const firstTable = tables[0].name;
         const initialTab: StudioTab = {
@@ -105,7 +117,10 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
 
     if (tabs.length > 0) {
       try {
-        sessionStorage.setItem(getTabsStorageKey(connectionId), JSON.stringify(tabs));
+        sessionStorage.setItem(
+          getTabsStorageKey(connectionId),
+          JSON.stringify(tabs),
+        );
       } catch (err) {
         console.warn("Failed to serialize tabs to sessionStorage:", err);
       }
@@ -122,13 +137,20 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
 
   // Open or switch to a table tab
   const openTableTab = useCallback(
-    (tableName: string, openInNewTab = false, initialState?: Partial<StudioTabState>) => {
+    (
+      tableName: string,
+      openInNewTab = false,
+      initialState?: Partial<StudioTabState>,
+    ) => {
       if (!connectionId || typeof tableName !== "string") return;
 
       if (!openInNewTab) {
         // If existing tab matches tableName, activate it
         const existing = tabs.find(
-          (t) => t.connectionId === connectionId && t.type === "table" && t.tableName === tableName
+          (t) =>
+            t.connectionId === connectionId &&
+            t.type === "table" &&
+            t.tableName === tableName,
         );
         if (existing) {
           setActiveTabId(existing.id);
@@ -148,8 +170,8 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
                         ...initialState,
                       },
                     }
-                  : t
-              )
+                  : t,
+              ),
             );
           }
           return;
@@ -176,7 +198,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
       setTabs((prev) => [...prev, newTab]);
       setActiveTabId(newTab.id);
     },
-    [connectionId, tabs]
+    [connectionId, tabs],
   );
 
   // Open a query console tab
@@ -210,7 +232,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
       setTabs((prev) => [...prev, newTab]);
       setActiveTabId(newTab.id);
     },
-    [connectionId, tabs]
+    [connectionId, tabs],
   );
 
   // Open an ERD tab
@@ -218,7 +240,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     if (!connectionId) return;
 
     const existing = tabs.find(
-      (t) => t.connectionId === connectionId && t.type === "erd"
+      (t) => t.connectionId === connectionId && t.type === "erd",
     );
     if (existing) {
       setActiveTabId(existing.id);
@@ -241,7 +263,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
     if (!connectionId) return;
 
     const existing = tabs.find(
-      (t) => t.connectionId === connectionId && t.type === "diff"
+      (t) => t.connectionId === connectionId && t.type === "diff",
     );
     if (existing) {
       setActiveTabId(existing.id);
@@ -281,7 +303,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
         return nextTabs;
       });
     },
-    [activeTabId]
+    [activeTabId],
   );
 
   // Close all other tabs except target
@@ -305,32 +327,31 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
         return nextTabs;
       });
     },
-    [activeTabId]
+    [activeTabId],
   );
 
   // Duplicate an existing tab
-  const duplicateTab = useCallback(
-    (tabId: string) => {
-      setTabs((prev) => {
-        const idx = prev.findIndex((t) => t.id === tabId);
-        if (idx === -1) return prev;
+  const duplicateTab = useCallback((tabId: string) => {
+    setTabs((prev) => {
+      const idx = prev.findIndex((t) => t.id === tabId);
+      if (idx === -1) return prev;
 
-        const original = prev[idx];
-        const copy: StudioTab = {
-          ...original,
-          id: `tab_${original.type}_copy_${Date.now()}`,
-          title: `${original.title} (Copy)`,
-          state: original.state ? { ...original.state, filters: [...original.state.filters] } : undefined,
-        };
+      const original = prev[idx];
+      const copy: StudioTab = {
+        ...original,
+        id: `tab_${original.type}_copy_${Date.now()}`,
+        title: `${original.title} (Copy)`,
+        state: original.state
+          ? { ...original.state, filters: [...original.state.filters] }
+          : undefined,
+      };
 
-        const nextTabs = [...prev];
-        nextTabs.splice(idx + 1, 0, copy);
-        setActiveTabId(copy.id);
-        return nextTabs;
-      });
-    },
-    []
-  );
+      const nextTabs = [...prev];
+      nextTabs.splice(idx + 1, 0, copy);
+      setActiveTabId(copy.id);
+      return nextTabs;
+    });
+  }, []);
 
   // Update state for active tab (page, filters, sortBy, sortDesc, queryText)
   const updateActiveTabState = useCallback(
@@ -367,7 +388,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
         });
       });
     },
-    [activeTabId]
+    [activeTabId],
   );
 
   // Reorder tabs by moving a tab from sourceIndex to destinationIndex
@@ -392,7 +413,7 @@ export function useTabs({ connectionId, tables }: UseTabsOptions) {
         return next;
       });
     },
-    []
+    [],
   );
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || null;

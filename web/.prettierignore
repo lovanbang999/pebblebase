@@ -1,0 +1,9 @@
+dist
+build
+node_modules
+wailsjs
+yarn.lock
+package-lock.json
+*.min.js
+*.min.css
+.vscode

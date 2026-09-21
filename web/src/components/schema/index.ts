@@ -1,2 +1,2 @@
-export { SchemaInspector } from './SchemaInspector';
-export { SchemaDiff } from './SchemaDiff';
+export { SchemaInspector } from "./SchemaInspector";
+export { SchemaDiff } from "./SchemaDiff";

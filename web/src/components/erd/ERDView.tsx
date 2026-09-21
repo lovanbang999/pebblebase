@@ -650,22 +650,22 @@ function ERDCanvas({
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 bg-zinc-50 dark:bg-[#0d0e17] text-zinc-500">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
-        <span className="text-sm font-mono">{t("erd.loading")}</span>
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-zinc-50 text-zinc-500 dark:bg-[#0d0e17]">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+        <span className="font-mono text-sm">{t("erd.loading")}</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 bg-zinc-50 dark:bg-[#0d0e17] text-rose-500">
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-zinc-50 text-rose-500 dark:bg-[#0d0e17]">
         <span className="text-sm font-semibold">
           {t("common.error")}: {error}
         </span>
         <button
           onClick={loadData}
-          className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs hover:bg-indigo-500 transition-colors"
+          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-indigo-500"
         >
           {t("common.retry")}
         </button>
@@ -678,7 +678,7 @@ function ERDCanvas({
   return (
     <div
       ref={reactFlowWrapper}
-      className={`relative flex-1 w-full h-full bg-[#f8fafc] dark:bg-[#0a0b12] overflow-hidden select-none ${isDraggingNode ? "is-dragging-node" : ""}`}
+      className={`relative h-full w-full flex-1 overflow-hidden bg-[#f8fafc] select-none dark:bg-[#0a0b12] ${isDraggingNode ? "is-dragging-node" : ""}`}
     >
       {/* Floating Toolbar */}
       <ERDToolbar
@@ -704,8 +704,8 @@ function ERDCanvas({
 
       {/* Notice Banner if No Relations Exist */}
       {hasNoRelations && (
-        <div className="absolute top-16 left-3 z-10 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 text-xs shadow-md">
-          <Info className="w-3.5 h-3.5 shrink-0" />
+        <div className="absolute top-16 left-3 z-10 flex items-center gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-600 shadow-md dark:text-amber-400">
+          <Info className="h-3.5 w-3.5 shrink-0" />
           <span>{t("erd.noRelations")}</span>
         </div>
       )}
@@ -757,7 +757,7 @@ function ERDCanvas({
             nodeColor={(node) => {
               return node.data?.isDimmed ? "#94a3b8" : "#6366f1";
             }}
-            className="bg-white/90! dark:bg-[#13141f]/90! border! border-zinc-200/80! dark:border-white/10! rounded-xl! shadow-xl! bottom-4! right-4! overflow-hidden backdrop-blur-md! [&_.react-flow\_\_minimap-mask]:fill-zinc-300/60! dark:[&_.react-flow\_\_minimap-mask]:fill-[#0a0b12]/75!"
+            className="right-4! bottom-4! overflow-hidden rounded-xl! border! border-zinc-200/80! bg-white/90! shadow-xl! backdrop-blur-md! dark:border-white/10! dark:bg-[#13141f]/90! [&_.react-flow\_\_minimap-mask]:fill-zinc-300/60! dark:[&_.react-flow\_\_minimap-mask]:fill-[#0a0b12]/75!"
             zoomable
             pannable
           />

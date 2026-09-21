@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import type { Connection, ConnectionInput, FilterOption } from '../lib/types';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import type { Connection, ConnectionInput, FilterOption } from "../lib/types";
 import {
   fetchConnections,
   createConnection,
@@ -11,7 +11,7 @@ import {
   insertRow,
   updateRow,
   deleteRow,
-} from '../lib/api';
+} from "../lib/api";
 import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
 
 export interface UsePebblebaseStudioOptions {
@@ -24,36 +24,49 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
   const { t } = useTranslation();
 
   // Selection states
-  const [userSelectedConnectionId, setUserSelectedConnectionId] = useState<string | null>(null);
-  const [userSelectedTable, setUserSelectedTable] = useState<string | null>(null);
+  const [userSelectedConnectionId, setUserSelectedConnectionId] = useState<
+    string | null
+  >(null);
+  const [userSelectedTable, setUserSelectedTable] = useState<string | null>(
+    null,
+  );
 
   // Modals state
   const [isConnModalOpen, setIsConnModalOpen] = useState(false);
-  const [cloningConnection, setCloningConnection] = useState<Connection | null>(null);
+  const [cloningConnection, setCloningConnection] = useState<Connection | null>(
+    null,
+  );
   const [isRowModalOpen, setIsRowModalOpen] = useState(false);
-  const [editingRow, setEditingRow] = useState<Record<string, unknown> | null>(null);
-  const [rowToDelete, setRowToDelete] = useState<Record<string, unknown> | null>(null);
+  const [editingRow, setEditingRow] = useState<Record<string, unknown> | null>(
+    null,
+  );
+  const [rowToDelete, setRowToDelete] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
 
   // Theme state
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem(STORAGE_KEYS.THEME) as 'dark' | 'light') || 'dark';
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    return (
+      (localStorage.getItem(STORAGE_KEYS.THEME) as "dark" | "light") || "dark"
+    );
   });
 
   const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     localStorage.setItem(STORAGE_KEYS.THEME, nextTheme);
-    if (nextTheme === 'dark') {
-      document.documentElement.classList.add('dark');
+    if (nextTheme === "dark") {
+      document.documentElement.classList.add("dark");
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.remove("dark");
     }
   };
 
   // Data grid state
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-  const [sortBy, setSortBy] = useState('');
+  const [sortBy, setSortBy] = useState("");
   const [sortDesc, setSortDesc] = useState(false);
   const [filters, setFilters] = useState<FilterOption[]>([]);
   const [bannerError, setBannerError] = useState<string | null>(null);
@@ -61,16 +74,15 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
   const [isRetrying, setIsRetrying] = useState(false);
 
   // 1. Fetch Connections
-  const {
-    data: connections = [],
-    isLoading: isLoadingConnections,
-  } = useQuery({
-    queryKey: ['connections'],
+  const { data: connections = [], isLoading: isLoadingConnections } = useQuery({
+    queryKey: ["connections"],
     queryFn: fetchConnections,
   });
 
   const activeConnection =
-    connections.find((c) => c.id === userSelectedConnectionId) || connections[0] || null;
+    connections.find((c) => c.id === userSelectedConnectionId) ||
+    connections[0] ||
+    null;
 
   // 2. Fetch Tables
   const {
@@ -79,13 +91,15 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     refetch: refetchTables,
     error: tablesError,
   } = useQuery({
-    queryKey: ['tables', activeConnection?.id],
+    queryKey: ["tables", activeConnection?.id],
     queryFn: () => fetchTables(activeConnection!.id),
     enabled: Boolean(activeConnection?.id),
   });
 
   const activeTable =
-    tables.find((t) => t.name === userSelectedTable)?.name || tables[0]?.name || null;
+    tables.find((t) => t.name === userSelectedTable)?.name ||
+    tables[0]?.name ||
+    null;
   const activeTableSchema = tables.find((t) => t.name === activeTable);
 
   const handleSelectConnection = (connId: string) => {
@@ -98,7 +112,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
   const handleSelectTable = (tblName: string) => {
     setUserSelectedTable(tblName);
     setPage(0);
-    setSortBy('');
+    setSortBy("");
     setSortDesc(false);
     setFilters([]);
     setBannerError(null);
@@ -113,7 +127,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     error: rowsError,
   } = useQuery({
     queryKey: [
-      'rows',
+      "rows",
       activeConnection?.id,
       activeTable,
       page,
@@ -137,7 +151,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
   const createConnMutation = useMutation({
     mutationFn: createConnection,
     onSuccess: (newConn) => {
-      qc.invalidateQueries({ queryKey: ['connections'] });
+      qc.invalidateQueries({ queryKey: ["connections"] });
       setUserSelectedConnectionId(newConn.id);
       setUserSelectedTable(null);
       setBannerError(null);
@@ -147,7 +161,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
   const deleteConnMutation = useMutation({
     mutationFn: deleteConnection,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['connections'] });
+      qc.invalidateQueries({ queryKey: ["connections"] });
       setUserSelectedConnectionId(null);
       setUserSelectedTable(null);
     },
@@ -157,7 +171,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     mutationFn: (values: Record<string, unknown>) =>
       insertRow(activeConnection!.id, activeTable!, values),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['rows'] });
+      qc.invalidateQueries({ queryKey: ["rows"] });
       setBannerError(null);
     },
   });
@@ -171,7 +185,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
       values: Record<string, unknown>;
     }) => updateRow(activeConnection!.id, activeTable!, where, values),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['rows'] });
+      qc.invalidateQueries({ queryKey: ["rows"] });
       setBannerError(null);
     },
   });
@@ -180,7 +194,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     mutationFn: (where: Record<string, unknown>) =>
       deleteRow(activeConnection!.id, activeTable!, where),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['rows'] });
+      qc.invalidateQueries({ queryKey: ["rows"] });
       setBannerError(null);
     },
   });
@@ -193,7 +207,9 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     await deleteConnMutation.mutateAsync(id);
   };
 
-  const getWhereCondition = (row: Record<string, unknown>): Record<string, unknown> => {
+  const getWhereCondition = (
+    row: Record<string, unknown>,
+  ): Record<string, unknown> => {
     if (!activeTableSchema) return row;
     const pkCols = activeTableSchema.columns.filter((c) => c.is_primary_key);
     if (pkCols.length > 0) {
@@ -218,7 +234,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
   const handleSaveCell = async (
     row: Record<string, unknown>,
     columnName: string,
-    newValue: unknown
+    newValue: unknown,
   ) => {
     const where = getWhereCondition(row);
     const values = { [columnName]: newValue };
@@ -228,13 +244,15 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
   const handleNavigateToRelatedTable = (
     targetTable: string,
     targetColumn: string,
-    value: unknown
+    value: unknown,
   ) => {
     setUserSelectedTable(targetTable);
     setPage(0);
-    setSortBy('');
+    setSortBy("");
     setSortDesc(false);
-    setFilters([{ column: targetColumn, operator: 'eq', value: String(value) }]);
+    setFilters([
+      { column: targetColumn, operator: "eq", value: String(value) },
+    ]);
     setBannerError(null);
   };
 
@@ -248,7 +266,8 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     try {
       await deleteRowMutation.mutateAsync(where);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t('app.failedToDelete');
+      const message =
+        err instanceof Error ? err.message : t("app.failedToDelete");
       setBannerError(message);
     } finally {
       setRowToDelete(null);
@@ -261,7 +280,9 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     (rowsError instanceof Error ? rowsError.message : null);
 
   const activeErrorMessage =
-    rawErrorMessage && rawErrorMessage !== dismissedError ? rawErrorMessage : null;
+    rawErrorMessage && rawErrorMessage !== dismissedError
+      ? rawErrorMessage
+      : null;
 
   const handleDismissBanner = () => {
     setBannerError(null);
@@ -275,7 +296,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     setBannerError(null);
     setDismissedError(null);
     try {
-      await qc.refetchQueries({ type: 'active' });
+      await qc.refetchQueries({ type: "active" });
     } finally {
       setIsRetrying(false);
     }

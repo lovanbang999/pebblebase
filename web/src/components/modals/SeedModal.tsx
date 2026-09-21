@@ -65,11 +65,16 @@ export const SeedModal: FC<SeedModalProps> = ({
       setError(null);
       const res = await generateSeedSQL(connId, {
         table: tableName,
-        count: Math.max(SEED_CONFIG.MIN_COUNT, Math.min(count, SEED_CONFIG.MAX_COUNT)),
+        count: Math.max(
+          SEED_CONFIG.MIN_COUNT,
+          Math.min(count, SEED_CONFIG.MAX_COUNT),
+        ),
       });
       setSeedResult(res);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to generate seed SQL");
+      setError(
+        err instanceof Error ? err.message : "Failed to generate seed SQL",
+      );
     } finally {
       setIsGenerating(false);
     }
@@ -101,25 +106,25 @@ export const SeedModal: FC<SeedModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-3xl w-[92vw] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl p-0 overflow-hidden flex flex-col max-h-[90vh]">
+      <DialogContent className="flex max-h-[90vh] w-[92vw] max-w-3xl flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
         {/* Header */}
-        <DialogHeader className="p-4 md:p-5 border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30">
+        <DialogHeader className="border-b border-zinc-200 bg-zinc-50/50 p-4 md:p-5 dark:border-zinc-800 dark:bg-zinc-900/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <Sparkles className="w-5 h-5" />
+              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+                <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-base font-bold font-mono tracking-tight text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2 font-mono text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
                   <span>{t("seed.title")}</span>
                   <Badge
                     variant="outline"
-                    className="font-mono text-[11px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                    className="border-emerald-500/20 bg-emerald-500/10 font-mono text-[11px] text-emerald-700 dark:text-emerald-400"
                   >
                     {tableName}
                   </Badge>
                 </DialogTitle>
-                <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                <DialogDescription className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                   {t("seed.description")}
                 </DialogDescription>
               </div>
@@ -128,13 +133,13 @@ export const SeedModal: FC<SeedModalProps> = ({
         </DialogHeader>
 
         {/* Content Body */}
-        <div className="p-4 md:p-5 space-y-4 overflow-y-auto flex-1">
+        <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
           {/* Controls bar */}
-          <div className="flex items-center justify-between flex-wrap gap-3 p-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/40">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
             <div className="flex items-center gap-2">
               <label
                 htmlFor="seed-count"
-                className="text-xs font-mono font-medium text-zinc-700 dark:text-zinc-300 whitespace-nowrap"
+                className="font-mono text-xs font-medium whitespace-nowrap text-zinc-700 dark:text-zinc-300"
               >
                 {t("seed.count")}
               </label>
@@ -149,12 +154,15 @@ export const SeedModal: FC<SeedModalProps> = ({
                   setCount(
                     isNaN(val)
                       ? SEED_CONFIG.MIN_COUNT
-                      : Math.max(SEED_CONFIG.MIN_COUNT, Math.min(val, SEED_CONFIG.MAX_COUNT)),
+                      : Math.max(
+                          SEED_CONFIG.MIN_COUNT,
+                          Math.min(val, SEED_CONFIG.MAX_COUNT),
+                        ),
                   );
                 }}
-                className="w-24 h-8 text-xs font-mono"
+                className="h-8 w-24 font-mono text-xs"
               />
-              <span className="text-[11px] text-zinc-400 dark:text-zinc-500 font-mono">
+              <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500">
                 {t("seed.countHelp")}
               </span>
             </div>
@@ -164,19 +172,21 @@ export const SeedModal: FC<SeedModalProps> = ({
               size="sm"
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="h-8 px-3.5 font-mono text-xs font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer"
+              className="h-8 cursor-pointer gap-1.5 bg-emerald-600 px-3.5 font-mono text-xs font-semibold text-white shadow-xs hover:bg-emerald-500"
             >
               <RefreshCw
-                className={cn("w-3.5 h-3.5", isGenerating && "animate-spin")}
+                className={cn("h-3.5 w-3.5", isGenerating && "animate-spin")}
               />
-              <span>{isGenerating ? t("seed.generating") : t("seed.generate")}</span>
+              <span>
+                {isGenerating ? t("seed.generating") : t("seed.generate")}
+              </span>
             </Button>
           </div>
 
           {/* Error notice */}
           {error && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 font-mono">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+            <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 font-mono text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
@@ -184,41 +194,44 @@ export const SeedModal: FC<SeedModalProps> = ({
           {/* Seed Preview info */}
           {seedResult && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-1.5 text-xs font-mono text-zinc-600 dark:text-zinc-400">
-                  <Layers className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-600 dark:text-zinc-400">
+                  <Layers className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                   <span className="font-semibold text-zinc-900 dark:text-zinc-200">
                     {t("seed.tablesIncluded")}
                   </span>
-                  <div className="flex items-center gap-1 flex-wrap">
+                  <div className="flex flex-wrap items-center gap-1">
                     {seedResult.tables_seeded.map((tbl, i) => (
-                      <span key={tbl} className="inline-flex items-center gap-1">
+                      <span
+                        key={tbl}
+                        className="inline-flex items-center gap-1"
+                      >
                         <Badge
                           variant="outline"
                           className={cn(
-                            "font-mono text-[10px] px-1.5 py-0 h-4",
+                            "h-4 px-1.5 py-0 font-mono text-[10px]",
                             tbl === tableName
-                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 font-bold"
-                              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-200 dark:border-zinc-700",
+                              ? "border-emerald-500/30 bg-emerald-500/15 font-bold text-emerald-700 dark:text-emerald-300"
+                              : "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
                           )}
                         >
                           {tbl}
                         </Badge>
                         {i < seedResult.tables_seeded.length - 1 && (
-                          <span className="text-zinc-400 text-xs">→</span>
+                          <span className="text-xs text-zinc-400">→</span>
                         )}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="font-mono text-[11px] text-zinc-400">
                   {t("seed.preview")}
                 </span>
               </div>
 
               {/* CodeMirror preview */}
-              <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-inner text-xs">
+              <div className="overflow-hidden rounded-lg border border-zinc-200 text-xs shadow-inner dark:border-zinc-800">
                 <CodeMirror
                   value={seedResult.sql}
                   height="340px"
@@ -239,13 +252,13 @@ export const SeedModal: FC<SeedModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-3 md:p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 border-t border-zinc-200 bg-zinc-50/50 p-3 md:p-4 dark:border-zinc-800 dark:bg-zinc-900/30">
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={onClose}
-            className="h-8 px-3 font-mono text-xs cursor-pointer"
+            className="h-8 cursor-pointer px-3 font-mono text-xs"
           >
             Close
           </Button>
@@ -258,18 +271,19 @@ export const SeedModal: FC<SeedModalProps> = ({
               onClick={handleCopy}
               disabled={!seedResult?.sql}
               className={cn(
-                "h-8 px-3 font-mono text-xs gap-1.5 cursor-pointer transition-colors",
-                copied && "border-emerald-500 text-emerald-600 dark:text-emerald-400",
+                "h-8 cursor-pointer gap-1.5 px-3 font-mono text-xs transition-colors",
+                copied &&
+                  "border-emerald-500 text-emerald-600 dark:text-emerald-400",
               )}
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
                   <span>{t("seed.copied")}</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5 text-zinc-500" />
+                  <Copy className="h-3.5 w-3.5 text-zinc-500" />
                   <span>{t("seed.copy")}</span>
                 </>
               )}
@@ -281,9 +295,9 @@ export const SeedModal: FC<SeedModalProps> = ({
                 size="sm"
                 onClick={handleRunConsole}
                 disabled={!seedResult?.sql}
-                className="h-8 px-3.5 font-mono text-xs font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs cursor-pointer"
+                className="h-8 cursor-pointer gap-1.5 bg-emerald-600 px-3.5 font-mono text-xs font-semibold text-white shadow-xs hover:bg-emerald-500"
               >
-                <Terminal className="w-3.5 h-3.5" />
+                <Terminal className="h-3.5 w-3.5" />
                 <span>{t("seed.run")}</span>
               </Button>
             )}

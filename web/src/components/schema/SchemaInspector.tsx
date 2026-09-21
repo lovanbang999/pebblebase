@@ -100,7 +100,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
         return (
           <Badge
             variant="outline"
-            className="bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20 font-mono text-[11px]"
+            className="border-indigo-500/20 bg-indigo-500/10 font-mono text-[11px] text-indigo-700 dark:text-indigo-400"
           >
             PostgreSQL
           </Badge>
@@ -109,7 +109,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
         return (
           <Badge
             variant="outline"
-            className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 font-mono text-[11px]"
+            className="border-amber-500/20 bg-amber-500/10 font-mono text-[11px] text-amber-700 dark:text-amber-400"
           >
             MySQL
           </Badge>
@@ -118,7 +118,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
         return (
           <Badge
             variant="outline"
-            className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 font-mono text-[11px]"
+            className="border-emerald-500/20 bg-emerald-500/10 font-mono text-[11px] text-emerald-700 dark:text-emerald-400"
           >
             MongoDB
           </Badge>
@@ -127,7 +127,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
         return (
           <Badge
             variant="outline"
-            className="bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20 font-mono text-[11px]"
+            className="border-sky-500/20 bg-sky-500/10 font-mono text-[11px] text-sky-700 dark:text-sky-400"
           >
             SQLite
           </Badge>
@@ -152,21 +152,21 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
   };
 
   return (
-    <div className="flex-1 overflow-auto p-4 md:p-6 space-y-6 bg-zinc-50/50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans">
+    <div className="flex-1 space-y-6 overflow-auto bg-zinc-50/50 p-4 font-sans text-zinc-900 md:p-6 dark:bg-zinc-950 dark:text-zinc-100">
       {/* Overview Top Bar */}
-      <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-zinc-200 dark:border-zinc-800">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3 dark:border-zinc-800">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-            <Database className="w-5 h-5" />
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+            <Database className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base font-bold font-mono tracking-tight">
+              <h2 className="font-mono text-base font-bold tracking-tight">
                 {table.name}
               </h2>
               {getEngineBadge(data?.engine)}
             </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 font-mono mt-0.5">
+            <p className="mt-0.5 font-mono text-xs text-zinc-500 dark:text-zinc-400">
               {t("schema.columnsCount", { count: table.columns.length })}
               {data?.indexes && data.indexes.length > 0 && (
                 <span>
@@ -179,31 +179,31 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
         </div>
 
         {/* Sub-view Switcher */}
-        <div className="flex items-center bg-zinc-200/60 dark:bg-zinc-800/60 p-0.5 rounded-lg border border-zinc-300/40 dark:border-zinc-700/40">
+        <div className="flex items-center rounded-lg border border-zinc-300/40 bg-zinc-200/60 p-0.5 dark:border-zinc-700/40 dark:bg-zinc-800/60">
           <button
             type="button"
             onClick={() => setActiveSubTab("schema")}
             className={cn(
-              "px-3 py-1.5 text-xs font-mono font-medium rounded-md flex items-center gap-1.5 transition-all",
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-xs font-medium transition-all",
               activeSubTab === "schema"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                 : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
             )}
           >
-            <FileCode className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <FileCode className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
             <span>{t("migration.tabSchema")}</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab("migration")}
             className={cn(
-              "px-3 py-1.5 text-xs font-mono font-medium rounded-md flex items-center gap-1.5 transition-all",
+              "flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-xs font-medium transition-all",
               activeSubTab === "migration"
-                ? "bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-xs font-semibold"
+                ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                 : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
             )}
           >
-            <Rocket className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <Rocket className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
             <span>{t("migration.tabMigration")}</span>
           </button>
         </div>
@@ -220,11 +220,11 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                       size="sm"
                       onClick={() => refetch()}
                       disabled={isLoading || isRefetching}
-                      className="h-8 px-2.5 font-mono text-xs gap-1.5"
+                      className="h-8 gap-1.5 px-2.5 font-mono text-xs"
                     >
                       <RefreshCw
                         className={cn(
-                          "w-3.5 h-3.5",
+                          "h-3.5 w-3.5",
                           (isLoading || isRefetching) && "animate-spin",
                         )}
                       />
@@ -241,9 +241,9 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsSeedModalOpen(true)}
-                  className="h-8 px-2.5 font-mono text-xs gap-1.5 border-emerald-500/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 cursor-pointer"
+                  className="h-8 cursor-pointer gap-1.5 border-emerald-500/30 px-2.5 font-mono text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
                   <span>{t("seed.title")}</span>
                 </Button>
               )}
@@ -254,20 +254,20 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                 onClick={handleCopy}
                 disabled={!data?.ddl}
                 className={cn(
-                  "h-8 px-3 font-mono text-xs font-semibold gap-1.5 transition-all shadow-xs",
+                  "h-8 gap-1.5 px-3 font-mono text-xs font-semibold shadow-xs transition-all",
                   copied
                     ? "bg-emerald-600 text-white"
-                    : "bg-emerald-600 hover:bg-emerald-500 text-white",
+                    : "bg-emerald-600 text-white hover:bg-emerald-500",
                 )}
               >
                 {copied ? (
                   <>
-                    <Check className="w-3.5 h-3.5" />
+                    <Check className="h-3.5 w-3.5" />
                     <span>{t("schema.copied")}</span>
                   </>
                 ) : (
                   <>
-                    <Copy className="w-3.5 h-3.5" />
+                    <Copy className="h-3.5 w-3.5" />
                     <span>{t("schema.copyDdl")}</span>
                   </>
                 )}
@@ -287,8 +287,8 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
       ) : (
         <>
           {error ? (
-            <div className="p-4 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-mono flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-4 font-mono text-xs text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+              <ShieldAlert className="h-4 w-4 shrink-0" />
               <span>
                 {t("schema.failedDdl", {
                   error:
@@ -301,35 +301,35 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
           {/* Section 1: Column Specifications */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
+              <Layers className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <h3 className="font-mono text-xs font-semibold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
                 {t("schema.columnsTitle")}
               </h3>
             </div>
 
-            <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/50 shadow-2xs">
+            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/50">
               <Table>
-                <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                <TableHeader className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
                   <TableRow className="hover:bg-transparent">
-                    <TableHead className="w-12 text-center text-xs font-mono">
+                    <TableHead className="w-12 text-center font-mono text-xs">
                       #
                     </TableHead>
-                    <TableHead className="text-xs font-mono">
+                    <TableHead className="font-mono text-xs">
                       {t("schema.colName")}
                     </TableHead>
-                    <TableHead className="text-xs font-mono">
+                    <TableHead className="font-mono text-xs">
                       {t("schema.colType")}
                     </TableHead>
-                    <TableHead className="text-xs font-mono">
+                    <TableHead className="font-mono text-xs">
                       {t("schema.colPk")}
                     </TableHead>
-                    <TableHead className="text-xs font-mono">
+                    <TableHead className="font-mono text-xs">
                       {t("schema.colNullable")}
                     </TableHead>
-                    <TableHead className="text-xs font-mono">
+                    <TableHead className="font-mono text-xs">
                       {t("schema.colDefault")}
                     </TableHead>
-                    <TableHead className="text-xs font-mono">
+                    <TableHead className="font-mono text-xs">
                       {t("schema.colRelations")}
                     </TableHead>
                   </TableRow>
@@ -343,7 +343,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                     return (
                       <TableRow
                         key={col.name}
-                        className="font-mono text-xs hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60"
+                        className="border-b border-zinc-100 font-mono text-xs hover:bg-zinc-50/60 dark:border-zinc-800/60 dark:hover:bg-zinc-800/40"
                       >
                         <TableCell className="text-center text-zinc-400">
                           {idx + 1}
@@ -351,7 +351,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                         <TableCell className="font-semibold text-zinc-900 dark:text-zinc-100">
                           <div className="flex items-center gap-1.5">
                             {col.is_primary_key && (
-                              <Key className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                              <Key className="h-3.5 w-3.5 shrink-0 text-amber-500" />
                             )}
                             <span>{col.name}</span>
                           </div>
@@ -360,7 +360,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                           <Badge
                             variant="outline"
                             className={cn(
-                              "font-mono text-[11px] font-normal px-2 py-0.5",
+                              "px-2 py-0.5 font-mono text-[11px] font-normal",
                               getTypeBadgeClass(col.type),
                             )}
                           >
@@ -371,7 +371,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                           {col.is_primary_key ? (
                             <Badge
                               variant="outline"
-                              className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-[10px] font-bold uppercase"
+                              className="border-amber-500/30 bg-amber-500/10 text-[10px] font-bold text-amber-700 uppercase dark:text-amber-400"
                             >
                               {t("schema.primary")}
                             </Badge>
@@ -381,22 +381,22 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                         </TableCell>
                         <TableCell>
                           {col.nullable ? (
-                            <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
+                            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                               {t("schema.yes")}
                             </span>
                           ) : (
-                            <span className="text-zinc-500 dark:text-zinc-400 text-[11px]">
+                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
                               {t("schema.no")}
                             </span>
                           )}
                         </TableCell>
                         <TableCell>
                           {col.default_value ? (
-                            <code className="text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-[11px]">
+                            <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                               {col.default_value}
                             </code>
                           ) : (
-                            <span className="text-zinc-400 text-[11px]">
+                            <span className="text-[11px] text-zinc-400">
                               {t("schema.none")}
                             </span>
                           )}
@@ -412,10 +412,10 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                                   "",
                                 )
                               }
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:underline cursor-pointer text-[11px]"
+                              className="inline-flex cursor-pointer items-center gap-1 rounded border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] text-indigo-700 hover:underline dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300"
                             >
                               <span>{relation.to_table}</span>
-                              <ArrowRight className="w-3 h-3" />
+                              <ArrowRight className="h-3 w-3" />
                               <span>{relation.to_column}</span>
                             </button>
                           ) : (
@@ -433,37 +433,37 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
           {/* Section 2: Database Indexes */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
+              <Key className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <h3 className="font-mono text-xs font-semibold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
                 {t("schema.indexesTitle")}
               </h3>
             </div>
 
             {isLoading ? (
-              <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 space-y-2 bg-white dark:bg-zinc-900/40">
+              <div className="space-y-2 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900/40">
                 <Skeleton className="h-6 w-1/3" />
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
               </div>
             ) : !data?.indexes || data.indexes.length === 0 ? (
-              <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg p-4 text-center text-xs font-mono text-zinc-500 dark:text-zinc-400 bg-white dark:bg-zinc-900/30">
+              <div className="rounded-lg border border-zinc-200 bg-white p-4 text-center font-mono text-xs text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/30 dark:text-zinc-400">
                 {t("schema.noIndexes")}
               </div>
             ) : (
-              <div className="border border-zinc-200 dark:border-zinc-800 rounded-lg overflow-hidden bg-white dark:bg-zinc-900/50 shadow-2xs">
+              <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/50">
                 <Table>
-                  <TableHeader className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+                  <TableHeader className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="text-xs font-mono">
+                      <TableHead className="font-mono text-xs">
                         {t("schema.idxName")}
                       </TableHead>
-                      <TableHead className="text-xs font-mono">
+                      <TableHead className="font-mono text-xs">
                         {t("schema.idxType")}
                       </TableHead>
-                      <TableHead className="text-xs font-mono">
+                      <TableHead className="font-mono text-xs">
                         {t("schema.idxCols")}
                       </TableHead>
-                      <TableHead className="text-xs font-mono">
+                      <TableHead className="font-mono text-xs">
                         {t("schema.idxUnique")}
                       </TableHead>
                     </TableRow>
@@ -472,7 +472,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                     {data.indexes.map((idx) => (
                       <TableRow
                         key={idx.name}
-                        className="font-mono text-xs hover:bg-zinc-50/60 dark:hover:bg-zinc-800/40 border-b border-zinc-100 dark:border-zinc-800/60"
+                        className="border-b border-zinc-100 font-mono text-xs hover:bg-zinc-50/60 dark:border-zinc-800/60 dark:hover:bg-zinc-800/40"
                       >
                         <TableCell className="font-semibold text-zinc-900 dark:text-zinc-100">
                           {idx.name}
@@ -481,26 +481,26 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                           {idx.primary ? (
                             <Badge
                               variant="outline"
-                              className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 font-bold text-[10px] uppercase"
+                              className="border-amber-500/30 bg-amber-500/10 text-[10px] font-bold text-amber-700 uppercase dark:text-amber-400"
                             >
                               {t("schema.primary")}
                             </Badge>
                           ) : (
                             <Badge
                               variant="outline"
-                              className="bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border-zinc-300 dark:border-zinc-700 text-[10px]"
+                              className="border-zinc-300 bg-zinc-100 text-[10px] text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
                             >
                               {t("schema.secondary")}
                             </Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="flex flex-wrap items-center gap-1.5">
                             {idx.columns.map((c) => (
                               <Badge
                                 key={c}
                                 variant="secondary"
-                                className="font-mono text-[11px] font-normal px-1.5 py-0"
+                                className="px-1.5 py-0 font-mono text-[11px] font-normal"
                               >
                                 {c}
                               </Badge>
@@ -511,7 +511,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                           {idx.unique ? (
                             <Badge
                               variant="outline"
-                              className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold uppercase"
+                              className="border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold text-emerald-700 uppercase dark:text-emerald-400"
                             >
                               {t("schema.unique")}
                             </Badge>
@@ -533,23 +533,23 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <FileCode className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <h3 className="text-xs font-semibold uppercase tracking-wider font-mono text-zinc-700 dark:text-zinc-300">
+                <FileCode className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                <h3 className="font-mono text-xs font-semibold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
                   {t("schema.ddlTitle")}
                 </h3>
               </div>
 
               {data?.ddl && (
-                <span className="text-[11px] font-mono text-zinc-400">
+                <span className="font-mono text-[11px] text-zinc-400">
                   {data.ddl.split("\n").length} lines
                 </span>
               )}
             </div>
 
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-900 shadow-sm">
+            <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
               {/* Editor Header Bar */}
-              <div className="h-9 px-3 bg-zinc-100/70 dark:bg-zinc-800/60 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
-                <span className="text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400 uppercase">
+              <div className="flex h-9 items-center justify-between border-b border-zinc-200 bg-zinc-100/70 px-3 dark:border-zinc-800 dark:bg-zinc-800/60">
+                <span className="font-mono text-xs font-medium text-zinc-600 uppercase dark:text-zinc-400">
                   {data?.engine === "mongodb" ? "JSON Definition" : "SQL DDL"}
                 </span>
 
@@ -559,18 +559,18 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                   size="sm"
                   onClick={handleCopy}
                   disabled={!data?.ddl}
-                  className="h-6 px-2 text-xs font-mono gap-1 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  className="h-6 gap-1 px-2 font-mono text-xs text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 >
                   {copied ? (
                     <>
-                      <Check className="w-3 h-3 text-emerald-500" />
+                      <Check className="h-3 w-3 text-emerald-500" />
                       <span className="text-emerald-600 dark:text-emerald-400">
                         {t("schema.copied")}
                       </span>
                     </>
                   ) : (
                     <>
-                      <Copy className="w-3 h-3" />
+                      <Copy className="h-3 w-3" />
                       <span>{t("schema.copyDdl")}</span>
                     </>
                   )}
@@ -579,7 +579,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
 
               {/* Code Container */}
               {isLoading ? (
-                <div className="p-4 space-y-2">
+                <div className="space-y-2 p-4">
                   <Skeleton className="h-4 w-3/4" />
                   <Skeleton className="h-4 w-1/2" />
                   <Skeleton className="h-4 w-2/3" />

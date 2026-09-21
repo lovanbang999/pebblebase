@@ -6,7 +6,7 @@ import type { TableSchema, RelationSchema } from "./types";
 export function generateJoinQuery(
   baseTableName: string,
   tables: TableSchema[],
-  relations: RelationSchema[]
+  relations: RelationSchema[],
 ): string {
   const baseTable = tables.find((t) => t.name === baseTableName);
   if (!baseTable) return `SELECT * FROM ${baseTableName} LIMIT 50;`;
@@ -33,7 +33,7 @@ export function generateJoinQuery(
     joinedTables.add(rel.to_table);
 
     joins.push(
-      `LEFT JOIN ${rel.to_table} ON ${rel.to_table}.${rel.to_column} = ${rel.from_table}.${rel.from_column}`
+      `LEFT JOIN ${rel.to_table} ON ${rel.to_table}.${rel.to_column} = ${rel.from_table}.${rel.from_column}`,
     );
 
     const targetTable = tables.find((t) => t.name === rel.to_table);
@@ -44,7 +44,7 @@ export function generateJoinQuery(
         .slice(0, 2);
       for (const tc of targetCols) {
         selectColumns.push(
-          `  ${rel.to_table}.${tc.name} AS ${rel.to_table}_${tc.name}`
+          `  ${rel.to_table}.${tc.name} AS ${rel.to_table}_${tc.name}`,
         );
       }
     }
@@ -56,7 +56,7 @@ export function generateJoinQuery(
     joinedTables.add(rel.from_table);
 
     joins.push(
-      `LEFT JOIN ${rel.from_table} ON ${rel.from_table}.${rel.from_column} = ${rel.to_table}.${rel.to_column}`
+      `LEFT JOIN ${rel.from_table} ON ${rel.from_table}.${rel.from_column} = ${rel.to_table}.${rel.to_column}`,
     );
 
     const sourceTable = tables.find((t) => t.name === rel.from_table);
@@ -66,14 +66,16 @@ export function generateJoinQuery(
         .slice(0, 2);
       for (const sc of sourceCols) {
         selectColumns.push(
-          `  ${rel.from_table}.${sc.name} AS ${rel.from_table}_${sc.name}`
+          `  ${rel.from_table}.${sc.name} AS ${rel.from_table}_${sc.name}`,
         );
       }
     }
   }
 
   const selectClause =
-    selectColumns.length > 0 ? selectColumns.join(",\n") : `  ${baseTableName}.*`;
+    selectColumns.length > 0
+      ? selectColumns.join(",\n")
+      : `  ${baseTableName}.*`;
 
   const joinsClause = joins.length > 0 ? "\n" + joins.join("\n") : "";
 
@@ -85,7 +87,7 @@ export function generateJoinQuery(
  */
 export function generateMermaidERD(
   tables: TableSchema[],
-  relations: RelationSchema[]
+  relations: RelationSchema[],
 ): string {
   const lines: string[] = ["erDiagram"];
 
@@ -95,11 +97,11 @@ export function generateMermaidERD(
       rel.type === "one_to_one"
         ? "||--||"
         : rel.type === "many_to_many"
-        ? "}o--o{"
-        : "}o--||"; // default one_to_many
+          ? "}o--o{"
+          : "}o--||"; // default one_to_many
 
     lines.push(
-      `    ${rel.from_table} ${symbol} ${rel.to_table} : "${rel.from_column} -> ${rel.to_column}"`
+      `    ${rel.from_table} ${symbol} ${rel.to_table} : "${rel.from_column} -> ${rel.to_column}"`,
     );
   }
 
@@ -107,7 +109,11 @@ export function generateMermaidERD(
   for (const tbl of tables) {
     lines.push(`    ${tbl.name} {`);
     for (const col of tbl.columns) {
-      const pkBadge = col.is_primary_key ? " PK" : col.is_foreign_key ? " FK" : "";
+      const pkBadge = col.is_primary_key
+        ? " PK"
+        : col.is_foreign_key
+          ? " FK"
+          : "";
       const colType = col.type.toLowerCase().replace(/[^a-z0-9_]/g, "");
       lines.push(`        ${colType || "string"} ${col.name}${pkBadge}`);
     }

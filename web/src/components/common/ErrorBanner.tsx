@@ -24,15 +24,15 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
   return (
     <Alert
       variant="destructive"
-      className="rounded-none border-x-0 border-t-0 text-xs flex items-center justify-between font-mono py-2 px-4"
+      className="flex items-center justify-between rounded-none border-x-0 border-t-0 px-4 py-2 font-mono text-xs"
     >
-      <div className="flex items-center gap-2 truncate min-w-0">
-        <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-        <AlertDescription className="truncate text-xs font-mono">
+      <div className="flex min-w-0 items-center gap-2 truncate">
+        <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
+        <AlertDescription className="truncate font-mono text-xs">
           {message}
         </AlertDescription>
       </div>
-      <div className="flex items-center gap-3 shrink-0 ml-4">
+      <div className="ml-4 flex shrink-0 items-center gap-3">
         {onRetry && (
           <Button
             type="button"
@@ -40,9 +40,11 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
             size="sm"
             onClick={onRetry}
             disabled={isRetrying}
-            className="h-6 px-2 text-xs border-rose-500/40 text-rose-300 hover:bg-rose-500/10 hover:text-rose-100 flex items-center gap-1.5 cursor-pointer disabled:opacity-50 transition-colors"
+            className="flex h-6 cursor-pointer items-center gap-1.5 border-rose-500/40 px-2 text-xs text-rose-300 transition-colors hover:bg-rose-500/10 hover:text-rose-100 disabled:opacity-50"
           >
-            <RefreshCw className={`w-3 h-3 ${isRetrying ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-3 w-3 ${isRetrying ? "animate-spin" : ""}`}
+            />
             <span>{t("common.retry", "Retry")}</span>
           </Button>
         )}
@@ -51,7 +53,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
           variant="link"
           size="sm"
           onClick={onDismiss}
-          className="text-xs text-rose-400 hover:text-rose-100 p-0 h-auto underline cursor-pointer"
+          className="h-auto cursor-pointer p-0 text-xs text-rose-400 underline hover:text-rose-100"
         >
           {t("app.dismiss")}
         </Button>
