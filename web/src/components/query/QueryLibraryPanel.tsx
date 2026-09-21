@@ -80,14 +80,14 @@ function queryPreview(q: string): string {
   return line.length > 48 ? line.slice(0, 48) + "…" : line;
 }
 
-// Tag color palette — cycles through indigo, violet, sky, emerald, amber
+// Tag color palette — theme-adaptive emerald, teal, sky, amber, rose, zinc
 const TAG_COLORS = [
-  "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
-  "bg-violet-500/20 text-violet-300 border-violet-500/30",
-  "bg-sky-500/20 text-sky-300 border-sky-500/30",
-  "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
-  "bg-amber-500/20 text-amber-300 border-amber-500/30",
-  "bg-rose-500/20 text-rose-300 border-rose-500/30",
+  "bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "bg-teal-500/10 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-500/30",
+  "bg-sky-500/10 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30",
+  "bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30",
+  "bg-rose-500/10 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 border-rose-500/30",
+  "bg-zinc-500/10 dark:bg-zinc-500/20 text-zinc-700 dark:text-zinc-300 border-zinc-500/30",
 ];
 const tagColorMap = new Map<string, string>();
 let tagColorIdx = 0;
@@ -160,24 +160,20 @@ function QueryHistoryTab({
   return (
     <div className="flex h-full flex-col">
       {/* Search */}
-      <div className="border-b border-white/5 px-2.5 py-2">
+      <div className="border-b border-zinc-200/80 px-2.5 py-2 dark:border-zinc-800/80">
         <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-white/25" />
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("savedQuery.history.searchPlaceholder")}
-            className={cn(
-              "h-7 border-white/10 bg-white/6 pl-8 text-xs text-white/80",
-              "rounded-md placeholder:text-white/25",
-              "focus-visible:border-violet-500/40 focus-visible:ring-1 focus-visible:ring-violet-500/60",
-              "transition-all",
-            )}
+            className="h-7.5 rounded-md border-zinc-200 bg-white pl-8 text-xs text-zinc-900 shadow-2xs transition-all placeholder:text-zinc-400 focus-visible:border-emerald-500 focus-visible:ring-1 focus-visible:ring-emerald-500/30 dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-100 dark:placeholder:text-zinc-500"
           />
           {search && (
             <button
+              type="button"
               onClick={() => setSearch("")}
-              className="absolute top-1/2 right-2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+              className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
             >
               <span className="text-[10px]">✕</span>
             </button>
@@ -187,8 +183,8 @@ function QueryHistoryTab({
 
       {/* Count badge */}
       {!loading && entries.length > 0 && (
-        <div className="border-b border-white/5 px-3 py-1.5">
-          <span className="font-mono text-[9px] text-white/25">
+        <div className="border-b border-zinc-200/80 px-3 py-1.5 dark:border-zinc-800/80">
+          <span className="font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
             {total} {total === 1 ? "entry" : "entries"}
             {search && ` matching "${search}"`}
           </span>
@@ -196,25 +192,25 @@ function QueryHistoryTab({
       )}
 
       {/* Entry list */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="custom-scrollbar flex-1 overflow-y-auto">
         {loading && (
-          <div className="flex items-center justify-center gap-2 py-8 text-white/30">
-            <Loader2 className="h-4 w-4 animate-spin" />
+          <div className="flex items-center justify-center gap-2 py-8 text-zinc-400 dark:text-zinc-500">
+            <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
             <span className="text-xs">Loading…</span>
           </div>
         )}
 
         {!loading && entries.length === 0 && (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-4 py-10 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-linear-to-br from-violet-500/10 to-purple-500/10">
-              <History className="h-6 w-6 text-violet-400/40" />
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-4 py-10 text-center select-none">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-100 text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/70 dark:text-zinc-500">
+              <History className="h-6 w-6 text-emerald-600/70 dark:text-emerald-400/70" />
             </div>
             <div className="space-y-1">
-              <p className="text-xs font-semibold text-white/40">
+              <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                 {search ? "No matching history" : t("savedQuery.history.empty")}
               </p>
               {search && (
-                <p className="max-w-40 text-[10px] leading-relaxed text-white/20">
+                <p className="max-w-40 text-[10px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                   Try a different search term.
                 </p>
               )}
@@ -228,17 +224,17 @@ function QueryHistoryTab({
               key={entry.id}
               className={cn(
                 "group relative flex cursor-pointer flex-col gap-1.5 px-3 py-2.5",
-                "border-l-2 border-transparent hover:border-violet-500/60",
-                "hover:bg-linear-to-r hover:from-violet-500/8 hover:to-transparent",
+                "border-l-2 border-transparent hover:border-emerald-500",
+                "hover:bg-zinc-100/90 dark:hover:bg-zinc-900/60",
                 "rounded-r-md transition-all duration-150",
               )}
               onClick={() => onLoadQuery(entry.detail)}
             >
               {/* SQL preview row */}
               <div className="flex min-w-0 items-start gap-1.5">
-                <Terminal className="mt-0.5 h-3 w-3 shrink-0 text-violet-400/50" />
+                <Terminal className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600/70 dark:text-emerald-400/70" />
                 <div className="min-w-0 flex-1">
-                  <span className="block truncate font-mono text-[11px] leading-tight text-white/70">
+                  <span className="block truncate font-mono text-[11px] leading-tight text-zinc-800 dark:text-zinc-200">
                     {queryPreview(entry.detail)}
                   </span>
                 </div>
@@ -246,25 +242,27 @@ function QueryHistoryTab({
                 {/* Inline actions — hover */}
                 <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       copyEntry(entry);
                     }}
-                    className="rounded p-1 text-white/25 transition-colors hover:bg-white/10 hover:text-white/70"
+                    className="rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
                     title={t("savedQuery.copyQuery")}
                   >
                     {copiedId === entry.id ? (
-                      <Check className="h-3 w-3 text-emerald-400" />
+                      <Check className="h-3 w-3 text-emerald-500" />
                     ) : (
                       <Copy className="h-3 w-3" />
                     )}
                   </button>
                   <button
+                    type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       onLoadQuery(entry.detail);
                     }}
-                    className="rounded p-1 text-white/25 transition-colors hover:bg-white/10 hover:text-violet-400"
+                    className="rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-200/60 hover:text-emerald-600 dark:hover:bg-zinc-800 dark:hover:text-emerald-400"
                     title={t("savedQuery.history.load")}
                   >
                     <BookOpen className="h-3 w-3" />
@@ -275,11 +273,11 @@ function QueryHistoryTab({
               {/* Footer: user + timestamp */}
               <div className="flex min-w-0 items-center gap-1.5 pl-4">
                 {entry.username && entry.username !== "anonymous" && (
-                  <span className="truncate font-mono text-[9px] text-white/25">
+                  <span className="truncate font-mono text-[9px] text-zinc-500 dark:text-zinc-400">
                     {t("savedQuery.history.by")} {entry.username}
                   </span>
                 )}
-                <span className="ml-auto flex shrink-0 items-center gap-0.5 text-[9px] text-white/20">
+                <span className="ml-auto flex shrink-0 items-center gap-0.5 font-mono text-[9px] text-zinc-400 dark:text-zinc-500">
                   <Clock className="h-2.5 w-2.5" />
                   {formatRelativeTime(entry.created_at)}
                 </span>
@@ -488,46 +486,47 @@ export default function QueryLibraryPanel({
     <div
       key={q.id}
       className={cn(
-        "group relative flex cursor-pointer flex-col gap-1.5 px-3 py-2.5",
-        "border-l-2 border-transparent hover:border-indigo-500/60",
-        "hover:bg-linear-to-r hover:from-indigo-500/8 hover:to-transparent",
-        "rounded-r-md transition-all duration-150",
-        q.is_favorite && "border-l-yellow-400/40 bg-yellow-400/3",
+        "group relative flex cursor-pointer flex-col gap-1.5 px-3 py-2.5 transition-all duration-150",
+        "border-l-2 border-transparent hover:border-emerald-500",
+        "rounded-r-md hover:bg-zinc-100/90 dark:hover:bg-zinc-900/60",
+        q.is_favorite &&
+          "border-l-amber-500/80 bg-amber-500/5 dark:bg-amber-500/10",
       )}
       onClick={() => onLoadQuery(q.query)}
       onContextMenu={(e) => handleContextMenu(e, q)}
     >
       <div className="flex min-w-0 items-start gap-1.5">
         {q.is_favorite && (
-          <Star className="mt-0.5 h-3 w-3 shrink-0 fill-yellow-400 text-yellow-400" />
+          <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-500" />
         )}
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-1.5">
-            <span className="block truncate text-[12.5px] leading-tight font-semibold text-white/85">
+            <span className="block truncate text-xs leading-tight font-semibold text-zinc-900 dark:text-zinc-100">
               {q.title}
             </span>
             {q.folder && (
-              <span className="py-0.2 inline-flex shrink-0 items-center gap-0.5 rounded border border-indigo-500/20 bg-indigo-500/10 px-1 font-mono text-[9px] text-indigo-300/60">
-                <Folder className="h-2.5 w-2.5 text-indigo-400" />
+              <span className="py-0.2 inline-flex shrink-0 items-center gap-1 rounded border border-zinc-200 bg-zinc-100 px-1 font-mono text-[9px] text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-300">
+                <Folder className="h-2.5 w-2.5 text-zinc-500" />
                 {q.folder}
               </span>
             )}
           </div>
-          <span className="mt-0.5 block truncate font-mono text-[10px] leading-tight text-white/30">
+          <span className="mt-0.5 block truncate font-mono text-[10px] leading-tight text-zinc-500 dark:text-zinc-400">
             {queryPreview(q.query)}
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               toggleFavorite(q);
             }}
             className={cn(
-              "rounded p-1 transition-colors hover:bg-white/10",
+              "rounded p-1 transition-colors hover:bg-zinc-200/60 dark:hover:bg-zinc-800",
               q.is_favorite
-                ? "text-yellow-400 hover:text-yellow-300"
-                : "text-white/25 hover:text-yellow-400",
+                ? "text-amber-500 hover:text-amber-600"
+                : "text-zinc-400 hover:text-amber-500",
             )}
             title={t("savedQuery.favorite")}
           >
@@ -538,25 +537,27 @@ export default function QueryLibraryPanel({
             )}
           </button>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               copyQuery(q);
             }}
-            className="rounded p-1 text-white/25 transition-colors hover:bg-white/10 hover:text-white/70"
+            className="rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
             title={t("savedQuery.copyQuery")}
           >
             {copiedId === q.id ? (
-              <Check className="h-3 w-3 text-emerald-400" />
+              <Check className="h-3 w-3 text-emerald-500" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
           </button>
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               handleContextMenu(e, q);
             }}
-            className="rounded p-1 text-white/25 transition-colors hover:bg-white/10 hover:text-white/70"
+            className="rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
             title="More options"
           >
             <MoreHorizontal className="h-3 w-3" />
@@ -567,14 +568,15 @@ export default function QueryLibraryPanel({
         {q.tags.map((tag) => (
           <button
             key={tag}
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               setActiveTagFilter(tag === activeTagFilter ? "__all__" : tag);
             }}
             className={cn(
-              "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold",
-              "border transition-all hover:opacity-80",
-              activeTagFilter === tag ? "ring-1 ring-indigo-400/40" : "",
+              "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-medium",
+              "cursor-pointer border transition-all hover:opacity-80",
+              activeTagFilter === tag ? "ring-1 ring-emerald-500/40" : "",
               getTagColor(tag),
             )}
           >
@@ -582,7 +584,7 @@ export default function QueryLibraryPanel({
             {tag}
           </button>
         ))}
-        <span className="ml-auto flex shrink-0 items-center gap-0.5 text-[9px] text-white/20">
+        <span className="ml-auto flex shrink-0 items-center gap-0.5 font-mono text-[9px] text-zinc-400 dark:text-zinc-500">
           <Clock className="h-2.5 w-2.5" />
           {formatRelativeTime(q.updated_at)}
         </span>
@@ -595,46 +597,47 @@ export default function QueryLibraryPanel({
     onToggle,
     label,
     count,
-    accent,
+    accent = "default",
     icon: IconComponent,
   }: {
     open: boolean;
     onToggle: () => void;
     label: string;
     count: number;
-    accent?: "yellow" | "indigo" | "default";
+    accent?: "yellow" | "emerald" | "default";
     icon?: any;
   }) => (
     <button
+      type="button"
       onClick={onToggle}
       className={cn(
-        "flex w-full cursor-pointer items-center gap-1.5 px-3 py-1.5 transition-colors",
+        "flex w-full cursor-pointer items-center gap-1.5 px-3 py-1.5 transition-colors select-none",
         accent === "yellow"
-          ? "text-yellow-400/60 hover:text-yellow-400"
-          : accent === "indigo"
-            ? "text-indigo-300/80 hover:text-indigo-300"
-            : "text-white/25 hover:text-white/50",
+          ? "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
+          : accent === "emerald"
+            ? "text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+            : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
       )}
     >
       {open ? (
-        <ChevronDown className="h-3 w-3" />
+        <ChevronDown className="h-3 w-3 text-zinc-400" />
       ) : (
-        <ChevronRight className="h-3 w-3" />
+        <ChevronRight className="h-3 w-3 text-zinc-400" />
       )}
       {IconComponent && (
         <IconComponent className="h-3 w-3 shrink-0 fill-current" />
       )}
-      <span className="truncate text-[10px] font-bold tracking-widest uppercase">
+      <span className="truncate text-[10px] font-semibold tracking-wider uppercase">
         {label}
       </span>
       <span
         className={cn(
-          "ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold",
+          "py-0.2 ml-auto shrink-0 rounded-full px-1.5 font-mono text-[9px] font-medium",
           accent === "yellow"
-            ? "bg-yellow-400/15 text-yellow-400/70"
-            : accent === "indigo"
-              ? "bg-indigo-500/15 text-indigo-300"
-              : "bg-white/8 text-white/30",
+            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+            : accent === "emerald"
+              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+              : "bg-zinc-200/70 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
         )}
       >
         {count}
@@ -644,18 +647,18 @@ export default function QueryLibraryPanel({
 
   // --------------------------------------------------------------------------
   return (
-    <div className="flex h-full flex-col border-r border-white/[0.07] bg-[#13141f]">
+    <div className="flex h-full flex-col bg-zinc-50/50 text-zinc-900 dark:bg-zinc-950/70 dark:text-zinc-100">
       {/* Header */}
-      <div className="relative border-b border-white/[0.07] bg-linear-to-b from-indigo-500/5 to-transparent px-3 pt-3 pb-2.5">
+      <div className="relative border-b border-zinc-200 bg-white/80 px-3 pt-3 pb-2.5 dark:border-zinc-800 dark:bg-zinc-900/60">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-indigo-500/30 bg-indigo-500/20">
-            <Library className="h-3.5 w-3.5 text-indigo-400" />
+          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-emerald-500/25 bg-emerald-500/10">
+            <Library className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-[11px] font-bold tracking-wide text-white/80">
+            <span className="block text-xs font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
               {t("savedQuery.library")}
             </span>
-            <span className="mt-0.5 block text-[9px] leading-none text-white/30">
+            <span className="mt-0.5 block font-mono text-[10px] leading-none text-zinc-500 dark:text-zinc-400">
               {activeTab === "library"
                 ? loading
                   ? "Loading…"
@@ -664,35 +667,37 @@ export default function QueryLibraryPanel({
             </span>
           </div>
           {loading && activeTab === "library" && (
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-indigo-400/60" />
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-emerald-600 dark:text-emerald-400" />
           )}
         </div>
 
-        {/* Tab Switcher */}
-        <div className="mt-2.5 flex overflow-hidden rounded-md border border-white/8 bg-white/3">
+        {/* Tab Switcher - Segmented Control */}
+        <div className="mt-2.5 flex rounded-lg border border-zinc-200 bg-zinc-100/90 p-0.5 dark:border-zinc-800 dark:bg-zinc-900">
           <button
+            type="button"
             onClick={() => setActiveTab("library")}
             className={cn(
-              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 py-1.5 text-[10px] font-semibold transition-all",
+              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-medium transition-all",
               activeTab === "library"
-                ? "border-r border-white/8 bg-indigo-500/20 text-indigo-300"
-                : "border-r border-white/8 text-white/30 hover:bg-white/5 hover:text-white/60",
+                ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-100"
+                : "text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100",
             )}
           >
-            <Library className="h-3 w-3" />
-            {t("savedQuery.tabs.library")}
+            <Library className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>{t("savedQuery.tabs.library")}</span>
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab("history")}
             className={cn(
-              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 py-1.5 text-[10px] font-semibold transition-all",
+              "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-medium transition-all",
               activeTab === "history"
-                ? "bg-violet-500/20 text-violet-300"
-                : "text-white/30 hover:bg-white/5 hover:text-white/60",
+                ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-100"
+                : "text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100",
             )}
           >
-            <History className="h-3 w-3" />
-            {t("savedQuery.tabs.history")}
+            <History className="h-3.5 w-3.5" />
+            <span>{t("savedQuery.tabs.history")}</span>
           </button>
         </div>
       </div>
@@ -706,24 +711,20 @@ export default function QueryLibraryPanel({
       ) : (
         <>
           {/* Search */}
-          <div className="space-y-2 border-b border-white/5 px-2.5 py-2">
+          <div className="border-b border-zinc-200/80 px-2.5 py-2 dark:border-zinc-800/80">
             <div className="relative">
-              <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-white/25" />
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={t("savedQuery.search")}
-                className={cn(
-                  "h-7 border-white/10 bg-white/6 pl-8 text-xs text-white/80",
-                  "rounded-md placeholder:text-white/25",
-                  "focus-visible:border-indigo-500/40 focus-visible:ring-1 focus-visible:ring-indigo-500/60",
-                  "transition-all",
-                )}
+                className="h-7.5 rounded-md border-zinc-200 bg-white pl-8 text-xs text-zinc-900 shadow-2xs transition-all placeholder:text-zinc-400 focus-visible:border-emerald-500 focus-visible:ring-1 focus-visible:ring-emerald-500/30 dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
               {searchTerm && (
                 <button
+                  type="button"
                   onClick={() => setSearchTerm("")}
-                  className="absolute top-1/2 right-2 -translate-y-1/2 text-white/30 transition-colors hover:text-white/60"
+                  className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                 >
                   <span className="text-[10px]">✕</span>
                 </button>
@@ -733,20 +734,21 @@ export default function QueryLibraryPanel({
 
           {/* Folder & Tag filter chips */}
           {(allFolders.length > 0 || allTags.length > 0) && (
-            <div className="flex flex-col gap-1.5 border-b border-white/5 px-2.5 py-2">
+            <div className="flex flex-col gap-1.5 border-b border-zinc-200/80 px-2.5 py-2 dark:border-zinc-800/80">
               {/* Folder filter dropdown / chips */}
               {allFolders.length > 0 && (
                 <div className="no-scrollbar flex items-center gap-1 overflow-x-auto py-0.5">
-                  <span className="shrink-0 font-mono text-[9px] tracking-wider text-white/30 uppercase">
+                  <span className="shrink-0 font-mono text-[9px] tracking-wider text-zinc-400 uppercase">
                     Folder:
                   </span>
                   <button
+                    type="button"
                     onClick={() => setActiveFolderFilter("__all__")}
                     className={cn(
                       "shrink-0 cursor-pointer rounded border px-2 py-0.5 font-mono text-[9px] transition-all",
                       activeFolderFilter === "__all__"
-                        ? "border-indigo-500/40 bg-indigo-500/25 font-bold text-indigo-300"
-                        : "border-white/10 bg-white/5 text-white/35 hover:bg-white/10 hover:text-white/50",
+                        ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
+                        : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60",
                     )}
                   >
                     All
@@ -754,19 +756,19 @@ export default function QueryLibraryPanel({
                   {allFolders.map((fName) => (
                     <button
                       key={fName}
+                      type="button"
                       onClick={() =>
                         setActiveFolderFilter(
                           activeFolderFilter === fName ? "__all__" : fName,
                         )
                       }
                       className={cn(
-                        "inline-flex shrink-0 cursor-pointer items-center gap-1 rounded border px-2 py-0.5 font-mono text-[9px] transition-all",
+                        "shrink-0 cursor-pointer rounded border px-2 py-0.5 font-mono text-[9px] transition-all",
                         activeFolderFilter === fName
-                          ? "border-indigo-500/40 bg-indigo-500/25 font-bold text-indigo-300"
-                          : "border-white/10 bg-white/5 text-white/35 hover:bg-white/10 hover:text-white/50",
+                          ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
+                          : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60",
                       )}
                     >
-                      <Folder className="h-2.5 w-2.5 text-indigo-400" />
                       {fName}
                     </button>
                   ))}
@@ -776,16 +778,17 @@ export default function QueryLibraryPanel({
               {/* Tag filter chips */}
               {allTags.length > 0 && (
                 <div className="no-scrollbar flex items-center gap-1 overflow-x-auto py-0.5">
-                  <span className="shrink-0 font-mono text-[9px] tracking-wider text-white/30 uppercase">
+                  <span className="shrink-0 font-mono text-[9px] tracking-wider text-zinc-400 uppercase">
                     Tag:
                   </span>
                   <button
+                    type="button"
                     onClick={() => setActiveTagFilter("__all__")}
                     className={cn(
-                      "shrink-0 cursor-pointer rounded-full border px-2 py-0.5 text-[9px] font-bold transition-all",
+                      "shrink-0 cursor-pointer rounded-full border px-2 py-0.5 text-[9px] font-medium transition-all",
                       activeTagFilter === "__all__"
-                        ? "border-indigo-500/40 bg-indigo-500/25 text-indigo-300 shadow-sm shadow-indigo-500/10"
-                        : "border-white/10 bg-white/5 text-white/35 hover:bg-white/10 hover:text-white/50",
+                        ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
+                        : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60",
                     )}
                   >
                     All
@@ -793,16 +796,20 @@ export default function QueryLibraryPanel({
                   {allTags.map((tag) => (
                     <button
                       key={tag}
+                      type="button"
                       onClick={() =>
                         setActiveTagFilter(
                           activeTagFilter === tag ? "__all__" : tag,
                         )
                       }
                       className={cn(
-                        "shrink-0 cursor-pointer rounded-full border px-2 py-0.5 text-[9px] font-bold transition-all",
+                        "shrink-0 cursor-pointer rounded-full border px-2 py-0.5 text-[9px] font-medium transition-all",
                         activeTagFilter === tag
-                          ? cn(getTagColor(tag), "ring-1 ring-current/30")
-                          : "border-white/10 bg-white/5 text-white/35 hover:bg-white/10 hover:text-white/50",
+                          ? cn(
+                              getTagColor(tag),
+                              "font-semibold shadow-2xs ring-1 ring-current/30",
+                            )
+                          : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60",
                       )}
                     >
                       #{tag}
@@ -814,26 +821,26 @@ export default function QueryLibraryPanel({
           )}
 
           {/* Query list / Folder Tree */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="custom-scrollbar flex-1 overflow-y-auto">
             {queries.length === 0 && !loading && (
-              <div className="flex h-full flex-col items-center justify-center gap-3 px-4 py-10 text-center">
+              <div className="flex h-full flex-col items-center justify-center gap-3 px-4 py-10 text-center select-none">
                 <div className="relative">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-linear-to-br from-indigo-500/10 to-purple-500/10">
-                    <Library className="h-6 w-6 text-indigo-400/40" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10 dark:bg-emerald-500/15">
+                    <Library className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full border border-white/10 bg-indigo-500/20">
-                    <Star className="h-2 w-2 text-yellow-400/60" />
+                  <div className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
+                    <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-500" />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-white/40">
+                  <p className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                     {searchTerm ||
                     activeTagFilter !== "__all__" ||
                     activeFolderFilter !== "__all__"
                       ? "No matching queries"
                       : t("savedQuery.noSaved")}
                   </p>
-                  <p className="max-w-40 text-[10px] leading-relaxed text-white/20">
+                  <p className="max-w-44 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                     {searchTerm ||
                     activeTagFilter !== "__all__" ||
                     activeFolderFilter !== "__all__"
@@ -860,7 +867,7 @@ export default function QueryLibraryPanel({
             )}
 
             {favorites.length > 0 && nonFavorites.length > 0 && (
-              <div className="mx-3 my-1 h-px bg-white/5" />
+              <div className="mx-3 my-1 h-px bg-zinc-200/80 dark:bg-zinc-800/80" />
             )}
 
             {/* Collapsible Folder Tree */}
@@ -885,7 +892,7 @@ export default function QueryLibraryPanel({
                           onToggle={() => toggleFolder(folderName)}
                           label={displayLabel}
                           count={folderQueries.length}
-                          accent={isUncategorized ? "default" : "indigo"}
+                          accent={isUncategorized ? "default" : "emerald"}
                           icon={
                             isUncategorized ? undefined : FolderIconComponent
                           }
@@ -895,7 +902,7 @@ export default function QueryLibraryPanel({
                             className={
                               isUncategorized
                                 ? ""
-                                : "ml-3 border-l border-white/5 pl-2"
+                                : "ml-3 border-l border-zinc-200 pl-2 dark:border-zinc-800"
                             }
                           >
                             {folderQueries.map(renderQueryItem)}
@@ -917,22 +924,20 @@ export default function QueryLibraryPanel({
       {contextMenu && (
         <div
           ref={contextRef}
-          className={cn(
-            "fixed z-100 min-w-44 overflow-hidden py-1",
-            "rounded-xl border border-white/10 bg-[#1c1d2e] shadow-2xl",
-            "shadow-black/40 backdrop-blur-sm",
-          )}
+          className="fixed z-100 min-w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 text-zinc-900 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
-          <div className="mb-1 border-b border-white/8 px-3 py-1.5">
-            <p className="truncate text-[10px] font-semibold text-white/40">
+          <div className="mb-1 border-b border-zinc-100 px-3 py-1.5 dark:border-zinc-800">
+            <p className="truncate text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
               {contextMenu.query.title}
             </p>
           </div>
 
           {[
             {
-              icon: <BookOpen className="h-3.5 w-3.5 text-indigo-400" />,
+              icon: (
+                <BookOpen className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              ),
               label: t("savedQuery.loadQuery"),
               onClick: () => {
                 onLoadQuery(contextMenu.query.query);
@@ -942,9 +947,9 @@ export default function QueryLibraryPanel({
             {
               icon:
                 copiedId === contextMenu.query.id ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-400" />
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
                 ) : (
-                  <Copy className="h-3.5 w-3.5 text-white/40" />
+                  <Copy className="h-3.5 w-3.5 text-zinc-400" />
                 ),
               label:
                 copiedId === contextMenu.query.id
@@ -953,34 +958,36 @@ export default function QueryLibraryPanel({
               onClick: () => copyQuery(contextMenu.query),
             },
             {
-              icon: <Edit2 className="h-3.5 w-3.5 text-white/40" />,
+              icon: <Edit2 className="h-3.5 w-3.5 text-zinc-400" />,
               label: t("savedQuery.editQuery"),
               onClick: () => openEdit(contextMenu.query),
             },
             {
-              icon: <Download className="h-3.5 w-3.5 text-white/40" />,
+              icon: <Download className="h-3.5 w-3.5 text-zinc-400" />,
               label: t("savedQuery.export"),
               onClick: () => exportQuery(contextMenu.query),
             },
           ].map((item, i) => (
             <button
               key={i}
+              type="button"
               onClick={item.onClick}
-              className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-[12px] text-white/75 transition-colors hover:bg-indigo-500/10 hover:text-white"
+              className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-[12px] text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
             >
               {item.icon}
               {item.label}
             </button>
           ))}
 
-          <div className="my-1 h-px bg-white/8" />
+          <div className="my-1 h-px bg-zinc-100 dark:bg-zinc-800" />
 
           <button
+            type="button"
             onClick={() => {
               setDeleteTarget(contextMenu.query);
               setContextMenu(null);
             }}
-            className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-[12px] text-red-400/80 transition-colors hover:bg-red-500/10 hover:text-red-300"
+            className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-[12px] text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
           >
             <Trash2 className="h-3.5 w-3.5" />
             {t("savedQuery.deleteQuery")}
@@ -990,35 +997,37 @@ export default function QueryLibraryPanel({
 
       {/* Delete Dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <DialogContent className="max-w-sm border-white/10 bg-[#1c1d2e] text-white">
+        <DialogContent className="max-w-sm border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
           <DialogHeader>
             <div className="mb-1 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-red-500/25 bg-red-500/15">
-                <Trash2 className="h-4 w-4 text-red-400" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-rose-500/25 bg-rose-500/15">
+                <Trash2 className="h-4 w-4 text-rose-500" />
               </div>
-              <DialogTitle className="text-sm text-white">
+              <DialogTitle className="text-sm text-zinc-900 dark:text-zinc-100">
                 {t("savedQuery.confirmDelete", {
                   title: deleteTarget?.title ?? "",
                 })}
               </DialogTitle>
             </div>
-            <DialogDescription className="ml-10 text-xs text-white/45">
+            <DialogDescription className="ml-10 text-xs text-zinc-500 dark:text-zinc-400">
               {t("savedQuery.confirmDeleteDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-3 flex justify-end gap-2">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => setDeleteTarget(null)}
-              className="text-xs text-white/60 hover:bg-white/10 hover:text-white"
+              className="text-xs text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
             >
               {t("savedQuery.cancel")}
             </Button>
             <Button
+              type="button"
               size="sm"
               onClick={confirmDelete}
-              className="gap-1.5 bg-red-600 text-xs text-white hover:bg-red-500"
+              className="gap-1.5 bg-rose-600 text-xs text-white hover:bg-rose-500"
             >
               <Trash2 className="h-3.5 w-3.5" />
               {t("savedQuery.deleteQuery")}
@@ -1029,55 +1038,55 @@ export default function QueryLibraryPanel({
 
       {/* Edit Dialog */}
       <Dialog open={!!editTarget} onOpenChange={() => setEditTarget(null)}>
-        <DialogContent className="max-w-sm border-white/10 bg-[#1c1d2e] text-white">
+        <DialogContent className="max-w-sm border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
           <DialogHeader>
             <div className="mb-1 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-indigo-500/25 bg-indigo-500/15">
-                <Edit2 className="h-4 w-4 text-indigo-400" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/25 bg-emerald-500/15">
+                <Edit2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <DialogTitle className="text-sm text-white">
+              <DialogTitle className="text-sm text-zinc-900 dark:text-zinc-100">
                 {t("savedQuery.editQuery")}
               </DialogTitle>
             </div>
           </DialogHeader>
           <div className="mt-1 space-y-4">
             <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+              <label className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                 {t("savedQuery.title")}
               </label>
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="border-white/10 bg-white/5 text-sm text-white focus-visible:ring-1 focus-visible:ring-indigo-500/50"
+                className="border-zinc-200 bg-zinc-50 text-sm text-zinc-900 focus-visible:ring-1 focus-visible:ring-emerald-500/50 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100"
                 onKeyDown={(e) => e.key === "Enter" && saveEdit()}
               />
             </div>
 
             {/* Folder Input */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+              <label className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                 {t("savedQuery.folder", "Folder")}
               </label>
               <Input
                 value={editFolder}
                 onChange={(e) => setEditFolder(e.target.value)}
                 placeholder={t("savedQuery.folderPlaceholder")}
-                className="border-white/10 bg-white/5 font-mono text-sm text-white placeholder:text-white/25 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
+                className="border-zinc-200 bg-zinc-50 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-emerald-500/50 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
             </div>
 
             {/* Tags Input with Autocomplete Chips */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+              <label className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
                 {t("savedQuery.tags")}
               </label>
               <Input
                 value={editTags}
                 onChange={(e) => setEditTags(e.target.value)}
                 placeholder={t("savedQuery.tagsPlaceholder")}
-                className="border-white/10 bg-white/5 font-mono text-sm text-white placeholder:text-white/25 focus-visible:ring-1 focus-visible:ring-indigo-500/50"
+                className="border-zinc-200 bg-zinc-50 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-emerald-500/50 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
-              <p className="text-[9px] text-white/25">
+              <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
                 Separate tags with commas
               </p>
               {allTags.length > 0 && (
@@ -1104,8 +1113,8 @@ export default function QueryLibraryPanel({
                         className={cn(
                           "cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[9px] transition-all",
                           isSelected
-                            ? "border-indigo-400 bg-indigo-500/30 font-bold text-indigo-200"
-                            : "border-white/10 bg-white/5 text-white/40 hover:bg-white/10",
+                            ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 dark:text-emerald-400"
+                            : "border-zinc-200 bg-zinc-100 text-zinc-600 hover:bg-zinc-200/60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800",
                         )}
                       >
                         +#{tName}
@@ -1118,18 +1127,20 @@ export default function QueryLibraryPanel({
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <Button
+              type="button"
               variant="ghost"
               size="sm"
               onClick={() => setEditTarget(null)}
-              className="text-xs text-white/60 hover:bg-white/10 hover:text-white"
+              className="text-xs text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
             >
               {t("savedQuery.cancel")}
             </Button>
             <Button
+              type="button"
               size="sm"
               onClick={saveEdit}
               disabled={!editTitle.trim()}
-              className="gap-1.5 bg-indigo-600 text-xs text-white shadow-sm shadow-indigo-500/20 hover:bg-indigo-500"
+              className="gap-1.5 bg-emerald-600 text-xs text-white shadow-xs hover:bg-emerald-500"
             >
               <Check className="h-3.5 w-3.5" />
               {t("savedQuery.save")}
