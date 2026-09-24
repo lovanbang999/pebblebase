@@ -131,3 +131,50 @@ sudo apt install --reinstall ./build/bin/pebblebase_0.1.1_amd64.deb
 ```bash
 sudo apt remove pebblebase
 ```
+
+---
+
+## Windows Cross-Compilation & Packaging
+
+Pebblebase Studio can be cross-compiled for 64-bit Windows directly from your Linux environment using MinGW-w64 and the provided packaging script.
+
+### 1. Prerequisites (on Ubuntu / Debian)
+
+Install the 64-bit MinGW C compiler and NSIS (for generating the 1-click Windows installer):
+
+```bash
+sudo apt update
+sudo apt install -y gcc-mingw-w64-x86-64 nsis
+```
+
+### 2. Run Windows Packaging Script
+
+From the project root:
+
+```bash
+bash ./scripts/package-windows.sh
+```
+
+What the script performs:
+1. Validates all cross-compilation dependencies (`wails`, `x86_64-w64-mingw32-gcc`, `makensis`).
+2. Ensures Windows build assets exist in `build/windows/` (`icon.ico`, `info.json`, `wails.exe.manifest`, `project.nsi`).
+3. Compiles the frontend (`yarn build`).
+4. Cross-compiles the Windows standalone binary `build/bin/pebblebase.exe`.
+5. Compiles the NSIS 1-click installer `build/bin/pebblebase_0.1.1_windows_amd64_setup.exe`.
+6. Packages a portable ZIP archive `build/bin/pebblebase_0.1.1_windows_amd64.zip` for quick sharing with teammates.
+
+### 3. Sharing with Teammates
+
+Send either of the generated files located in `build/bin/`:
+- **`pebblebase_0.1.1_windows_amd64_setup.exe`**: 1-click setup installer (installs to Program Files, creates Desktop and Start Menu shortcuts, includes uninstaller).
+- **`pebblebase_0.1.1_windows_amd64.zip`**: Portable ZIP archive (extract and double-click `pebblebase.exe` to run immediately without installation).
+
+### 4. Windows Runtime Requirements
+
+- **Supported OS**: Windows 10 (version 1809+) or Windows 11 (64-bit).
+- **WebView2**: Pre-installed out of the box on modern Windows 10 and 11.
+- **Data Storage**: User configuration and local database storage are automatically saved under:
+  ```text
+  %APPDATA%\pebblebase (C:\Users\<User>\AppData\Roaming\pebblebase)
+  ```
+

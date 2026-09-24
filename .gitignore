@@ -71,12 +71,22 @@ desktop.ini
 *~
 
 # =============================================================================
-# Wails Desktop & Linux Packages
+# Wails Desktop & Release Packages
 # =============================================================================
-build/
-cmd/desktop/build/
+build/bin/
+build/windows/installer/tmp/
+build/windows/installer/wails_tools.nsh
+cmd/desktop/build/bin/
+cmd/desktop/build/windows/installer/tmp/
+cmd/desktop/build/windows/installer/wails_tools.nsh
 **/wailsjs/
 *.deb
 *.AppImage
 *.rpm
+*.zip
+*.tar.gz
+*.tgz
+*.msi
 *.md5
+*.sha256
+
