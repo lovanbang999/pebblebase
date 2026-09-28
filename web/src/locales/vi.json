@@ -36,7 +36,43 @@
       "add": "Ghim bảng",
       "remove": "Bỏ ghim bảng",
       "max": "Chỉ có thể ghim tối đa 10 bảng"
+    },
+    "tableMenu": {
+      "openDataGrid": "Mở xem dữ liệu",
+      "openInNewTab": "Mở trong tab mới",
+      "viewSchema": "Xem Cấu trúc & DDL",
+      "queryMenu": "Truy vấn bảng",
+      "selectTop100": "Xem 100 bản ghi đầu",
+      "selectCount": "Đếm tổng số bản ghi (COUNT)",
+      "insertTemplate": "Tạo mẫu lệnh INSERT",
+      "copyMenu": "Sao chép",
+      "copyTableName": "Sao chép tên bảng",
+      "copySelectQuery": "Sao chép câu lệnh SELECT",
+      "exportMenu": "Xuất dữ liệu",
+      "exportCsv": "Xuất file CSV",
+      "exportJson": "Xuất file JSON",
+      "pinTable": "Ghim bảng lên đầu",
+      "unpinTable": "Bỏ ghim bảng",
+      "truncateTable": "Xóa sạch dữ liệu (Truncate)...",
+      "dropTable": "Xóa bảng vĩnh viễn (Drop)...",
+      "actionsTooltip": "Thao tác với bảng (Chuột phải)"
     }
+  },
+  "tableDanger": {
+    "truncateTitle": "Xóa sạch dữ liệu bảng: {{table}}",
+    "truncateDesc": "Hành động này sẽ xóa toàn bộ các bản ghi trong bảng \"{{table}}\". Cấu trúc cột và định nghĩa bảng vẫn giữ nguyên nhưng dữ liệu sẽ không thể khôi phục.",
+    "truncateConfirmHelp": "Để xác nhận xóa sạch dữ liệu bảng này, vui lòng nhập \"{{table}}\" vào bên dưới:",
+    "truncateButton": "Xóa sạch dữ liệu",
+    "truncateSuccess": "Đã làm trống dữ liệu bảng \"{{table}}\" thành công.",
+    "dropTitle": "Xóa hoàn toàn bảng: {{table}}",
+    "dropDesc": "Hành động này sẽ xóa vĩnh viễn bảng \"{{table}}\" cùng toàn bộ dữ liệu, chỉ mục (index) và ràng buộc khỏi cơ sở dữ liệu. Thao tác này KHÔNG THỂ hoàn tác.",
+    "dropConfirmHelp": "Để xác nhận xóa bảng vĩnh viễn, vui lòng nhập \"{{table}}\" vào bên dưới:",
+    "dropButton": "Xóa hoàn toàn bảng",
+    "dropSuccess": "Đã xóa bảng \"{{table}}\" thành công.",
+    "typeToConfirmPlaceholder": "Nhập \"{{table}}\" để xác nhận",
+    "canceling": "Hủy bỏ",
+    "executing": "Đang thực thi...",
+    "errorOccurred": "Có lỗi khi thực thi thao tác bảng:"
   },
   "grid": {
     "column": {

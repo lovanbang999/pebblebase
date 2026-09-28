@@ -791,6 +791,20 @@ export const DataGrid: FC<DataGridProps> = ({
   const [tableStats, setTableStats] = useState<TableStats | null>(null);
   const [copiedCol, setCopiedCol] = useState<string | null>(null);
 
+  // Listen for external subview switch requests (e.g. from table context menu)
+  useEffect(() => {
+    const handleSwitchSubView = (e: Event) => {
+      const customEvent = e as CustomEvent<"grid" | "schema">;
+      if (customEvent.detail === "grid" || customEvent.detail === "schema") {
+        setActiveSubView(customEvent.detail);
+      }
+    };
+    window.addEventListener("pb:switch-subview", handleSwitchSubView);
+    return () => {
+      window.removeEventListener("pb:switch-subview", handleSwitchSubView);
+    };
+  }, []);
+
   // Right-click Context Menu State
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;

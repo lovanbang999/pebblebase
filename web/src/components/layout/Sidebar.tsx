@@ -25,11 +25,14 @@ import {
   HelpCircle,
   Pin,
   GitCompare,
+  MoreHorizontal,
 } from "lucide-react";
 import type { Connection, TableSchema } from "@/lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "@/lib/platform";
 import { useAuthStore } from "@/lib/auth";
-import { apiLogout } from "@/lib/api";
+import { apiLogout, exportTableData } from "@/lib/api";
+import { TableContextMenu } from "./TableContextMenu";
+import { TableDangerModal, type DangerActionType } from "@/components/modals";
 import packageJson from "../../../package.json";
 import { Button } from "@/components/ui/button";
 import { cn } from "cn";
@@ -75,7 +78,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
@@ -96,7 +98,7 @@ interface SidebarProps {
   isLoadingTables: boolean;
   onRefreshTables: () => void | Promise<void>;
   activeView?: "table" | "console" | "erd";
-  onOpenQueryConsole?: () => void;
+  onOpenQueryConsole?: (initialQuery?: string, title?: string) => void;
   onOpenERD?: () => void;
   onOpenDiff?: () => void;
   onOpenAdminPanel?: () => void;
@@ -106,6 +108,49 @@ interface SidebarProps {
 }
 
 const ENGINE_CONFIG = DATABASE_ENGINES;
+
+function buildSelectQuery(
+  tbl: TableSchema,
+  dbType?: string,
+  limit = 100,
+): string {
+  if (dbType === "mongodb") {
+    return `db.${tbl.name}.find().limit(${limit})`;
+  }
+  if (dbType === "mysql") {
+    return `SELECT * FROM \`${tbl.name}\` LIMIT ${limit};`;
+  }
+  return `SELECT * FROM "${tbl.name}" LIMIT ${limit};`;
+}
+
+function buildCountQuery(tbl: TableSchema, dbType?: string): string {
+  if (dbType === "mongodb") {
+    return `db.${tbl.name}.countDocuments()`;
+  }
+  if (dbType === "mysql") {
+    return `SELECT COUNT(*) AS total_count FROM \`${tbl.name}\`;`;
+  }
+  return `SELECT COUNT(*) AS total_count FROM "${tbl.name}";`;
+}
+
+function buildInsertTemplate(tbl: TableSchema, dbType?: string): string {
+  if (dbType === "mongodb") {
+    const sampleDoc: Record<string, any> = {};
+    tbl.columns.slice(0, 5).forEach((c) => {
+      sampleDoc[c.name] = c.is_primary_key ? "auto" : "value";
+    });
+    return `db.${tbl.name}.insertOne(${JSON.stringify(sampleDoc, null, 2)})`;
+  }
+  const cols = tbl.columns.map((c) => c.name);
+  if (dbType === "mysql") {
+    const colList = cols.map((c) => `\`${c}\``).join(", ");
+    const valList = cols.map((_, i) => `'val_${i + 1}'`).join(", ");
+    return `INSERT INTO \`${tbl.name}\` (${colList})\nVALUES (${valList});`;
+  }
+  const colList = cols.map((c) => `"${c}"`).join(", ");
+  const valList = cols.map((_, i) => `'val_${i + 1}'`).join(", ");
+  return `INSERT INTO "${tbl.name}" (${colList})\nVALUES (${valList});`;
+}
 
 function getStoredPinnedTables(connectionId?: string): string[] {
   if (!connectionId) return [];
@@ -186,6 +231,27 @@ export default function Sidebar({
   );
   const [pinToast, setPinToast] = useState<string | null>(null);
 
+  // Table Context Menu & Actions
+  const [tableContextMenu, setTableContextMenu] = useState<{
+    tableName: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const [dangerModal, setDangerModal] = useState<{
+    isOpen: boolean;
+    actionType: DangerActionType;
+    tableName: string;
+  } | null>(null);
+
+  const [actionToast, setActionToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!actionToast) return;
+    const timer = setTimeout(() => setActionToast(null), TOAST_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [actionToast]);
+
   useEffect(() => {
     setPinnedTableNames(getStoredPinnedTables(selectedConnection?.id));
   }, [selectedConnection?.id]);
@@ -253,25 +319,40 @@ export default function Sidebar({
 
   const renderTableItem = (tbl: TableSchema, isPinned: boolean) => {
     const isSelected = selectedTable === tbl.name;
+    const isMenuOpen = tableContextMenu?.tableName === tbl.name;
     const hasPk = tbl.columns.some((c) => c.is_primary_key);
     const hasFk = tbl.columns.some((c) => c.is_foreign_key);
     const colCount = tbl.columns.length;
 
     return (
-      <SidebarMenuItem key={tbl.name}>
+      <SidebarMenuItem
+        key={tbl.name}
+        className="group/menu-item relative flex items-center"
+      >
         <SidebarMenuButton
           isActive={isSelected}
           onClick={(e) => onSelectTable(tbl.name, e.ctrlKey || e.metaKey)}
+          onContextMenu={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setTableContextMenu({
+              tableName: tbl.name,
+              x: e.clientX,
+              y: e.clientY,
+            });
+          }}
           tooltip={
             isPinned
               ? `⭐ ${tbl.name} (${colCount} cols)`
               : `${tbl.name} (${colCount} cols)`
           }
           className={cn(
-            "h-7 cursor-pointer px-2 pr-7 font-mono text-xs transition-colors",
+            "h-7 cursor-pointer px-2 pr-14 font-mono text-xs transition-colors",
             isSelected
               ? "border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-900 dark:text-emerald-200"
-              : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
+              : isMenuOpen
+                ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
+                : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
           )}
         >
           <TableIcon
@@ -288,7 +369,20 @@ export default function Sidebar({
             {tbl.name}
           </span>
 
-          <div className="ml-auto flex shrink-0 items-center gap-1 group-data-[collapsible=icon]:hidden">
+          {/* Normal State: Metadata badges (smoothly fades out on hover) */}
+          <div
+            className={cn(
+              "ml-auto flex shrink-0 items-center gap-1 transition-opacity duration-150 group-data-[collapsible=icon]:hidden",
+              isMenuOpen
+                ? "pointer-events-none opacity-0"
+                : "group-hover/menu-item:opacity-0",
+            )}
+          >
+            {isPinned && (
+              <span title={t("sidebar.pinned")}>
+                <Pin className="size-2.5 rotate-45 fill-amber-500 text-amber-500" />
+              </span>
+            )}
             {hasPk && (
               <span title={t("sidebar.primaryKeyTooltip")}>
                 <Key className="size-2.5 text-amber-500 dark:text-amber-400/80" />
@@ -313,30 +407,65 @@ export default function Sidebar({
           </div>
         </SidebarMenuButton>
 
-        <SidebarMenuAction
-          showOnHover={!isPinned}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleTogglePin(tbl.name);
-          }}
+        {/* Hover / Active Action Toolbar: Pin + More (•••) */}
+        <div
           className={cn(
-            "top-1 right-1 h-5 w-5 cursor-pointer transition-colors",
-            isPinned
-              ? "text-amber-500 opacity-100 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
-              : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200",
+            "pointer-events-none absolute top-1/2 right-1.5 z-10 flex -translate-y-1/2 items-center gap-0.5 rounded-md p-0.5 transition-all duration-150 group-data-[collapsible=icon]:hidden",
+            isMenuOpen
+              ? "pointer-events-auto bg-zinc-200/90 opacity-100 shadow-xs dark:bg-zinc-800/90"
+              : "opacity-0 group-hover/menu-item:pointer-events-auto group-hover/menu-item:bg-zinc-200/80 group-hover/menu-item:opacity-100 dark:group-hover/menu-item:bg-zinc-800/80",
           )}
-          title={isPinned ? t("sidebar.pin.remove") : t("sidebar.pin.add")}
         >
-          <Pin
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTogglePin(tbl.name);
+            }}
             className={cn(
-              "size-3 transition-transform",
-              isPinned && "rotate-45 fill-current",
+              "flex h-5 w-5 cursor-pointer items-center justify-center rounded transition-colors",
+              isPinned
+                ? "text-amber-500 hover:bg-amber-500/20 hover:text-amber-600 dark:text-amber-400 dark:hover:text-amber-300"
+                : "text-zinc-500 hover:bg-zinc-300/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/80 dark:hover:text-zinc-100",
             )}
-          />
-          <span className="sr-only">
-            {isPinned ? t("sidebar.pin.remove") : t("sidebar.pin.add")}
-          </span>
-        </SidebarMenuAction>
+            title={isPinned ? t("sidebar.pin.remove") : t("sidebar.pin.add")}
+          >
+            <Pin
+              className={cn(
+                "size-3 transition-transform",
+                isPinned && "rotate-45 fill-current",
+              )}
+            />
+            <span className="sr-only">
+              {isPinned ? t("sidebar.pin.remove") : t("sidebar.pin.add")}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              const rect = e.currentTarget.getBoundingClientRect();
+              setTableContextMenu({
+                tableName: tbl.name,
+                x: rect.right + 4,
+                y: rect.top,
+              });
+            }}
+            className={cn(
+              "flex h-5 w-5 cursor-pointer items-center justify-center rounded transition-colors",
+              isMenuOpen
+                ? "bg-zinc-300/80 text-zinc-900 dark:bg-zinc-700/80 dark:text-zinc-100"
+                : "text-zinc-500 hover:bg-zinc-300/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/80 dark:hover:text-zinc-100",
+            )}
+            title={t("sidebar.tableMenu.actionsTooltip")}
+          >
+            <MoreHorizontal className="size-3" />
+            <span className="sr-only">
+              {t("sidebar.tableMenu.actionsTooltip")}
+            </span>
+          </button>
+        </div>
       </SidebarMenuItem>
     );
   };
@@ -1147,6 +1276,139 @@ export default function Sidebar({
           <Pin className="size-3.5 shrink-0 rotate-45 fill-amber-500 text-amber-500" />
           <span>{pinToast}</span>
         </div>
+      )}
+
+      {/* Action Toast (copy, export, danger success) */}
+      {actionToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="animate-in fade-in slide-in-from-bottom-2 fixed bottom-6 left-6 z-50 flex items-center gap-2 rounded-lg border border-zinc-700/50 bg-zinc-900 px-3 py-2 font-mono text-xs font-medium text-zinc-100 shadow-xl dark:border-zinc-300 dark:bg-zinc-100 dark:text-zinc-900"
+        >
+          <CheckCircle2 className="size-3.5 shrink-0 text-emerald-400 dark:text-emerald-600" />
+          <span>{actionToast}</span>
+        </div>
+      )}
+
+      {/* Table Context Menu */}
+      {tableContextMenu && (
+        <TableContextMenu
+          tableName={tableContextMenu.tableName}
+          x={tableContextMenu.x}
+          y={tableContextMenu.y}
+          isPinned={pinnedTableNames.includes(tableContextMenu.tableName)}
+          onClose={() => setTableContextMenu(null)}
+          onOpenTable={(openInNewTab) => {
+            onSelectTable(tableContextMenu.tableName, openInNewTab);
+          }}
+          onViewSchema={() => {
+            onSelectTable(tableContextMenu.tableName, false);
+            window.dispatchEvent(
+              new CustomEvent("pb:switch-subview", { detail: "schema" }),
+            );
+          }}
+          onQuerySelectTop100={() => {
+            const targetTable = tables.find(
+              (t) => t.name === tableContextMenu.tableName,
+            );
+            if (targetTable) {
+              const q = buildSelectQuery(
+                targetTable,
+                selectedConnection?.type,
+                100,
+              );
+              onOpenQueryConsole?.(q, `${targetTable.name} (Top 100)`);
+            }
+          }}
+          onQuerySelectCount={() => {
+            const targetTable = tables.find(
+              (t) => t.name === tableContextMenu.tableName,
+            );
+            if (targetTable) {
+              const q = buildCountQuery(targetTable, selectedConnection?.type);
+              onOpenQueryConsole?.(q, `${targetTable.name} (Count)`);
+            }
+          }}
+          onQueryInsertTemplate={() => {
+            const targetTable = tables.find(
+              (t) => t.name === tableContextMenu.tableName,
+            );
+            if (targetTable) {
+              const q = buildInsertTemplate(
+                targetTable,
+                selectedConnection?.type,
+              );
+              onOpenQueryConsole?.(q, `Insert ${targetTable.name}`);
+            }
+          }}
+          onCopyTableName={() => {
+            navigator.clipboard.writeText(tableContextMenu.tableName);
+            setActionToast(`Copied "${tableContextMenu.tableName}"`);
+          }}
+          onCopySelectQuery={() => {
+            const targetTable = tables.find(
+              (t) => t.name === tableContextMenu.tableName,
+            );
+            if (targetTable) {
+              const q = buildSelectQuery(
+                targetTable,
+                selectedConnection?.type,
+                100,
+              );
+              navigator.clipboard.writeText(q);
+              setActionToast(`Copied SELECT query`);
+            }
+          }}
+          onExport={async (format) => {
+            if (!selectedConnection) return;
+            const tName = tableContextMenu.tableName;
+            setActionToast(`Exporting ${tName} (${format.toUpperCase()})...`);
+            try {
+              const blob = await exportTableData(
+                selectedConnection.id,
+                tName,
+                format,
+              );
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${tName}_${Date.now()}.${format}`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              setActionToast(`Exported ${tName}.${format}`);
+            } catch (err: any) {
+              console.error("Export error:", err);
+              setActionToast(`Export failed: ${err.message || "error"}`);
+            }
+          }}
+          onTogglePin={() => {
+            handleTogglePin(tableContextMenu.tableName);
+          }}
+          onDangerAction={(type) => {
+            setDangerModal({
+              isOpen: true,
+              actionType: type,
+              tableName: tableContextMenu.tableName,
+            });
+          }}
+        />
+      )}
+
+      {/* Table Danger Modal (Truncate / Drop) */}
+      {dangerModal && (
+        <TableDangerModal
+          isOpen={dangerModal.isOpen}
+          actionType={dangerModal.actionType}
+          tableName={dangerModal.tableName}
+          connection={selectedConnection}
+          onClose={() => setDangerModal(null)}
+          onSuccess={(msg) => {
+            setActionToast(msg);
+            onRefreshTables();
+          }}
+        />
       )}
     </SidebarPrimitive>
   );
