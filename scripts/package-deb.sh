@@ -15,6 +15,10 @@ DEB_NAME="${APP_NAME}_${VERSION}_${ARCH}.deb"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
+echo "======================================================================"
+echo "  Pebblebase Studio - Debian (.deb) Packaging Pipeline (v${VERSION})"
+echo "======================================================================"
+
 # Check if binary is missing, --build was passed, or source files are newer than build/bin/pebblebase
 REBUILD=false
 if [ "$1" = "--build" ] || [ ! -f "build/bin/pebblebase" ]; then
@@ -22,13 +26,13 @@ if [ "$1" = "--build" ] || [ ! -f "build/bin/pebblebase" ]; then
 elif [ -f "build/bin/pebblebase" ]; then
   NEWER=$(find web/src cmd internal -newer "build/bin/pebblebase" 2>/dev/null | head -n 1)
   if [ -n "$NEWER" ]; then
-    echo "🔍 Detected source modifications newer than build/bin/pebblebase ($NEWER)."
+    echo "Detected source modifications newer than build/bin/pebblebase ($NEWER)."
     REBUILD=true
   fi
 fi
 
 if [ "$REBUILD" = true ]; then
-  echo "🔨 Building frontend and desktop binary with Wails..."
+  echo "Building frontend and desktop binary with Wails..."
   (cd web && yarn build)
   wails build -s -skipbindings -clean -ldflags "-s -w"
 fi
@@ -38,7 +42,7 @@ if [ ! -f "build/bin/pebblebase" ]; then
   exit 1
 fi
 
-echo "📦 Packaging Pebblebase Studio v${VERSION} (.deb)..."
+echo "Packaging Pebblebase Studio v${VERSION} (.deb)..."
 
 # Clean up any previous package staging
 rm -rf "$PKG_DIR"
@@ -117,7 +121,7 @@ Section: database
 Priority: optional
 Architecture: ${ARCH}
 Maintainer: Pebblebase Team <lovanbangbox9@gmail.com>
-Depends: libgtk-3-0, libwebkit2gtk-4.1-0 | libwebkit2gtk-4.0-37
+Depends: libgtk-3-0, libwebkit2gtk-4.1-0
 Description: Pebblebase Studio - Modern lightweight database studio
  Native desktop database management tool for PostgreSQL, MySQL, SQLite, and MongoDB.
  Zero-overhead in-memory core with modern React interface.
@@ -155,5 +159,8 @@ dpkg-deb --build --root-owner-group "$PKG_DIR" "build/bin/${DEB_NAME}"
 # Clean up staging dir
 rm -rf "$PKG_DIR"
 
-echo "✅ Successfully built Debian package: build/bin/${DEB_NAME}"
+echo ""
+echo "======================================================================"
+echo "Debian packaging complete! Output file located in build/bin/:"
 ls -lh "build/bin/${DEB_NAME}"
+echo "======================================================================"

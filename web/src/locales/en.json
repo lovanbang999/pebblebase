@@ -36,7 +36,43 @@
       "add": "Pin table",
       "remove": "Unpin table",
       "max": "Maximum 10 tables can be pinned"
+    },
+    "tableMenu": {
+      "openDataGrid": "Open Data Grid",
+      "openInNewTab": "Open in New Tab",
+      "viewSchema": "View Schema & DDL",
+      "queryMenu": "Query Table",
+      "selectTop100": "Select Top 100 rows",
+      "selectCount": "Select Count(*)",
+      "insertTemplate": "Generate INSERT template",
+      "copyMenu": "Copy",
+      "copyTableName": "Copy Table Name",
+      "copySelectQuery": "Copy SELECT Statement",
+      "exportMenu": "Export Data",
+      "exportCsv": "Export as CSV",
+      "exportJson": "Export as JSON",
+      "pinTable": "Pin Table",
+      "unpinTable": "Unpin Table",
+      "truncateTable": "Truncate Table (Empty Data)...",
+      "dropTable": "Drop Table (Delete)...",
+      "actionsTooltip": "Table actions (Right-click)"
     }
+  },
+  "tableDanger": {
+    "truncateTitle": "Truncate Table: {{table}}",
+    "truncateDesc": "This action will permanently delete all records inside table \"{{table}}\". The table schema and columns will remain intact, but data cannot be recovered.",
+    "truncateConfirmHelp": "To confirm emptying this table, please type \"{{table}}\" below:",
+    "truncateButton": "Truncate Table",
+    "truncateSuccess": "Table \"{{table}}\" has been truncated successfully.",
+    "dropTitle": "Drop Table: {{table}}",
+    "dropDesc": "This action will completely remove the table \"{{table}}\" and all of its indexes, constraints, and data from the database. This action CANNOT be undone.",
+    "dropConfirmHelp": "To confirm dropping this table permanently, please type \"{{table}}\" below:",
+    "dropButton": "Drop Table",
+    "dropSuccess": "Table \"{{table}}\" was dropped successfully.",
+    "typeToConfirmPlaceholder": "Type \"{{table}}\" to confirm",
+    "canceling": "Cancel",
+    "executing": "Executing...",
+    "errorOccurred": "Failed to execute table operation:"
   },
   "grid": {
     "column": {
