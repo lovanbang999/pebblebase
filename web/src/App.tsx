@@ -620,6 +620,11 @@ function PebblebaseStudio() {
       <SidebarProvider
         defaultOpen={true}
         className="min-h-0 w-full flex-1 overflow-hidden"
+        style={
+          {
+            "--sidebar-width": "clamp(13.5rem, 16vw, 16rem)",
+          } as React.CSSProperties
+        }
       >
         {/* Left Sidebar */}
         <Sidebar

@@ -622,101 +622,56 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                   {t("diff.columns")}
                 </h3>
 
-                <div className="overflow-hidden rounded-lg border border-zinc-200 shadow-sm dark:border-zinc-800">
-                  {/* Grid Headers */}
-                  <div className="grid grid-cols-2 divide-x divide-zinc-200 bg-zinc-100 px-3 py-2 font-mono text-xs font-semibold text-zinc-700 dark:divide-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-                    <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                      {t("diff.source")}:{" "}
-                      {fromConnObj?.name || t("diff.source")}
+                <div className="overflow-x-auto rounded-lg border border-zinc-200 shadow-sm dark:border-zinc-800">
+                  <div className="min-w-125">
+                    {/* Grid Headers */}
+                    <div className="grid grid-cols-2 divide-x divide-zinc-200 bg-zinc-100 px-3 py-2 font-mono text-xs font-semibold text-zinc-700 dark:divide-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                      <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                        {t("diff.source")}:{" "}
+                        {fromConnObj?.name || t("diff.source")}
+                      </div>
+                      <div className="flex items-center gap-1.5 pl-3 text-indigo-700 dark:text-indigo-400">
+                        <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                        {t("diff.target")}:{" "}
+                        {toConnObj?.name || t("diff.target")}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 pl-3 text-indigo-700 dark:text-indigo-400">
-                      <span className="h-2 w-2 rounded-full bg-indigo-500" />
-                      {t("diff.target")}: {toConnObj?.name || t("diff.target")}
-                    </div>
-                  </div>
 
-                  {/* Column Rows */}
-                  <div className="divide-y divide-zinc-100 font-mono text-xs dark:divide-zinc-800/60">
-                    {currentTableDiff.columns?.map((col) => {
-                      const isAdded = col.status === "added";
-                      const isRemoved = col.status === "removed";
-                      const isModified = col.status === "modified";
+                    {/* Column Rows */}
+                    <div className="divide-y divide-zinc-100 font-mono text-xs dark:divide-zinc-800/60">
+                      {currentTableDiff.columns?.map((col) => {
+                        const isAdded = col.status === "added";
+                        const isRemoved = col.status === "removed";
+                        const isModified = col.status === "modified";
 
-                      return (
-                        <div
-                          key={col.name}
-                          className={cn(
-                            "grid grid-cols-2 divide-x divide-zinc-200 transition-colors dark:divide-zinc-800/80",
-                            isAdded &&
-                              "bg-emerald-50/40 dark:bg-emerald-950/20",
-                            isRemoved && "bg-rose-50/40 dark:bg-rose-950/20",
-                            isModified && "bg-amber-50/40 dark:bg-amber-950/20",
-                          )}
-                        >
-                          {/* Left Column (Source) */}
-                          <div className="p-3">
-                            {col.from_column ? (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1.5">
-                                  {isAdded && (
-                                    <PlusCircle className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                                  )}
-                                  {isModified && (
-                                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
-                                  )}
-                                  <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                                    {col.from_column.name}
-                                  </span>
-                                  {col.from_column.is_primary_key && (
-                                    <Badge
-                                      variant="outline"
-                                      className="h-4 border-amber-500/30 bg-amber-500/10 px-1 py-0 text-[9px] text-amber-600"
-                                    >
-                                      <Key className="mr-0.5 h-2.5 w-2.5" /> PK
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                                  <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                                    {col.from_column.type}
-                                  </span>
-                                  <span>·</span>
-                                  <span>
-                                    {col.from_column.nullable
-                                      ? "NULL"
-                                      : "NOT NULL"}
-                                  </span>
-                                  {col.from_column.default_value && (
-                                    <>
-                                      <span>·</span>
-                                      <span className="text-zinc-400">
-                                        DEFAULT {col.from_column.default_value}
-                                      </span>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="rounded border border-dashed border-zinc-200 px-2 py-1 text-center text-[11px] text-zinc-400 italic dark:border-zinc-800 dark:text-zinc-600">
-                                {t("diff.not_in_source")}
-                              </div>
+                        return (
+                          <div
+                            key={col.name}
+                            className={cn(
+                              "grid grid-cols-2 divide-x divide-zinc-200 transition-colors dark:divide-zinc-800/80",
+                              isAdded &&
+                                "bg-emerald-50/40 dark:bg-emerald-950/20",
+                              isRemoved && "bg-rose-50/40 dark:bg-rose-950/20",
+                              isModified &&
+                                "bg-amber-50/40 dark:bg-amber-950/20",
                             )}
-                          </div>
-
-                          {/* Right Column (Target) */}
-                          <div className="p-3 pl-4">
-                            {col.to_column ? (
-                              <div className="space-y-1">
-                                <div className="flex items-center justify-between gap-1.5">
+                          >
+                            {/* Left Column (Source) */}
+                            <div className="p-3">
+                              {col.from_column ? (
+                                <div className="space-y-1">
                                   <div className="flex items-center gap-1.5">
-                                    {isRemoved && (
-                                      <MinusCircle className="h-3.5 w-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                                    {isAdded && (
+                                      <PlusCircle className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                    )}
+                                    {isModified && (
+                                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
                                     )}
                                     <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                                      {col.to_column.name}
+                                      {col.from_column.name}
                                     </span>
-                                    {col.to_column.is_primary_key && (
+                                    {col.from_column.is_primary_key && (
                                       <Badge
                                         variant="outline"
                                         className="h-4 border-amber-500/30 bg-amber-500/10 px-1 py-0 text-[9px] text-amber-600"
@@ -726,52 +681,103 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                                       </Badge>
                                     )}
                                   </div>
+                                  <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                                    <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                                      {col.from_column.type}
+                                    </span>
+                                    <span>·</span>
+                                    <span>
+                                      {col.from_column.nullable
+                                        ? "NULL"
+                                        : "NOT NULL"}
+                                    </span>
+                                    {col.from_column.default_value && (
+                                      <>
+                                        <span>·</span>
+                                        <span className="text-zinc-400">
+                                          DEFAULT{" "}
+                                          {col.from_column.default_value}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="rounded border border-dashed border-zinc-200 px-2 py-1 text-center text-[11px] text-zinc-400 italic dark:border-zinc-800 dark:text-zinc-600">
+                                  {t("diff.not_in_source")}
+                                </div>
+                              )}
+                            </div>
 
-                                  {isModified && (
-                                    <div className="flex flex-wrap gap-1">
-                                      {col.changes?.map(
-                                        (chg: string, idx: number) => (
-                                          <Badge
-                                            key={idx}
-                                            variant="outline"
-                                            className="h-4 border-amber-500/40 bg-amber-500/10 px-1 py-0 text-[9px] text-amber-700 dark:text-amber-300"
-                                          >
-                                            {chg}
-                                          </Badge>
-                                        ),
+                            {/* Right Column (Target) */}
+                            <div className="p-3 pl-4">
+                              {col.to_column ? (
+                                <div className="space-y-1">
+                                  <div className="flex items-center justify-between gap-1.5">
+                                    <div className="flex items-center gap-1.5">
+                                      {isRemoved && (
+                                        <MinusCircle className="h-3.5 w-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                                      )}
+                                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                                        {col.to_column.name}
+                                      </span>
+                                      {col.to_column.is_primary_key && (
+                                        <Badge
+                                          variant="outline"
+                                          className="h-4 border-amber-500/30 bg-amber-500/10 px-1 py-0 text-[9px] text-amber-600"
+                                        >
+                                          <Key className="mr-0.5 h-2.5 w-2.5" />{" "}
+                                          PK
+                                        </Badge>
                                       )}
                                     </div>
-                                  )}
+
+                                    {isModified && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {col.changes?.map(
+                                          (chg: string, idx: number) => (
+                                            <Badge
+                                              key={idx}
+                                              variant="outline"
+                                              className="h-4 border-amber-500/40 bg-amber-500/10 px-1 py-0 text-[9px] text-amber-700 dark:text-amber-300"
+                                            >
+                                              {chg}
+                                            </Badge>
+                                          ),
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
+                                    <span className="font-medium text-indigo-600 dark:text-indigo-400">
+                                      {col.to_column.type}
+                                    </span>
+                                    <span>·</span>
+                                    <span>
+                                      {col.to_column.nullable
+                                        ? "NULL"
+                                        : "NOT NULL"}
+                                    </span>
+                                    {col.to_column.default_value && (
+                                      <>
+                                        <span>·</span>
+                                        <span className="text-zinc-400">
+                                          DEFAULT {col.to_column.default_value}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400">
-                                  <span className="font-medium text-indigo-600 dark:text-indigo-400">
-                                    {col.to_column.type}
-                                  </span>
-                                  <span>·</span>
-                                  <span>
-                                    {col.to_column.nullable
-                                      ? "NULL"
-                                      : "NOT NULL"}
-                                  </span>
-                                  {col.to_column.default_value && (
-                                    <>
-                                      <span>·</span>
-                                      <span className="text-zinc-400">
-                                        DEFAULT {col.to_column.default_value}
-                                      </span>
-                                    </>
-                                  )}
+                              ) : (
+                                <div className="rounded border border-dashed border-zinc-200 px-2 py-1 text-center text-[11px] text-zinc-400 italic dark:border-zinc-800 dark:text-zinc-600">
+                                  {t("diff.not_in_target")}
                                 </div>
-                              </div>
-                            ) : (
-                              <div className="rounded border border-dashed border-zinc-200 px-2 py-1 text-center text-[11px] text-zinc-400 italic dark:border-zinc-800 dark:text-zinc-600">
-                                {t("diff.not_in_target")}
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>

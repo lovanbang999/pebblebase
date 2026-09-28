@@ -813,7 +813,16 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
   // Collapsible & Resizable Results Panel State
   const [isResultsCollapsed, setIsResultsCollapsed] = useState(false);
-  const [editorHeight, setEditorHeight] = useState(450);
+  // Responsively scale editor height based on viewport height (default ~35% of screen, leaving >=65% for results)
+  const [editorHeight, setEditorHeight] = useState(() => {
+    if (typeof window !== "undefined") {
+      return Math.min(
+        420,
+        Math.max(160, Math.floor(window.innerHeight * 0.35)),
+      );
+    }
+    return 300;
+  });
   const [isDragging, setIsDragging] = useState(false);
 
   const handleMouseDownResizer = useCallback(
@@ -825,7 +834,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
       const handleMouseMove = (moveEvent: MouseEvent) => {
         const deltaY = moveEvent.clientY - startY;
-        const newHeight = Math.min(Math.max(80, startHeight + deltaY), 750);
+        const maxAllowedHeight =
+          typeof window !== "undefined"
+            ? Math.max(160, window.innerHeight - 200)
+            : 700;
+        const newHeight = Math.min(
+          Math.max(80, startHeight + deltaY),
+          maxAllowedHeight,
+        );
         setEditorHeight(newHeight);
       };
 

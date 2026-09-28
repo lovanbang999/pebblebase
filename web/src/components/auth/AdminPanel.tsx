@@ -318,20 +318,20 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex h-160 max-h-[88vh] flex-col gap-0 overflow-hidden rounded-2xl border-zinc-200 bg-white p-0 font-sans text-zinc-900 shadow-2xl sm:max-w-3xl md:max-w-4xl dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+      <DialogContent className="flex h-[min(40rem,calc(100vh-3.5rem))] max-h-[calc(100vh-3rem)] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden rounded-2xl border-zinc-200 bg-white p-0 font-sans text-zinc-900 shadow-2xl sm:max-w-3xl md:max-w-4xl dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
         {/* Header */}
-        <DialogHeader className="shrink-0 border-b border-zinc-200 bg-zinc-50/70 px-6 py-4 dark:border-zinc-800/80 dark:bg-zinc-900/40">
+        <DialogHeader className="shrink-0 border-b border-zinc-200 bg-zinc-50/70 px-4 py-3 sm:px-6 sm:py-4 dark:border-zinc-800/80 dark:bg-zinc-900/40">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-indigo-500/25 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
-              <Shield className="size-4.5" />
+            <div className="flex size-8.5 shrink-0 items-center justify-center rounded-xl border border-indigo-500/25 bg-indigo-500/15 text-indigo-600 sm:size-9 dark:text-indigo-400">
+              <Shield className="size-4 sm:size-4.5" />
             </div>
             <div className="space-y-0.5">
-              <DialogTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
+              <DialogTitle className="flex items-center gap-2 text-sm font-semibold text-zinc-900 sm:text-base dark:text-zinc-100">
                 {currentUser?.role === "admin"
                   ? t("auth.adminPanel")
                   : t("auth.changePassword")}
               </DialogTitle>
-              <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+              <DialogDescription className="text-[11px] text-zinc-500 sm:text-xs dark:text-zinc-400">
                 {currentUser?.role === "admin"
                   ? t("auth.adminPanelDesc")
                   : t("auth.changePasswordDesc")}
@@ -347,8 +347,8 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
           className="flex flex-1 flex-col overflow-hidden"
         >
           {currentUser?.role === "admin" && (
-            <div className="shrink-0 border-b border-zinc-200 bg-zinc-50/50 px-6 py-2.5 dark:border-zinc-800/60 dark:bg-zinc-900/20">
-              <TabsList className="h-10.5 gap-1.5 rounded-lg border border-zinc-200 bg-zinc-100 p-1 group-data-horizontal/tabs:h-10.5 dark:border-zinc-800/80 dark:bg-zinc-900/90">
+            <div className="shrink-0 overflow-x-auto border-b border-zinc-200 bg-zinc-50/50 px-4 py-2 sm:px-6 sm:py-2.5 dark:border-zinc-800/60 dark:bg-zinc-900/20">
+              <TabsList className="h-9.5 gap-1 rounded-lg border border-zinc-200 bg-zinc-100 p-1 group-data-horizontal/tabs:h-9.5 sm:h-10.5 sm:gap-1.5 sm:group-data-horizontal/tabs:h-10.5 dark:border-zinc-800/80 dark:bg-zinc-900/90">
                 <TabsTrigger
                   value="users"
                   className="h-full cursor-pointer gap-2 px-3.5 text-xs font-medium text-zinc-600 transition-colors hover:text-zinc-900 data-active:bg-white data-active:text-zinc-900 data-active:shadow-xs data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-xs dark:text-zinc-400 dark:hover:text-zinc-100 dark:data-active:bg-zinc-800 dark:data-active:text-zinc-100 dark:data-[state=active]:bg-zinc-800 dark:data-[state=active]:text-zinc-100"
