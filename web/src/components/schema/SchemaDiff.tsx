@@ -139,10 +139,10 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
 
   // Initial compare on mount if two connections are available
   useEffect(() => {
-    if (fromId && toId && fromId !== toId && !diffResult && !isLoading) {
+    if (fromId && toId && fromId !== toId) {
       runCompare();
     }
-  }, [fromId, toId, diffResult, isLoading, runCompare]);
+  }, [fromId, toId, runCompare]);
 
   const handleSwap = () => {
     const prevFrom = fromId;

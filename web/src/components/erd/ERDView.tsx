@@ -135,28 +135,30 @@ function computeInitialLayout(
     type: "smoothstep",
     animated: true,
     style: {
-      stroke: "#6366f1",
-      strokeWidth: 2,
-      opacity: 0.85,
+      stroke: "#64748b",
+      strokeWidth: 1.8,
+      opacity: 0.9,
     },
     markerEnd: {
       type: MarkerType.ArrowClosed,
       width: 14,
       height: 14,
-      color: "#6366f1",
+      color: "#64748b",
     },
     label: `${rel.from_column} → ${rel.to_column}`,
     labelStyle: {
-      fill: "#a5b4fc",
-      fontSize: 10,
+      fill: "#334155",
+      fontSize: 11,
       fontFamily: "monospace",
-      fontWeight: 500,
+      fontWeight: 600,
     },
     labelBgStyle: {
-      fill: "#1e1b4b",
-      fillOpacity: 0.9,
+      fill: "#ffffff",
+      stroke: "#cbd5e1",
+      strokeWidth: 1.5,
+      fillOpacity: 0.95,
     },
-    labelBgPadding: [4, 2],
+    labelBgPadding: [6, 3],
     labelBgBorderRadius: 4,
   }));
 
@@ -483,15 +485,13 @@ function ERDCanvas({
         }
 
         const strokeColor = isEdgeHighlighted
-          ? hoveredColumn
-            ? "#38bdf8"
-            : "#a855f7"
+          ? "#4f46e5"
           : isEdgeDimmed
-            ? "#374151"
-            : "#6366f1";
+            ? "#cbd5e1"
+            : "#64748b";
 
-        const strokeWidth = isEdgeHighlighted ? 3 : isEdgeDimmed ? 1 : 2;
-        const opacity = isEdgeHighlighted ? 1 : isEdgeDimmed ? 0.15 : 0.85;
+        const strokeWidth = isEdgeHighlighted ? 2.5 : isEdgeDimmed ? 1 : 1.8;
+        const opacity = isEdgeHighlighted ? 1 : isEdgeDimmed ? 0.15 : 0.9;
 
         return {
           ...edge,
@@ -511,16 +511,19 @@ function ERDCanvas({
           labelStyle: {
             ...edge.labelStyle,
             fill: isEdgeHighlighted
-              ? "#ffffff"
+              ? "#4338ca"
               : isEdgeDimmed
-                ? "#6b7280"
-                : "#a5b4fc",
-            fontWeight: isEdgeHighlighted ? 600 : 500,
+                ? "#94a3b8"
+                : "#334155",
+            fontWeight: isEdgeHighlighted ? 700 : 600,
+            fontSize: 11,
           },
           labelBgStyle: {
             ...edge.labelBgStyle,
-            fill: isEdgeHighlighted ? "#4338ca" : "#1e1b4b",
-            fillOpacity: isEdgeDimmed ? 0.4 : 0.9,
+            fill: isEdgeHighlighted ? "#eef2ff" : "#ffffff",
+            stroke: isEdgeHighlighted ? "#818cf8" : "#cbd5e1",
+            strokeWidth: 1.5,
+            fillOpacity: isEdgeDimmed ? 0.3 : 0.95,
           },
         };
       }),
@@ -678,7 +681,7 @@ function ERDCanvas({
   return (
     <div
       ref={reactFlowWrapper}
-      className={`relative h-full w-full flex-1 overflow-hidden bg-[#f8fafc] select-none dark:bg-[#0a0b12] ${isDraggingNode ? "is-dragging-node" : ""}`}
+      className={`relative h-full w-full flex-1 overflow-hidden bg-[#fafafa] select-none dark:bg-[#09090b] ${isDraggingNode ? "is-dragging-node" : ""}`}
     >
       {/* Floating Toolbar */}
       <ERDToolbar
@@ -748,16 +751,16 @@ function ERDCanvas({
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1.2}
-          color="rgba(120, 119, 198, 0.15)"
+          color="rgba(100, 116, 139, 0.15)"
         />
 
         {showMinimap && (
           <MiniMap
-            nodeStrokeWidth={3}
+            nodeStrokeWidth={2}
             nodeColor={(node) => {
-              return node.data?.isDimmed ? "#94a3b8" : "#6366f1";
+              return node.data?.isDimmed ? "#cbd5e1" : "#3b82f6";
             }}
-            className="right-4! bottom-4! overflow-hidden rounded-xl! border! border-zinc-200/80! bg-white/90! shadow-xl! backdrop-blur-md! dark:border-white/10! dark:bg-[#13141f]/90! [&_.react-flow\_\_minimap-mask]:fill-zinc-300/60! dark:[&_.react-flow\_\_minimap-mask]:fill-[#0a0b12]/75!"
+            className="right-4! bottom-4! overflow-hidden rounded-lg! border! border-zinc-200! bg-white/95! shadow-md! backdrop-blur-md! dark:border-zinc-800! dark:bg-zinc-900/95! [&_.react-flow\_\_minimap-mask]:fill-zinc-300/50! dark:[&_.react-flow\_\_minimap-mask]:fill-zinc-950/75!"
             zoomable
             pannable
           />
