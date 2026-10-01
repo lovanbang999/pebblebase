@@ -31,9 +31,22 @@ elif [ -f "build/bin/pebblebase" ]; then
   fi
 fi
 
+export PATH="$PATH:$HOME/go/bin:/usr/local/go/bin"
+
 if [ "$REBUILD" = true ]; then
   echo "Building frontend and desktop binary with Wails..."
-  (cd web && yarn build)
+  if command -v yarn &> /dev/null; then
+    (cd web && yarn build)
+  elif command -v npm &> /dev/null; then
+    (cd web && npm run build)
+  elif command -v pnpm &> /dev/null; then
+    (cd web && pnpm build)
+  elif command -v bun &> /dev/null; then
+    (cd web && bun run build)
+  else
+    echo "Error: No Node.js package manager (npm/yarn/pnpm/bun) found."
+    exit 1
+  fi
   wails build -s -skipbindings -clean -ldflags "-s -w"
 fi
 

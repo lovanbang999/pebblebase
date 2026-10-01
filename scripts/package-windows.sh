@@ -120,7 +120,18 @@ with open('wails.json', 'w') as f:
 # 3. Build Web Frontend
 # ------------------------------------------------------------------------------
 echo "Building frontend web assets..."
-(cd web && yarn build)
+if command -v yarn &> /dev/null; then
+  (cd web && yarn build)
+elif command -v npm &> /dev/null; then
+  (cd web && npm run build)
+elif command -v pnpm &> /dev/null; then
+  (cd web && pnpm build)
+elif command -v bun &> /dev/null; then
+  (cd web && bun run build)
+else
+  echo "Error: No Node.js package manager (npm/yarn/pnpm/bun) found."
+  exit 1
+fi
 
 # ------------------------------------------------------------------------------
 # 4. Cross-Compile Windows Binary with Wails & MinGW
