@@ -51,12 +51,14 @@ interface SchemaDiffProps {
   connections: Connection[];
   activeConnectionId?: string | null;
   onOpenQueryConsole?: (query?: string, title?: string) => void;
+  onError?: (err: string | null) => void;
 }
 
 export const SchemaDiff: FC<SchemaDiffProps> = ({
   connections,
   activeConnectionId,
   onOpenQueryConsole,
+  onError,
 }) => {
   const { t } = useTranslation();
 
@@ -81,7 +83,6 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [diffResult, setDiffResult] = useState<SchemaDiffResult | null>(null);
 
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -108,16 +109,16 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
 
   const runCompare = useCallback(async () => {
     if (!fromId || !toId) {
-      setError(t("diff.same_connection"));
+      onError?.(t("diff.same_connection"));
       return;
     }
     if (fromId === toId) {
-      setError(t("diff.same_connection"));
+      onError?.(t("diff.same_connection"));
       return;
     }
 
     setIsLoading(true);
-    setError(null);
+    onError?.(null);
 
     try {
       const res = await fetchSchemaDiff(fromId, toId);
@@ -131,11 +132,11 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
         setSelectedTable(null);
       }
     } catch (err: any) {
-      setError(err?.message || t("diff.failed_compare"));
+      onError?.(err?.message || t("diff.failed_compare"));
     } finally {
       setIsLoading(false);
     }
-  }, [fromId, toId, t]);
+  }, [fromId, toId, t, onError]);
 
   // Initial compare on mount if two connections are available
   useEffect(() => {
@@ -383,14 +384,6 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
           </div>
         )}
       </div>
-
-      {/* Error Banner */}
-      {error && (
-        <div className="flex items-center gap-2 border-b border-rose-200 bg-rose-50 p-3 text-xs text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-300">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
-          <span>{error}</span>
-        </div>
-      )}
 
       {/* Main Diff Content */}
       <div className="flex flex-1 overflow-hidden">
