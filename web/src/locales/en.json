@@ -334,6 +334,8 @@
     "error": "Error",
     "loading": "Loading...",
     "retry": "Retry",
+    "copy": "Copy",
+    "copied": "Copied!",
     "close": "Close",
     "cancel": "Cancel",
     "add": "Add"
@@ -673,7 +675,11 @@
     "allCols": "All Cols",
     "generateJoinConsole": "Generate SQL JOIN query in console",
     "columnsHidden": "+{{count}} columns hidden",
-    "loading": "Loading ERD diagram..."
+    "loading": "Loading ERD diagram...",
+    "loadError": "Failed to Load ERD Diagram",
+    "loadErrorDesc": "Unable to connect or introspect database schema and relationships.",
+    "errorDetails": "Error Details",
+    "retryConnection": "Retry Connection"
   },
   "migration": {
     "title": "Migration Runner",

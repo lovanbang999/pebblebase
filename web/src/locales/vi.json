@@ -334,6 +334,8 @@
     "error": "Lỗi",
     "loading": "Đang tải...",
     "retry": "Thử lại",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép!",
     "close": "Đóng",
     "cancel": "Hủy",
     "add": "Thêm"
@@ -673,7 +675,11 @@
     "allCols": "Tất cả cột",
     "generateJoinConsole": "Tạo câu lệnh JOIN SQL trong bảng truy vấn",
     "columnsHidden": "+{{count}} cột bị ẩn",
-    "loading": "Đang tải sơ đồ ERD..."
+    "loading": "Đang tải sơ đồ ERD...",
+    "loadError": "Không thể tải sơ đồ ERD",
+    "loadErrorDesc": "Không thể kết nối hoặc phân tích lược đồ và các quan hệ cơ sở dữ liệu.",
+    "errorDetails": "Chi tiết lỗi",
+    "retryConnection": "Thử lại kết nối"
   },
   "migration": {
     "title": "Trình chạy Migration",
