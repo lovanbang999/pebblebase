@@ -20,6 +20,9 @@
     "refreshTablesTooltip": "Refresh tables",
     "noActiveConn": "No active connection",
     "connectToIntrospect": "Connect to introspect database",
+    "connectionFailed": "Connection Failed",
+    "couldNotLoadTables": "Could not load tables",
+    "edit": "Edit",
     "noUserTablesFound": "No user tables found",
     "noTablesMatching": "No tables matching \"{{term}}\"",
     "primaryKeyTooltip": "Primary key",
@@ -680,6 +683,48 @@
     "loadErrorDesc": "Unable to connect or introspect database schema and relationships.",
     "errorDetails": "Error Details",
     "retryConnection": "Retry Connection"
+  },
+  "diagnostics": {
+    "unknownConnection": "Active Database",
+    "cannotConnectTitle": "Cannot Connect to Database",
+    "failedToReach": "Pebblebase could not reach",
+    "suggestedSolution": "Suggested Resolution",
+    "showTechnicalDetails": "Show Technical Log",
+    "hideTechnicalDetails": "Hide Technical Log",
+    "rawOutput": "Raw Backend Error",
+    "retryConnection": "Retry Connection",
+    "retrying": "Retrying...",
+    "editConnection": "Edit Settings",
+    "showDetails": "Details",
+    "hideDetails": "Hide Details",
+    "copyTechnicalLog": "Copy Full Error",
+    "category": {
+      "connectionRefused": "Connection Refused",
+      "authFailed": "Authentication Failed",
+      "dbNotFound": "Database Not Found",
+      "hostUnreachable": "Host Unreachable",
+      "timeout": "Connection Timed Out",
+      "permissionDenied": "Access Denied",
+      "generic": "Connection Failed"
+    },
+    "summary": {
+      "connectionRefused": "The database server rejected the connection. Service might not be running.",
+      "authFailed": "Credentials rejected for the specified user.",
+      "dbNotFound": "The specified database does not exist on the server.",
+      "hostUnreachable": "Could not resolve or reach hostname.",
+      "timeout": "The database server took too long to respond.",
+      "permissionDenied": "File system permission error or database file is locked.",
+      "generic": "Unable to establish communication with the database."
+    },
+    "suggestion": {
+      "connectionRefused": "Check if your database service is running and listening on the configured port.",
+      "authFailed": "Verify your database username and password in the connection settings.",
+      "dbNotFound": "Verify the database name or create it before connecting.",
+      "hostUnreachable": "Check the host address, DNS resolution, and your active network connection.",
+      "timeout": "Ensure the server is responsive and network firewalls allow inbound traffic.",
+      "permissionDenied": "Check file permissions and ensure no other process is locking the database file.",
+      "generic": "Review the technical error details below or test your connection settings."
+    }
   },
   "migration": {
     "title": "Migration Runner",

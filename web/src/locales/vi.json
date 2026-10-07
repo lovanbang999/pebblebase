@@ -20,6 +20,9 @@
     "refreshTablesTooltip": "Tải lại danh sách bảng",
     "noActiveConn": "Chưa có kết nối nào",
     "connectToIntrospect": "Kết nối để khám phá cơ sở dữ liệu",
+    "connectionFailed": "Kết nối thất bại",
+    "couldNotLoadTables": "Không thể tải danh sách bảng",
+    "edit": "Sửa",
     "noUserTablesFound": "Không tìm thấy bảng người dùng nào",
     "noTablesMatching": "Không có bảng nào khớp với \"{{term}}\"",
     "primaryKeyTooltip": "Khóa chính",
@@ -680,6 +683,48 @@
     "loadErrorDesc": "Không thể kết nối hoặc phân tích lược đồ và các quan hệ cơ sở dữ liệu.",
     "errorDetails": "Chi tiết lỗi",
     "retryConnection": "Thử lại kết nối"
+  },
+  "diagnostics": {
+    "unknownConnection": "Cơ sở dữ liệu hiện tại",
+    "cannotConnectTitle": "Không thể kết nối đến cơ sở dữ liệu",
+    "failedToReach": "Pebblebase không thể kết nối tới",
+    "suggestedSolution": "Gợi ý khắc phục",
+    "showTechnicalDetails": "Xem nhật ký kỹ thuật",
+    "hideTechnicalDetails": "Ẩn nhật ký kỹ thuật",
+    "rawOutput": "Lỗi chi tiết từ máy chủ",
+    "retryConnection": "Thử lại kết nối",
+    "retrying": "Đang thử lại...",
+    "editConnection": "Sửa cấu hình",
+    "showDetails": "Chi tiết",
+    "hideDetails": "Ẩn chi tiết",
+    "copyTechnicalLog": "Sao chép toàn bộ lỗi",
+    "category": {
+      "connectionRefused": "Từ chối kết nối",
+      "authFailed": "Xác thực thất bại",
+      "dbNotFound": "Không tìm thấy CSDL",
+      "hostUnreachable": "Không thể tiếp cận máy chủ",
+      "timeout": "Hết thời gian chờ",
+      "permissionDenied": "Từ chối truy cập",
+      "generic": "Kết nối thất bại"
+    },
+    "summary": {
+      "connectionRefused": "Máy chủ cơ sở dữ liệu từ chối kết nối. Dịch vụ có thể chưa được khởi chạy.",
+      "authFailed": "Thông tin xác thực bị từ chối cho người dùng này.",
+      "dbNotFound": "Cơ sở dữ liệu được chỉ định không tồn tại trên máy chủ.",
+      "hostUnreachable": "Không thể phân giải hoặc tiếp cận địa chỉ máy chủ.",
+      "timeout": "Máy chủ cơ sở dữ liệu mất quá nhiều thời gian để phản hồi.",
+      "permissionDenied": "Lỗi quyền truy cập tệp hoặc tệp cơ sở dữ liệu đang bị khóa.",
+      "generic": "Không thể thiết lập kết nối tới cơ sở dữ liệu."
+    },
+    "suggestion": {
+      "connectionRefused": "Kiểm tra xem dịch vụ cơ sở dữ liệu đã chạy và đang lắng nghe trên cổng đã cấu hình chưa.",
+      "authFailed": "Kiểm tra lại tên người dùng và mật khẩu trong cài đặt kết nối.",
+      "dbNotFound": "Kiểm tra lại tên cơ sở dữ liệu hoặc tạo mới trước khi kết nối.",
+      "hostUnreachable": "Kiểm tra địa chỉ máy chủ, phân giải DNS và kết nối mạng hiện tại.",
+      "timeout": "Đảm bảo máy chủ phản hồi và tường lửa cho phép kết nối mạng.",
+      "permissionDenied": "Kiểm tra quyền truy cập tệp và đảm bảo không có tiến trình nào khác đang khóa tệp.",
+      "generic": "Xem lại chi tiết lỗi kỹ thuật bên dưới hoặc kiểm tra lại cài đặt kết nối."
+    }
   },
   "migration": {
     "title": "Trình chạy Migration",

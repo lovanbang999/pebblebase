@@ -314,6 +314,7 @@ export function usePebblebaseStudio(options: UsePebblebaseStudioOptions = {}) {
     handleSelectConnection,
     tables,
     isLoadingTables,
+    tablesError,
     activeTable,
     activeTableSchema,
     handleSelectTable,

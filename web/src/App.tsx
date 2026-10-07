@@ -17,7 +17,11 @@ import {
   CommandPalette,
   type CommandActionId,
 } from "@/components/layout";
-import { DataGrid, EmptyTableScreen } from "@/components/grid";
+import {
+  DataGrid,
+  EmptyTableScreen,
+  ConnectionErrorScreen,
+} from "@/components/grid";
 import {
   ErrorBanner,
   WelcomeScreen,
@@ -133,6 +137,7 @@ function PebblebaseStudio() {
     setUserSelectedTable,
     tables,
     isLoadingTables,
+    tablesError,
     activeTable,
     activeTableSchema,
     refetchTables,
@@ -640,6 +645,7 @@ function PebblebaseStudio() {
           selectedTable={selectedTable}
           onSelectTable={handleOpenTableWithRecent}
           isLoadingTables={isLoadingTables}
+          tablesError={tablesError}
           onRefreshTables={handleRefreshTables}
           activeView={activeView}
           onOpenQueryConsole={openQueryTab}
@@ -681,6 +687,12 @@ function PebblebaseStudio() {
             onDismiss={handleDismissBanner}
             onRetry={handleRetry}
             isRetrying={isRetrying}
+            activeConnectionName={activeConnection?.name}
+            onEditConnection={
+              activeConnection
+                ? () => handleCloneConnection(activeConnection)
+                : undefined
+            }
           />
 
           {/* Dynamic Main Views */}
@@ -763,6 +775,7 @@ function PebblebaseStudio() {
                       connections={connections}
                       activeConnectionId={activeConnection?.id}
                       onOpenQueryConsole={openQueryTab}
+                      onError={setBannerError}
                     />
                   </Suspense>
                 </div>
@@ -776,11 +789,29 @@ function PebblebaseStudio() {
                 )}
               >
                 {!activeTable || !activeTableSchema ? (
-                  <EmptyTableScreen
-                    connectionName={activeConnection?.name}
-                    hasTables={tables.length > 0}
-                    onReintrospect={refetchTables}
-                  />
+                  tablesError ? (
+                    <ConnectionErrorScreen
+                      connection={activeConnection}
+                      error={
+                        tablesError instanceof Error
+                          ? tablesError.message
+                          : String(tablesError)
+                      }
+                      onRetry={handleRefreshTables}
+                      isRetrying={isLoadingTables}
+                      onEditConnection={
+                        activeConnection
+                          ? () => handleCloneConnection(activeConnection)
+                          : undefined
+                      }
+                    />
+                  ) : (
+                    <EmptyTableScreen
+                      connectionName={activeConnection?.name}
+                      hasTables={tables.length > 0}
+                      onReintrospect={refetchTables}
+                    />
+                  )
                 ) : (
                   <DataGrid
                     key={`grid-${activeTab?.id || activeTable}`}

@@ -26,6 +26,7 @@ import {
   Pin,
   GitCompare,
   MoreHorizontal,
+  Unplug,
 } from "lucide-react";
 import type { Connection, TableSchema } from "@/lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "@/lib/platform";
@@ -96,6 +97,7 @@ interface SidebarProps {
   selectedTable: string | null;
   onSelectTable: (tableName: string, openInNewTab?: boolean) => void;
   isLoadingTables: boolean;
+  tablesError?: string | Error | null;
   onRefreshTables: () => void | Promise<void>;
   activeView?: "table" | "console" | "erd";
   onOpenQueryConsole?: (initialQuery?: string, title?: string) => void;
@@ -180,6 +182,7 @@ export default function Sidebar({
   selectedTable,
   onSelectTable,
   isLoadingTables,
+  tablesError,
   onRefreshTables,
   activeView = "table",
   onOpenQueryConsole,
@@ -956,6 +959,47 @@ export default function Sidebar({
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
+            ) : tablesError && tables.length === 0 ? (
+              <div className="mx-2 my-2 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3 text-center group-data-[collapsible=icon]:hidden dark:border-rose-500/25 dark:bg-rose-500/10">
+                <div className="mx-auto mb-1.5 flex size-8 items-center justify-center rounded-lg bg-rose-500/15 text-rose-500">
+                  <Unplug className="size-4" />
+                </div>
+                <p className="font-mono text-xs font-semibold text-rose-600 dark:text-rose-400">
+                  {t("sidebar.connectionFailed", "Connection Failed")}
+                </p>
+                <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {t("sidebar.couldNotLoadTables", "Could not load tables")}
+                </p>
+                <div className="mt-2.5 flex items-center justify-center gap-1.5">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="xs"
+                    onClick={onRefreshTables}
+                    disabled={isLoadingTables || isRefreshing}
+                    className="h-6 cursor-pointer gap-1 border-rose-300/60 px-2 font-mono text-[10px] text-rose-700 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950/60"
+                  >
+                    <RefreshCw
+                      className={cn(
+                        "size-2.5",
+                        (isLoadingTables || isRefreshing) && "animate-spin",
+                      )}
+                    />
+                    <span>{t("common.retry", "Retry")}</span>
+                  </Button>
+                  {onCloneConnection && selectedConnection && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => onCloneConnection(selectedConnection)}
+                      className="h-6 cursor-pointer px-2 font-mono text-[10px] text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                    >
+                      {t("sidebar.edit", "Edit")}
+                    </Button>
+                  )}
+                </div>
+              </div>
             ) : filteredTables.length === 0 ? (
               <div className="px-2 py-8 text-center font-mono text-xs text-zinc-500 group-data-[collapsible=icon]:hidden">
                 {tables.length === 0
