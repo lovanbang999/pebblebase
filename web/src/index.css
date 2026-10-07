@@ -87,37 +87,51 @@
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --background: #12141a;
+  --foreground: #f4f6f8;
+  --card: #181a22;
+  --card-foreground: #f4f6f8;
+  --popover: #181a22;
+  --popover-foreground: #f4f6f8;
+  --primary: #f4f6f8;
+  --primary-foreground: #12141a;
+  --secondary: #222530;
+  --secondary-foreground: #f4f6f8;
+  --muted: #222530;
+  --muted-foreground: #9da4b4;
+  --accent: #222530;
+  --accent-foreground: #f4f6f8;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --border: rgba(255, 255, 255, 0.14);
+  --input: rgba(255, 255, 255, 0.18);
+  --ring: #10b981;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar: #181a22;
+  --sidebar-foreground: #f4f6f8;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #222530;
+  --sidebar-accent-foreground: #f4f6f8;
+  --sidebar-border: rgba(255, 255, 255, 0.13);
+  --sidebar-ring: #10b981;
+
+  /* Modern Studio Slate scale: Replaces pitch-black #09090b with ergonomic, high-legibility dark slate/zinc */
+  --color-zinc-950: #12141a;
+  --color-zinc-900: #181a22;
+  --color-zinc-850: #1e202a;
+  --color-zinc-800: #262936;
+  --color-zinc-700: #383c4e;
+  --color-zinc-600: #585f74;
+  --color-zinc-500: #7b8398;
+  --color-zinc-400: #9da4b4;
+  --color-zinc-300: #cbd1de;
+  --color-zinc-200: #e2e6ed;
+  --color-zinc-100: #f1f3f7;
+  --color-zinc-50: #f8f9fa;
 }
 
 @layer base {
@@ -222,8 +236,8 @@
 }
 
 .dark .cm-tooltip.cm-tooltip-autocomplete {
-  background: #18181b !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: #181a22 !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
   box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.5),
     0 8px 10px -6px rgba(0, 0, 0, 0.4) !important;
@@ -323,9 +337,9 @@ input:-webkit-autofill:active {
 .dark input:-webkit-autofill:hover,
 .dark input:-webkit-autofill:focus,
 .dark input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px oklch(0.205 0 0) inset !important;
-  -webkit-text-fill-color: oklch(0.985 0 0) !important;
-  caret-color: oklch(0.985 0 0) !important;
+  -webkit-box-shadow: 0 0 0 1000px #181a22 inset !important;
+  -webkit-text-fill-color: #f4f6f8 !important;
+  caret-color: #f4f6f8 !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -335,6 +349,6 @@ input:autofill {
 }
 
 .dark input:autofill {
-  background-color: oklch(0.205 0 0) !important;
-  color: oklch(0.985 0 0) !important;
+  background-color: #181a22 !important;
+  color: #f4f6f8 !important;
 }

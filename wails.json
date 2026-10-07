@@ -10,8 +10,8 @@
   "frontend:dev:serverUrl": "auto",
   "build:tags": "webkit2_41",
   "postBuildHooks": {
-    "linux/*": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd) && mkdir -p \"$ROOT/build/bin\" && find \"$ROOT/cmd/desktop\" -name pebblebase -type f -exec cp -f {} \"$ROOT/build/bin/pebblebase\" \\; && rm -rf \"$ROOT/cmd/desktop/cmd\" \"$ROOT/cmd/desktop/web\"'",
-    "windows/*": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd) && mkdir -p \"$ROOT/build/bin\" && find \"$ROOT/cmd/desktop\" -name \"pebblebase*.exe\" -type f -exec cp -f {} \"$ROOT/build/bin/\" \\;'"
+    "linux/*": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd) && mkdir -p \"$ROOT/build/bin\" \"$ROOT/cmd/desktop/build/bin\" && find \"$ROOT/cmd/desktop/cmd\" -type f -exec cp -f {} \"$ROOT/cmd/desktop/build/bin/\" \\; 2>/dev/null || true && find \"$ROOT/cmd/desktop/build/bin\" -type f -exec cp -f {} \"$ROOT/build/bin/\" \\; 2>/dev/null || true && find \"$ROOT/cmd/desktop\" -maxdepth 4 -name pebblebase -type f -exec cp -f {} \"$ROOT/build/bin/pebblebase\" \\; 2>/dev/null || true && rm -rf \"$ROOT/cmd/desktop/cmd\" \"$ROOT/cmd/desktop/web\"'",
+    "windows/*": "sh -c 'ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd) && mkdir -p \"$ROOT/build/bin\" \"$ROOT/cmd/desktop/build/bin\" && find \"$ROOT/cmd/desktop/cmd\" -type f -exec cp -f {} \"$ROOT/cmd/desktop/build/bin/\" \\; 2>/dev/null || true && find \"$ROOT/cmd/desktop/build/bin\" -type f -exec cp -f {} \"$ROOT/build/bin/\" \\; 2>/dev/null || true && find \"$ROOT/cmd/desktop\" -name \"pebblebase*.exe\" -type f -exec cp -f {} \"$ROOT/build/bin/\" \\; 2>/dev/null || true && rm -rf \"$ROOT/cmd/desktop/cmd\" \"$ROOT/cmd/desktop/web\"'"
   },
   "author": {
     "name": "Pebblebase Team",

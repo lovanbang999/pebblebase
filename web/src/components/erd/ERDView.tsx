@@ -18,7 +18,9 @@ import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { toPng } from "html-to-image";
 import { useTranslation } from "react-i18next";
-import { Loader2, Info } from "lucide-react";
+import { Loader2, Info, RefreshCw, Copy, Check, Unplug } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "cn";
 import { fetchERD } from "@/lib/api";
 import type { ERDResponse, TableSchema } from "@/lib/types";
 import { generateJoinQuery, generateMermaidERD } from "@/lib/erdUtils";
@@ -207,6 +209,15 @@ function ERDCanvas({
       setLoading(false);
     }
   }, [connectionId]);
+
+  const [isCopiedError, setIsCopiedError] = useState(false);
+
+  const handleCopyError = useCallback(() => {
+    if (!error) return;
+    navigator.clipboard.writeText(error);
+    setIsCopiedError(true);
+    setTimeout(() => setIsCopiedError(false), COPY_FEEDBACK_MS);
+  }, [error]);
 
   useEffect(() => {
     loadData();
@@ -653,25 +664,98 @@ function ERDCanvas({
 
   if (loading) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-zinc-50 text-zinc-500 dark:bg-[#0d0e17]">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-        <span className="font-mono text-sm">{t("erd.loading")}</span>
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-zinc-50/50 text-zinc-500 dark:bg-zinc-950">
+        <div className="flex size-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 shadow-2xs dark:border-emerald-500/25 dark:bg-emerald-500/15">
+          <Loader2 className="size-6 animate-spin text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
+          {t("erd.loading", "Loading ERD diagram...")}
+        </span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-zinc-50 text-rose-500 dark:bg-[#0d0e17]">
-        <span className="text-sm font-semibold">
-          {t("common.error")}: {error}
-        </span>
-        <button
-          onClick={loadData}
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs text-white transition-colors hover:bg-indigo-500"
-        >
-          {t("common.retry")}
-        </button>
+      <div className="flex h-full flex-1 flex-col items-center justify-center bg-zinc-50/50 p-6 text-center select-none dark:bg-zinc-950">
+        <div className="w-full max-w-xl rounded-2xl border border-zinc-200/90 bg-white/95 p-6 shadow-xl backdrop-blur-md sm:p-8 dark:border-zinc-800/90 dark:bg-zinc-900/95">
+          {/* Unplug / Disconnected Icon Badge */}
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-600 shadow-sm dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-400">
+            <Unplug className="size-7" />
+          </div>
+
+          <h2 className="text-base font-bold tracking-tight text-zinc-900 sm:text-lg dark:text-zinc-100">
+            {t("erd.loadError", "Failed to Load ERD Diagram")}
+          </h2>
+
+          <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+            {connectionName ? (
+              <span>
+                {t(
+                  "erd.loadErrorDesc",
+                  "Unable to introspect database schema and relationships on",
+                )}{" "}
+                <strong className="font-mono font-semibold text-zinc-800 dark:text-zinc-200">
+                  {connectionName}
+                </strong>
+                .
+              </span>
+            ) : (
+              t(
+                "erd.loadErrorDesc",
+                "Unable to connect or introspect database schema and relationships.",
+              )
+            )}
+          </p>
+
+          {/* Formatted Error Details Box with Copy Action */}
+          <div className="mt-5 text-left">
+            <div className="mb-1.5 flex items-center justify-between px-0.5">
+              <span className="font-mono text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                {t("erd.errorDetails", "Error Details")}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={handleCopyError}
+                className="h-6 gap-1 px-2 font-mono text-[10px] text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                {isCopiedError ? (
+                  <>
+                    <Check className="size-3 text-emerald-500" />
+                    <span className="text-emerald-600 dark:text-emerald-400">
+                      {t("common.copied", "Copied!")}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3" />
+                    <span>{t("common.copy", "Copy")}</span>
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="max-h-32 overflow-y-auto rounded-lg border border-rose-200/80 bg-rose-50/60 p-3 font-mono text-[11px] leading-relaxed text-rose-700 select-text dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
+              {error}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Button
+              type="button"
+              onClick={loadData}
+              disabled={loading}
+              className="cursor-pointer gap-2 bg-emerald-600 px-4 py-2 font-mono text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-500 active:scale-95 disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+            >
+              <RefreshCw
+                className={cn("size-3.5", loading && "animate-spin")}
+              />
+              <span>{t("erd.retryConnection", "Retry Connection")}</span>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -681,7 +765,7 @@ function ERDCanvas({
   return (
     <div
       ref={reactFlowWrapper}
-      className={`relative h-full w-full flex-1 overflow-hidden bg-[#fafafa] select-none dark:bg-[#09090b] ${isDraggingNode ? "is-dragging-node" : ""}`}
+      className={`relative h-full w-full flex-1 overflow-hidden bg-[#fafafa] select-none dark:bg-zinc-950 ${isDraggingNode ? "is-dragging-node" : ""}`}
     >
       {/* Floating Toolbar */}
       <ERDToolbar

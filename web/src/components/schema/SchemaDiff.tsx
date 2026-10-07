@@ -365,7 +365,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
               {t("diff.removed").toLowerCase()}
             </Badge>
 
-            <span className="ml-auto font-mono text-[10px] text-zinc-400 dark:text-zinc-600">
+            <span className="ml-auto font-mono text-[10px] text-zinc-400 dark:text-zinc-400">
               {t("diff.column_changes", {
                 count:
                   diffResult.summary.columns_added +
@@ -548,9 +548,9 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
               </div>
             </div>
           ) : !diffResult ? (
-            <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-zinc-400 select-none dark:text-zinc-600">
-              <GitCompare className="mb-3 size-12 stroke-1 text-zinc-300 dark:text-zinc-700" />
-              <h3 className="mb-1 font-mono text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+            <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-zinc-500 select-none dark:text-zinc-400">
+              <GitCompare className="mb-3 size-12 stroke-1 text-zinc-400 dark:text-zinc-500" />
+              <h3 className="mb-1 font-mono text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 {t("diff.title")}
               </h3>
               <p className="max-w-sm font-mono text-xs">{t("diff.subtitle")}</p>
