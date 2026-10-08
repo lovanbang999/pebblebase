@@ -80,6 +80,7 @@ func fetchColumns(ctx context.Context, db *sql.DB, table string, fkCols map[stri
 		SELECT
 			column_name,
 			data_type,
+			column_type,
 			is_nullable,
 			column_default,
 			column_key
@@ -99,18 +100,19 @@ func fetchColumns(ctx context.Context, db *sql.DB, table string, fkCols map[stri
 		var (
 			name       string
 			rawType    string
+			colType    string
 			isNullable string
 			defaultVal *string
 			columnKey  string
 		)
-		if err := rows.Scan(&name, &rawType, &isNullable, &defaultVal, &columnKey); err != nil {
+		if err := rows.Scan(&name, &rawType, &colType, &isNullable, &defaultVal, &columnKey); err != nil {
 			return nil, fmt.Errorf("mysql: scan column for %q: %w", table, err)
 		}
 
 		_, isFk := fkCols[table+"."+name]
 		cols = append(cols, schema.Column{
 			Name:         name,
-			Type:         normalizeType(rawType),
+			Type:         normalizeType(rawType, colType, name),
 			Nullable:     strings.EqualFold(isNullable, "YES"),
 			IsPrimaryKey: columnKey == "PRI",
 			IsForeignKey: isFk,
@@ -165,11 +167,25 @@ func fetchRelations(ctx context.Context, db *sql.DB) ([]schema.Relation, error) 
 }
 
 // normalizeType maps MySQL data types to schema.Column types.
-func normalizeType(dataType string) string {
-	switch strings.ToLower(dataType) {
+func normalizeType(dataType, columnType, colName string) string {
+	dt := strings.ToLower(dataType)
+	ct := strings.ToLower(columnType)
+	name := strings.ToLower(colName)
+
+	switch dt {
 	case "varchar", "char", "text", "tinytext", "mediumtext", "longtext", "enum", "set":
 		return "string"
-	case "int", "tinyint", "smallint", "mediumint", "bigint", "integer":
+	case "int", "smallint", "mediumint", "bigint", "integer":
+		return "int"
+	case "tinyint":
+		if strings.HasPrefix(ct, "tinyint(1)") {
+			return "bool"
+		}
+		return "int"
+	case "bit":
+		if ct == "bit(1)" || ct == "bit" || ct == "" {
+			return "bool"
+		}
 		return "int"
 	case "float", "double", "decimal", "numeric":
 		return "float"
@@ -179,9 +195,21 @@ func normalizeType(dataType string) string {
 		return "datetime"
 	case "json":
 		return "json"
-	case "blob", "tinyblob", "mediumblob", "longblob", "binary", "varbinary":
+	case "binary", "varbinary":
+		if (ct == "binary(16)" || ct == "varbinary(16)") && isUUIDColumnName(name) {
+			return "uuid"
+		}
+		return "binary"
+	case "blob", "tinyblob", "mediumblob", "longblob":
 		return "binary"
 	default:
 		return "unknown"
 	}
+}
+
+func isUUIDColumnName(name string) bool {
+	return strings.HasSuffix(name, "id") ||
+		strings.HasSuffix(name, "_by") ||
+		strings.Contains(name, "uuid") ||
+		strings.Contains(name, "guid")
 }

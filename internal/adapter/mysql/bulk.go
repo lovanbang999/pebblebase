@@ -33,6 +33,8 @@ func streamTableRows(
 		return fmt.Errorf("mysql: get stream columns: %w", err)
 	}
 
+	colTypes, _ := rows.ColumnTypes()
+
 	chunk := make([]map[string]any, 0, defaultChunkSize)
 
 	hasStreamed := false
@@ -54,12 +56,11 @@ func streamTableRows(
 
 		row := make(map[string]any, len(colNames))
 		for i, col := range colNames {
-			val := values[i]
-			if b, ok := val.([]byte); ok {
-				row[col] = string(b)
-			} else {
-				row[col] = val
+			var ct *sql.ColumnType
+			if i < len(colTypes) {
+				ct = colTypes[i]
 			}
+			row[col] = formatMySQLValue(values[i], ct)
 		}
 		chunk = append(chunk, row)
 

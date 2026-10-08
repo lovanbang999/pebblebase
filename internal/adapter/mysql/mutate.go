@@ -35,7 +35,7 @@ func execInsert(ctx context.Context, db *sql.DB, table string, values map[string
 	for col, val := range values {
 		cols = append(cols, fmt.Sprintf("`%s`", escapeIdentifier(col)))
 		placeholders = append(placeholders, "?")
-		args = append(args, val)
+		args = append(args, normalizeMutationValue(val))
 	}
 
 	sql := fmt.Sprintf(
@@ -64,13 +64,13 @@ func execUpdate(ctx context.Context, db *sql.DB, table string, where, values map
 
 	for col, val := range values {
 		setClauses = append(setClauses, fmt.Sprintf("`%s` = ?", escapeIdentifier(col)))
-		args = append(args, val)
+		args = append(args, normalizeMutationValue(val))
 	}
 
 	whereClauses := make([]string, 0, len(where))
 	for col, val := range where {
 		whereClauses = append(whereClauses, fmt.Sprintf("`%s` = ?", escapeIdentifier(col)))
-		args = append(args, val)
+		args = append(args, normalizeMutationValue(val))
 	}
 
 	sql := fmt.Sprintf(

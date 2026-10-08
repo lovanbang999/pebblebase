@@ -33,6 +33,7 @@ func executeRaw(ctx context.Context, db *sql.DB, query string) (adapter.RawQuery
 			defer rows.Close()
 			colNames, err := rows.Columns()
 			if err == nil && len(colNames) > 0 {
+				colTypes, _ := rows.ColumnTypes()
 				var result []map[string]any
 				for rows.Next() {
 					values := make([]any, len(colNames))
@@ -47,12 +48,11 @@ func executeRaw(ctx context.Context, db *sql.DB, query string) (adapter.RawQuery
 
 					row := make(map[string]any, len(colNames))
 					for i, col := range colNames {
-						val := values[i]
-						if b, ok := val.([]byte); ok {
-							row[col] = string(b)
-						} else {
-							row[col] = val
+						var ct *sql.ColumnType
+						if i < len(colTypes) {
+							ct = colTypes[i]
 						}
+						row[col] = formatMySQLValue(values[i], ct)
 					}
 					result = append(result, row)
 				}
