@@ -1333,37 +1333,39 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-white select-text dark:bg-zinc-950">
       {/* Top Header */}
-      <div className="flex h-11 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/40">
-        <div className="flex items-center gap-2">
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2 overflow-x-auto border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+        <div className="flex shrink-0 items-center gap-2">
           {onNavigateToTable && tables.length > 0 && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => onNavigateToTable(tables[0].name)}
-              className="-ml-1 h-7 gap-1 font-mono text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              className="-ml-1 h-7 shrink-0 gap-1 font-mono text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>{t("console.backToTable")}</span>
+              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
+              <span className="whitespace-nowrap">
+                {t("console.backToTable")}
+              </span>
             </Button>
           )}
 
-          <div className="ml-1 flex items-center gap-1.5">
+          <div className="ml-1 flex shrink-0 items-center gap-1.5">
             <Terminal className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+            <span className="font-mono text-xs font-semibold whitespace-nowrap text-zinc-900 dark:text-zinc-100">
               {t("console.title")}
             </span>
           </div>
 
           <Badge
             variant="outline"
-            className="h-4 border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] text-emerald-700 uppercase dark:text-emerald-400"
+            className="h-4 shrink-0 border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] text-emerald-700 uppercase dark:text-emerald-400"
           >
             {connection.type}
           </Badge>
 
           {isMongo && (
-            <div className="ml-2 flex items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80">
+            <div className="ml-2 flex shrink-0 items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80">
               <button
                 type="button"
                 onClick={() => setActiveMode("console")}
@@ -1396,7 +1398,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           {connection.read_only && (
             <Badge
               variant="outline"
-              className="h-4 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 font-mono text-[10px] text-amber-700 uppercase dark:text-amber-400"
+              className="h-4 shrink-0 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 font-mono text-[10px] text-amber-700 uppercase dark:text-amber-400"
             >
               <ShieldAlert className="h-2.5 w-2.5 shrink-0 text-amber-600 dark:text-amber-400" />
               <span>{t("connection.readOnlyBadge")}</span>
@@ -1404,7 +1406,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {/* Sample Templates */}
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -1413,11 +1415,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-7 gap-1 border-zinc-200 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
+                  title={t("console.sampleTemplates")}
+                  className="h-7 shrink-0 gap-1 border-zinc-200 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
                 >
-                  <Sparkles className="h-3 w-3 text-amber-500" />
-                  <span>{t("console.sampleTemplates")}</span>
-                  <ChevronDown className="h-3 w-3 opacity-60" />
+                  <Sparkles className="h-3 w-3 shrink-0 text-amber-500" />
+                  <span className="hidden whitespace-nowrap xl:inline">
+                    {t("console.sampleTemplates")}
+                  </span>
+                  <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
                 </Button>
               }
             />
@@ -1440,10 +1445,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setIsHistoryOpen(true)}
-            className="h-7 gap-1 border-zinc-200 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
+            title={t("console.history")}
+            className="h-7 shrink-0 gap-1 border-zinc-200 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
           >
-            <History className="h-3 w-3" />
-            <span>{t("console.history")}</span>
+            <History className="h-3 w-3 shrink-0" />
+            <span className="hidden whitespace-nowrap sm:inline">
+              {t("console.history")}
+            </span>
             {history.length > 0 && (
               <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-200 px-1 text-center font-sans text-[10px] leading-none font-semibold text-zinc-700 tabular-nums select-none dark:bg-zinc-800 dark:text-zinc-300">
                 {history.length}
@@ -1460,10 +1468,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               handleQueryChange("");
               setShowLimitWarning(false);
             }}
-            className="inline-flex h-7 items-center justify-center gap-1.5 font-mono text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            title={t("console.clear")}
+            className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 font-mono text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
           >
             <Trash2 className="size-3.5 shrink-0" />
-            <span className="translate-y-px leading-none">
+            <span className="hidden translate-y-px leading-none whitespace-nowrap md:inline">
               {t("console.clear")}
             </span>
           </Button>
@@ -1476,17 +1485,21 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             disabled={isRunning || !query.trim()}
             title={getShortcutTooltip("runQuery")}
             aria-keyshortcuts={SHORTCUTS.runQueryFull}
-            className="h-7 cursor-pointer gap-1.5 bg-emerald-600 text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-500"
+            className="h-7 shrink-0 cursor-pointer gap-1.5 bg-emerald-600 text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-500"
           >
             {isRunning ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>{t("console.running")}</span>
+                <span className="whitespace-nowrap">
+                  {t("console.running")}
+                </span>
               </>
             ) : (
               <>
-                <Play className="h-3 w-3 fill-current" />
-                <span>{t("console.runQuery")}</span>
+                <Play className="h-3 w-3 shrink-0 fill-current" />
+                <span className="whitespace-nowrap">
+                  {t("console.runQuery")}
+                </span>
                 <kbd className="hidden items-center rounded bg-emerald-700/80 px-1.5 py-0.5 font-mono text-[9px] leading-none font-medium tracking-tight text-emerald-100 sm:inline-flex">
                   {SHORTCUTS.runQuery}
                 </kbd>
@@ -1501,22 +1514,26 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             onClick={handleExplain}
             disabled={isExplaining || isRunning || !query.trim()}
             title={t("console.explain.tooltip")}
-            className="h-7 cursor-pointer gap-1.5 bg-amber-600 text-xs font-semibold text-white shadow-xs transition-all hover:bg-amber-500"
+            className="h-7 shrink-0 cursor-pointer gap-1.5 bg-amber-600 text-xs font-semibold text-white shadow-xs transition-all hover:bg-amber-500"
           >
             {isExplaining ? (
               <>
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span>{t("console.explain.explaining")}</span>
+                <span className="hidden whitespace-nowrap md:inline">
+                  {t("console.explain.explaining")}
+                </span>
               </>
             ) : (
               <>
-                <FileSearch className="h-3.5 w-3.5" />
-                <span>{t("console.explain.button")}</span>
+                <FileSearch className="h-3.5 w-3.5 shrink-0" />
+                <span className="hidden whitespace-nowrap md:inline">
+                  {t("console.explain.button")}
+                </span>
               </>
             )}
           </Button>
 
-          {/* Save Query — indigo gradient CTA */}
+          {/* Save Query */}
           <Button
             type="button"
             size="sm"
@@ -1527,10 +1544,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               setIsSaveDialogOpen(true);
             }}
             disabled={!query.trim()}
-            className="h-7 gap-1.5 border-0 bg-emerald-600 text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-500 disabled:opacity-40"
+            title={t("savedQuery.save")}
+            className="h-7 shrink-0 gap-1.5 border-0 bg-emerald-600 text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-500 disabled:opacity-40"
           >
-            <Save className="h-3 w-3" />
-            <span>{t("savedQuery.save")}</span>
+            <Save className="h-3 w-3 shrink-0" />
+            <span className="hidden whitespace-nowrap lg:inline">
+              {t("savedQuery.save")}
+            </span>
           </Button>
 
           {/* Library Toggle */}
@@ -1538,8 +1558,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             type="button"
             size="sm"
             onClick={() => setIsLibraryOpen((v) => !v)}
+            title={t("savedQuery.library")}
             className={cn(
-              "h-7 gap-1.5 border text-xs font-semibold transition-all",
+              "h-7 shrink-0 gap-1.5 border text-xs font-semibold transition-all",
               isLibraryOpen
                 ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25 dark:text-emerald-400"
                 : "border-zinc-200 bg-transparent text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800",
@@ -1547,11 +1568,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           >
             <BookOpen
               className={cn(
-                "h-3 w-3",
+                "h-3 w-3 shrink-0",
                 isLibraryOpen ? "text-emerald-600 dark:text-emerald-400" : "",
               )}
             />
-            <span>{t("savedQuery.library")}</span>
+            <span className="hidden whitespace-nowrap lg:inline">
+              {t("savedQuery.library")}
+            </span>
           </Button>
         </div>
       </div>

@@ -212,6 +212,7 @@ const DocumentView: FC<DocumentViewProps> = ({
       if (col.type === "datetime") return "Date";
       if (col.type === "json") return "Object";
       if (col.type === "uuid") return "UUID";
+      if (col.type === "binary") return "Binary";
       return "String";
     }
     if (val === null || val === undefined) return "Null";
@@ -1489,18 +1490,55 @@ export const DataGrid: FC<DataGridProps> = ({
               }
             }
 
-            if (typeof val === "boolean") {
+            if (
+              typeof val === "boolean" ||
+              (col.type === "bool" &&
+                (val === 1 ||
+                  val === 0 ||
+                  val === "1" ||
+                  val === "0" ||
+                  val === "true" ||
+                  val === "false" ||
+                  val === "\x01" ||
+                  val === "\x00"))
+            ) {
+              const boolVal =
+                typeof val === "boolean"
+                  ? val
+                  : val === 1 ||
+                    val === "1" ||
+                    val === "true" ||
+                    val === "\x01";
               return (
                 <Badge
-                  variant={val ? "default" : "secondary"}
+                  variant={boolVal ? "default" : "secondary"}
                   className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
-                    val
+                    boolVal
                       ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-400"
                       : "border border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-transparent dark:bg-zinc-800 dark:text-zinc-400"
                   }`}
                 >
-                  {String(val)}
+                  {String(boolVal)}
                 </Badge>
+              );
+            }
+
+            if (col.type === "binary") {
+              return (
+                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-700 dark:text-zinc-300">
+                  <span className="inline-flex shrink-0 items-center rounded border border-zinc-200 bg-zinc-100 px-1 py-0 font-mono text-[9px] font-semibold text-zinc-500 uppercase select-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-400">
+                    BIN
+                  </span>
+                  <span className="max-w-xs truncate">{String(val)}</span>
+                </div>
+              );
+            }
+
+            if (col.type === "uuid") {
+              return (
+                <span className="block truncate font-mono text-xs text-zinc-800 select-all dark:text-zinc-200">
+                  {String(val)}
+                </span>
               );
             }
 
@@ -1526,9 +1564,16 @@ export const DataGrid: FC<DataGridProps> = ({
               );
             }
 
+            const strVal = String(val);
+            const cleanStr = /[\x00-\x08\x0B-\x0C\x0E-\x1F]/.test(strVal)
+              ? `0x${Array.from(strVal)
+                  .map((c) => c.charCodeAt(0).toString(16).padStart(2, "0"))
+                  .join("")}`
+              : strVal;
+
             return (
               <span className="block truncate font-mono text-xs text-zinc-800 dark:text-zinc-300">
-                {String(val)}
+                {cleanStr}
               </span>
             );
           };

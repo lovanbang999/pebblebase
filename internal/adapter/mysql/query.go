@@ -36,6 +36,8 @@ func queryTable(ctx context.Context, db *sql.DB, table string, opts adapter.Quer
 		return adapter.QueryResult{}, fmt.Errorf("mysql: get columns: %w", err)
 	}
 
+	colTypes, _ := rows.ColumnTypes()
+
 	var result []map[string]any
 	for rows.Next() {
 		values := make([]any, len(colNames))
@@ -50,13 +52,11 @@ func queryTable(ctx context.Context, db *sql.DB, table string, opts adapter.Quer
 
 		row := make(map[string]any, len(colNames))
 		for i, col := range colNames {
-			val := values[i]
-			// MySQL driver often returns VARCHAR/TEXT as []byte
-			if b, ok := val.([]byte); ok {
-				row[col] = string(b)
-			} else {
-				row[col] = val
+			var ct *sql.ColumnType
+			if i < len(colTypes) {
+				ct = colTypes[i]
 			}
+			row[col] = formatMySQLValue(values[i], ct)
 		}
 		result = append(result, row)
 	}
