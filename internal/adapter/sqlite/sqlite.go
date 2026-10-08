@@ -65,11 +65,8 @@ func New(ctx context.Context, dsn string) (*SQLiteAdapter, error) {
 		return nil, fmt.Errorf("sqlite: set busy_timeout: %w", err)
 	}
 	if cleanPath != ":memory:" {
-		// WAL mode enables concurrent readers alongside writers
-		if _, err := db.ExecContext(ctx, "PRAGMA journal_mode = WAL;"); err != nil {
-			// Non-fatal if filesystem doesn't support WAL (e.g. read-only mounts)
-			_ = err
-		}
+		// WAL mode enables concurrent readers alongside writers (non-fatal on read-only mounts)
+		_, _ = db.ExecContext(ctx, "PRAGMA journal_mode = WAL;")
 	}
 
 	a := &SQLiteAdapter{

@@ -168,9 +168,13 @@ export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
           setStatsData(statsRes);
           setTimeSeriesData(timeRes);
         }
-      } catch (err: any) {
+      } catch (err) {
         if (mounted) {
-          setError(err.message || "Failed to load column analytics");
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load column analytics",
+          );
         }
       } finally {
         if (mounted) {

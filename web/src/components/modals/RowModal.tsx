@@ -36,11 +36,11 @@ import {
 
 interface FieldDiff {
   column: string;
-  before: any;
-  after: any;
+  before: unknown;
+  after: unknown;
 }
 
-function areValuesEqual(a: any, b: any): boolean {
+function areValuesEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (
     (a === null || a === undefined || a === "") &&
@@ -57,7 +57,7 @@ function areValuesEqual(a: any, b: any): boolean {
   return String(a) === String(b);
 }
 
-function formatDiffValue(val: any): React.ReactNode {
+function formatDiffValue(val: unknown): React.ReactNode {
   if (val === null || val === undefined) {
     return (
       <span className="text-zinc-400 italic dark:text-zinc-500">NULL</span>
@@ -111,7 +111,9 @@ export const RowModal: FC<RowModalProps> = ({
   onDelete,
 }) => {
   const { t } = useTranslation();
-  const isDuplicate = Boolean((initialRow as any)?._isDuplicate);
+  const isDuplicate = Boolean(
+    initialRow && "_isDuplicate" in initialRow && initialRow._isDuplicate,
+  );
   const isEditing = Boolean(initialRow) && !isDuplicate;
   const [formData, setFormData] = useState<Record<string, any>>(() => {
     if (initialRow) {
