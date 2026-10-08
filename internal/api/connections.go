@@ -1,7 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"pebblebase/internal/audit"
@@ -78,6 +81,21 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Type == "sqlite" {
+		fp := req.Filepath
+		if fp == "" {
+			fp = req.DBName
+		}
+		if req.Mode == "url" && req.RawURL != "" {
+			fp = req.RawURL
+		}
+		var dataDir string
+		if s.store != nil {
+			dataDir = s.store.DataDir()
+		}
+		if err := validateSQLitePath(fp, dataDir); err != nil {
+			writeError(w, http.StatusForbidden, err.Error())
+			return
+		}
 		req.SavePassword = true
 	}
 
@@ -189,6 +207,24 @@ func (s *Server) testConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Type == "sqlite" {
+		fp := req.Filepath
+		if fp == "" {
+			fp = req.DBName
+		}
+		if req.Mode == "url" && req.RawURL != "" {
+			fp = req.RawURL
+		}
+		var dataDir string
+		if s.store != nil {
+			dataDir = s.store.DataDir()
+		}
+		if err := validateSQLitePath(fp, dataDir); err != nil {
+			writeError(w, http.StatusForbidden, err.Error())
+			return
+		}
+	}
+
 	input := connection.ConnectionInput{
 		Type:         req.Type,
 		Mode:         req.Mode,
@@ -222,4 +258,52 @@ func (s *Server) testConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// validateSQLitePath ensures a SQLite file path does not point to internal
+// Pebblebase system databases (meta.db, .master.key, etc.) or sensitive system files.
+func validateSQLitePath(rawPath, dataDir string) error {
+	trimmed := strings.TrimSpace(rawPath)
+	if trimmed == "" {
+		return fmt.Errorf("file path is required for sqlite connections")
+	}
+
+	cleanPath := strings.TrimPrefix(trimmed, "file:")
+	if idx := strings.Index(cleanPath, "?"); idx != -1 {
+		cleanPath = cleanPath[:idx]
+	}
+	cleanPath = strings.TrimSpace(cleanPath)
+
+	// In-memory sqlite is safe
+	if cleanPath == ":memory:" || strings.HasPrefix(cleanPath, ":memory:") {
+		return nil
+	}
+
+	baseName := strings.ToLower(filepath.Base(cleanPath))
+	blockedFiles := map[string]bool{
+		"meta.db":          true,
+		".master.key":      true,
+		".jwt.secret":      true,
+		"connections.json": true,
+		"shadow":           true,
+		"passwd":           true,
+		"sudoers":          true,
+	}
+	if blockedFiles[baseName] {
+		return fmt.Errorf("access to internal or sensitive file %q is forbidden", baseName)
+	}
+
+	// Resolve absolute path and ensure it's not inside dataDir
+	absTarget, err := filepath.Abs(cleanPath)
+	if err == nil && dataDir != "" {
+		absDataDir, errDir := filepath.Abs(dataDir)
+		if errDir == nil {
+			rel, errRel := filepath.Rel(absDataDir, absTarget)
+			if errRel == nil && !strings.HasPrefix(rel, "..") && rel != "." {
+				return fmt.Errorf("access to internal Pebblebase data directory is forbidden")
+			}
+		}
+	}
+
+	return nil
 }

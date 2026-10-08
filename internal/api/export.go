@@ -374,16 +374,17 @@ func (s *Server) streamParquetExport(
 	}
 }
 
-// formatCSVValue formats an arbitrary database value for CSV serialization.
+// formatCSVValue formats an arbitrary database value for CSV serialization,
+// neutralizing spreadsheet formula injection.
 func formatCSVValue(val any) string {
 	if val == nil {
 		return ""
 	}
 	switch v := val.(type) {
 	case string:
-		return v
+		return sanitizeCSVValue(v)
 	case []byte:
-		return string(v)
+		return sanitizeCSVValue(string(v))
 	case bool:
 		return strconv.FormatBool(v)
 	case int:
@@ -415,10 +416,37 @@ func formatCSVValue(val any) string {
 	case map[string]any, []any:
 		b, err := json.Marshal(v)
 		if err != nil {
-			return fmt.Sprintf("%v", v)
+			return sanitizeCSVValue(fmt.Sprintf("%v", v))
 		}
 		return string(b)
 	default:
-		return fmt.Sprintf("%v", v)
+		return sanitizeCSVValue(fmt.Sprintf("%v", v))
 	}
+}
+
+// sanitizeCSVValue neutralizes CSV / formula injection (OWASP A08).
+// Spreadsheet applications (Excel, Calc) execute formulas if a cell begins with '=', '+', '-', '@', '\t', or '\r'.
+// If the string starts with any of these formula characters, it is prefixed with a single quote (')
+// unless it represents a purely numeric float or integer (e.g. "-42.5" or "+10").
+func sanitizeCSVValue(s string) string {
+	trimmed := strings.TrimLeft(s, " \t\r\n")
+	if len(trimmed) == 0 {
+		return s
+	}
+
+	firstChar := trimmed[0]
+	if firstChar == '=' || firstChar == '@' || firstChar == '\t' || firstChar == '\r' {
+		return "'" + s
+	}
+
+	if firstChar == '+' || firstChar == '-' {
+		// If it's a valid numeric value like "-123.45" or "+5", it's safe to keep as number
+		if _, err := strconv.ParseFloat(trimmed, 64); err == nil {
+			return s
+		}
+		// Otherwise, contains non-numeric formula characters e.g. "-cmd|..." or "+SUM(...)"
+		return "'" + s
+	}
+
+	return s
 }

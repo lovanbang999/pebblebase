@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -26,6 +27,12 @@ func New(ctx context.Context, dsn string) (*SQLiteAdapter, error) {
 	cleanPath := strings.TrimPrefix(dsn, "file:")
 	if idx := strings.Index(cleanPath, "?"); idx != -1 {
 		cleanPath = cleanPath[:idx]
+	}
+
+	// Guard against opening internal metadata and secret files
+	baseName := strings.ToLower(filepath.Base(cleanPath))
+	if baseName == "meta.db" || baseName == ".master.key" || baseName == ".jwt.secret" || baseName == "connections.json" {
+		return nil, fmt.Errorf("sqlite: opening internal application database file %q is forbidden", baseName)
 	}
 
 	// Validate file existence unless in-memory

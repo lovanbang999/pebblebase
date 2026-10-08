@@ -59,6 +59,14 @@ func NewStore(dataDir string, enc *Encryptor) (*Store, error) {
 	}, nil
 }
 
+// DataDir returns the base directory where storage files reside.
+func (s *Store) DataDir() string {
+	if s == nil {
+		return ""
+	}
+	return filepath.Dir(s.path)
+}
+
 // Save encrypts the DSN (when savePassword is true) and persists the record.
 // Returns the new record with its generated ID.
 func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePassword bool, extra ...any) (Record, error) {
