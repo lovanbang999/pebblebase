@@ -66,31 +66,3 @@ func (s *Server) executeRawQuery(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, result)
 }
-
-// isMutatingQuery inspects SQL or Mongo commands to identify mutating statements.
-func isMutatingQuery(dbType, query string) bool {
-	upper := strings.ToUpper(strings.TrimSpace(query))
-
-	if dbType == "mongodb" {
-		for _, kw := range []string{
-			"INSERTONE", "INSERTMANY", "UPDATEONE", "UPDATEMANY", "DELETEONE", "DELETEMANY",
-			"DROP", "CREATECOLLECTION", "\"INSERT\"", "\"UPDATE\"", "\"DELETE\"", "\"DROP\"",
-		} {
-			if strings.Contains(upper, kw) {
-				return true
-			}
-		}
-		return false
-	}
-
-	// SQL mutations (Postgres, MySQL, SQLite)
-	for _, kw := range []string{
-		"INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "TRUNCATE",
-		"REPLACE", "RENAME", "GRANT", "REVOKE", "ATTACH", "DETACH",
-	} {
-		if strings.HasPrefix(upper, kw) {
-			return true
-		}
-	}
-	return false
-}
