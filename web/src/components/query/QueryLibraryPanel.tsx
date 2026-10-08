@@ -21,6 +21,7 @@ import {
   Terminal,
   Folder,
   FolderOpen,
+  type LucideIcon,
 } from "lucide-react";
 import type {
   SavedQuery,
@@ -605,7 +606,7 @@ export default function QueryLibraryPanel({
     label: string;
     count: number;
     accent?: "yellow" | "emerald" | "default";
-    icon?: any;
+    icon?: LucideIcon;
   }) => (
     <button
       type="button"

@@ -186,8 +186,13 @@ func (a *Adapter) executeJSONCommand(ctx context.Context, query string, start ti
 		if err2 := json.Unmarshal([]byte(query), &rawMap); err2 != nil {
 			return adapter.RawQueryResult{}, fmt.Errorf("mongodb: invalid JSON command or query: %w", err)
 		}
-		bytes, _ := bson.Marshal(rawMap)
-		_ = bson.Unmarshal(bytes, &cmd)
+		bytes, errMarshal := bson.Marshal(rawMap)
+		if errMarshal != nil {
+			return adapter.RawQueryResult{}, fmt.Errorf("mongodb: marshal raw JSON command: %w", errMarshal)
+		}
+		if errUnmarshal := bson.Unmarshal(bytes, &cmd); errUnmarshal != nil {
+			return adapter.RawQueryResult{}, fmt.Errorf("mongodb: unmarshal raw JSON command to BSON: %w", errUnmarshal)
+		}
 	}
 
 	var res bson.M

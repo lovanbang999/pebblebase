@@ -2625,7 +2625,15 @@ export const DataGrid: FC<DataGridProps> = ({
                   <Select
                     value={filterOp}
                     onValueChange={(val) => {
-                      if (typeof val === "string") setFilterOp(val as any);
+                      if (
+                        val === "eq" ||
+                        val === "neq" ||
+                        val === "gt" ||
+                        val === "lt" ||
+                        val === "contains"
+                      ) {
+                        setFilterOp(val);
+                      }
                     }}
                   >
                     <SelectTrigger className="h-7 min-w-24 font-mono text-xs">

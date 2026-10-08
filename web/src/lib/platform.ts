@@ -3,10 +3,40 @@
  * Automatically adapts display labels and keymaps for macOS, Windows, and Linux.
  */
 
+interface WailsRuntime {
+  Quit?: () => void;
+  WindowMinimise?: () => void;
+  WindowToggleMaximise?: () => void;
+  WindowIsMaximised?: () => Promise<boolean>;
+  WindowIsFullscreen?: () => Promise<boolean>;
+  WindowFullscreen?: () => void;
+  WindowUnfullscreen?: () => void;
+  EventsOn?: (
+    event: string,
+    callback: (...args: unknown[]) => void,
+  ) => () => void;
+}
+
+interface GoApp {
+  Quit?: () => void;
+  ToggleFullscreen?: () => Promise<void> | void;
+}
+
+declare global {
+  interface Window {
+    runtime?: WailsRuntime;
+    go?: { main?: { App?: GoApp } };
+    wails?: unknown;
+  }
+  interface Navigator {
+    userAgentData?: { platform?: string };
+  }
+}
+
 export const isMac =
   typeof window !== "undefined"
     ? /Mac|iPhone|iPod|iPad/i.test(
-        (navigator as any).userAgentData?.platform ||
+        navigator.userAgentData?.platform ||
           navigator.platform ||
           navigator.userAgent ||
           "",
@@ -15,9 +45,7 @@ export const isMac =
 
 export const isDesktop =
   typeof window !== "undefined" &&
-  Boolean(
-    (window as any).runtime || (window as any).go || (window as any).wails,
-  );
+  Boolean(window.runtime || window.go || window.wails);
 
 /**
  * Checks if the application is running inside a native desktop container (Wails).
@@ -25,9 +53,7 @@ export const isDesktop =
 export function isDesktopApp(): boolean {
   return (
     typeof window !== "undefined" &&
-    Boolean(
-      (window as any).runtime || (window as any).go || (window as any).wails,
-    )
+    Boolean(window.runtime || window.go || window.wails)
   );
 }
 
@@ -37,13 +63,13 @@ export function isDesktopApp(): boolean {
 export function quitDesktopApp(): void {
   if (typeof window === "undefined") return;
 
-  const wailsRuntime = (window as any).runtime;
+  const wailsRuntime = window.runtime;
   if (wailsRuntime && typeof wailsRuntime.Quit === "function") {
     wailsRuntime.Quit();
     return;
   }
 
-  const goApp = (window as any).go?.main?.App;
+  const goApp = window.go?.main?.App;
   if (goApp && typeof goApp.Quit === "function") {
     goApp.Quit();
   }
@@ -54,7 +80,7 @@ export function quitDesktopApp(): void {
  */
 export function minimizeDesktopWindow(): void {
   if (typeof window === "undefined") return;
-  const wailsRuntime = (window as any).runtime;
+  const wailsRuntime = window.runtime;
   if (wailsRuntime && typeof wailsRuntime.WindowMinimise === "function") {
     wailsRuntime.WindowMinimise();
   }
@@ -65,7 +91,7 @@ export function minimizeDesktopWindow(): void {
  */
 export function toggleMaximizeDesktopWindow(): void {
   if (typeof window === "undefined") return;
-  const wailsRuntime = (window as any).runtime;
+  const wailsRuntime = window.runtime;
   if (wailsRuntime && typeof wailsRuntime.WindowToggleMaximise === "function") {
     wailsRuntime.WindowToggleMaximise();
   }
@@ -76,7 +102,7 @@ export function toggleMaximizeDesktopWindow(): void {
  */
 export async function isDesktopWindowMaximized(): Promise<boolean> {
   if (typeof window === "undefined") return false;
-  const wailsRuntime = (window as any).runtime;
+  const wailsRuntime = window.runtime;
   if (wailsRuntime && typeof wailsRuntime.WindowIsMaximised === "function") {
     try {
       return await wailsRuntime.WindowIsMaximised();
@@ -100,7 +126,7 @@ export function closeDesktopWindow(): void {
 export async function toggleFullscreen(): Promise<void> {
   if (typeof window === "undefined") return;
 
-  const wailsRuntime = (window as any).runtime;
+  const wailsRuntime = window.runtime;
   if (wailsRuntime) {
     if (typeof wailsRuntime.WindowIsFullscreen === "function") {
       try {
@@ -123,7 +149,7 @@ export async function toggleFullscreen(): Promise<void> {
     }
   }
 
-  const goApp = (window as any).go?.main?.App;
+  const goApp = window.go?.main?.App;
   if (goApp && typeof goApp.ToggleFullscreen === "function") {
     try {
       await goApp.ToggleFullscreen();

@@ -93,9 +93,11 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
 
       onSuccess(successMsg);
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to execute danger action:", err);
-      setErrorMsg(err.message || t("tableDanger.errorOccurred"));
+      setErrorMsg(
+        err instanceof Error ? err.message : t("tableDanger.errorOccurred"),
+      );
     } finally {
       setIsExecuting(false);
     }

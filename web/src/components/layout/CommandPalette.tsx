@@ -15,6 +15,7 @@ import {
   FileCode,
   Sparkles,
   GitCompare,
+  type LucideIcon,
 } from "lucide-react";
 import type { Connection, TableSchema, SavedQuery } from "@/lib/types";
 import type { RecentItem } from "@/lib/recentItems";
@@ -53,7 +54,7 @@ interface PaletteItem {
   type: "recent" | "table" | "connection" | "query" | "action";
   title: string;
   subtitle?: string;
-  icon: any;
+  icon: LucideIcon;
   action: () => void;
 }
 

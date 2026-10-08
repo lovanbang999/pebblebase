@@ -51,8 +51,10 @@ export function LoginScreen() {
     try {
       const res = await apiLogin(username, password);
       setAuth(res.user, res.token, res.is_default_password);
-    } catch (err: any) {
-      setError(err.message ?? t("auth.invalidCredentials"));
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : t("auth.invalidCredentials"),
+      );
     } finally {
       setLoading(false);
     }
