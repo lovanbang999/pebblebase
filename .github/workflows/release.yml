@@ -89,11 +89,20 @@ jobs:
           yarn install --frozen-lockfile
           yarn build
 
+      - name: Prepare Desktop Build Assets
+        run: |
+          mkdir -p cmd/desktop/build/bin build/bin
+          cp -rf build/windows cmd/desktop/build/ 2>/dev/null || true
+          cp -f build/appicon.png cmd/desktop/build/ 2>/dev/null || true
+
       - name: Build Desktop App (macOS)
         if: runner.os == 'macOS'
         run: |
+          mkdir -p cmd/desktop/build/bin build/bin
           wails build -platform darwin/universal -clean -skipbindings -s
-          mkdir -p build/bin
+          if [ -d "cmd/desktop/build/bin/pebblebase.app" ]; then
+            cp -rf cmd/desktop/build/bin/pebblebase.app build/bin/
+          fi
           cd build/bin
           ditto -c -k --sequesterRsrc --keepParent pebblebase.app pebblebase-darwin-universal.app.zip
           shasum -a 256 pebblebase-darwin-universal.app.zip > pebblebase-darwin-universal.app.zip.sha256
@@ -101,8 +110,11 @@ jobs:
       - name: Build Desktop App (Windows)
         if: runner.os == 'Windows'
         run: |
+          mkdir -p cmd/desktop/build/bin build/bin
           wails build -platform windows/amd64 -clean -skipbindings -s
-          mkdir -p build/bin
+          if [ -f "cmd/desktop/build/bin/pebblebase.exe" ]; then
+            cp -f cmd/desktop/build/bin/pebblebase.exe build/bin/
+          fi
           cd build/bin
           powershell Compress-Archive -Path pebblebase.exe -DestinationPath pebblebase-windows-amd64.zip
           certutil -hashfile pebblebase-windows-amd64.zip SHA256 | findstr /V ":" > pebblebase-windows-amd64.zip.sha256
@@ -110,8 +122,11 @@ jobs:
       - name: Build Desktop App (Linux)
         if: runner.os == 'Linux'
         run: |
+          mkdir -p cmd/desktop/build/bin build/bin
           wails build -platform linux/amd64 -clean -skipbindings -s
-          mkdir -p build/bin
+          if [ -f "cmd/desktop/build/bin/pebblebase" ]; then
+            cp -f cmd/desktop/build/bin/pebblebase build/bin/
+          fi
           cd build/bin
           tar -czvf pebblebase-linux-amd64.tar.gz pebblebase
           sha256sum pebblebase-linux-amd64.tar.gz > pebblebase-linux-amd64.tar.gz.sha256

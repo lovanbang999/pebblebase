@@ -76,7 +76,8 @@ desktop.ini
 build/bin/
 build/windows/installer/tmp/
 build/windows/installer/wails_tools.nsh
-cmd/desktop/build/bin/
+cmd/desktop/build/bin/*
+!cmd/desktop/build/bin/.gitkeep
 cmd/desktop/build/windows/installer/tmp/
 cmd/desktop/build/windows/installer/wails_tools.nsh
 **/wailsjs/
