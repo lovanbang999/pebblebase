@@ -4,10 +4,19 @@ on:
   push:
     tags:
       - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (e.g. v1.0.0)"
+        required: false
+        default: "v1.0.0"
 
 permissions:
   contents: write
   packages: write
+
+env:
+  RELEASE_TAG: ${{ inputs.tag_name || github.ref_name }}
 
 jobs:
   # ─── 1. Release initialization ──────────────────────────────────────────────
@@ -22,8 +31,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create ${{ github.ref_name }} \
-            --title "Pebblebase Studio ${{ github.ref_name }}" \
+          gh release create "${{ env.RELEASE_TAG }}" \
+            --title "Pebblebase Studio ${{ env.RELEASE_TAG }}" \
             --generate-notes \
             --draft=false \
             --prerelease=false || true
@@ -112,4 +121,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd build/bin
-          find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.sha256" \) -exec gh release upload ${{ github.ref_name }} {} --clobber \;
+          find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.sha256" \) -exec gh release upload "${{ env.RELEASE_TAG }}" {} --clobber \;

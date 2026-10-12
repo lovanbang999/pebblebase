@@ -20,8 +20,9 @@
   "info": {
     "companyName": "Pebblebase",
     "productName": "Pebblebase Studio",
-    "productVersion": "0.1.1",
+    "productVersion": "1.0.0",
     "copyright": "Copyright 2026",
     "comments": "Modern lightweight database studio"
   }
+
 }

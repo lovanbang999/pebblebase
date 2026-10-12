@@ -171,7 +171,7 @@ export default function DesktopTitleBar({
                   "Click to check for software updates",
                 )}
               >
-                v{updateInfo?.currentVersion || "0.1.1"}
+                v{updateInfo?.currentVersion || "1.0.0"}
               </button>
             </span>
 
