@@ -109,6 +109,14 @@ func (a *App) Quit() {
 	}
 }
 
+// RestartApp quits the running process so the updated binary (already written
+// to disk by /api/update/apply) launches fresh on the next open.
+func (a *App) RestartApp() {
+	if a.ctx != nil {
+		runtime.Quit(a.ctx)
+	}
+}
+
 // ToggleFullscreen toggles between fullscreen and normal window state.
 func (a *App) ToggleFullscreen() {
 	if a.ctx != nil {

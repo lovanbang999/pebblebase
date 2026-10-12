@@ -334,3 +334,21 @@ export interface SchemaDiffResult {
   summary: DiffSummary;
   migration_sql: string;
 }
+
+export interface UpdateInfo {
+  currentVersion: string;
+  latestVersion: string;
+  hasUpdate: boolean;
+  downloadUrl: string;
+  releaseNotes: string;
+  publishedAt: string;
+  size: number;
+  signature?: string;
+  requiresSig: boolean;
+  assetFound: boolean;
+}
+
+export interface UpdateSettings {
+  checkOnStartup: boolean;
+  channel: string;
+}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Minus, Square, Copy, X, Search } from "lucide-react";
+import { Minus, Square, Copy, X, Search, Sparkles } from "lucide-react";
 import {
   isDesktopApp,
   minimizeDesktopWindow,
@@ -8,6 +8,9 @@ import {
   isDesktopWindowMaximized,
   closeDesktopWindow,
 } from "@/lib/platform";
+import { checkAppUpdate, fetchUpdateSettings } from "@/lib/api";
+import type { UpdateInfo } from "@/lib/types";
+import { UpdateDialog } from "@/components/common/UpdateDialog";
 
 interface DesktopTitleBarProps {
   activeConnectionName?: string;
@@ -15,14 +18,61 @@ interface DesktopTitleBarProps {
   onOpenCommandPalette?: () => void;
 }
 
-export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
+export default function DesktopTitleBar({
   activeConnectionName,
   activeDatabaseType,
   onOpenCommandPalette,
-}) => {
+}: DesktopTitleBarProps) {
   const { t } = useTranslation();
   const isDesktop = isDesktopApp();
   const [isMaximized, setIsMaximized] = useState(true);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+
+  // Auto-check for updates on startup
+  useEffect(() => {
+    let mounted = true;
+    async function checkUpdates() {
+      try {
+        const settings = await fetchUpdateSettings().catch(() => ({
+          checkOnStartup: true,
+          channel: "stable",
+        }));
+        if (settings.checkOnStartup === false) return;
+
+        setIsCheckingUpdate(true);
+        const info = await checkAppUpdate();
+        if (mounted && info) {
+          setUpdateInfo(info);
+          if (info.hasUpdate) {
+            setIsUpdateDialogOpen(true);
+          }
+        }
+      } catch (err) {
+        console.debug("Startup update check:", err);
+      } finally {
+        if (mounted) setIsCheckingUpdate(false);
+      }
+    }
+
+    checkUpdates();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleManualCheck = async () => {
+    setIsCheckingUpdate(true);
+    try {
+      const info = await checkAppUpdate();
+      setUpdateInfo(info);
+    } catch (err) {
+      console.error("Failed to check for updates:", err);
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
 
   // Sync window maximized state reactively without polling
   useEffect(() => {
@@ -95,114 +145,154 @@ export const DesktopTitleBar: React.FC<DesktopTitleBarProps> = ({
   } as React.CSSProperties;
 
   return (
-    <header
-      style={dragStyle}
-      onDoubleClick={handleToggleMaximize}
-      className="dark:border-border/40 relative z-50 flex h-9.5 w-full shrink-0 items-center justify-between border-b border-zinc-200/80 bg-zinc-100/90 px-3 text-xs transition-colors select-none dark:bg-zinc-950/95"
-    >
-      {/* Left: Brand Identity & Active Connection */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <img
-            src="/favicon.svg"
-            alt="Pebblebase Logo"
-            className="pointer-events-none h-4 w-4 object-contain"
-          />
-          <span className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">
-            Pebblebase Studio
-            <span className="py-0.2 rounded border border-emerald-500/30 bg-emerald-500/10 px-1 font-mono text-[10px] leading-none text-emerald-700 dark:border-emerald-500/20 dark:text-emerald-400">
-              v0.1.1
+    <>
+      <header
+        style={dragStyle}
+        onDoubleClick={handleToggleMaximize}
+        className="dark:border-border/40 relative z-50 flex h-9.5 w-full shrink-0 items-center justify-between border-b border-zinc-200/80 bg-zinc-100/90 px-3 text-xs transition-colors select-none dark:bg-zinc-950/95"
+      >
+        {/* Left: Brand Identity & Active Connection */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <img
+              src="/favicon.svg"
+              alt="Pebblebase Logo"
+              className="pointer-events-none h-4 w-4 object-contain"
+            />
+            <span className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">
+              Pebblebase Studio
+              <button
+                type="button"
+                style={noDragStyle}
+                onClick={() => setIsUpdateDialogOpen(true)}
+                className="py-0.2 cursor-pointer rounded border border-emerald-500/30 bg-emerald-500/10 px-1 font-mono text-[10px] leading-none text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-500/20 dark:text-emerald-400"
+                title={t(
+                  "titlebar.checkUpdatesTooltip",
+                  "Click to check for software updates",
+                )}
+              >
+                v{updateInfo?.currentVersion || "0.1.1"}
+              </button>
             </span>
-          </span>
-        </div>
 
-        {activeConnectionName && (
-          <div
-            style={noDragStyle}
-            className="hidden items-center gap-1.5 rounded-full border border-zinc-200/90 bg-white/90 px-2 py-0.5 text-[11px] text-zinc-700 shadow-2xs sm:flex dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-300"
-          >
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-            <span className="max-w-40 truncate font-medium text-zinc-800 dark:text-zinc-200">
-              {activeConnectionName}
-            </span>
-            {activeDatabaseType && (
-              <span className="font-mono text-[10px] text-zinc-400 uppercase dark:text-zinc-500">
-                {activeDatabaseType}
-              </span>
+            {updateInfo?.hasUpdate && (
+              <button
+                type="button"
+                style={noDragStyle}
+                onClick={() => setIsUpdateDialogOpen(true)}
+                className="flex animate-pulse cursor-pointer items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-500/25 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300"
+                title={t("titlebar.updateAvailableTooltip", {
+                  version: updateInfo.latestVersion,
+                  defaultValue: `New update v${updateInfo.latestVersion} available!`,
+                })}
+              >
+                <Sparkles className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
+                <span>
+                  {t("titlebar.updateAvailableBadge", {
+                    version: updateInfo.latestVersion,
+                    defaultValue: `Update v${updateInfo.latestVersion}`,
+                  })}
+                </span>
+              </button>
             )}
           </div>
-        )}
-      </div>
 
-      {/* Center: Quick Search / Command Palette Trigger (Mathematically Centered in Titlebar) */}
-      {onOpenCommandPalette && (
-        <div className="pointer-events-none absolute left-1/2 w-64 max-w-[calc(100vw-420px)] -translate-x-1/2 sm:w-72 md:w-80">
-          <button
-            type="button"
-            style={noDragStyle}
-            onClick={onOpenCommandPalette}
-            className="group pointer-events-auto flex h-6.5 w-full cursor-pointer items-center justify-between rounded-md border border-zinc-200/90 bg-white/80 px-2.5 text-[11px] text-zinc-500 shadow-2xs transition-colors hover:border-zinc-300 hover:bg-white hover:text-zinc-800 dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:text-zinc-400 dark:hover:border-zinc-700/80 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200"
-          >
-            <span className="flex items-center gap-1.5 truncate">
-              <Search className="h-3 w-3 shrink-0 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300" />
-              <span className="truncate">
-                {t("titlebar.searchPlaceholder", "Search or run commands...")}
+          {activeConnectionName && (
+            <div
+              style={noDragStyle}
+              className="hidden items-center gap-1.5 rounded-full border border-zinc-200/90 bg-white/90 px-2 py-0.5 text-[11px] text-zinc-700 shadow-2xs sm:flex dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-300"
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+              <span className="max-w-40 truncate font-medium text-zinc-800 dark:text-zinc-200">
+                {activeConnectionName}
               </span>
-            </span>
-            <kbd className="py-0.2 hidden shrink-0 rounded border border-zinc-200/80 bg-zinc-100 px-1.5 font-mono text-[9px] text-zinc-500 sm:inline-block dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-400">
-              Ctrl K
-            </kbd>
-          </button>
+              {activeDatabaseType && (
+                <span className="font-mono text-[10px] text-zinc-400 uppercase dark:text-zinc-500">
+                  {activeDatabaseType}
+                </span>
+              )}
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Right: Window Controls (Desktop Only) */}
-      <div className="flex items-center gap-0.5">
-        <div style={noDragStyle} className="flex items-center">
-          {/* Minimize */}
-          <button
-            type="button"
-            onClick={handleMinimize}
-            className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
-            title={t("titlebar.minimize", "Minimize")}
-            aria-label="Minimize Window"
-          >
-            <Minus className="h-3.5 w-3.5" />
-          </button>
+        {/* Center: Quick Search / Command Palette Trigger (Mathematically Centered in Titlebar) */}
+        {onOpenCommandPalette && (
+          <div className="pointer-events-none absolute left-1/2 w-64 max-w-[calc(100vw-420px)] -translate-x-1/2 sm:w-72 md:w-80">
+            <button
+              type="button"
+              style={noDragStyle}
+              onClick={onOpenCommandPalette}
+              className="group pointer-events-auto flex h-6.5 w-full cursor-pointer items-center justify-between rounded-md border border-zinc-200/90 bg-white/80 px-2.5 text-[11px] text-zinc-500 shadow-2xs transition-colors hover:border-zinc-300 hover:bg-white hover:text-zinc-800 dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:text-zinc-400 dark:hover:border-zinc-700/80 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200"
+            >
+              <span className="flex items-center gap-1.5 truncate">
+                <Search className="h-3 w-3 shrink-0 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300" />
+                <span className="truncate">
+                  {t("titlebar.searchPlaceholder", "Search or run commands...")}
+                </span>
+              </span>
+              <kbd className="py-0.2 hidden shrink-0 rounded border border-zinc-200/80 bg-zinc-100 px-1.5 font-mono text-[9px] text-zinc-500 sm:inline-block dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-400">
+                Ctrl K
+              </kbd>
+            </button>
+          </div>
+        )}
 
-          {/* Maximize / Restore */}
-          <button
-            type="button"
-            onClick={handleToggleMaximize}
-            className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
-            title={
-              isMaximized
-                ? t("titlebar.restore", "Restore")
-                : t("titlebar.maximize", "Maximize")
-            }
-            aria-label="Maximize or Restore Window"
-          >
-            {isMaximized ? (
-              <Copy className="h-3 w-3 rotate-180" />
-            ) : (
-              <Square className="h-3 w-3" />
-            )}
-          </button>
+        {/* Right: Window Controls (Desktop Only) */}
+        <div className="flex items-center gap-0.5">
+          <div style={noDragStyle} className="flex items-center">
+            {/* Minimize */}
+            <button
+              type="button"
+              onClick={handleMinimize}
+              className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
+              title={t("titlebar.minimize", "Minimize")}
+              aria-label="Minimize Window"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
 
-          {/* Close */}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-red-600 hover:text-white dark:text-zinc-400 dark:hover:bg-red-600 dark:hover:text-white"
-            title={t("titlebar.close", "Close")}
-            aria-label="Close Window"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+            {/* Maximize / Restore */}
+            <button
+              type="button"
+              onClick={handleToggleMaximize}
+              className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
+              title={
+                isMaximized
+                  ? t("titlebar.restore", "Restore")
+                  : t("titlebar.maximize", "Maximize")
+              }
+              aria-label="Maximize or Restore Window"
+            >
+              {isMaximized ? (
+                <Copy className="h-3 w-3 rotate-180" />
+              ) : (
+                <Square className="h-3 w-3" />
+              )}
+            </button>
+
+            {/* Close */}
+            <button
+              type="button"
+              onClick={handleClose}
+              className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-red-600 hover:text-white dark:text-zinc-400 dark:hover:bg-red-600 dark:hover:text-white"
+              title={t("titlebar.close", "Close")}
+              aria-label="Close Window"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <UpdateDialog
+        isOpen={isUpdateDialogOpen}
+        onClose={() => setIsUpdateDialogOpen(false)}
+        updateInfo={updateInfo}
+        onRefresh={handleManualCheck}
+        isLoading={isCheckingUpdate}
+      />
+    </>
   );
-};
+}
 
-export default DesktopTitleBar;
+export { DesktopTitleBar };

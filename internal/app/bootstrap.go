@@ -13,6 +13,7 @@ import (
 	"pebblebase/internal/api"
 	"pebblebase/internal/audit"
 	"pebblebase/internal/auth"
+	"pebblebase/internal/autoupdate"
 	"pebblebase/internal/migration"
 	"pebblebase/internal/savedquery"
 	"pebblebase/internal/storage"
@@ -27,6 +28,7 @@ type Instance struct {
 	MetaDB      *sql.DB
 	AuthEnabled bool
 	APIServer   *api.Server
+	UpdateSvc   *autoupdate.Service
 }
 
 // Close releases resources held by the instance, including all active database adapter pools.
@@ -134,12 +136,17 @@ func Bootstrap(dataDir string, authEnabled bool) (*Instance, error) {
 	apiSrv := api.NewServer(store, enc, authSvc, auditLog, querySvc, migrationSvc, authEnabled)
 	apiSrv.RegisterRoutes(mux)
 
+	updateSvc := autoupdate.NewService("0.1.1", dataDir)
+	updateHandler := autoupdate.NewHandler(updateSvc)
+	updateHandler.RegisterRoutes(mux)
+
 	return &Instance{
 		Mux:         mux,
 		DataDir:     dataDir,
 		MetaDB:      metaDB,
 		AuthEnabled: authEnabled,
 		APIServer:   apiSrv,
+		UpdateSvc:   updateSvc,
 	}, nil
 }
 
