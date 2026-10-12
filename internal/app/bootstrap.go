@@ -21,6 +21,9 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+// Version is the current application version.
+var Version = "1.0.0"
+
 // Instance represents a running Pebblebase core instance.
 type Instance struct {
 	Mux         *http.ServeMux
@@ -136,7 +139,7 @@ func Bootstrap(dataDir string, authEnabled bool) (*Instance, error) {
 	apiSrv := api.NewServer(store, enc, authSvc, auditLog, querySvc, migrationSvc, authEnabled)
 	apiSrv.RegisterRoutes(mux)
 
-	updateSvc := autoupdate.NewService("0.1.1", dataDir)
+	updateSvc := autoupdate.NewService(Version, dataDir)
 	updateHandler := autoupdate.NewHandler(updateSvc)
 	updateHandler.RegisterRoutes(mux)
 

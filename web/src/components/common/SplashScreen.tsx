@@ -8,7 +8,7 @@ interface SplashScreenProps {
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({
   message,
-  version = "v0.1.1",
+  version = "v1.0.0",
 }) => {
   const { t } = useTranslation();
   const displayMessage =

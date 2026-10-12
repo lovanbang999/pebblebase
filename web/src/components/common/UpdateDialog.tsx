@@ -143,7 +143,7 @@ export default function UpdateDialog({
                   {t("updates.installedVersion", "Installed Version:")}
                 </span>
                 <Badge variant="outline" className="font-mono text-xs">
-                  v{updateInfo?.currentVersion || "0.1.1"}
+                  v{updateInfo?.currentVersion || "1.0.0"}
                 </Badge>
               </div>
 
