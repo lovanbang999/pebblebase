@@ -19,6 +19,7 @@ interface WailsRuntime {
 
 interface GoApp {
   Quit?: () => void;
+  RestartApp?: () => Promise<void> | void;
   ToggleFullscreen?: () => Promise<void> | void;
 }
 
@@ -55,6 +56,24 @@ export function isDesktopApp(): boolean {
     typeof window !== "undefined" &&
     Boolean(window.runtime || window.go || window.wails)
   );
+}
+
+/**
+ * Restarts the desktop application after an update is written to disk.
+ */
+export function restartDesktopApp(): void {
+  if (typeof window === "undefined") return;
+
+  const goApp = window.go?.main?.App;
+  if (goApp && typeof goApp.RestartApp === "function") {
+    goApp.RestartApp();
+    return;
+  }
+
+  const wailsRuntime = window.runtime;
+  if (wailsRuntime && typeof wailsRuntime.Quit === "function") {
+    wailsRuntime.Quit();
+  }
 }
 
 /**

@@ -879,8 +879,12 @@
     "minimize": "Minimize",
     "maximize": "Maximize",
     "restore": "Restore",
-    "close": "Close"
+    "close": "Close",
+    "checkUpdatesTooltip": "Click to check for software updates",
+    "updateAvailableBadge": "Update v{{version}}",
+    "updateAvailableTooltip": "New update v{{version}} available!"
   },
+
   "pipeline": {
     "title": "Pipeline Builder",
     "desc": "Visually build, reorder, and execute MongoDB aggregation pipelines.",
@@ -945,5 +949,27 @@
     "no_results": "Pipeline output documents will be displayed here.",
     "valid_json_error": "Invalid JSON syntax in raw stage editor.",
     "missing_collection": "Please select or enter a collection name."
+  },
+  "updates": {
+    "dialogTitle": "Software Updates",
+    "dialogDesc": "Pebblebase Studio release channel and automatic updates",
+    "installedVersion": "Installed Version:",
+    "available": "Available",
+    "versionAvailable": "v{{version}} Available",
+    "upToDate": "Up to Date",
+    "whatsNew": "What's new in v{{version}}:",
+    "downloadSize": "Download size: ~{{size}} MB",
+    "downloadingTitle": "Downloading and installing update...",
+    "downloadingDesc": "Downloading latest binary from GitHub Releases and verifying package.",
+    "installSuccessTitle": "Update successfully installed!",
+    "installSuccessDesc": "The new version is ready. Restart Pebblebase to complete the update.",
+    "restartNow": "Restart Pebblebase Now",
+    "installFailedTitle": "Failed to apply update",
+    "downloadManual": "Download manually from GitHub",
+    "retry": "Retry",
+    "autoCheckStartup": "Automatically check for updates on startup",
+    "updateNow": "Update Now",
+    "checkNow": "Check Now",
+    "done": "Done"
   }
 }

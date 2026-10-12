@@ -635,3 +635,37 @@ export async function fetchSchemaDiff(
   });
   return handleResponse<SchemaDiffResult>(res);
 }
+
+export async function checkAppUpdate(): Promise<import("./types").UpdateInfo> {
+  const res = await fetch(`${BASE_URL}/update/check`);
+  return handleResponse<import("./types").UpdateInfo>(res);
+}
+
+export async function fetchUpdateSettings(): Promise<
+  import("./types").UpdateSettings
+> {
+  const res = await fetch(`${BASE_URL}/update/settings`);
+  return handleResponse<import("./types").UpdateSettings>(res);
+}
+
+export async function saveUpdateSettings(
+  settings: import("./types").UpdateSettings,
+): Promise<{ success: boolean }> {
+  const res = await fetch(`${BASE_URL}/update/settings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(settings),
+  });
+  return handleResponse<{ success: boolean }>(res);
+}
+
+export async function applyAppUpdate(
+  updateInfo: import("./types").UpdateInfo,
+): Promise<{ message: string; requiresRestart: boolean }> {
+  const res = await fetch(`${BASE_URL}/update/apply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updateInfo),
+  });
+  return handleResponse<{ message: string; requiresRestart: boolean }>(res);
+}

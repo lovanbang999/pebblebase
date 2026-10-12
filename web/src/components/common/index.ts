@@ -5,3 +5,4 @@ export { LanguageSwitcher } from "./LanguageSwitcher";
 export { ThemeToggle } from "./ThemeToggle";
 export { SplashScreen } from "./SplashScreen";
 export { WelcomeScreen } from "./WelcomeScreen";
+export { UpdateDialog } from "./UpdateDialog";

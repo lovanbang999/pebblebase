@@ -879,8 +879,12 @@
     "minimize": "Thu nhỏ",
     "maximize": "Phóng to",
     "restore": "Khôi phục",
-    "close": "Đóng"
+    "close": "Đóng",
+    "checkUpdatesTooltip": "Nhấp để kiểm tra bản cập nhật phần mềm",
+    "updateAvailableBadge": "Cập nhật v{{version}}",
+    "updateAvailableTooltip": "Đã có bản cập nhật mới v{{version}}!"
   },
+
   "pipeline": {
     "title": "Pipeline Builder",
     "desc": "Xây dựng trực quan, sắp xếp và thực thi aggregation pipeline trong MongoDB.",
@@ -945,5 +949,27 @@
     "no_results": "Dữ liệu kết quả từ pipeline sẽ xuất hiện tại đây.",
     "valid_json_error": "Cú pháp JSON không hợp lệ trong trình sửa thô.",
     "missing_collection": "Vui lòng chọn hoặc nhập tên collection."
+  },
+  "updates": {
+    "dialogTitle": "Cập nhật phần mềm",
+    "dialogDesc": "Kênh phát hành và tự động cập nhật Pebblebase Studio",
+    "installedVersion": "Phiên bản đã cài:",
+    "available": "Có sẵn",
+    "versionAvailable": "Đã có v{{version}}",
+    "upToDate": "Đã cập nhật mới nhất",
+    "whatsNew": "Điểm mới trong v{{version}}:",
+    "downloadSize": "Dung lượng tải: ~{{size}} MB",
+    "downloadingTitle": "Đang tải xuống và cài đặt bản cập nhật...",
+    "downloadingDesc": "Đang tải tệp nhị phân mới nhất từ GitHub Releases và xác thực gói cài đặt.",
+    "installSuccessTitle": "Cài đặt bản cập nhật thành công!",
+    "installSuccessDesc": "Phiên bản mới đã sẵn sàng. Khởi động lại Pebblebase để hoàn tất cập nhật.",
+    "restartNow": "Khởi động lại Pebblebase ngay",
+    "installFailedTitle": "Cập nhật thất bại",
+    "downloadManual": "Tải xuống thủ công từ GitHub",
+    "retry": "Thử lại",
+    "autoCheckStartup": "Tự động kiểm tra bản cập nhật khi khởi động",
+    "updateNow": "Cập nhật ngay",
+    "checkNow": "Kiểm tra ngay",
+    "done": "Xong"
   }
 }
