@@ -92,7 +92,7 @@ jobs:
       - name: Build Desktop App (macOS)
         if: runner.os == 'macOS'
         run: |
-          wails build -platform darwin/universal -clean
+          wails build -platform darwin/universal -clean -skipbindings -s
           mkdir -p build/bin
           cd build/bin
           ditto -c -k --sequesterRsrc --keepParent pebblebase.app pebblebase-darwin-universal.app.zip
@@ -101,7 +101,7 @@ jobs:
       - name: Build Desktop App (Windows)
         if: runner.os == 'Windows'
         run: |
-          wails build -platform windows/amd64 -clean
+          wails build -platform windows/amd64 -clean -skipbindings -s
           mkdir -p build/bin
           cd build/bin
           powershell Compress-Archive -Path pebblebase.exe -DestinationPath pebblebase-windows-amd64.zip
@@ -110,7 +110,7 @@ jobs:
       - name: Build Desktop App (Linux)
         if: runner.os == 'Linux'
         run: |
-          wails build -platform linux/amd64 -clean
+          wails build -platform linux/amd64 -clean -skipbindings -s
           mkdir -p build/bin
           cd build/bin
           tar -czvf pebblebase-linux-amd64.tar.gz pebblebase
