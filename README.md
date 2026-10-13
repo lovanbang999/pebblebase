@@ -6,6 +6,7 @@
 </p>
 
 <p align="center">
+  <a href="https://lovanbang999.github.io/pebblebase/"><img src="https://img.shields.io/badge/Documentation-Live-059669?style=flat-square&logo=astro&logoColor=white" alt="Documentation"></a>
   <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go" alt="Go Version"></a>
   <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react" alt="React 19"></a>
   <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind-v4.0-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind v4"></a>
@@ -13,6 +14,19 @@
   <a href="https://github.com/lovanbang999/pebblebase/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License"></a>
   <a href="https://github.com/lovanbang999/pebblebase/actions"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome"></a>
 </p>
+
+---
+
+## 📖 Official Documentation & Guides
+
+Explore the live documentation site and interactive guides:  
+👉 **[https://lovanbang999.github.io/pebblebase](https://lovanbang999.github.io/pebblebase)**
+
+- [Getting Started & Installation](https://lovanbang999.github.io/pebblebase/getting-started/installation/)
+- [Visual ERD Diagrams](https://lovanbang999.github.io/pebblebase/features/erd-diagrams/)
+- [Schema Diff & Migrations](https://lovanbang999.github.io/pebblebase/features/schema-diff/)
+- [PostgreSQL, MySQL, SQLite, and MongoDB Guides](https://lovanbang999.github.io/pebblebase/databases/postgresql/)
+- [Docker Self-Hosting Guide](https://lovanbang999.github.io/pebblebase/deployment/docker/)
 
 ---
 
