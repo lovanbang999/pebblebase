@@ -26,6 +26,13 @@ yarn-error.log*
 pnpm-debug.log*
 
 # =============================================================================
+# Documentation Site (Astro / Starlight)
+# =============================================================================
+docs-site/node_modules/
+docs-site/dist/
+docs-site/.astro/
+
+# =============================================================================
 # Pebblebase runtime data
 # =============================================================================
 # SQLite/JSON connection storage (mounted via Docker volume or local config)

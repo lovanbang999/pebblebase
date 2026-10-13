@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="pb-top-grad" x1="26" y1="24" x2="102" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="pb-mid-grad" x1="26" y1="54" x2="102" y2="82" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#047857" />
+    </linearGradient>
+
+    <linearGradient id="pb-base-grad" x1="26" y1="82" x2="102" y2="110" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#064e3b" />
+    </linearGradient>
+
+    <radialGradient id="pb-shadow-grad" cx="64" cy="102" r="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#047857" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#047857" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Base Soft Shadow (vector-native for universal Linux/librsvg compatibility) -->
+  <ellipse cx="64" cy="102" rx="42" ry="14" fill="url(#pb-shadow-grad)" />
+
+  <g id="pb-database-layers">
+    <!-- Layer 1: Bottom Disk -->
+    <path d="M26 82C26 89.732 43.0132 96 64 96C84.9868 96 102 89.732 102 82V96C102 103.732 84.9868 110 64 110C43.0132 110 26 103.732 26 96V82Z" fill="url(#pb-base-grad)" />
+    <ellipse cx="64" cy="82" rx="38" ry="14" fill="#10b981" opacity="0.3" />
+
+    <!-- Layer 2: Middle Disk -->
+    <path d="M26 54C26 61.732 43.0132 68 64 68C84.9868 68 102 61.732 102 54V68C102 75.732 84.9868 82 64 82C43.0132 82 26 75.732 26 68V54Z" fill="url(#pb-mid-grad)" />
+    <ellipse cx="64" cy="54" rx="38" ry="14" fill="#34d399" opacity="0.4" />
+
+    <!-- Layer 3: Top Cylinder Body -->
+    <path d="M26 26C26 33.732 43.0132 40 64 40C84.9868 40 102 33.732 102 26V40C102 47.732 84.9868 54 64 54C43.0132 54 26 47.732 26 40V26Z" fill="url(#pb-top-grad)" />
+    
+    <!-- Layer 3: Top Full Unclipped Ellipse Dome -->
+    <ellipse cx="64" cy="26" rx="38" ry="14" fill="#6ee7b7" />
+  </g>
+
+  <!-- Top Curved Specular Highlight -->
+  <path d="M42 21C50 18 78 18 86 21" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+</svg>

@@ -1,0 +1,304 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Modern Typography */
+  --sl-font-system: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --sl-font-code: 'JetBrains Mono', monospace;
+
+  /* Emerald Brand Theme (Dark Mode Default) */
+  --sl-color-accent-low: #042f24;
+  --sl-color-accent: #10b981;
+  --sl-color-accent-high: #34d399;
+
+  /* Deep High-End Slate/Zinc Backgrounds */
+  --sl-color-black: #090d16;
+  --sl-color-gray-6: #0e1526;
+  --sl-color-gray-5: #1a2238;
+  --sl-color-gray-4: #2e3a59;
+  --sl-color-gray-3: #64748b;
+  --sl-color-gray-2: #cbd5e1;
+  --sl-color-gray-1: #f1f5f9;
+  --sl-color-white: #ffffff;
+
+  /* Accent surface tokens */
+  --sl-color-bg-nav: rgba(11, 15, 25, 0.82);
+  --sl-color-bg-sidebar: rgba(11, 15, 25, 0.6);
+  --sl-color-hairline: rgba(255, 255, 255, 0.07);
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.12);
+
+  --sl-color-bg-inline-code: rgba(16, 185, 129, 0.1);
+  --sl-color-text-accent: #34d399;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #d1fae5;
+  --sl-color-accent: #059669;
+  --sl-color-accent-high: #065f46;
+
+  --sl-color-black: #f8fafc;
+  --sl-color-gray-6: #f1f5f9;
+  --sl-color-gray-5: #e2e8f0;
+  --sl-color-gray-4: #94a3b8;
+  --sl-color-gray-3: #64748b;
+  --sl-color-gray-2: #334155;
+  --sl-color-gray-1: #0f172a;
+  --sl-color-white: #020617;
+
+  --sl-color-bg-nav: rgba(248, 250, 252, 0.85);
+  --sl-color-bg-sidebar: rgba(248, 250, 252, 0.75);
+  --sl-color-hairline: rgba(0, 0, 0, 0.08);
+  --sl-color-hairline-light: rgba(0, 0, 0, 0.12);
+}
+
+/* ==========================================================================
+   Header & Navigation Bar
+   ========================================================================== */
+header.header {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* ==========================================================================
+   Sidebar Navigation Polish
+   ========================================================================== */
+.sidebar-pane {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-inline-end: 1px solid var(--sl-color-hairline);
+}
+
+/* Sidebar Links Default */
+.sidebar-content a {
+  border-radius: 6px;
+  transition: all 0.15s ease-in-out;
+  padding: 0.35rem 0.65rem !important;
+  color: var(--sl-color-gray-2) !important;
+  font-size: 0.88rem !important;
+}
+
+.sidebar-content a:hover:not([aria-current='page']) {
+  color: var(--sl-color-white) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Modern Active Sidebar Item (Replaces the harsh bright green block) */
+.sidebar-content [aria-current='page'],
+.sidebar-content [aria-current='page']:hover,
+.sidebar-content [aria-current='page']:focus {
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-left: 2px solid #10b981 !important;
+  border-radius: 0 6px 6px 0 !important;
+  font-weight: 600 !important;
+  box-shadow: inset 0 0 12px rgba(16, 185, 129, 0.05);
+}
+
+:root[data-theme='light'] .sidebar-content [aria-current='page'] {
+  color: #047857 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-left: 2px solid #059669 !important;
+}
+
+/* Sidebar Group Headers */
+.sidebar-content .group-label {
+  font-size: 0.78rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700 !important;
+  color: var(--sl-color-gray-3) !important;
+  margin-top: 1.25rem !important;
+  margin-bottom: 0.35rem !important;
+}
+
+/* ==========================================================================
+   Right Table of Contents (On this page)
+   ========================================================================== */
+starlight-toc {
+  font-size: 0.85rem;
+}
+
+starlight-toc a {
+  transition: color 0.15s ease;
+}
+
+starlight-toc a[aria-current='true'],
+starlight-toc a[aria-current='true']:hover {
+  color: #34d399 !important;
+  font-weight: 600 !important;
+}
+
+:root[data-theme='light'] starlight-toc a[aria-current='true'] {
+  color: #059669 !important;
+}
+
+/* ==========================================================================
+   Modern Asides / Callout Banners
+   ========================================================================== */
+.starlight-aside {
+  border-radius: 10px;
+  border-inline-start-width: 3px !important;
+  backdrop-filter: blur(8px);
+  margin: 1.5rem 0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.starlight-aside--note {
+  background-color: rgba(30, 58, 138, 0.18) !important;
+  border-color: #3b82f6 !important;
+  --sl-color-asides-text-accent: #93c5fd;
+}
+
+.starlight-aside--tip {
+  background-color: rgba(6, 78, 59, 0.22) !important;
+  border-color: #10b981 !important;
+  --sl-color-asides-text-accent: #6ee7b7;
+}
+
+.starlight-aside--caution {
+  background-color: rgba(120, 53, 15, 0.22) !important;
+  border-color: #f59e0b !important;
+  --sl-color-asides-text-accent: #fcd34d;
+}
+
+/* ==========================================================================
+   Code Blocks & Inline Code
+   ========================================================================== */
+code:not(pre code) {
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+  padding: 0.15rem 0.4rem !important;
+  border-radius: 5px !important;
+  color: #34d399 !important;
+  font-size: 0.88em !important;
+}
+
+:root[data-theme='light'] code:not(pre code) {
+  color: #065f46 !important;
+  border-color: rgba(5, 150, 105, 0.25) !important;
+}
+
+.expressive-code {
+  margin: 1.25rem 0 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ==========================================================================
+   OS Platform Header & Badges (For Installation Page)
+   ========================================================================== */
+.platform-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+.platform-header h2 {
+  margin: 0 !important;
+  padding: 0 !important;
+  border-bottom: none !important;
+}
+
+.os-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.os-icon-apple {
+  fill: currentColor;
+}
+
+.os-icon-windows {
+  fill: #0078d4;
+}
+
+.os-icon-linux {
+  fill: #fcc624;
+}
+
+.os-icon-docker {
+  fill: #2496ed;
+}
+
+.platform-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  margin-left: 0.5rem;
+}
+
+/* ==========================================================================
+   Feature Cards Grid (For Landing Page)
+   ========================================================================== */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin: 2.5rem 0;
+}
+
+.feature-card {
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: rgba(14, 21, 38, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.feature-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(16, 185, 129, 0.4);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3), 0 0 16px rgba(16, 185, 129, 0.1);
+}
+
+:root[data-theme='light'] .feature-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+:root[data-theme='light'] .feature-card:hover {
+  border-color: rgba(5, 150, 105, 0.4);
+  box-shadow: 0 12px 24px rgba(5, 150, 105, 0.08);
+}
+
+.feature-card-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: var(--sl-color-white);
+}
+
+.feature-card p {
+  font-size: 0.92rem;
+  color: var(--sl-color-gray-2);
+  line-height: 1.55;
+  margin: 0;
+}
