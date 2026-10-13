@@ -8,9 +8,7 @@ import {
   isDesktopWindowMaximized,
   closeDesktopWindow,
 } from "@/lib/platform";
-import { checkAppUpdate, fetchUpdateSettings } from "@/lib/api";
-import type { UpdateInfo } from "@/lib/types";
-import { UpdateDialog } from "@/components/common/UpdateDialog";
+import { useUpdateStore } from "@/lib/updateStore";
 
 interface DesktopTitleBarProps {
   activeConnectionName?: string;
@@ -26,53 +24,12 @@ export default function DesktopTitleBar({
   const { t } = useTranslation();
   const isDesktop = isDesktopApp();
   const [isMaximized, setIsMaximized] = useState(true);
-  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
-  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const { updateInfo, openDialogAndCheck, checkOnStartup } = useUpdateStore();
 
   // Auto-check for updates on startup
   useEffect(() => {
-    let mounted = true;
-    async function checkUpdates() {
-      try {
-        const settings = await fetchUpdateSettings().catch(() => ({
-          checkOnStartup: true,
-          channel: "stable",
-        }));
-        if (settings.checkOnStartup === false) return;
-
-        setIsCheckingUpdate(true);
-        const info = await checkAppUpdate();
-        if (mounted && info) {
-          setUpdateInfo(info);
-          if (info.hasUpdate) {
-            setIsUpdateDialogOpen(true);
-          }
-        }
-      } catch (err) {
-        console.debug("Startup update check:", err);
-      } finally {
-        if (mounted) setIsCheckingUpdate(false);
-      }
-    }
-
-    checkUpdates();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const handleManualCheck = async () => {
-    setIsCheckingUpdate(true);
-    try {
-      const info = await checkAppUpdate();
-      setUpdateInfo(info);
-    } catch (err) {
-      console.error("Failed to check for updates:", err);
-    } finally {
-      setIsCheckingUpdate(false);
-    }
-  };
+    checkOnStartup();
+  }, [checkOnStartup]);
 
   // Sync window maximized state reactively without polling
   useEffect(() => {
@@ -164,7 +121,7 @@ export default function DesktopTitleBar({
               <button
                 type="button"
                 style={noDragStyle}
-                onClick={() => setIsUpdateDialogOpen(true)}
+                onClick={() => openDialogAndCheck()}
                 className="py-0.2 cursor-pointer rounded border border-emerald-500/30 bg-emerald-500/10 px-1 font-mono text-[10px] leading-none text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-500/20 dark:text-emerald-400"
                 title={t(
                   "titlebar.checkUpdatesTooltip",
@@ -179,7 +136,7 @@ export default function DesktopTitleBar({
               <button
                 type="button"
                 style={noDragStyle}
-                onClick={() => setIsUpdateDialogOpen(true)}
+                onClick={() => openDialogAndCheck()}
                 className="flex animate-pulse cursor-pointer items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-500/25 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300"
                 title={t("titlebar.updateAvailableTooltip", {
                   version: updateInfo.latestVersion,
@@ -283,14 +240,6 @@ export default function DesktopTitleBar({
           </div>
         </div>
       </header>
-
-      <UpdateDialog
-        isOpen={isUpdateDialogOpen}
-        onClose={() => setIsUpdateDialogOpen(false)}
-        updateInfo={updateInfo}
-        onRefresh={handleManualCheck}
-        isLoading={isCheckingUpdate}
-      />
     </>
   );
 }

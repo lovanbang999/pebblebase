@@ -27,6 +27,7 @@ import {
   WelcomeScreen,
   SplashScreen,
   ErrorBoundary,
+  UpdateDialog,
 } from "@/components/common";
 import { DeleteRowDialog } from "@/components/modals";
 import { LoginScreen, DefaultPasswordBanner } from "@/components/auth";
@@ -48,6 +49,7 @@ import {
   apiLogout,
 } from "./lib/api";
 import { isDesktopApp, quitDesktopApp, toggleFullscreen } from "./lib/platform";
+import { useUpdateStore } from "./lib/updateStore";
 import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
 
 // Lazy-loaded heavy modules for fast desktop startup and minimal initial memory
@@ -92,6 +94,14 @@ const queryClient = new QueryClient({
 
 function PebblebaseStudio() {
   const isDesktop = isDesktopApp();
+  const {
+    isDialogOpen: isUpdateDialogOpen,
+    setDialogOpen: setIsUpdateDialogOpen,
+    updateInfo,
+    isChecking: isCheckingUpdate,
+    manualCheck: handleCheckUpdate,
+    openDialogAndCheck,
+  } = useUpdateStore();
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   // Shared admin panel tab — 'password' when triggered from user menu
   const [adminPanelDefaultTab, setAdminPanelDefaultTab] = useState<
@@ -420,6 +430,9 @@ function PebblebaseStudio() {
           break;
         case "product_tour":
           setIsOnboardingWelcomeOpen(true);
+          break;
+        case "check_updates":
+          openDialogAndCheck();
           break;
         case "sign_out":
           clearRecentItems();
@@ -944,6 +957,14 @@ function PebblebaseStudio() {
             />
           </Suspense>
         )}
+        {/* Software Update Dialog */}
+        <UpdateDialog
+          isOpen={isUpdateDialogOpen}
+          onClose={() => setIsUpdateDialogOpen(false)}
+          updateInfo={updateInfo}
+          onRefresh={handleCheckUpdate}
+          isLoading={isCheckingUpdate}
+        />
       </SidebarProvider>
     </div>
   );

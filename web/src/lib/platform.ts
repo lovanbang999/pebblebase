@@ -11,6 +11,7 @@ interface WailsRuntime {
   WindowIsFullscreen?: () => Promise<boolean>;
   WindowFullscreen?: () => void;
   WindowUnfullscreen?: () => void;
+  BrowserOpenURL?: (url: string) => void;
   EventsOn?: (
     event: string,
     callback: (...args: unknown[]) => void,
@@ -21,6 +22,7 @@ interface GoApp {
   Quit?: () => void;
   RestartApp?: () => Promise<void> | void;
   ToggleFullscreen?: () => Promise<void> | void;
+  OpenURL?: (url: string) => Promise<void> | void;
 }
 
 declare global {
@@ -56,6 +58,40 @@ export function isDesktopApp(): boolean {
     typeof window !== "undefined" &&
     Boolean(window.runtime || window.go || window.wails)
   );
+}
+
+/**
+ * Opens a URL in the user's default external web browser.
+ * Handles Wails desktop container runtime call with graceful web browser fallback.
+ */
+export function openExternalUrl(url: string): void {
+  if (typeof window === "undefined" || !url) return;
+
+  const wailsRuntime = window.runtime;
+  if (wailsRuntime && typeof wailsRuntime.BrowserOpenURL === "function") {
+    try {
+      wailsRuntime.BrowserOpenURL(url);
+      return;
+    } catch {
+      // Fall through
+    }
+  }
+
+  const goApp = window.go?.main?.App;
+  if (goApp && typeof goApp.OpenURL === "function") {
+    try {
+      goApp.OpenURL(url);
+      return;
+    } catch {
+      // Fall through
+    }
+  }
+
+  try {
+    window.open(url, "_blank", "noopener,noreferrer");
+  } catch {
+    window.location.href = url;
+  }
 }
 
 /**
