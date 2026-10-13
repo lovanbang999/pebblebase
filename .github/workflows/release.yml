@@ -93,7 +93,17 @@ jobs:
         run: |
           mkdir -p cmd/desktop/build/bin build/bin
           cp -rf build/windows cmd/desktop/build/ 2>/dev/null || true
+          cp -rf cmd/desktop/build/windows build/ 2>/dev/null || true
           cp -f build/appicon.png cmd/desktop/build/ 2>/dev/null || true
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const wailsPath = path.resolve('wails.json');
+            const wails = JSON.parse(fs.readFileSync(wailsPath, 'utf8'));
+            wails.projectdir = path.resolve('cmd/desktop');
+            fs.writeFileSync(wailsPath, JSON.stringify(wails, null, 2));
+            console.log('Configured absolute projectdir:', wails.projectdir);
+          "
 
       - name: Build Desktop App (macOS)
         if: runner.os == 'macOS'
@@ -102,6 +112,12 @@ jobs:
           wails build -platform darwin/universal -clean -skipbindings -s
           if [ -d "cmd/desktop/build/bin/pebblebase.app" ]; then
             cp -rf cmd/desktop/build/bin/pebblebase.app build/bin/
+          fi
+          if [ ! -d "build/bin/pebblebase.app" ]; then
+            FOUND_APP=$(find cmd/desktop build -name "pebblebase.app" -type d 2>/dev/null | head -n 1)
+            if [ -n "$FOUND_APP" ]; then
+              cp -rf "$FOUND_APP" build/bin/
+            fi
           fi
           cd build/bin
           ditto -c -k --sequesterRsrc --keepParent pebblebase.app pebblebase-darwin-universal.app.zip
@@ -115,9 +131,19 @@ jobs:
           if [ -f "cmd/desktop/build/bin/pebblebase.exe" ]; then
             cp -f cmd/desktop/build/bin/pebblebase.exe build/bin/
           fi
+          if [ ! -f "build/bin/pebblebase.exe" ]; then
+            FOUND_EXE=$(find cmd/desktop build -name "pebblebase.exe" -type f 2>/dev/null | head -n 1)
+            if [ -n "$FOUND_EXE" ]; then
+              cp -f "$FOUND_EXE" build/bin/
+            fi
+          fi
           cd build/bin
-          powershell Compress-Archive -Path pebblebase.exe -DestinationPath pebblebase-windows-amd64.zip
-          certutil -hashfile pebblebase-windows-amd64.zip SHA256 | findstr /V ":" > pebblebase-windows-amd64.zip.sha256
+          powershell Compress-Archive -Force -Path pebblebase.exe -DestinationPath pebblebase-windows-amd64.zip
+          if command -v sha256sum &> /dev/null; then
+            sha256sum pebblebase-windows-amd64.zip > pebblebase-windows-amd64.zip.sha256
+          else
+            certutil -hashfile pebblebase-windows-amd64.zip SHA256 | findstr /V ":" > pebblebase-windows-amd64.zip.sha256
+          fi
 
       - name: Build Desktop App (Linux)
         if: runner.os == 'Linux'
@@ -126,6 +152,12 @@ jobs:
           wails build -platform linux/amd64 -clean -skipbindings -s
           if [ -f "cmd/desktop/build/bin/pebblebase" ]; then
             cp -f cmd/desktop/build/bin/pebblebase build/bin/
+          fi
+          if [ ! -f "build/bin/pebblebase" ]; then
+            FOUND_BIN=$(find cmd/desktop build -name "pebblebase" -type f 2>/dev/null | head -n 1)
+            if [ -n "$FOUND_BIN" ]; then
+              cp -f "$FOUND_BIN" build/bin/
+            fi
           fi
           cd build/bin
           tar -czvf pebblebase-linux-amd64.tar.gz pebblebase
