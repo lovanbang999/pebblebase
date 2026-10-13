@@ -17,26 +17,52 @@ export default defineConfig({
       editLink: {
         baseUrl: 'https://github.com/lovanbang999/pebblebase/edit/main/docs-site/',
       },
+      defaultLocale: 'root',
+      locales: {
+        root: {
+          label: 'English',
+          lang: 'en',
+        },
+        vi: {
+          label: 'Tiếng Việt',
+          lang: 'vi',
+        },
+      },
       customCss: ['./src/styles/custom.css'],
       sidebar: [
         {
           label: 'Start Here',
+          translations: {
+            vi: 'Bắt đầu',
+          },
           autogenerate: { directory: 'getting-started' },
         },
         {
           label: 'Core Features',
+          translations: {
+            vi: 'Tính năng chính',
+          },
           autogenerate: { directory: 'features' },
         },
         {
           label: 'Supported Databases',
+          translations: {
+            vi: 'Cơ sở dữ liệu hỗ trợ',
+          },
           autogenerate: { directory: 'databases' },
         },
         {
           label: 'Deployment & Self-Hosting',
+          translations: {
+            vi: 'Triển khai & Tự lưu trữ',
+          },
           autogenerate: { directory: 'deployment' },
         },
         {
           label: 'Reference',
+          translations: {
+            vi: 'Tài liệu tham khảo',
+          },
           autogenerate: { directory: 'reference' },
         },
       ],
