@@ -32,6 +32,7 @@ export type CommandActionId =
   | "toggle_theme"
   | "open_settings"
   | "product_tour"
+  | "check_updates"
   | "sign_out";
 
 export interface CommandPaletteProps {
@@ -163,6 +164,14 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         subtitle: "Quickstart & Guide",
         icon: Sparkles,
         action: () => onTriggerAction("product_tour"),
+      },
+      {
+        id: "action_check_updates",
+        type: "action",
+        title: t("palette.checkUpdates", "Check for Software Updates"),
+        subtitle: "Version & Releases",
+        icon: Sparkles,
+        action: () => onTriggerAction("check_updates"),
       },
       {
         id: "action_sign_out",

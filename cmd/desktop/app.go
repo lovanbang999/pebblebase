@@ -127,3 +127,10 @@ func (a *App) ToggleFullscreen() {
 		}
 	}
 }
+
+// OpenURL opens the specified URL in the user's default external web browser.
+func (a *App) OpenURL(url string) {
+	if a.ctx != nil {
+		runtime.BrowserOpenURL(a.ctx, url)
+	}
+}
