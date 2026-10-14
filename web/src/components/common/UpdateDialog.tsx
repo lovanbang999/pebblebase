@@ -34,6 +34,7 @@ import {
   saveUpdateSettings,
 } from "@/lib/api";
 import type { UpdateInfo, UpdateSettings } from "@/lib/types";
+import packageJson from "../../../package.json";
 
 type ApplyPhase = "idle" | "downloading" | "ready_to_restart" | "error";
 
@@ -282,8 +283,9 @@ export default function UpdateDialog({
               <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
                 {hasUpdate
                   ? t("updates.updateAvailableSubtitle", {
-                      current: updateInfo?.currentVersion || "1.0.0",
-                      defaultValue: `You are running v${updateInfo?.currentVersion || "1.0.0"}. A newer version is ready to install.`,
+                      current:
+                        updateInfo?.currentVersion || packageJson.version,
+                      defaultValue: `You are running v${updateInfo?.currentVersion || packageJson.version}. A newer version is ready to install.`,
                     })
                   : t(
                       "updates.dialogDesc",
@@ -308,7 +310,7 @@ export default function UpdateDialog({
                     variant="outline"
                     className="border-zinc-200 bg-white px-2 py-0.5 font-mono text-xs text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                   >
-                    v{updateInfo?.currentVersion || "1.0.0"}
+                    v{updateInfo?.currentVersion || packageJson.version}
                   </Badge>
                 </div>
 
