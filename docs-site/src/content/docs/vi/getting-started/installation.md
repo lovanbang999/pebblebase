@@ -65,6 +65,17 @@ Pebblebase Studio trên Windows hoàn toàn là bản portable—không yêu c�
 
 Pebblebase tương thích với Ubuntu, Debian, Fedora, Arch Linux và hầu hết các bản phân phối Linux phổ biến:
 
+### Ubuntu & Debian (.deb - Khuyến nghị)
+
+1. Tải về file **`pebblebase_<version>_amd64.deb`** từ [GitHub Releases](https://github.com/lovanbang999/pebblebase/releases/latest).
+2. Cài đặt tự động xử lý gói phụ thuộc bằng lệnh:
+   ```bash
+   sudo apt install ./pebblebase_*_amd64.deb
+   ```
+   *Hoặc nhấp đúp vào file `.deb` trong trình quản lý tệp để cài đặt qua Software Center / App Center.*
+
+### File Nhị Phân Di Động (Portable Binary)
+
 1. Tải về file **`pebblebase-linux-amd64.tar.gz`** từ [GitHub Releases](https://github.com/lovanbang999/pebblebase/releases/latest).
 2. Giải nén và khởi chạy file nhị phân:
    ```bash
@@ -73,7 +84,7 @@ Pebblebase tương thích với Ubuntu, Debian, Fedora, Arch Linux và hầu h�
    ```
 
 ### Gói phụ thuộc (Dependencies)
-Đảm bảo bản phân phối Linux của bạn đã cài đặt GTK3 và WebKitGTK:
+Đảm bảo bản phân phối Linux của bạn đã cài đặt GTK3 và WebKitGTK (được tự động cài đặt nếu dùng `apt` cài gói `.deb`):
 * **Ubuntu/Debian:** `sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0` (hoặc `libwebkit2gtk-4.0-37`)
 * **Fedora:** `sudo dnf install gtk3 webkit2gtk4.1`
 * **Arch Linux:** `sudo pacman -S gtk3 webkit2gtk-4.1`

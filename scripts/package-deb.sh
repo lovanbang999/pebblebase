@@ -6,14 +6,23 @@ set -e
 # Packages build/bin/pebblebase into a 1-click installable Debian/Ubuntu .deb
 # ==============================================================================
 
-VERSION="0.1.1"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$PROJECT_ROOT"
+
+# Resolve package version dynamically from env var or web/package.json
+if [ -z "$VERSION" ]; then
+  if command -v node &> /dev/null && [ -f "web/package.json" ]; then
+    VERSION=$(node -p "require('./web/package.json').version" 2>/dev/null || echo "1.0.2")
+  else
+    VERSION="1.0.2"
+  fi
+fi
+VERSION="${VERSION#v}"
+
 ARCH="amd64"
 APP_NAME="pebblebase"
 PKG_DIR="build/deb_pkg"
 DEB_NAME="${APP_NAME}_${VERSION}_${ARCH}.deb"
-
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$PROJECT_ROOT"
 
 echo "======================================================================"
 echo "  Pebblebase Studio - Debian (.deb) Packaging Pipeline (v${VERSION})"
@@ -47,7 +56,7 @@ if [ "$REBUILD" = true ]; then
     echo "Error: No Node.js package manager (npm/yarn/pnpm/bun) found."
     exit 1
   fi
-  wails build -s -skipbindings -clean -ldflags "-s -w"
+  wails build -s -skipbindings -clean -ldflags "-s -w -X pebblebase/internal/app.Version=${VERSION}"
 fi
 
 if [ ! -f "build/bin/pebblebase" ]; then

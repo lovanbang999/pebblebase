@@ -213,13 +213,19 @@ jobs:
               cp -f "$FOUND_BIN" build/bin/
             fi
           fi
+          # Package Debian .deb installer with desktop icons and launcher
+          VERSION="${VERSION}" bash scripts/package-deb.sh
+
           cd build/bin
           tar -czvf pebblebase-linux-amd64.tar.gz pebblebase
           sha256sum pebblebase-linux-amd64.tar.gz > pebblebase-linux-amd64.tar.gz.sha256
+          if [ -f "pebblebase_${VERSION}_amd64.deb" ]; then
+            sha256sum "pebblebase_${VERSION}_amd64.deb" > "pebblebase_${VERSION}_amd64.deb.sha256"
+          fi
 
       - name: Upload Desktop Artifacts to Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd build/bin
-          find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.sha256" \) -exec gh release upload "${{ env.RELEASE_TAG }}" {} --clobber \;
+          find . -maxdepth 1 -type f \( -name "*.zip" -o -name "*.tar.gz" -o -name "*.deb" -o -name "*.sha256" \) -exec gh release upload "${{ env.RELEASE_TAG }}" {} --clobber \;
