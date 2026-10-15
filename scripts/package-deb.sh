@@ -30,7 +30,9 @@ echo "======================================================================"
 
 # Check if binary is missing, --build was passed, or source files are newer than build/bin/pebblebase
 REBUILD=false
-if [ "$1" = "--build" ] || [ ! -f "build/bin/pebblebase" ]; then
+if [ "$1" = "--no-build" ]; then
+  REBUILD=false
+elif [ "$1" = "--build" ] || [ ! -f "build/bin/pebblebase" ]; then
   REBUILD=true
 elif [ -f "build/bin/pebblebase" ]; then
   NEWER=$(find web/src cmd internal -newer "build/bin/pebblebase" 2>/dev/null | head -n 1)
@@ -100,18 +102,19 @@ if [ -f "web/public/favicon.svg" ]; then
   cp -f "web/public/favicon.svg" "$PKG_DIR/usr/share/pixmaps/pebblebase.svg"
   chmod 644 "$PKG_DIR/usr/share/pixmaps/pebblebase.svg"
 
-  # Render pixel-perfect PNG icons for standard Linux resolutions
+  # Render pixel-perfect PNG icons for standard Linux resolutions (optional)
   python3 - << 'PYEOF'
 import os
-import gi
-gi.require_version('Rsvg', '2.0')
-from gi.repository import Rsvg
-import cairo
 
 svg_file = "web/public/favicon.svg"
 pkg_dir = os.environ.get("PKG_DIR", "build/deb_pkg")
 
 try:
+    import gi
+    gi.require_version('Rsvg', '2.0')
+    from gi.repository import Rsvg
+    import cairo
+
     handle = Rsvg.Handle.new_from_file(svg_file)
     sizes = [16, 32, 48, 64, 128, 256, 512]
     for sz in sizes:
