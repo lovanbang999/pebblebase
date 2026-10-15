@@ -11,7 +11,7 @@ Pebblebase Studio tích hợp sẵn hệ thống cập nhật tự động kết
 
 - **Tự động kiểm tra khi khởi động**: Khi được kích hoạt trong cài đặt, Pebblebase Studio sẽ tự động kiểm tra phiên bản mới ngầm mỗi khi ứng dụng khởi chạy.
 - **Kích hoạt thủ công**:
-  - Nhấp vào huy hiệu phiên bản **`v1.0.2`** trên thanh tiêu đề Desktop Titlebar.
+  - Nhấp vào huy hiệu phiên bản trên thanh tiêu đề Desktop Titlebar.
   - Nhấp vào thẻ phiên bản ở góc dưới của thanh sidebar bên trái.
   - Mở **Menu Tài khoản người dùng** (góc dưới bên trái) và chọn **"Check for Updates..." (Kiểm tra bản cập nhật...)**.
   - Mở **Command Palette** (`Ctrl+K`) và gõ tìm kiếm **"Check for Software Updates"**.
