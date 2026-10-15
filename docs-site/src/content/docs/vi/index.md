@@ -11,7 +11,7 @@ hero:
       link: /pebblebase/vi/getting-started/installation/
       icon: right-arrow
       variant: primary
-    - text: Tải bản v1.0.2
+    - text: Tải bản mới nhất
       link: https://github.com/lovanbang999/pebblebase/releases/latest
       icon: external
       variant: secondary

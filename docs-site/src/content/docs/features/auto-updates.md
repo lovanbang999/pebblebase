@@ -11,7 +11,7 @@ Pebblebase Studio features a built-in auto-update system that connects directly 
 
 - **Automatic Startup Checks**: When enabled in settings, Pebblebase Studio checks for newer versions on startup in the background.
 - **Manual Triggers**:
-  - Click the **`v1.0.2`** version badge in the desktop title bar.
+  - Click the version badge in the desktop title bar.
   - Click the version pill at the bottom of the left sidebar.
   - Open the **User Profile Menu** (bottom-left) and select **"Check for Updates..."**.
   - Open the **Command Palette** (`Ctrl+K`) and search for **"Check for Software Updates"**.

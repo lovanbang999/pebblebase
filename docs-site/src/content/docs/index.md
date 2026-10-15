@@ -11,7 +11,7 @@ hero:
       link: /pebblebase/getting-started/installation/
       icon: right-arrow
       variant: primary
-    - text: Download v1.0.2
+    - text: Download Latest
       link: https://github.com/lovanbang999/pebblebase/releases/latest
       icon: external
       variant: secondary
