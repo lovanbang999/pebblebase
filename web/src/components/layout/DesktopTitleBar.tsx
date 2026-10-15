@@ -9,6 +9,7 @@ import {
   closeDesktopWindow,
 } from "@/lib/platform";
 import { useUpdateStore } from "@/lib/updateStore";
+import packageJson from "../../../package.json";
 
 interface DesktopTitleBarProps {
   activeConnectionName?: string;
@@ -128,7 +129,7 @@ export default function DesktopTitleBar({
                   "Click to check for software updates",
                 )}
               >
-                v{updateInfo?.currentVersion || "1.0.0"}
+                v{updateInfo?.currentVersion || packageJson.version}
               </button>
             </span>
 

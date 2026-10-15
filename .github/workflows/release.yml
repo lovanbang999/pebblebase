@@ -83,6 +83,53 @@ jobs:
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@v2.16.0
 
+      - name: Synchronize Release Version
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          echo "Synchronizing release version: $VERSION (from tag $RELEASE_TAG)"
+          node -e "
+            const fs = require('fs');
+            const version = process.env.RELEASE_TAG ? process.env.RELEASE_TAG.replace(/^v/, '') : '1.0.0';
+
+            // 1. Update web/package.json
+            const pkgPath = 'web/package.json';
+            if (fs.existsSync(pkgPath)) {
+              const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+              pkg.version = version;
+              fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+              console.log('Synchronized web/package.json to version:', version);
+            }
+
+            // 2. Update web/index.html splash badge
+            const htmlPath = 'web/index.html';
+            if (fs.existsSync(htmlPath)) {
+              let html = fs.readFileSync(htmlPath, 'utf8');
+              html = html.replace(/<span class=\"pb-splash-badge\">v[^<]*<\/span>/, '<span class=\"pb-splash-badge\">v' + version + '</span>');
+              fs.writeFileSync(htmlPath, html, 'utf8');
+              console.log('Synchronized web/index.html to version: v' + version);
+            }
+
+            // 3. Update internal/app/bootstrap.go
+            const bootstrapPath = 'internal/app/bootstrap.go';
+            if (fs.existsSync(bootstrapPath)) {
+              let content = fs.readFileSync(bootstrapPath, 'utf8');
+              content = content.replace(/var Version = \"[^\"]*\"/, 'var Version = \"' + version + '\"');
+              fs.writeFileSync(bootstrapPath, content, 'utf8');
+              console.log('Synchronized internal/app/bootstrap.go to Version:', version);
+            }
+
+            // 4. Update wails.json
+            const wailsPath = 'wails.json';
+            if (fs.existsSync(wailsPath)) {
+              const wails = JSON.parse(fs.readFileSync(wailsPath, 'utf8'));
+              if (wails.info) {
+                wails.info.productVersion = version;
+              }
+              fs.writeFileSync(wailsPath, JSON.stringify(wails, null, 2) + '\n');
+              console.log('Synchronized wails.json productVersion to:', version);
+            }
+          "
+
       - name: Build Web Assets
         run: |
           cd web
@@ -101,15 +148,20 @@ jobs:
             const wailsPath = path.resolve('wails.json');
             const wails = JSON.parse(fs.readFileSync(wailsPath, 'utf8'));
             wails.projectdir = path.resolve('cmd/desktop');
+            const version = process.env.RELEASE_TAG ? process.env.RELEASE_TAG.replace(/^v/, '') : '1.0.0';
+            if (wails.info) {
+              wails.info.productVersion = version;
+            }
             fs.writeFileSync(wailsPath, JSON.stringify(wails, null, 2));
-            console.log('Configured absolute projectdir:', wails.projectdir);
+            console.log('Configured absolute projectdir:', wails.projectdir, 'productVersion:', version);
           "
 
       - name: Build Desktop App (macOS)
         if: runner.os == 'macOS'
         run: |
+          VERSION="${RELEASE_TAG#v}"
           mkdir -p cmd/desktop/build/bin build/bin
-          wails build -platform darwin/universal -clean -skipbindings -s
+          wails build -platform darwin/universal -clean -skipbindings -ldflags "-s -w -X pebblebase/internal/app.Version=${VERSION}"
           if [ -d "cmd/desktop/build/bin/pebblebase.app" ]; then
             cp -rf cmd/desktop/build/bin/pebblebase.app build/bin/
           fi
@@ -126,8 +178,9 @@ jobs:
       - name: Build Desktop App (Windows)
         if: runner.os == 'Windows'
         run: |
+          VERSION="${RELEASE_TAG#v}"
           mkdir -p cmd/desktop/build/bin build/bin
-          wails build -platform windows/amd64 -clean -skipbindings -s
+          wails build -platform windows/amd64 -clean -skipbindings -ldflags "-s -w -X pebblebase/internal/app.Version=${VERSION}"
           if [ -f "cmd/desktop/build/bin/pebblebase.exe" ]; then
             cp -f cmd/desktop/build/bin/pebblebase.exe build/bin/
           fi
@@ -148,8 +201,9 @@ jobs:
       - name: Build Desktop App (Linux)
         if: runner.os == 'Linux'
         run: |
+          VERSION="${RELEASE_TAG#v}"
           mkdir -p cmd/desktop/build/bin build/bin
-          wails build -platform linux/amd64 -clean -skipbindings -s
+          wails build -platform linux/amd64 -clean -skipbindings -ldflags "-s -w -X pebblebase/internal/app.Version=${VERSION}"
           if [ -f "cmd/desktop/build/bin/pebblebase" ]; then
             cp -f cmd/desktop/build/bin/pebblebase build/bin/
           fi

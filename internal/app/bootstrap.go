@@ -22,7 +22,7 @@ import (
 )
 
 // Version is the current application version.
-var Version = "1.0.0"
+var Version = "1.0.2"
 
 // Instance represents a running Pebblebase core instance.
 type Instance struct {

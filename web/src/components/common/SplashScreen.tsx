@@ -1,5 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import packageJson from "../../../package.json";
 
 interface SplashScreenProps {
   message?: string;
@@ -8,7 +9,7 @@ interface SplashScreenProps {
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({
   message,
-  version = "v1.0.0",
+  version = `v${packageJson.version}`,
 }) => {
   const { t } = useTranslation();
   const displayMessage =
