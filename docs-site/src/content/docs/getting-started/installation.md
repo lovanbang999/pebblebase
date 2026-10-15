@@ -67,6 +67,17 @@ Pebblebase Studio on Windows is completely self-contained and portable—no admi
 
 Pebblebase is compatible with Ubuntu, Debian, Fedora, Arch, and most standard Linux distributions:
 
+### Ubuntu & Debian (.deb - Recommended)
+
+1. Download **`pebblebase_<version>_amd64.deb`** from [GitHub Releases](https://github.com/lovanbang999/pebblebase/releases/latest).
+2. Install with automatic dependency resolution:
+   ```bash
+   sudo apt install ./pebblebase_*_amd64.deb
+   ```
+   *Or double-click the `.deb` file in your desktop file manager to install via the Software Center.*
+
+### Portable Binary (Universal)
+
 1. Download **`pebblebase-linux-amd64.tar.gz`** from [GitHub Releases](https://github.com/lovanbang999/pebblebase/releases/latest).
 2. Extract the archive and execute the binary:
    ```bash
@@ -76,7 +87,7 @@ Pebblebase is compatible with Ubuntu, Debian, Fedora, Arch, and most standard Li
 
 ### Dependencies
 
-Ensure your Linux distribution has GTK3 and WebKitGTK installed:
+Ensure your Linux distribution has GTK3 and WebKitGTK installed (automatically handled if using `apt` for `.deb`):
 
 - **Ubuntu/Debian:** `sudo apt install libgtk-3-0 libwebkit2gtk-4.1-0` (or `libwebkit2gtk-4.0-37`)
 - **Fedora:** `sudo dnf install gtk3 webkit2gtk4.1`
