@@ -640,7 +640,7 @@ function PebblebaseStudio() {
         className="min-h-0 w-full flex-1 overflow-hidden"
         style={
           {
-            "--sidebar-width": "clamp(13.5rem, 16vw, 16rem)",
+            "--sidebar-width": "clamp(14.5rem, 16vw, 17rem)",
           } as React.CSSProperties
         }
       >

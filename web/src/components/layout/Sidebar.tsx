@@ -1062,7 +1062,7 @@ export default function Sidebar({
       <SidebarFooter className="border-sidebar-border flex flex-col gap-0 border-t p-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:p-2">
         {/* User menu — shown when authenticated */}
         {user && (
-          <div className="w-full p-2 pb-1.5">
+          <div className="w-full p-2">
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -1182,45 +1182,57 @@ export default function Sidebar({
         )}
 
         {/* Version + Language + Theme bar */}
-        <div className="border-sidebar-border flex h-9 items-center justify-between border-t bg-zinc-50/40 px-3 group-data-[collapsible=icon]:hidden dark:bg-zinc-950/30">
-          <div className="flex flex-1 items-center gap-1.5 truncate">
-            <span className="font-mono text-[11px] font-semibold tracking-tight text-zinc-600 dark:text-zinc-400">
+        <div className="border-sidebar-border flex h-9 items-center justify-between border-t bg-zinc-50/50 px-2.5 group-data-[collapsible=icon]:hidden dark:bg-zinc-950/40">
+          <div className="flex shrink-0 items-center gap-1.5">
+            <span className="font-mono text-[11px] font-semibold tracking-tight text-zinc-700 dark:text-zinc-300">
               Pebblebase
             </span>
-            <button
-              type="button"
-              onClick={openDialogAndCheck}
-              title={
-                updateInfo?.hasUpdate
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    onClick={openDialogAndCheck}
+                    className={cn(
+                      "group/ver inline-flex h-4.5 cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[10px] leading-none transition-colors",
+                      updateInfo?.hasUpdate
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400"
+                        : "border-zinc-200/80 bg-zinc-100/70 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-200/70 hover:text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
+                    )}
+                  >
+                    <span>
+                      v{updateInfo?.currentVersion || packageJson.version}
+                    </span>
+                    {updateInfo?.hasUpdate ? (
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      </span>
+                    ) : (
+                      <RefreshCw
+                        className={cn(
+                          "size-2.5 opacity-0 transition-opacity group-hover/ver:opacity-70",
+                          isCheckingUpdate &&
+                            "animate-spin text-emerald-500 opacity-100",
+                        )}
+                      />
+                    )}
+                  </button>
+                }
+              />
+              <TooltipContent
+                side="top"
+                sideOffset={6}
+                className="font-sans text-[11px] select-none"
+              >
+                {updateInfo?.hasUpdate
                   ? t(
                       "updates.updateAvailableBadge",
                       `v${updateInfo.latestVersion} available! Click to update`,
                     )
-                  : t("updates.checkTooltip", "Click to check for updates")
-              }
-              className={cn(
-                "group/ver inline-flex h-4.5 cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[10px] leading-none transition-colors",
-                updateInfo?.hasUpdate
-                  ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 hover:bg-emerald-500/25 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-400"
-                  : "border-zinc-200 bg-zinc-100/60 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-200/60 hover:text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
-              )}
-            >
-              <span>v{updateInfo?.currentVersion || packageJson.version}</span>
-              {updateInfo?.hasUpdate ? (
-                <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                </span>
-              ) : (
-                <RefreshCw
-                  className={cn(
-                    "h-2.5 w-2.5 opacity-0 transition-opacity group-hover/ver:opacity-70",
-                    isCheckingUpdate &&
-                      "animate-spin text-emerald-500 opacity-100",
-                  )}
-                />
-              )}
-            </button>
+                  : t("updates.checkTooltip", "Click to check for updates")}
+              </TooltipContent>
+            </Tooltip>
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {onOpenOnboarding && (
