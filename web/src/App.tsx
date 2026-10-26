@@ -83,9 +83,9 @@ const OnboardingTour = lazy(() =>
     default: m.OnboardingTour,
   })),
 );
-const RedisKeyBrowser = lazy(() =>
+const RedisStudio = lazy(() =>
   import("@/components/redis").then((m) => ({
-    default: m.RedisKeyBrowser,
+    default: m.RedisStudio,
   })),
 );
 
@@ -830,11 +830,11 @@ function PebblebaseStudio() {
                   <Suspense
                     fallback={
                       <div className="flex flex-1 items-center justify-center font-mono text-xs text-zinc-500">
-                        Loading Redis Key Browser...
+                        Loading Redis Studio...
                       </div>
                     }
                   >
-                    <RedisKeyBrowser
+                    <RedisStudio
                       key={`redis-${activeConnection.id}`}
                       connId={activeConnection.id}
                       isReadOnly={Boolean(activeConnection.read_only)}

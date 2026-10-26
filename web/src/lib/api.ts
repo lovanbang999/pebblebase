@@ -760,3 +760,39 @@ export async function deleteRedisKey(
   );
   return handleResponse<{ ok: boolean }>(res);
 }
+
+export interface RedisPubSubMessage {
+  channel: string;
+  pattern?: string;
+  payload: string;
+  timestamp: string;
+}
+
+export async function publishRedisMessage(
+  connId: string,
+  channel: string,
+  message: string,
+): Promise<{ channel: string; receivers: number }> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${connId}/redis/pubsub/publish`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify({ channel, message }),
+    },
+  );
+  return handleResponse<{ channel: string; receivers: number }>(res);
+}
+
+export function getRedisPubSubStreamUrl(
+  connId: string,
+  channels: string[],
+  patterns: string[],
+): string {
+  const sp = new URLSearchParams();
+  if (channels.length > 0) sp.set("channels", channels.join(","));
+  if (patterns.length > 0) sp.set("patterns", patterns.join(","));
+  const token = useAuthStore.getState().token;
+  if (token) sp.set("token", token);
+  return `${BASE_URL}/connections/${connId}/redis/pubsub/stream?${sp.toString()}`;
+}

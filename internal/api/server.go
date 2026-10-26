@@ -93,6 +93,10 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/connections/{id}/redis/key/item", protect(http.HandlerFunc(s.handleRedisKeyItemMutate)))
 	mux.Handle("DELETE /api/connections/{id}/redis/key", protect(http.HandlerFunc(s.handleRedisKeyDelete)))
 
+	// Redis Pub/Sub Streaming & Publishing
+	mux.Handle("GET /api/connections/{id}/redis/pubsub/stream", protect(http.HandlerFunc(s.handleRedisPubSubStream)))
+	mux.Handle("POST /api/connections/{id}/redis/pubsub/publish", protect(http.HandlerFunc(s.handleRedisPubSubPublish)))
+
 	// Ad-hoc raw SQL and Mongo query execution
 	mux.Handle("POST /api/connections/{id}/query", protect(http.HandlerFunc(s.executeRawQuery)))
 	mux.Handle("POST /api/connections/{id}/explain", protect(http.HandlerFunc(s.explainQuery)))
