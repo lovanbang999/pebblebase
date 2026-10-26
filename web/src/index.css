@@ -48,6 +48,21 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Font Size Scaling Presets */
+html[data-font-size="sm"] {
+  font-size: 14px;
+}
+html[data-font-size="md"],
+html:not([data-font-size]) {
+  font-size: 16px;
+}
+html[data-font-size="lg"] {
+  font-size: 18px;
+}
+html[data-font-size="xl"] {
+  font-size: 20px;
+}
+
 :root {
   color-scheme: light;
   --titlebar-height: 0px;
