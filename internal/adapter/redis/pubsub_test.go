@@ -76,3 +76,49 @@ func TestPubSub_PublishValidation(t *testing.T) {
 		t.Fatal("expected error publishing to empty channel")
 	}
 }
+
+func TestPubSub_HighThroughputRapidBroadcast(t *testing.T) {
+	adp, _ := setupTestRedis(t)
+	ctx := context.Background()
+
+	msgChan, cleanup, err := adp.Subscribe(ctx, []string{"stream.metrics"}, nil)
+	if err != nil {
+		t.Fatalf("subscription failed: %v", err)
+	}
+	defer cleanup()
+
+	time.Sleep(50 * time.Millisecond)
+
+	const messageCount = 50
+	donePublish := make(chan struct{})
+
+	go func() {
+		for i := 0; i < messageCount; i++ {
+			_, pubErr := adp.Publish(ctx, "stream.metrics", "metric_packet")
+			if pubErr != nil {
+				t.Errorf("publish %d error: %v", i, pubErr)
+			}
+		}
+		close(donePublish)
+	}()
+
+	received := 0
+	timeout := time.After(3 * time.Second)
+
+	for received < messageCount {
+		select {
+		case msg, ok := <-msgChan:
+			if !ok {
+				t.Fatal("message channel closed unexpectedly")
+			}
+			if msg.Channel == "stream.metrics" {
+				received++
+			}
+		case <-timeout:
+			t.Fatalf("timed out receiving rapid broadcast messages (received %d/%d)", received, messageCount)
+		}
+	}
+
+	<-donePublish
+	t.Logf("Successfully verified %d rapid pubsub broadcast deliveries without deadlock", received)
+}

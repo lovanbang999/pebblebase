@@ -80,6 +80,12 @@ func (a *Adapter) ScanKeysWithMetadata(ctx context.Context, cursor uint64, patte
 		}
 	}
 
+	// Cap to count so a single scan page never exceeds the requested batch size
+	// (protects against huge pipeline overhead and ensures consistent page sizes)
+	if len(scannedKeys) > int(count) {
+		scannedKeys = scannedKeys[:count]
+	}
+
 	if len(scannedKeys) == 0 {
 		return ScanResult{
 			Keys:       []KeyMetadata{},
