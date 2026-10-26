@@ -105,7 +105,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           ? "MySQL"
           : targetDbType === "mongodb"
             ? "MongoDB"
-            : "SQLite";
+            : targetDbType === "redis"
+              ? "Redis"
+              : "SQLite";
     const envLabel = targetEnv !== "local" ? ` - ${targetEnv}` : "";
     let prefix = "Local";
 
@@ -128,9 +130,19 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
     setTestResult(null);
     const defaultPort = getDefaultPort(type);
     setPort(defaultPort);
+    if (type === "redis" && (dbName === "pebble_test" || !dbName)) {
+      setDbName("0");
+    }
 
     if (!isNameCustom) {
-      setName(generateDefaultName(type, dbName, environment, filepath));
+      setName(
+        generateDefaultName(
+          type,
+          type === "redis" ? "0" : dbName,
+          environment,
+          filepath,
+        ),
+      );
     }
   };
 
@@ -469,10 +481,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 <div>
                   <div className="mb-1 flex items-center justify-between">
                     <label className="text-xs text-zinc-600 dark:text-zinc-400">
-                      {t("connection.database")}
+                      {dbType === "redis"
+                        ? t("connection.redisDbIndex")
+                        : t("connection.database")}
                     </label>
                     <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
-                      {t("connection.targetSchema")}
+                      {dbType === "redis"
+                        ? t("connection.redisLogicalDb")
+                        : t("connection.targetSchema")}
                     </span>
                   </div>
                   <Input
@@ -480,7 +496,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     value={dbName}
                     onChange={(e) => handleDbNameChange(e.target.value)}
                     required
-                    placeholder="database_name"
+                    placeholder={dbType === "redis" ? "0" : "database_name"}
                     className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                   />
                 </div>
@@ -494,7 +510,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       type="text"
                       value={user}
                       onChange={(e) => setUser(e.target.value)}
-                      placeholder="username"
+                      placeholder={
+                        dbType === "redis"
+                          ? t("connection.redisUserPlaceholder")
+                          : "username"
+                      }
                       className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                     />
                   </div>
@@ -506,7 +526,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder={
+                        dbType === "redis"
+                          ? t("connection.optionalPassword")
+                          : "••••••••"
+                      }
                       className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                     />
                   </div>
@@ -530,7 +554,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       ? "mysql://root:secret@tcp(127.0.0.1:3306)/mydb"
                       : dbType === "mongodb"
                         ? "mongodb://pebble:pebble@localhost:27017/pebble_test?authSource=admin"
-                        : "file:/path/to/database.db"
+                        : dbType === "redis"
+                          ? "redis://:secret@localhost:6379/0"
+                          : "file:/path/to/database.db"
                 }
                 className="resize-none border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
               />

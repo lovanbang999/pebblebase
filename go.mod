@@ -18,6 +18,7 @@ require (
 require (
 	filippo.io/edwards25519 v1.2.0 // indirect
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
+	github.com/alicebob/miniredis/v2 v2.40.0 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -65,6 +66,7 @@ require (
 	github.com/xuri/efp v0.0.1 // indirect
 	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
+	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.uber.org/atomic v1.12.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect

@@ -45,6 +45,14 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     defaultPort: "local-file",
     badge: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
   },
+  {
+    type: "redis",
+    name: "Redis",
+    label: "Redis",
+    category: "In-Memory / Key-Value",
+    defaultPort: "6379",
+    badge: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
+  },
 ];
 
 export function getDefaultPort(type: DatabaseType): string {
