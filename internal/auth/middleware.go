@@ -62,11 +62,15 @@ func IsViewer(r *http.Request) bool {
 	return claims != nil && claims.Role == RoleViewer
 }
 
-// bearerToken extracts the token string from "Authorization: Bearer <token>".
+// bearerToken extracts the token string from "Authorization: Bearer <token>"
+// or the "token" query parameter (useful for EventSource and WebSocket streams).
 func bearerToken(r *http.Request) string {
 	h := r.Header.Get("Authorization")
-	if !strings.HasPrefix(h, "Bearer ") {
-		return ""
+	if strings.HasPrefix(h, "Bearer ") {
+		return strings.TrimPrefix(h, "Bearer ")
 	}
-	return strings.TrimPrefix(h, "Bearer ")
+	if token := r.URL.Query().Get("token"); token != "" {
+		return token
+	}
+	return ""
 }

@@ -1,4 +1,7 @@
+export { RedisStudio } from "./RedisStudio";
 export { RedisKeyBrowser } from "./RedisKeyBrowser";
+export { RedisPubSubMonitor } from "./RedisPubSubMonitor";
+export { RedisCliConsole } from "./RedisCliConsole";
 export { AddKeyModal } from "./AddKeyModal";
 export { EditTTLModal } from "./EditTTLModal";
 export { StringValueEditor } from "./StringValueEditor";
