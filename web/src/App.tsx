@@ -50,6 +50,7 @@ import {
 } from "./lib/api";
 import { isDesktopApp, quitDesktopApp, toggleFullscreen } from "./lib/platform";
 import { useUpdateStore } from "./lib/updateStore";
+import { useFontSizeStore } from "./lib/fontSizeStore";
 import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
 
 // Lazy-loaded heavy modules for fast desktop startup and minimal initial memory
@@ -300,6 +301,25 @@ function PebblebaseStudio() {
           openErdTab();
         }
         return;
+      }
+
+      // Font Size Zoom Shortcuts: Ctrl/Cmd + Plus / Minus / 0
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "=" || e.key === "+") {
+          e.preventDefault();
+          useFontSizeStore.getState().increaseFontSize();
+          return;
+        }
+        if (e.key === "-") {
+          e.preventDefault();
+          useFontSizeStore.getState().decreaseFontSize();
+          return;
+        }
+        if (e.key === "0") {
+          e.preventDefault();
+          useFontSizeStore.getState().resetFontSize();
+          return;
+        }
       }
 
       // Desktop: Ctrl+Q to quit

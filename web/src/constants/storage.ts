@@ -4,6 +4,7 @@
  */
 export const STORAGE_KEYS = {
   THEME: "pb_theme",
+  FONT_SIZE: "pb_font_size",
   LANGUAGE: "pebblebase_language",
   AUTH: "pebblebase-auth",
   RECENT_ITEMS: "pebblebase_recent_items",

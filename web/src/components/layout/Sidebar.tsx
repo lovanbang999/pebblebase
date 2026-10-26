@@ -27,11 +27,14 @@ import {
   GitCompare,
   MoreHorizontal,
   Unplug,
+  Type,
+  Check,
 } from "lucide-react";
 import type { Connection, TableSchema } from "@/lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "@/lib/platform";
 import { useAuthStore } from "@/lib/auth";
 import { useUpdateStore } from "@/lib/updateStore";
+import { useFontSizeStore, FONT_SIZES } from "@/lib/fontSizeStore";
 import { apiLogout, exportTableData } from "@/lib/api";
 import { TableContextMenu } from "./TableContextMenu";
 import { TableDangerModal, type DangerActionType } from "@/components/modals";
@@ -53,6 +56,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -220,6 +226,8 @@ export default function Sidebar({
     isChecking: isCheckingUpdate,
     openDialogAndCheck,
   } = useUpdateStore();
+  const fontSize = useFontSizeStore((s) => s.fontSize);
+  const setFontSize = useFontSizeStore((s) => s.setFontSize);
 
   async function handleSignOut() {
     try {
@@ -1148,6 +1156,54 @@ export default function Sidebar({
                     <span className="flex-1">{t("auth.adminPanel")}</span>
                   </DropdownMenuItem>
                 )}
+
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100">
+                    <Type className="size-3.5 text-zinc-400" />
+                    <span className="flex-1">
+                      {t("fontSize.title", "Font Size")}
+                    </span>
+                    <span className="font-mono text-[10px] text-zinc-400 uppercase">
+                      {FONT_SIZES.find((s) => s.id === fontSize)?.scale ||
+                        "100%"}
+                    </span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-48 rounded-xl border border-zinc-200 bg-white p-1 text-zinc-900 shadow-xl backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
+                    {FONT_SIZES.map((item) => (
+                      <DropdownMenuItem
+                        key={item.id}
+                        onClick={() => setFontSize(item.id)}
+                        className={cn(
+                          "flex cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition-colors",
+                          fontSize === item.id
+                            ? "bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
+                            : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100",
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          {fontSize === item.id ? (
+                            <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
+                          ) : (
+                            <span className="size-3" />
+                          )}
+                          <span>{t(item.labelKey, item.defaultLabel)}</span>
+                        </div>
+                        <span className="font-mono text-[10px] text-zinc-400">
+                          {item.scale}
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator className="my-1 bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="flex items-center justify-between px-2.5 py-1 text-[10px] text-zinc-400">
+                      <span>
+                        {t("fontSize.zoomShortcut", "Zoom: Ctrl + / -")}
+                      </span>
+                      <kbd className="py-0.2 rounded border border-zinc-200 bg-zinc-100 px-1 font-mono text-[9px] dark:border-zinc-700 dark:bg-zinc-800">
+                        Ctrl 0
+                      </kbd>
+                    </div>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
 
                 <DropdownMenuItem
                   onClick={openDialogAndCheck}

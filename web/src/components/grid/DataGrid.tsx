@@ -21,33 +21,14 @@ import {
   ArrowUp,
   ArrowDown,
   Plus,
-  RefreshCw,
   Filter as FilterIcon,
   X,
   Key,
   Layers,
-  ChevronLeft,
-  ChevronRight,
-  ChevronDown as ChevronDownIcon,
-  ChevronUp as ChevronUpIcon,
-  Edit2,
-  Trash2,
-  Table as TableIcon,
-  LayoutList,
   ArrowUpRight,
   Search,
   Inbox,
   ShieldAlert,
-  Terminal,
-  Download,
-  UploadCloud,
-  FileSpreadsheet,
-  FileJson,
-  FileCode2,
-  Database,
-  Settings2,
-  ChevronDown,
-  FileCode,
   BarChart3,
   MoreVertical,
   Copy,
@@ -86,12 +67,11 @@ const ColumnAnalyticsDrawer = lazy(() =>
     default: m.ColumnAnalyticsDrawer,
   })),
 );
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
+const CellDetailDrawer = lazy(() =>
+  import("./cell-inspector/CellDetailDrawer").then((m) => ({
+    default: m.CellDetailDrawer,
+  })),
+);
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,8 +79,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { NumberInput } from "@/components/ui/number-input";
 import { Badge } from "@/components/ui/badge";
@@ -156,605 +134,11 @@ interface DataGridProps {
   dbType?: "postgres" | "mysql" | "mongodb" | "sqlite";
 }
 
-// ─────────────────────────────────────────────────────────
-// DocumentView — Compass-style expanded document card list
-// ─────────────────────────────────────────────────────────
-interface DocumentViewProps {
-  rows: Record<string, any>[];
-  table: TableSchema;
-  extraColumns: string[];
-  page: number;
-  pageSize: number;
-  isReadOnly: boolean;
-  onEditRow: (row: Record<string, any>) => void;
-  onDeleteRow: (row: Record<string, any>) => void;
-  onSaveCell?: (
-    row: Record<string, any>,
-    columnName: string,
-    newValue: any,
-  ) => Promise<void>;
-  onNavigateRelation?: (
-    targetTable: string,
-    targetColumn: string,
-    value: any,
-  ) => void;
-  t: (key: string, opts?: any) => string;
-}
-
-const DocumentView: FC<DocumentViewProps> = ({
-  rows,
-  table,
-  extraColumns,
-  page,
-  pageSize,
-  isReadOnly,
-  onEditRow,
-  onDeleteRow,
-  onSaveCell,
-  onNavigateRelation,
-  t,
-}) => {
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [copiedRow, setCopiedRow] = useState<number | null>(null);
-  const [editingDocIdx, setEditingDocIdx] = useState<number | null>(null);
-  const [editingValues, setEditingValues] = useState<Record<string, string>>(
-    {},
-  );
-  const [isSaving, setIsSaving] = useState(false);
-
-  // Helper: get field display type label
-  const getTypeLabel = (key: string, val: any): string => {
-    const col = table.columns.find((c) => c.name === key);
-    if (col) {
-      if (col.type === "int") return "Int32";
-      if (col.type === "float") return "Double";
-      if (col.type === "bool") return "Boolean";
-      if (col.type === "datetime") return "Date";
-      if (col.type === "json") return "Object";
-      if (col.type === "uuid") return "UUID";
-      if (col.type === "binary") return "Binary";
-      return "String";
-    }
-    if (val === null || val === undefined) return "Null";
-    if (typeof val === "number")
-      return Number.isInteger(val) ? "Int32" : "Double";
-    if (typeof val === "boolean") return "Boolean";
-    if (typeof val === "object") return "Object";
-    return "String";
-  };
-
-  const enterEditMode = (idx: number, row: Record<string, any>) => {
-    if (isReadOnly) return;
-    const draft: Record<string, string> = {};
-    Object.entries(row).forEach(([k, v]) => {
-      if (!k.startsWith("_pb_")) {
-        draft[k] =
-          v === null || v === undefined
-            ? ""
-            : typeof v === "object"
-              ? JSON.stringify(v)
-              : String(v);
-      }
-    });
-    setEditingDocIdx(idx);
-    setEditingValues(draft);
-    // Expand the card so all fields are visible in edit mode
-    setExpandedRows((prev) => {
-      const next = new Set(prev);
-      next.add(idx);
-      return next;
-    });
-  };
-
-  const cancelEdit = () => {
-    setEditingDocIdx(null);
-    setEditingValues({});
-    setIsSaving(false);
-  };
-
-  const isDocModified = (row: Record<string, any>): boolean => {
-    if (editingDocIdx === null) return false;
-    return Object.entries(editingValues).some(([k, v]) => {
-      const orig = row[k];
-      const origStr =
-        orig === null || orig === undefined
-          ? ""
-          : typeof orig === "object"
-            ? JSON.stringify(orig)
-            : String(orig);
-      return v !== origStr;
-    });
-  };
-
-  const handleUpdate = async (row: Record<string, any>) => {
-    if (!onSaveCell || isSaving) return;
-    setIsSaving(true);
-    try {
-      const changedEntries = Object.entries(editingValues).filter(([k, v]) => {
-        const orig = row[k];
-        const origStr =
-          orig === null || orig === undefined
-            ? ""
-            : typeof orig === "object"
-              ? JSON.stringify(orig)
-              : String(orig);
-        return v !== origStr;
-      });
-      for (const [key, rawVal] of changedEntries) {
-        const colSchema = table.columns.find((c) => c.name === key);
-        let parsed: any = rawVal;
-        if (colSchema) {
-          if (rawVal === "" && colSchema.nullable) parsed = null;
-          else if (colSchema.type === "int") {
-            const p = parseInt(rawVal, 10);
-            parsed = isNaN(p) ? rawVal : p;
-          } else if (colSchema.type === "float") {
-            const p = parseFloat(rawVal);
-            parsed = isNaN(p) ? rawVal : p;
-          } else if (colSchema.type === "bool") parsed = rawVal === "true";
-          else if (colSchema.type === "json") {
-            try {
-              parsed = JSON.parse(rawVal);
-            } catch {
-              parsed = rawVal;
-            }
-          }
-        }
-        await onSaveCell(row, key, parsed);
-      }
-      cancelEdit();
-    } catch (err) {
-      console.error("Document inline update failed:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Escape key to cancel editing
-  useEffect(() => {
-    if (editingDocIdx === null) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancelEdit();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [editingDocIdx]);
-
-  const toggleExpand = (idx: number) => {
-    setExpandedRows((prev) => {
-      const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
-      return next;
-    });
-  };
-
-  const handleCopyJson = (row: Record<string, any>, idx: number) => {
-    navigator.clipboard.writeText(JSON.stringify(row, null, 2));
-    setCopiedRow(idx);
-    setTimeout(() => setCopiedRow(null), COPY_FEEDBACK_MS);
-  };
-
-  // All field keys for a given row (schema + dynamic)
-  const allFieldKeys = (row: Record<string, any>) => {
-    const schemaKeys = table.columns.map((c) => c.name);
-    const rowKeys = Object.keys(row).filter((k) => !k.startsWith("_pb_"));
-    return Array.from(
-      new Set([...schemaKeys, ...extraColumns, ...rowKeys]),
-    ).filter((k) => k in row);
-  };
-
-  const renderValue = (key: string, val: any, _row: Record<string, any>) => {
-    if (val === undefined) {
-      return (
-        <span className="text-[11px] text-zinc-500 italic select-none">—</span>
-      );
-    }
-    if (val === null) {
-      return (
-        <span className="font-mono text-[11px] text-zinc-500 italic">null</span>
-      );
-    }
-
-    const colSchema = table.columns.find((c) => c.name === key);
-
-    // Foreign key navigation
-    if (colSchema?.is_foreign_key && onNavigateRelation) {
-      const rel = table.relations?.find((r) => r.from_column === key);
-      if (rel) {
-        return (
-          <button
-            type="button"
-            onClick={() => onNavigateRelation(rel.to_table, rel.to_column, val)}
-            className="inline-flex cursor-pointer items-center gap-1 font-mono text-[11px] text-sky-600 hover:underline dark:text-sky-400"
-          >
-            {String(val)}
-            <ArrowUpRight className="h-3 w-3 shrink-0" />
-          </button>
-        );
-      }
-    }
-
-    if (typeof val === "boolean") {
-      return (
-        <span
-          className={cn(
-            "rounded border px-1.5 py-px font-mono text-[11px] font-semibold",
-            val
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-400"
-              : "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-transparent dark:bg-zinc-800 dark:text-zinc-400",
-          )}
-        >
-          {String(val)}
-        </span>
-      );
-    }
-
-    if (typeof val === "object") {
-      const json = JSON.stringify(val);
-      const isLong = json.length > 80;
-      return (
-        <span
-          className="cursor-help font-mono text-[11px] break-all text-amber-700 dark:text-amber-300/90"
-          title={JSON.stringify(val, null, 2)}
-        >
-          {isLong ? json.slice(0, 80) + "…" : json}
-        </span>
-      );
-    }
-
-    if (colSchema?.is_primary_key) {
-      return (
-        <span className="font-mono text-[11px] font-semibold text-amber-700 dark:text-amber-400">
-          {String(val)}
-        </span>
-      );
-    }
-
-    if (typeof val === "number") {
-      return (
-        <span className="font-mono text-[11px] text-blue-700 dark:text-blue-300">
-          {String(val)}
-        </span>
-      );
-    }
-
-    // String
-    const str = String(val);
-    const isDate =
-      colSchema?.type === "datetime" || /^\d{4}-\d{2}-\d{2}T/.test(str);
-    if (isDate) {
-      return (
-        <span className="font-mono text-[11px] text-violet-700 dark:text-violet-300">
-          &quot;{str}&quot;
-        </span>
-      );
-    }
-    return (
-      <span className="font-mono text-[11px] text-emerald-700 dark:text-emerald-300">
-        &quot;{str}&quot;
-      </span>
-    );
-  };
-
-  return (
-    <div className="flex-1 space-y-2 overflow-auto bg-white p-3 dark:bg-zinc-950">
-      {rows.map((row, globalIdx) => {
-        const rowNumber = page * pageSize + globalIdx + 1;
-        const keys = allFieldKeys(row);
-        const isExpanded = expandedRows.has(globalIdx);
-        // Show first 8 fields collapsed, all when expanded
-        const visibleKeys = isExpanded ? keys : keys.slice(0, 15);
-        const hasMore = keys.length > 15;
-
-        // Primary key field shown prominently at top
-        const pkCol = table.columns.find((c) => c.is_primary_key);
-        const pkKey = pkCol?.name ?? "_id";
-        const pkVal = row[pkKey];
-
-        return (
-          <div
-            key={globalIdx}
-            className={cn(
-              "group overflow-hidden rounded-lg border bg-white transition-colors dark:bg-zinc-900",
-              editingDocIdx === globalIdx
-                ? "border-emerald-500/60 ring-1 ring-emerald-500/20 dark:border-emerald-500/40"
-                : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700",
-            )}
-            onDoubleClick={() => {
-              if (!isReadOnly && editingDocIdx !== globalIdx)
-                enterEditMode(globalIdx, row);
-            }}
-          >
-            {/* Card Header: row# + primary key + actions */}
-            <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/70 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/70">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="w-6 shrink-0 text-right font-mono text-[11px] text-zinc-400 select-none dark:text-zinc-600">
-                  {rowNumber}
-                </span>
-                <span className="shrink-0 font-mono text-[11px] text-zinc-500 dark:text-zinc-500">
-                  {pkKey}:
-                </span>
-                <span className="truncate font-mono text-[11px] font-semibold text-amber-700 dark:text-amber-400">
-                  {pkVal !== undefined && pkVal !== null ? (
-                    String(pkVal)
-                  ) : (
-                    <span className="text-zinc-400 italic">null</span>
-                  )}
-                </span>
-                {editingDocIdx === globalIdx && (
-                  <span className="ml-1 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-px font-mono text-[10px] text-emerald-600 select-none dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-400">
-                    editing
-                  </span>
-                )}
-              </div>
-
-              {/* Per-card actions — hidden when editing */}
-              {editingDocIdx !== globalIdx && (
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  {!isReadOnly && (
-                    <span className="mr-1 hidden font-mono text-[10px] text-zinc-400 select-none group-hover:inline dark:text-zinc-600">
-                      double-click to edit
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleCopyJson(row, globalIdx)}
-                    title={t("datagrid.documentView.copyJson")}
-                    className="cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
-                  >
-                    {copiedRow === globalIdx ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-500" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onEditRow(row)}
-                    disabled={isReadOnly}
-                    title={t("datagrid.editRecordTooltip")}
-                    className={cn(
-                      "cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-600 dark:hover:bg-zinc-800 dark:hover:text-emerald-400",
-                      isReadOnly &&
-                        "pointer-events-none cursor-not-allowed opacity-40",
-                    )}
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteRow(row)}
-                    disabled={isReadOnly}
-                    title={t("datagrid.deleteRecordTooltip")}
-                    className={cn(
-                      "cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400",
-                      isReadOnly &&
-                        "pointer-events-none cursor-not-allowed opacity-40",
-                    )}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Field list — Compass-style, one per line with line numbers */}
-            <div className="py-1">
-              {visibleKeys
-                .filter((k) => k !== pkKey)
-                .map((key, fieldIdx) => {
-                  const isPk = table.columns.find(
-                    (c) => c.name === key,
-                  )?.is_primary_key;
-                  const isEditing = editingDocIdx === globalIdx;
-                  const typeLabel = getTypeLabel(key, row[key]);
-                  const fieldLineNum = fieldIdx + 2; // starts at 2 (1 = _id)
-                  const currentVal = editingValues[key] ?? "";
-                  const origStr = (() => {
-                    const orig = row[key];
-                    return orig === null || orig === undefined
-                      ? ""
-                      : typeof orig === "object"
-                        ? JSON.stringify(orig)
-                        : String(orig);
-                  })();
-                  const isDirty = isEditing && currentVal !== origStr;
-
-                  return (
-                    <div
-                      key={key}
-                      className={cn(
-                        "flex min-w-0 items-center gap-0 border-l-2 transition-colors",
-                        isEditing && isDirty
-                          ? "border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/10"
-                          : "border-l-transparent",
-                      )}
-                    >
-                      {/* Line number */}
-                      {isEditing && (
-                        <span className="w-8 shrink-0 self-start pt-0.75 pr-2 text-right font-mono text-[10px] text-zinc-400 select-none dark:text-zinc-600">
-                          {fieldLineNum}
-                        </span>
-                      )}
-
-                      {/* Field name */}
-                      <span
-                        className={cn(
-                          "shrink-0 self-start truncate font-mono text-[11px] text-zinc-500 dark:text-zinc-400",
-                          isEditing
-                            ? "min-w-35 px-2 pt-0.75"
-                            : "min-w-30 px-3 py-px",
-                        )}
-                      >
-                        {key}
-                      </span>
-                      <span className="shrink-0 self-start pt-0.75 font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
-                        :
-                      </span>
-
-                      {/* Value — textarea in edit mode, styled display otherwise */}
-                      {isEditing && !isPk ? (
-                        <textarea
-                          rows={1}
-                          value={currentVal}
-                          onChange={(e) => {
-                            const el = e.target;
-                            el.style.height = "auto";
-                            el.style.height = `${el.scrollHeight}px`;
-                            setEditingValues((prev) => ({
-                              ...prev,
-                              [key]: e.target.value,
-                            }));
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && e.ctrlKey) {
-                              // Ctrl+Enter = insert newline
-                              e.preventDefault();
-                              const el = e.currentTarget;
-                              const start =
-                                el.selectionStart ?? currentVal.length;
-                              const end = el.selectionEnd ?? currentVal.length;
-                              const newVal =
-                                currentVal.slice(0, start) +
-                                "\n" +
-                                currentVal.slice(end);
-                              setEditingValues((prev) => ({
-                                ...prev,
-                                [key]: newVal,
-                              }));
-                              setTimeout(() => {
-                                el.selectionStart = el.selectionEnd = start + 1;
-                                el.style.height = "auto";
-                                el.style.height = `${el.scrollHeight}px`;
-                              }, 0);
-                            }
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          ref={(el) => {
-                            if (el) {
-                              el.style.height = "auto";
-                              el.style.height = `${el.scrollHeight}px`;
-                            }
-                          }}
-                          className={cn(
-                            "min-w-0 flex-1 resize-none overflow-hidden border-0 border-b bg-transparent px-2 py-px font-mono text-[11px] leading-5 text-zinc-900 transition-colors focus:outline-none dark:text-zinc-100",
-                            isDirty
-                              ? "border-b-emerald-500 dark:border-b-emerald-400"
-                              : "border-b-zinc-200 focus:border-b-zinc-400 dark:border-b-zinc-700 dark:focus:border-b-zinc-500",
-                          )}
-                          autoFocus={
-                            key === visibleKeys.filter((k) => k !== pkKey)[0]
-                          }
-                        />
-                      ) : (
-                        <span
-                          className={cn(
-                            "min-w-0 flex-1 font-mono text-[11px] wrap-break-word",
-                            isEditing
-                              ? "px-2 py-px text-zinc-500 dark:text-zinc-500"
-                              : "px-2 py-px",
-                          )}
-                        >
-                          {isEditing ? (
-                            // PK field shown as plain text in edit mode
-                            <span className="text-amber-700 dark:text-amber-400">
-                              {String(row[key] ?? "")}
-                            </span>
-                          ) : (
-                            renderValue(key, row[key], row)
-                          )}
-                        </span>
-                      )}
-
-                      {/* Type label (Compass-style, right side) */}
-                      <span
-                        className={cn(
-                          "shrink-0 self-start pt-0.75 pl-2 font-mono text-[10px]",
-                          isEditing
-                            ? "min-w-14 pr-3 text-right text-zinc-400 dark:text-zinc-500"
-                            : "min-w-14 pr-3 text-right text-zinc-300 dark:text-zinc-700",
-                        )}
-                      >
-                        {typeLabel}
-                      </span>
-                    </div>
-                  );
-                })}
-
-              {/* Expand / collapse — not shown in edit mode */}
-              {hasMore && editingDocIdx !== globalIdx && (
-                <button
-                  type="button"
-                  onClick={() => toggleExpand(globalIdx)}
-                  className="mt-1.5 ml-3 flex cursor-pointer items-center gap-1 font-mono text-[11px] text-zinc-400 transition-colors select-none hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUpIcon className="h-3.5 w-3.5" />
-                      {t("datagrid.documentView.collapse")}
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDownIcon className="h-3.5 w-3.5" />
-                      {t("datagrid.documentView.expand")} (+{keys.length - 15}{" "}
-                      fields)
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            {/* "Document modified." amber banner — only when editing AND changes exist */}
-            {editingDocIdx === globalIdx && (
-              <div
-                className={cn(
-                  "flex items-center justify-between border-t px-3 py-2 transition-colors",
-                  isDocModified(row)
-                    ? "border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30"
-                    : "border-zinc-100 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/60",
-                )}
-              >
-                <span
-                  className={cn(
-                    "font-mono text-[11px] transition-opacity",
-                    isDocModified(row)
-                      ? "text-amber-700 opacity-100 dark:text-amber-400"
-                      : "opacity-0 select-none",
-                  )}
-                >
-                  Document modified.
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={cancelEdit}
-                    className="cursor-pointer rounded border border-zinc-300 bg-white px-3 py-1.5 font-mono text-[11px] font-medium tracking-wide text-zinc-700 uppercase transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isSaving || !onSaveCell || !isDocModified(row)}
-                    onClick={() => handleUpdate(row)}
-                    className={cn(
-                      "rounded border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wide uppercase transition-colors",
-                      isSaving || !onSaveCell || !isDocModified(row)
-                        ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
-                        : "cursor-pointer border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-500",
-                    )}
-                  >
-                    {isSaving ? "Saving..." : "Update"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+import { DocumentView } from "./DocumentView";
+import { GridContextMenu, type ContextMenuState } from "./GridContextMenu";
+import { GridPaginationFooter } from "./GridPaginationFooter";
+import { GridHeaderToolbar } from "./GridHeaderToolbar";
+import { GridRowItem } from "./GridRowItem";
 
 export const DataGrid: FC<DataGridProps> = ({
   table,
@@ -812,13 +196,18 @@ export const DataGrid: FC<DataGridProps> = ({
   }, []);
 
   // Right-click Context Menu State
-  const [contextMenu, setContextMenu] = useState<{
-    mouseX: number;
-    mouseY: number;
-    row: Record<string, any>;
-    colName: string;
-    cellValue: any;
-  } | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [cellDrawerState, setCellDrawerState] = useState<{
+    isOpen: boolean;
+    columnName: string;
+    columnType?: string;
+    cellValue: unknown;
+    row?: Record<string, any>;
+  }>({
+    isOpen: false,
+    columnName: "",
+    cellValue: null,
+  });
   const [copiedNotification, setCopiedNotification] = useState<string | null>(
     null,
   );
@@ -882,6 +271,44 @@ export const DataGrid: FC<DataGridProps> = ({
       );
     },
     [isReadOnly, table.columns],
+  );
+
+  const handleRowContextMenu = useCallback(
+    (e: React.MouseEvent, row: Record<string, any>) => {
+      setContextMenu({
+        mouseX: e.clientX,
+        mouseY: e.clientY,
+        row,
+        colName: "",
+        cellValue: undefined,
+      });
+    },
+    [],
+  );
+
+  const handleCellClick = useCallback(
+    (_e: React.MouseEvent, rowIndex: number, colName: string) => {
+      setFocusedCell({ rowIndex, colName });
+    },
+    [],
+  );
+
+  const handleCellContextMenu = useCallback(
+    (
+      e: React.MouseEvent,
+      row: Record<string, any>,
+      colName: string,
+      cellValue: unknown,
+    ) => {
+      setContextMenu({
+        mouseX: e.clientX,
+        mouseY: e.clientY,
+        row,
+        colName,
+        cellValue,
+      });
+    },
+    [],
   );
 
   useEffect(() => {
@@ -2014,6 +1441,24 @@ export const DataGrid: FC<DataGridProps> = ({
         return;
       }
 
+      // Space: Open Cell Detail Inspector
+      if (e.key === " " && !editingCell) {
+        if (currentColName && currentColName !== "_row_index") {
+          e.preventDefault();
+          const colSchema = table.columns.find(
+            (c) => c.name === currentColName,
+          );
+          setCellDrawerState({
+            isOpen: true,
+            columnName: currentColName,
+            columnType: colSchema?.type,
+            cellValue: currentRow[currentColName],
+            row: currentRow,
+          });
+          return;
+        }
+      }
+
       // 5. ArrowUp / ArrowDown: Move up/down rows
       if (e.key === "ArrowUp") {
         e.preventDefault();
@@ -2120,426 +1565,75 @@ export const DataGrid: FC<DataGridProps> = ({
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-white transition-colors dark:bg-zinc-950">
-      {/* Top Action Bar */}
-      <div className="flex h-11 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/30">
-        <div className="flex h-full min-w-0 items-center gap-2 sm:gap-2.5">
-          <SidebarTrigger className="-ml-1 shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
-          <Separator
-            orientation="vertical"
-            className="h-4 self-center bg-zinc-200 dark:bg-zinc-800"
-          />
-          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-            <TableIcon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <h2
-              className="max-w-28 truncate font-mono text-sm font-semibold text-zinc-900 sm:max-w-36 md:max-w-48 lg:max-w-none dark:text-zinc-100"
-              title={table.name}
-            >
-              {table.name}
-            </h2>
-          </div>
-          <span className="hidden font-mono text-xs whitespace-nowrap text-zinc-500 2xl:inline dark:text-zinc-400">
-            {totalCount.toLocaleString()}{" "}
-            {totalCount === 1 ? "record" : "records"}
-          </span>
+      <GridHeaderToolbar
+        table={table}
+        totalCount={totalCount}
+        displayedRowsCount={displayedRows.length}
+        rawRowsCount={rows.length}
+        activeSubView={activeSubView}
+        onSubViewChange={setActiveSubView}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        dbType={dbType}
+        isReadOnly={isReadOnly}
+        quickSearch={quickSearch}
+        onQuickSearchChange={setQuickSearch}
+        quickSearchInputRef={quickSearchInputRef}
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        showFilterBuilder={showFilterBuilder}
+        onToggleFilterBuilder={() => setShowFilterBuilder((prev) => !prev)}
+        filterCol={filterCol}
+        onFilterColChange={setFilterCol}
+        filterOp={filterOp}
+        onFilterOpChange={setFilterOp}
+        filterVal={filterVal}
+        onFilterValChange={setFilterVal}
+        onAddFilter={handleAddFilter}
+        onRemoveFilter={handleRemoveFilter}
+        extraColumns={extraColumns}
+        isLoading={isLoading}
+        isRefreshing={isRefreshing}
+        onRefresh={handleRefresh}
+        onOpenQueryConsole={onOpenQueryConsole}
+        connId={connId}
+        onExport={handleExport}
+        onOpenImportModal={(mode) => {
+          setImportModalMode(mode);
+          setIsImportModalOpen(true);
+        }}
+        onAddRow={onAddRow}
+        t={t}
+      >
+        {/* Quick Stats Bar */}
+        <QuickStatsBar
+          table={table}
+          stats={tableStats}
+          totalFilteredRows={totalCount}
+          isFiltered={filters.length > 0}
+          onOpenAnalytics={(col) =>
+            setAnalyticsColumn(col || table.columns[0] || null)
+          }
+        />
 
-          <Separator
-            orientation="vertical"
-            className="mx-1 hidden h-4 self-center bg-zinc-200 2xl:inline-block dark:bg-zinc-800"
-          />
-
-          {/* Sub-view switcher: [ Data Grid ] | [ Schema & DDL ] */}
-          <div className="flex shrink-0 items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80">
-            <button
-              type="button"
-              onClick={() => setActiveSubView("grid")}
-              className={cn(
-                "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all sm:px-2.5",
-                activeSubView === "grid"
-                  ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
-                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
-              )}
-              title={t("schema.dataGrid")}
-            >
-              <TableIcon className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span className="hidden md:inline">{t("schema.dataGrid")}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveSubView("schema")}
-              className={cn(
-                "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all sm:px-2.5",
-                activeSubView === "schema"
-                  ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
-                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
-              )}
-              title={t("schema.schemaDdl")}
-            >
-              <FileCode className="h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
-              <span className="hidden md:inline">{t("schema.schemaDdl")}</span>
-            </button>
-          </div>
-
-          {/* View Mode toggle: Table | Document — MongoDB only */}
-          {activeSubView === "grid" && dbType === "mongodb" && (
-            <div
-              className="flex items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80"
-              title={t("datagrid.viewMode.toggleTooltip")}
-            >
-              <button
-                type="button"
-                onClick={() => setViewMode("table")}
-                className={cn(
-                  "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all",
-                  viewMode === "table"
-                    ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
-                    : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
-                )}
-                title={t("datagrid.viewMode.table")}
-              >
-                <TableIcon className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode("document")}
-                className={cn(
-                  "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all",
-                  viewMode === "document"
-                    ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
-                    : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
-                )}
-                title={t("datagrid.viewMode.document")}
-              >
-                <LayoutList className="h-3.5 w-3.5" />
-              </button>
+        {/* Read-Only Safety Banner */}
+        {isReadOnly && (
+          <div className="flex items-center justify-between border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-xs text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span className="font-medium">
+                {t("datagrid.readOnlyBanner")}
+              </span>
             </div>
-          )}
-
-          {isReadOnly && (
             <Badge
               variant="outline"
-              className="gap-1 border-amber-500/40 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] font-medium text-amber-700 select-none dark:text-amber-400"
-              title={t("datagrid.readOnlyBanner")}
+              className="border-amber-500/40 bg-amber-500/20 text-[10px] font-bold text-amber-700 uppercase dark:text-amber-400"
             >
-              <ShieldAlert className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span>{t("connection.readOnlyBadge")}</span>
+              {t("connection.readOnlyBadge")}
             </Badge>
-          )}
-          {activeSubView === "grid" && displayedRows.length !== rows.length && (
-            <Badge
-              variant="outline"
-              className="h-auto border-amber-200 bg-amber-50 px-1.5 py-0 font-mono text-[11px] font-normal text-amber-700 dark:border-amber-800/40 dark:bg-amber-950/40 dark:text-amber-400/90"
-            >
-              {t("datagrid.showingMatches", { count: displayedRows.length })}
-            </Badge>
-          )}
-        </div>
-
-        <div
-          data-tour="grid-toolbar"
-          className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2"
-        >
-          {activeSubView === "grid" ? (
-            <>
-              {/* Quick Search Input */}
-              <div className="relative flex items-center">
-                <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
-                <Input
-                  ref={quickSearchInputRef}
-                  type="text"
-                  value={quickSearch}
-                  onChange={(e) => setQuickSearch(e.target.value)}
-                  placeholder={`${t("datagrid.searchPlaceholder")} (/)`}
-                  className="h-8 w-24 pr-7 pl-8 font-mono text-xs transition-all focus:w-44 sm:w-32 sm:focus:w-48 md:w-36 md:focus:w-52 lg:w-44"
-                />
-                {quickSearch && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    onClick={() => setQuickSearch("")}
-                    className="absolute right-1 h-6 w-6 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
-                    title={t("datagrid.clearSearchTooltip")}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                )}
-              </div>
-
-              {/* Filter toggle */}
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant={
-                        filters.length > 0 || showFilterBuilder
-                          ? "secondary"
-                          : "outline"
-                      }
-                      size="sm"
-                      onClick={() => setShowFilterBuilder(!showFilterBuilder)}
-                      className={cn(
-                        "gap-1 px-2 font-mono text-xs font-medium sm:gap-1.5 sm:px-2.5 2xl:px-3",
-                        (filters.length > 0 || showFilterBuilder) &&
-                          "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/50 dark:bg-emerald-950/40 dark:text-emerald-300",
-                      )}
-                    >
-                      <FilterIcon className="h-3.5 w-3.5" />
-                      <span className="hidden 2xl:inline">
-                        {t("datagrid.filterButton")}
-                      </span>
-                      {filters.length > 0 && (
-                        <Badge className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 p-0 text-[10px] font-bold text-white dark:text-zinc-950">
-                          {filters.length}
-                        </Badge>
-                      )}
-                    </Button>
-                  }
-                />
-                <TooltipContent side="bottom" className="font-mono text-xs">
-                  {t("datagrid.filterButton")}
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Refresh */}
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-sm"
-                      onClick={handleRefresh}
-                      disabled={isLoading || isRefreshing}
-                      aria-label={t("datagrid.reloadTableTooltip")}
-                      className="shrink-0 border-zinc-200 text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-950 active:bg-zinc-200 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100 dark:active:bg-zinc-700/80"
-                    >
-                      <RefreshCw
-                        className={cn(
-                          "h-3.5 w-3.5 transition-colors",
-                          (isLoading || isRefreshing) &&
-                            "animate-spin text-indigo-600 dark:text-indigo-400",
-                        )}
-                      />
-                    </Button>
-                  }
-                />
-                <TooltipContent side="bottom" className="font-mono text-xs">
-                  {t("datagrid.reloadTableTooltip")}
-                </TooltipContent>
-              </Tooltip>
-
-              {/* Open in SQL / Query Console */}
-              {onOpenQueryConsole && (
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onOpenQueryConsole?.()}
-                        aria-label={t("datagrid.openQueryConsole")}
-                        className="shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 2xl:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white"
-                      >
-                        <Terminal className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                        <span className="hidden 2xl:inline">
-                          {t("datagrid.openQueryConsole")}
-                        </span>
-                      </Button>
-                    }
-                  />
-                  <TooltipContent side="bottom" className="font-mono text-xs">
-                    {t("datagrid.openQueryConsole")}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* Bulk Export Dropdown */}
-              {connId && (
-                <DropdownMenu>
-                  <Tooltip>
-                    <TooltipTrigger
-                      render={
-                        <DropdownMenuTrigger
-                          render={
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              aria-label={t("datagrid.export")}
-                              className="shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 2xl:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white"
-                            >
-                              <Download className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-                              <span className="hidden 2xl:inline">
-                                {t("datagrid.export")}
-                              </span>
-                              <ChevronDown className="h-3 w-3 text-zinc-400" />
-                            </Button>
-                          }
-                        />
-                      }
-                    />
-                    <TooltipContent side="bottom" className="font-mono text-xs">
-                      {t("datagrid.export")}
-                    </TooltipContent>
-                  </Tooltip>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-52 font-mono text-xs"
-                  >
-                    <DropdownMenuItem onClick={() => handleExport("csv")}>
-                      <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>{t("datagrid.exportAsCsv")}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport("json")}>
-                      <FileJson className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                      <span>{t("datagrid.exportAsJson")}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport("jsonl")}>
-                      <FileCode2 className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-                      <span>{t("datagrid.exportAsJsonl")}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport("xlsx")}>
-                      <FileSpreadsheet className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                      <span>{t("datagrid.exportAsXlsx")}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleExport("parquet")}>
-                      <Database className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
-                      <span>{t("datagrid.exportAsParquet")}</span>
-                    </DropdownMenuItem>
-                    <div className="my-1 h-px bg-zinc-200 dark:bg-zinc-800" />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setImportModalMode("export");
-                        setIsImportModalOpen(true);
-                      }}
-                    >
-                      <Settings2 className="h-3.5 w-3.5 text-zinc-500" />
-                      <span>{t("datagrid.exportOptions")}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-
-              {/* Bulk Import CSV Button */}
-              {connId && (
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setImportModalMode("import");
-                          setIsImportModalOpen(true);
-                        }}
-                        disabled={isReadOnly}
-                        aria-label={
-                          isReadOnly
-                            ? t("datagrid.readOnlyTooltip")
-                            : t("datagrid.importCsv")
-                        }
-                        className={cn(
-                          "shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 2xl:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white",
-                          isReadOnly && "cursor-not-allowed opacity-60",
-                        )}
-                      >
-                        <UploadCloud className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-                        <span className="hidden 2xl:inline">
-                          {t("datagrid.importCsv")}
-                        </span>
-                      </Button>
-                    }
-                  />
-                  <TooltipContent side="bottom" className="font-mono text-xs">
-                    {isReadOnly
-                      ? t("datagrid.readOnlyTooltip")
-                      : t("datagrid.importCsv")}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-
-              {/* Add Row CTA */}
-              <Button
-                type="button"
-                size="sm"
-                onClick={onAddRow}
-                disabled={isReadOnly}
-                title={
-                  isReadOnly
-                    ? t("datagrid.readOnlyTooltip")
-                    : t("datagrid.addRow")
-                }
-                className={cn(
-                  "shrink-0 gap-1 px-2.5 text-xs font-semibold shadow-xs transition-colors sm:gap-1.5 sm:px-3",
-                  isReadOnly
-                    ? "cursor-not-allowed border border-zinc-200 bg-zinc-100 text-zinc-400 opacity-60 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
-                    : "bg-emerald-600 text-white hover:bg-emerald-500",
-                )}
-              >
-                <Plus className="h-3.5 w-3.5 shrink-0" />
-                <span className="hidden sm:inline">{t("datagrid.addRow")}</span>
-              </Button>
-            </>
-          ) : (
-            <>
-              {/* Schema View Actions */}
-              {onOpenQueryConsole && (
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onOpenQueryConsole?.()}
-                        aria-label={t("datagrid.openQueryConsole")}
-                        className="shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 2xl:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white"
-                      >
-                        <Terminal className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                        <span className="hidden 2xl:inline">
-                          {t("datagrid.openQueryConsole")}
-                        </span>
-                      </Button>
-                    }
-                  />
-                  <TooltipContent side="bottom" className="font-mono text-xs">
-                    {t("datagrid.openQueryConsole")}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-              <Tooltip>
-                <TooltipTrigger
-                  render={
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon-sm"
-                      onClick={handleRefresh}
-                      disabled={isLoading || isRefreshing}
-                      aria-label={t("datagrid.reloadTableTooltip")}
-                      className="shrink-0 border-zinc-200 text-zinc-600 transition-colors hover:border-zinc-300 hover:bg-zinc-100 hover:text-zinc-950 active:bg-zinc-200 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100 dark:active:bg-zinc-700/80"
-                    >
-                      <RefreshCw
-                        className={cn(
-                          "h-3.5 w-3.5 transition-colors",
-                          (isLoading || isRefreshing) &&
-                            "animate-spin text-indigo-600 dark:text-indigo-400",
-                        )}
-                      />
-                    </Button>
-                  }
-                />
-                <TooltipContent side="bottom" className="font-mono text-xs">
-                  {t("datagrid.reloadTableTooltip")}
-                </TooltipContent>
-              </Tooltip>
-            </>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
+      </GridHeaderToolbar>
 
       {activeSubView === "schema" ? (
         <Suspense
@@ -2559,160 +1653,6 @@ export const DataGrid: FC<DataGridProps> = ({
         </Suspense>
       ) : (
         <>
-          {/* Quick Stats Bar */}
-          <QuickStatsBar
-            table={table}
-            stats={tableStats}
-            totalFilteredRows={totalCount}
-            isFiltered={filters.length > 0}
-            onOpenAnalytics={(col) =>
-              setAnalyticsColumn(col || table.columns[0] || null)
-            }
-          />
-
-          {/* Read-Only Safety Banner */}
-          {isReadOnly && (
-            <div className="flex items-center justify-between border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-xs text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                <span className="font-medium">
-                  {t("datagrid.readOnlyBanner")}
-                </span>
-              </div>
-              <Badge
-                variant="outline"
-                className="border-amber-500/40 bg-amber-500/20 text-[10px] font-bold text-amber-700 uppercase dark:text-amber-400"
-              >
-                {t("connection.readOnlyBadge")}
-              </Badge>
-            </div>
-          )}
-
-          {/* Filter Builder & Active Filter Chips */}
-          {(showFilterBuilder || filters.length > 0) && (
-            <div className="space-y-2 border-b border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800/80 dark:bg-zinc-900/40">
-              {showFilterBuilder && (
-                <form
-                  onSubmit={handleAddFilter}
-                  className="flex flex-wrap items-center gap-2 font-mono text-xs"
-                >
-                  <span className="text-zinc-500 dark:text-zinc-400">
-                    {t("datagrid.where")}
-                  </span>
-                  <Select
-                    value={filterCol}
-                    onValueChange={(val) => {
-                      if (typeof val === "string") setFilterCol(val);
-                    }}
-                  >
-                    <SelectTrigger className="h-7 min-w-32 font-mono text-xs">
-                      <SelectValue placeholder={t("datagrid.column")} />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
-                      {table.columns.map((c) => (
-                        <SelectItem key={c.name} value={c.name}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                      {extraColumns.map((extra) => (
-                        <SelectItem key={extra} value={extra}>
-                          {extra} (dynamic)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Select
-                    value={filterOp}
-                    onValueChange={(val) => {
-                      if (
-                        val === "eq" ||
-                        val === "neq" ||
-                        val === "gt" ||
-                        val === "lt" ||
-                        val === "contains"
-                      ) {
-                        setFilterOp(val);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="h-7 min-w-24 font-mono text-xs">
-                      <SelectValue placeholder={t("datagrid.operator")} />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
-                      <SelectItem value="eq">=</SelectItem>
-                      <SelectItem value="neq">≠</SelectItem>
-                      <SelectItem value="gt">&gt;</SelectItem>
-                      <SelectItem value="lt">&lt;</SelectItem>
-                      <SelectItem value="contains">CONTAINS</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Input
-                    type="text"
-                    value={filterVal}
-                    onChange={(e) => setFilterVal(e.target.value)}
-                    placeholder={t("datagrid.valuePlaceholder")}
-                    className="h-7 w-44 font-mono text-xs"
-                  />
-
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={!filterVal}
-                    className="h-7 text-xs font-medium"
-                  >
-                    {t("datagrid.apply")}
-                  </Button>
-                </form>
-              )}
-
-              {/* Active chips */}
-              {filters.length > 0 && (
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <span className="mr-1 font-mono text-[11px] tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-                    {t("datagrid.activeFilters")}
-                  </span>
-                  {filters.map((f, i) => (
-                    <Badge
-                      key={i}
-                      variant="outline"
-                      className="inline-flex items-center gap-1.5 border-emerald-200 bg-emerald-50 px-2 py-0.5 font-mono text-xs font-normal text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/40 dark:text-emerald-300"
-                    >
-                      <span className="font-semibold text-emerald-900 dark:text-emerald-200">
-                        {f.column}
-                      </span>
-                      <span className="text-emerald-600 dark:text-zinc-400">
-                        {f.operator}
-                      </span>
-                      <span className="font-medium text-emerald-800 dark:text-zinc-200">
-                        {f.value}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => handleRemoveFilter(i)}
-                        className="ml-0.5 h-4 w-4 p-0 text-current hover:text-rose-500"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </Badge>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="link"
-                    size="sm"
-                    onClick={() => onFiltersChange([])}
-                    className="ml-2 h-auto p-0 text-[11px] text-zinc-500 underline hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
-                  >
-                    {t("datagrid.clearAll")}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Grid Container */}
           <div
             ref={tableContainerRef}
@@ -2914,73 +1854,17 @@ export const DataGrid: FC<DataGridProps> = ({
                         const row = tableRows[virtualRow.index];
                         if (!row) return null;
                         return (
-                          <TableRow
+                          <GridRowItem
                             key={row.id}
-                            data-index={virtualRow.index}
-                            ref={rowVirtualizer.measureElement}
-                            className="group transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
-                            onContextMenu={(e) => {
-                              e.preventDefault();
-                              setContextMenu({
-                                mouseX: e.clientX,
-                                mouseY: e.clientY,
-                                row: row.original,
-                                colName: "",
-                                cellValue: undefined,
-                              });
-                            }}
-                          >
-                            {row.getVisibleCells().map((cell) => {
-                              const colId = cell.column.id.replace(
-                                "_extra_",
-                                "",
-                              );
-                              const isCellFocused =
-                                focusedCell?.rowIndex === virtualRow.index &&
-                                focusedCell?.colName === colId;
-                              const isEditingThisCell =
-                                editingCell?.rowIndex === virtualRow.index &&
-                                editingCell?.colName === colId;
-
-                              return (
-                                <TableCell
-                                  key={cell.id}
-                                  tabIndex={0}
-                                  data-cell-editing={
-                                    isEditingThisCell ? "true" : undefined
-                                  }
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setFocusedCell({
-                                      rowIndex: virtualRow.index,
-                                      colName: colId,
-                                    });
-                                  }}
-                                  className={cn(
-                                    "max-w-sm truncate border-zinc-200/80 px-3 py-2 text-xs whitespace-nowrap text-zinc-800 transition-all outline-none not-last:border-r dark:border-zinc-800/40 dark:text-zinc-200",
-                                    isCellFocused &&
-                                      "relative z-20 bg-emerald-500/10 font-medium ring-2 ring-emerald-500 ring-inset dark:bg-emerald-500/20 dark:ring-emerald-400",
-                                  )}
-                                  onContextMenu={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setContextMenu({
-                                      mouseX: e.clientX,
-                                      mouseY: e.clientY,
-                                      row: row.original,
-                                      colName: colId,
-                                      cellValue: cell.getValue(),
-                                    });
-                                  }}
-                                >
-                                  {flexRender(
-                                    cell.column.columnDef.cell,
-                                    cell.getContext(),
-                                  )}
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
+                            row={row}
+                            virtualIndex={virtualRow.index}
+                            measureElement={rowVirtualizer.measureElement}
+                            focusedCell={focusedCell}
+                            editingCell={editingCell}
+                            onRowContextMenu={handleRowContextMenu}
+                            onCellClick={handleCellClick}
+                            onCellContextMenu={handleCellContextMenu}
+                          />
                         );
                       })}
                       {rowVirtualizer.getTotalSize() -
@@ -3012,63 +1896,16 @@ export const DataGrid: FC<DataGridProps> = ({
           </div>
 
           {/* Pagination Footer */}
-          <div className="flex h-11 min-w-0 items-center justify-between gap-2 border-t border-zinc-200 bg-zinc-50/80 px-3 font-mono text-xs text-zinc-500 sm:px-4 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400">
-            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-              <span className="truncate">
-                {totalCount === 0
-                  ? `0 ${t("datagrid.records")}`
-                  : `${t("datagrid.showing")} ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} ${t("datagrid.of")} ${totalCount}`}
-              </span>
-              <div className="ml-1 hidden shrink-0 items-center gap-1.5 sm:ml-2 sm:flex">
-                <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {t("datagrid.perPage")}
-                </span>
-                <Select
-                  value={String(pageSize)}
-                  onValueChange={(val) => val && onPageSizeChange(Number(val))}
-                >
-                  <SelectTrigger className="h-6 w-16 px-2 py-0 font-mono text-xs">
-                    <SelectValue placeholder={String(pageSize)} />
-                  </SelectTrigger>
-                  <SelectContent side="top" align="start" className="min-w-16">
-                    {PAGE_SIZE_OPTIONS.map((sizeOpt) => (
-                      <SelectItem key={sizeOpt} value={String(sizeOpt)}>
-                        {sizeOpt}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-2">
-              <span className="text-[11px] whitespace-nowrap text-zinc-500 dark:text-zinc-400">
-                {t("datagrid.page")} {page + 1} {t("datagrid.of")} {totalPages}
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={page <= 0}
-                  onClick={() => onPageChange(page - 1)}
-                  className="text-zinc-700 dark:text-zinc-300"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon-sm"
-                  disabled={page + 1 >= totalPages}
-                  onClick={() => onPageChange(page + 1)}
-                  className="text-zinc-700 dark:text-zinc-300"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-          </div>
+          <GridPaginationFooter
+            page={page}
+            pageSize={pageSize}
+            totalCount={totalCount}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            onPageSizeChange={onPageSizeChange}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            t={t}
+          />
         </>
       )}
 
@@ -3106,192 +1943,50 @@ export const DataGrid: FC<DataGridProps> = ({
         </Suspense>
       )}
 
-      {/* Custom Right-Click Context Menu */}
-      {contextMenu && (
-        <div
-          style={{
-            position: "fixed",
-            left: `${Math.min(contextMenu.mouseX, window.innerWidth - 230)}px`,
-            top: `${Math.min(contextMenu.mouseY, window.innerHeight - 280)}px`,
-          }}
-          className="animate-in fade-in-50 zoom-in-95 z-50 w-56 rounded-lg border border-zinc-200 bg-white p-1 font-mono text-xs shadow-2xl duration-100 dark:border-zinc-800 dark:bg-zinc-900"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-zinc-100 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 dark:border-zinc-800/80 dark:text-zinc-400">
-            <span className="truncate">
-              {contextMenu.colName &&
-              contextMenu.colName !== "_actions" &&
-              contextMenu.colName !== "_row_index"
-                ? `Column: ${contextMenu.colName}`
-                : `Row Actions`}
-            </span>
-            <Badge
-              variant="outline"
-              className="h-4 px-1 py-0 text-[9px] font-normal"
-            >
-              Right-Click
-            </Badge>
-          </div>
-
-          <div className="py-1">
-            {/* Edit Record */}
-            <button
-              type="button"
-              disabled={isReadOnly}
-              onClick={() => {
-                onEditRow(contextMenu.row);
-                setContextMenu(null);
-              }}
-              className={cn(
-                "flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
-                isReadOnly &&
-                  "cursor-not-allowed opacity-50 hover:bg-transparent",
-              )}
-            >
-              <Edit2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span>{t("datagrid.contextMenu.editRecord")}</span>
-            </button>
-
-            {/* Delete Record */}
-            <button
-              type="button"
-              disabled={isReadOnly}
-              onClick={() => {
-                onDeleteRow(contextMenu.row);
-                setContextMenu(null);
-              }}
-              className={cn(
-                "flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40",
-                isReadOnly &&
-                  "cursor-not-allowed opacity-50 hover:bg-transparent",
-              )}
-            >
-              <Trash2 className="h-3.5 w-3.5 shrink-0 text-rose-500" />
-              <span>{t("datagrid.contextMenu.deleteRecord")}</span>
-            </button>
-          </div>
-
-          <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
-
-          <div className="py-1">
-            {/* Copy Cell Value */}
-            {contextMenu.cellValue !== undefined &&
-              contextMenu.cellValue !== null && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      String(contextMenu.cellValue),
-                    );
-                    setCopiedNotification(t("datagrid.contextMenu.copied"));
-                    setTimeout(
-                      () => setCopiedNotification(null),
-                      COPY_FEEDBACK_MS,
-                    );
-                    setContextMenu(null);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                >
-                  <Copy className="h-3.5 w-3.5 shrink-0 text-blue-500" />
-                  <span>{t("datagrid.contextMenu.copyCellValue")}</span>
-                </button>
-              )}
-
-            {/* Filter by this value */}
-            {contextMenu.colName &&
-              contextMenu.cellValue !== undefined &&
-              contextMenu.cellValue !== null && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onFiltersChange([
-                      ...filters,
-                      {
-                        column: contextMenu.colName,
-                        operator: "eq",
-                        value: String(contextMenu.cellValue),
-                      },
-                    ]);
-                    setContextMenu(null);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                >
-                  <FilterIcon className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                  <span>{t("datagrid.contextMenu.filterByValue")}</span>
-                </button>
-              )}
-
-            {/* Copy Row as JSON */}
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  JSON.stringify(contextMenu.row, null, 2),
-                );
-                setCopiedNotification(t("datagrid.contextMenu.copied"));
-                setTimeout(() => setCopiedNotification(null), COPY_FEEDBACK_MS);
-                setContextMenu(null);
-              }}
-              className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
-            >
-              <FileJson className="h-3.5 w-3.5 shrink-0 text-purple-500" />
-              <span>{t("datagrid.contextMenu.copyRowJson")}</span>
-            </button>
-
-            {/* Relation Navigation if FK */}
-            {(() => {
-              if (!contextMenu.colName || !onNavigateRelation) return null;
-              const rel = table.relations?.find(
-                (r) => r.from_column === contextMenu.colName,
-              );
-              if (!rel) return null;
-              return (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onNavigateRelation(
-                      rel.to_table,
-                      rel.to_column,
-                      contextMenu.cellValue,
-                    );
-                    setContextMenu(null);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-sky-600 transition-colors hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/40"
-                >
-                  <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-sky-500" />
-                  <span className="truncate">
-                    {t("datagrid.contextMenu.navigateToRelation")} (
-                    {rel.to_table})
-                  </span>
-                </button>
-              );
-            })()}
-
-            {/* Copy Column Name */}
-            {contextMenu.colName &&
-              contextMenu.colName !== "_actions" &&
-              contextMenu.colName !== "_row_index" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigator.clipboard.writeText(contextMenu.colName);
-                    setCopiedNotification(t("datagrid.contextMenu.copied"));
-                    setTimeout(
-                      () => setCopiedNotification(null),
-                      COPY_FEEDBACK_MS,
-                    );
-                    setContextMenu(null);
-                  }}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-600 transition-colors hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
-                >
-                  <Copy className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
-                  <span>{t("datagrid.contextMenu.copyColumnName")}</span>
-                </button>
-              )}
-          </div>
-        </div>
+      {cellDrawerState.isOpen && (
+        <Suspense fallback={null}>
+          <CellDetailDrawer
+            isOpen={cellDrawerState.isOpen}
+            onClose={() =>
+              setCellDrawerState((prev) => ({ ...prev, isOpen: false }))
+            }
+            tableName={table.name}
+            columnName={cellDrawerState.columnName}
+            columnType={cellDrawerState.columnType}
+            cellValue={cellDrawerState.cellValue}
+            row={cellDrawerState.row}
+            isReadOnly={isReadOnly}
+            onSaveCell={onSaveCell}
+          />
+        </Suspense>
       )}
+
+      {/* Custom Right-Click Context Menu */}
+      <GridContextMenu
+        contextMenu={contextMenu}
+        onClose={() => setContextMenu(null)}
+        table={table}
+        filters={filters}
+        onFiltersChange={onFiltersChange}
+        onEditRow={onEditRow}
+        onDeleteRow={onDeleteRow}
+        onNavigateRelation={onNavigateRelation}
+        onInspectCell={(colName, cellValue, row, colType) => {
+          setCellDrawerState({
+            isOpen: true,
+            columnName: colName,
+            columnType: colType,
+            cellValue,
+            row,
+          });
+        }}
+        onCopyNotify={(msg) => {
+          setCopiedNotification(msg);
+          setTimeout(() => setCopiedNotification(null), 2000);
+        }}
+        isReadOnly={isReadOnly}
+        t={t}
+      />
 
       {/* Copied Toast Notification */}
       {copiedNotification && (
