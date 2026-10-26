@@ -1,6 +1,42 @@
-export type DatabaseType = "postgres" | "mysql" | "mongodb" | "sqlite";
+export type DatabaseType =
+  "postgres" | "mysql" | "mongodb" | "sqlite" | "redis";
 export type EnvironmentType =
   "local" | "development" | "staging" | "production";
+
+export interface RedisKeyMetadata {
+  key: string;
+  type:
+    "string" | "hash" | "list" | "set" | "zset" | "stream" | "none" | string;
+  ttl: number;
+  memory_usage: number;
+  length?: number;
+}
+
+export interface RedisZSetMember {
+  member: string;
+  score: number;
+}
+
+export interface RedisStreamEntry {
+  id: string;
+  values: Record<string, unknown>;
+}
+
+export interface RedisKeyDetail extends RedisKeyMetadata {
+  value:
+    | string
+    | Record<string, string>
+    | string[]
+    | RedisZSetMember[]
+    | RedisStreamEntry[]
+    | null;
+}
+
+export interface RedisScanResponse {
+  keys: RedisKeyMetadata[];
+  next_cursor: number;
+  total_keys: number;
+}
 
 export interface Connection {
   id: string;

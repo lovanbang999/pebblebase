@@ -669,3 +669,94 @@ export async function applyAppUpdate(
   });
   return handleResponse<{ message: string; requiresRestart: boolean }>(res);
 }
+
+// --------------------------------------------------------------------------
+// Redis Key Browser & Multi-Type Operations
+// --------------------------------------------------------------------------
+
+export async function scanRedisKeys(
+  connId: string,
+  params: {
+    cursor?: number;
+    pattern?: string;
+    count?: number;
+    type?: string;
+  } = {},
+): Promise<import("./types").RedisScanResponse> {
+  const sp = new URLSearchParams();
+  if (params.cursor !== undefined) sp.set("cursor", String(params.cursor));
+  if (params.pattern) sp.set("pattern", params.pattern);
+  if (params.count) sp.set("count", String(params.count));
+  if (params.type && params.type !== "all") sp.set("type", params.type);
+
+  const res = await fetch(
+    `${BASE_URL}/connections/${connId}/redis/scan?${sp.toString()}`,
+    { headers: getAuthHeaders() },
+  );
+  return handleResponse<import("./types").RedisScanResponse>(res);
+}
+
+export async function fetchRedisKeyDetail(
+  connId: string,
+  keyName: string,
+): Promise<import("./types").RedisKeyDetail> {
+  const sp = new URLSearchParams({ name: keyName });
+  const res = await fetch(
+    `${BASE_URL}/connections/${connId}/redis/key?${sp.toString()}`,
+    { headers: getAuthHeaders() },
+  );
+  return handleResponse<import("./types").RedisKeyDetail>(res);
+}
+
+export async function updateRedisKey(
+  connId: string,
+  data: {
+    key: string;
+    new_key?: string;
+    ttl?: number;
+    value?: string;
+  },
+): Promise<{ ok: boolean; key: string }> {
+  const res = await fetch(`${BASE_URL}/connections/${connId}/redis/key`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<{ ok: boolean; key: string }>(res);
+}
+
+export async function mutateRedisKeyItem(
+  connId: string,
+  data: {
+    key: string;
+    type: string;
+    action: string;
+    field?: string;
+    value?: string;
+    score?: number;
+    index?: number;
+    left?: boolean;
+  },
+): Promise<{ ok: boolean }> {
+  const res = await fetch(`${BASE_URL}/connections/${connId}/redis/key/item`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(data),
+  });
+  return handleResponse<{ ok: boolean }>(res);
+}
+
+export async function deleteRedisKey(
+  connId: string,
+  keyName: string,
+): Promise<{ ok: boolean }> {
+  const sp = new URLSearchParams({ name: keyName });
+  const res = await fetch(
+    `${BASE_URL}/connections/${connId}/redis/key?${sp.toString()}`,
+    {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    },
+  );
+  return handleResponse<{ ok: boolean }>(res);
+}

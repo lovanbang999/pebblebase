@@ -83,6 +83,11 @@ const OnboardingTour = lazy(() =>
     default: m.OnboardingTour,
   })),
 );
+const RedisKeyBrowser = lazy(() =>
+  import("@/components/redis").then((m) => ({
+    default: m.RedisKeyBrowser,
+  })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -814,14 +819,28 @@ function PebblebaseStudio() {
                 </div>
               ))}
 
-              {/* Table Data View (Preserved when switching to/from console/ERD) */}
+              {/* Table Data View or Redis Key Browser */}
               <div
                 className={cn(
                   "flex h-full flex-1 flex-col overflow-hidden",
                   activeTab?.type === "table" ? "flex" : "hidden",
                 )}
               >
-                {!activeTable || !activeTableSchema ? (
+                {activeConnection?.type === "redis" ? (
+                  <Suspense
+                    fallback={
+                      <div className="flex flex-1 items-center justify-center font-mono text-xs text-zinc-500">
+                        Loading Redis Key Browser...
+                      </div>
+                    }
+                  >
+                    <RedisKeyBrowser
+                      key={`redis-${activeConnection.id}`}
+                      connId={activeConnection.id}
+                      isReadOnly={Boolean(activeConnection.read_only)}
+                    />
+                  </Suspense>
+                ) : !activeTable || !activeTableSchema ? (
                   tablesError ? (
                     <ConnectionErrorScreen
                       connection={activeConnection}
