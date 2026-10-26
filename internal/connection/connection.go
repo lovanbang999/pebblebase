@@ -10,7 +10,7 @@ import (
 // ConnectionInput is the raw user input from the UI — either form fields or a raw URL.
 // It is the single entry point before any DSN is constructed.
 type ConnectionInput struct {
-	Type                               string // "postgres" | "mysql" | "mongodb" | "sqlite"
+	Type                               string // "postgres" | "mysql" | "mongodb" | "sqlite" | "redis"
 	Mode                               string // "form" | "url"
 	Host, Port, User, Password, DBName string // used when Mode == "form"
 	Filepath                           string // used when Type == "sqlite" in form mode
@@ -41,6 +41,8 @@ func (c ConnectionInput) ToDSN() (string, error) {
 		return c.mongoDSN()
 	case "sqlite":
 		return c.sqliteDSN()
+	case "redis":
+		return c.redisDSN()
 	default:
 		return "", fmt.Errorf("connection: unsupported database type %q", c.Type)
 	}
@@ -113,6 +115,31 @@ func (c ConnectionInput) sqliteDSN() (string, error) {
 		return "", fmt.Errorf("connection: file path is required for sqlite connections")
 	}
 	return fp, nil
+}
+
+// redisDSN builds a Redis connection URI.
+// Default port: 6379. Default DB: 0.
+func (c ConnectionInput) redisDSN() (string, error) {
+	if strings.TrimSpace(c.Host) == "" {
+		return "", fmt.Errorf("connection: host is required for redis connections")
+	}
+	port := c.portOr("6379")
+	dbPath := "/" + strings.TrimSpace(c.DBName)
+	if strings.Trim(dbPath, "/") == "" {
+		dbPath = "/0"
+	} else if !strings.HasPrefix(dbPath, "/") {
+		dbPath = "/" + dbPath
+	}
+
+	u := url.URL{
+		Scheme: "redis",
+		Host:   fmt.Sprintf("%s:%s", c.Host, port),
+		Path:   dbPath,
+	}
+	if c.User != "" || c.Password != "" {
+		u.User = url.UserPassword(c.User, c.Password)
+	}
+	return u.String(), nil
 }
 
 // requireFields returns an error if any of the named fields are empty.

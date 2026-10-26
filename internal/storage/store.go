@@ -19,7 +19,7 @@ import (
 type Record struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
-	Type         string    `json:"type"` // postgres | mysql | mongodb | sqlite
+	Type         string    `json:"type"` // postgres | mysql | mongodb | sqlite | redis
 	Host         string    `json:"host"`
 	Port         string    `json:"port"`
 	User         string    `json:"user"`
