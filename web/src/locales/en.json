@@ -248,6 +248,17 @@
     "title": "Database Connection Manager",
     "description": "Connect to PostgreSQL, MySQL, or local SQLite databases.",
     "driver": "Database Engine",
+    "searchEngines": "Search engines (name, type, port)...",
+    "noEnginesFound": "No database engines match \"{{query}}\"",
+    "clearSearch": "Clear search",
+    "enginesCount": "{{count}} engines",
+    "categories": {
+      "all": "All Engines",
+      "sql": "Relational / SQL",
+      "nosql": "Document / NoSQL",
+      "inmemory": "In-Memory / Cache",
+      "embedded": "Embedded / File"
+    },
     "host": "Host",
     "port": "Port",
     "user": "Username",
