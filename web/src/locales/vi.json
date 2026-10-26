@@ -248,6 +248,17 @@
     "title": "Quản lý Kết nối Cơ sở Dữ liệu",
     "description": "Kết nối đến PostgreSQL, MySQL, hoặc file SQLite cục bộ.",
     "driver": "Loại Cơ sở Dữ liệu",
+    "searchEngines": "Tìm kiếm engine (tên, loại, cổng)...",
+    "noEnginesFound": "Không tìm thấy engine nào khớp với \"{{query}}\"",
+    "clearSearch": "Xóa tìm kiếm",
+    "enginesCount": "{{count}} engines",
+    "categories": {
+      "all": "Tất cả",
+      "sql": "Quan hệ / SQL",
+      "nosql": "Tài liệu / NoSQL",
+      "inmemory": "Bộ nhớ đệm / Cache",
+      "embedded": "Nhúng / Tập tin"
+    },
     "host": "Máy chủ (Host)",
     "port": "Cổng (Port)",
     "user": "Tên người dùng (User)",
