@@ -10,7 +10,7 @@ import (
 	goredis "github.com/redis/go-redis/v9"
 )
 
-func setupTestRedis(t *testing.T) (*Adapter, *miniredis.Miniredis) {
+func setupTestRedis(t testing.TB) (*Adapter, *miniredis.Miniredis) {
 	mr := miniredis.RunT(t)
 	dsn := fmt.Sprintf("redis://%s/0", mr.Addr())
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
