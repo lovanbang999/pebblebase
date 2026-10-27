@@ -388,3 +388,43 @@ export interface UpdateSettings {
   checkOnStartup: boolean;
   channel: string;
 }
+
+export type AIProviderType =
+  "openai" | "gemini" | "anthropic" | "groq" | "ollama";
+
+export interface AIConfig {
+  provider: AIProviderType;
+  model: string;
+  base_url: string;
+  api_key?: string;
+  has_key: boolean;
+  key_mask: string;
+  temperature: number;
+  max_tokens: number;
+}
+
+export interface AISaveConfigInput {
+  provider: AIProviderType;
+  model: string;
+  base_url: string;
+  api_key?: string;
+  temperature?: number;
+  max_tokens?: number;
+}
+
+export interface AITestResult {
+  ok: boolean;
+  latency_ms: number;
+  message: string;
+  available_models?: string[];
+}
+
+export interface AIProviderInfo {
+  id: AIProviderType;
+  name: string;
+  default_base_url: string;
+  default_model: string;
+  models: string[];
+  requires_key: boolean;
+  doc_url: string;
+}

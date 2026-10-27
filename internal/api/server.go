@@ -16,6 +16,7 @@ import (
 	pgadapter "pebblebase/internal/adapter/postgres"
 	redisadapter "pebblebase/internal/adapter/redis"
 	sqliteadapter "pebblebase/internal/adapter/sqlite"
+	"pebblebase/internal/ai"
 	"pebblebase/internal/audit"
 	"pebblebase/internal/auth"
 	"pebblebase/internal/migration"
@@ -32,12 +33,13 @@ type Server struct {
 	auditLog     *audit.Logger
 	querySvc     *savedquery.Store
 	migrationSvc *migration.Store
+	aiSvc        *ai.Service
 	authEnabled  bool
 }
 
-// NewServer creates a Server wired with the given store and encryptor.
-// Pass nil authSvc / auditLog to run without authentication (authEnabled=false).
-func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Service, auditLog *audit.Logger, querySvc *savedquery.Store, migrationSvc *migration.Store, authEnabled bool) *Server {
+// NewServer creates a Server wired with the given dependencies.
+// Pass nil for optional services or when running in test mode.
+func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Service, auditLog *audit.Logger, querySvc *savedquery.Store, migrationSvc *migration.Store, aiSvc *ai.Service, authEnabled bool) *Server {
 	return &Server{
 		store:        store,
 		enc:          enc,
@@ -46,8 +48,14 @@ func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Servi
 		auditLog:     auditLog,
 		querySvc:     querySvc,
 		migrationSvc: migrationSvc,
+		aiSvc:        aiSvc,
 		authEnabled:  authEnabled,
 	}
+}
+
+// SetAIService updates the AI service reference on the Server.
+func (s *Server) SetAIService(aiSvc *ai.Service) {
+	s.aiSvc = aiSvc
 }
 
 // RegisterRoutes registers all /api/* routes on mux.
@@ -128,6 +136,13 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/connections/{id}/migrations", protect(http.HandlerFunc(s.executeMigration)))
 	mux.Handle("GET /api/connections/{id}/migrations", protect(http.HandlerFunc(s.listMigrations)))
 	mux.Handle("POST /api/connections/{id}/migrations/{mid}/rollback", protect(http.HandlerFunc(s.rollbackMigration)))
+
+	// Privacy-First AI BYO Key Vault & LLM Providers
+	mux.Handle("GET /api/ai/config", protect(http.HandlerFunc(s.handleGetAIConfig)))
+	mux.Handle("POST /api/ai/config", protect(http.HandlerFunc(s.handleSaveAIConfig)))
+	mux.Handle("POST /api/ai/test", protect(http.HandlerFunc(s.handleTestAIConnection)))
+	mux.Handle("GET /api/ai/providers", protect(http.HandlerFunc(s.handleGetAIProviders)))
+	mux.Handle("POST /api/ai/generate", protect(http.HandlerFunc(s.handleAIGenerate)))
 }
 
 // protectMiddleware returns a middleware wrapper that enforces JWT auth when

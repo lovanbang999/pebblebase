@@ -818,7 +818,10 @@
     "openSettings": "Open Admin & Settings",
     "productTour": "Take Product Tour",
     "signOut": "Sign Out",
-    "shortcutHint": "Press Cmd+K or Ctrl+K anytime"
+    "shortcutHint": "Press Cmd+K or Ctrl+K anytime",
+    "checkUpdates": "Check for Software Updates",
+    "navHint": "Navigation",
+    "selectHint": "Select"
   },
   "onboarding": {
     "welcomeBadge": "Quickstart Guide",
@@ -1228,5 +1231,41 @@
       "badge": "XREVRANGE",
       "empty": "No entries in this stream."
     }
+  },
+  "ai": {
+    "settingsTitle": "AI Assistant Settings",
+    "byoKeyBadge": "BYO KEY",
+    "settingsSubtitle": "Bring your own API key or connect to local Ollama for 100% private, zero-telemetry SQL assistance.",
+    "selectProvider": "AI Provider",
+    "selectProviderHelp": "Select cloud LLM or local offline model",
+    "model": "Model",
+    "modelPlaceholder": "e.g. gpt-4o-mini or qwen2.5-coder:latest",
+    "endpointUrl": "Endpoint / Base URL",
+    "endpointUrlPlaceholder": "https://api.openai.com/v1",
+    "resetDefaultUrl": "Reset default",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "Paste your API key here",
+    "keyEncryptedBadge": "AES-256-GCM",
+    "keyEncryptedHelp": "Your API key is encrypted locally with hardware AES-256-GCM and never shared with third-party proxy servers.",
+    "keySavedMasked": "Stored securely ({{mask}}). Leave blank to keep existing key.",
+    "keyRequired": "An API key is required for this provider.",
+    "keyNotRequired": "No API key required for local Ollama.",
+    "temperature": "Temperature",
+    "temperatureHelp": "Lower values (0.0 - 0.3) produce more deterministic, precise SQL queries.",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "saveSettings": "Save Settings",
+    "saving": "Saving...",
+    "testSuccess": "Connection verified successfully ({{latency}}ms)",
+    "testFailed": "Connection test failed",
+    "saveSuccess": "AI configuration saved successfully.",
+    "saveFailed": "Failed to save AI configuration",
+    "ollamaNotice": "Ensure Ollama is running locally via `ollama serve` and models are pulled.",
+    "recommendedModels": "Recommended Models",
+    "customModel": "Custom Model",
+    "getKey": "Get key",
+    "loadFailed": "Failed to load AI configuration",
+    "offlineBadge": "Offline",
+    "cloudBadge": "Cloud"
   }
 }

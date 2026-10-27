@@ -88,6 +88,11 @@ const RedisStudio = lazy(() =>
     default: m.RedisStudio,
   })),
 );
+const AISettingsModal = lazy(() =>
+  import("@/components/modals/AISettingsModal").then((m) => ({
+    default: m.AISettingsModal,
+  })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -109,6 +114,7 @@ function PebblebaseStudio() {
     openDialogAndCheck,
   } = useUpdateStore();
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isAISettingsOpen, setIsAISettingsOpen] = useState(false);
   // Shared admin panel tab — 'password' when triggered from user menu
   const [adminPanelDefaultTab, setAdminPanelDefaultTab] = useState<
     "users" | "password"
@@ -453,6 +459,9 @@ function PebblebaseStudio() {
           setAdminPanelDefaultTab("users");
           setIsAdminPanelOpen(true);
           break;
+        case "open_ai_settings":
+          setIsAISettingsOpen(true);
+          break;
         case "product_tour":
           setIsOnboardingWelcomeOpen(true);
           break;
@@ -503,6 +512,10 @@ function PebblebaseStudio() {
   const handleOpenAdminPanel = useCallback(() => {
     setAdminPanelDefaultTab("users");
     setIsAdminPanelOpen(true);
+  }, []);
+
+  const handleOpenAISettings = useCallback(() => {
+    setIsAISettingsOpen(true);
   }, []);
 
   const handleOpenChangePassword = useCallback(() => {
@@ -693,6 +706,7 @@ function PebblebaseStudio() {
           onOpenChangePassword={handleOpenChangePassword}
           onOpenCommandPalette={handleOpenCommandPalette}
           onOpenOnboarding={handleOpenOnboarding}
+          onOpenAISettings={handleOpenAISettings}
         />
 
         {/* Main Content Pane */}
@@ -963,6 +977,16 @@ function PebblebaseStudio() {
               isOpen={isAdminPanelOpen}
               onClose={() => setIsAdminPanelOpen(false)}
               defaultTab={adminPanelDefaultTab}
+            />
+          </Suspense>
+        )}
+
+        {/* AI Vault & Provider Settings Modal */}
+        {isAISettingsOpen && (
+          <Suspense fallback={null}>
+            <AISettingsModal
+              isOpen={isAISettingsOpen}
+              onClose={() => setIsAISettingsOpen(false)}
             />
           </Suspense>
         )}

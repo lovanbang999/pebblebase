@@ -11,11 +11,11 @@ import (
 	"path/filepath"
 	"testing"
 
+	_ "modernc.org/sqlite"
 	"pebblebase/internal/api"
 	"pebblebase/internal/audit"
 	"pebblebase/internal/auth"
 	"pebblebase/internal/storage"
-	_ "modernc.org/sqlite"
 )
 
 type testAuthEnv struct {
@@ -64,7 +64,7 @@ func setupAuthTestServer(t *testing.T) *testAuthEnv {
 	}
 
 	mux := http.NewServeMux()
-	srv := api.NewServer(store, enc, authSvc, auditLog, nil, nil, true)
+	srv := api.NewServer(store, enc, authSvc, auditLog, nil, nil, nil, true)
 	srv.RegisterRoutes(mux)
 
 	// Obtain admin token

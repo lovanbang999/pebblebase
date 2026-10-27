@@ -70,7 +70,7 @@ func setupMigrationTestServer(t *testing.T) (http.Handler, *storage.Store, *migr
 	}
 
 	mux := http.NewServeMux()
-	srv := api.NewServer(store, enc, nil, nil, nil, migStore, false)
+	srv := api.NewServer(store, enc, nil, nil, nil, migStore, nil, false)
 	srv.RegisterRoutes(mux)
 
 	return mux, store, migStore, rec.ID, roRec.ID
