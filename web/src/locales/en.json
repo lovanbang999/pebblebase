@@ -298,7 +298,9 @@
     "redisDbIndex": "DB Index (0-15)",
     "redisLogicalDb": "Logical DB",
     "redisUserPlaceholder": "default (optional)",
-    "optionalPassword": "optional"
+    "optionalPassword": "optional",
+    "windowsAuth": "Windows Authentication (Trusted Connection)",
+    "windowsAuthDesc": "Connect using current Windows OS / domain credentials without database username or password."
   },
   "rowModal": {
     "titleEdit": "Edit Record",

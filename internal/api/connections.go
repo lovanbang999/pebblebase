@@ -64,6 +64,8 @@ type createConnectionRequest struct {
 	Environment  string `json:"environment,omitempty"`
 	RawURL       string `json:"raw_url"`
 	SavePassword bool   `json:"save_password"`
+	SSLMode      string `json:"ssl_mode,omitempty"`
+	WindowsAuth  bool   `json:"windows_auth,omitempty"`
 }
 
 // createConnection handles POST /api/connections.
@@ -111,6 +113,8 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		RawURL:       req.RawURL,
 		SavePassword: req.SavePassword,
 		ReadOnly:     req.ReadOnly,
+		SSLMode:      req.SSLMode,
+		WindowsAuth:  req.WindowsAuth,
 	}
 
 	dsn, err := input.ToDSN()
@@ -237,6 +241,8 @@ func (s *Server) testConnection(w http.ResponseWriter, r *http.Request) {
 		RawURL:       req.RawURL,
 		SavePassword: req.SavePassword,
 		ReadOnly:     req.ReadOnly,
+		SSLMode:      req.SSLMode,
+		WindowsAuth:  req.WindowsAuth,
 	}
 
 	dsn, err := input.ToDSN()

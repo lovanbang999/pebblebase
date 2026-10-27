@@ -123,6 +123,24 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
             MongoDB
           </Badge>
         );
+      case "mssql":
+        return (
+          <Badge
+            variant="outline"
+            className="border-blue-500/20 bg-blue-500/10 font-mono text-[11px] text-blue-700 dark:text-blue-400"
+          >
+            SQL Server
+          </Badge>
+        );
+      case "redis":
+        return (
+          <Badge
+            variant="outline"
+            className="border-rose-500/20 bg-rose-500/10 font-mono text-[11px] text-rose-700 dark:text-rose-400"
+          >
+            Redis
+          </Badge>
+        );
       default:
         return (
           <Badge

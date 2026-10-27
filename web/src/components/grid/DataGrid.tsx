@@ -40,6 +40,7 @@ import type {
   FilterOption,
   ColumnSchema,
   TableStats,
+  DatabaseType,
 } from "@/lib/types";
 import { exportTableData, fetchTableStats, type ExportFormat } from "@/lib/api";
 import { useTranslation } from "react-i18next";
@@ -131,7 +132,7 @@ interface DataGridProps {
   isReadOnly?: boolean;
   onOpenQueryConsole?: (query?: string, title?: string) => void;
   connId?: string;
-  dbType?: "postgres" | "mysql" | "mongodb" | "sqlite";
+  dbType?: DatabaseType;
 }
 
 import { DocumentView } from "./DocumentView";

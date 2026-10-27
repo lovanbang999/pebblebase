@@ -95,6 +95,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   const [rawURL, setRawURL] = useState("");
   const [savePassword, setSavePassword] = useState(true);
   const [readOnly, setReadOnly] = useState(cloneData?.read_only ?? false);
+  const [windowsAuth, setWindowsAuth] = useState(false);
 
   // Statuses
   const [testing, setTesting] = useState(false);
@@ -121,7 +122,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             ? "MongoDB"
             : targetDbType === "redis"
               ? "Redis"
-              : "SQLite";
+              : targetDbType === "mssql"
+                ? "SQL Server"
+                : "SQLite";
     const envLabel = targetEnv !== "local" ? ` - ${targetEnv}` : "";
     let prefix = "Local";
 
@@ -146,6 +149,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
     setPort(defaultPort);
     if (type === "redis" && (dbName === "pebble_test" || !dbName)) {
       setDbName("0");
+    } else if (type === "mssql" && (dbName === "pebble_test" || !dbName)) {
+      setDbName("master");
+      setUser("sa");
     }
 
     if (!isNameCustom) {
@@ -196,10 +202,13 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       host: !isSqlite && mode === "form" ? host : undefined,
       port: !isSqlite && mode === "form" ? port : undefined,
       db_name: !isSqlite && mode === "form" ? dbName : undefined,
-      user: !isSqlite && mode === "form" ? user : undefined,
-      password: !isSqlite && mode === "form" ? password : undefined,
+      user: !isSqlite && mode === "form" && !windowsAuth ? user : undefined,
+      password:
+        !isSqlite && mode === "form" && !windowsAuth ? password : undefined,
       raw_url: mode === "url" ? rawURL : undefined,
-      save_password: isSqlite ? true : savePassword,
+      save_password: isSqlite || windowsAuth ? true : savePassword,
+      ssl_mode: dbType === "mssql" ? "disable" : undefined,
+      windows_auth: dbType === "mssql" ? windowsAuth : undefined,
     };
   };
 
@@ -577,40 +586,65 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
-                        {t("connection.user")}
-                      </label>
-                      <Input
-                        type="text"
-                        value={user}
-                        onChange={(e) => setUser(e.target.value)}
-                        placeholder={
-                          dbType === "redis"
-                            ? t("connection.redisUserPlaceholder")
-                            : "username"
-                        }
-                        className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                  {dbType === "mssql" && (
+                    <div className="flex items-center gap-2 py-0.5">
+                      <input
+                        type="checkbox"
+                        id="windowsAuth"
+                        checked={windowsAuth}
+                        onChange={(e) => setWindowsAuth(e.target.checked)}
+                        className="rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
                       />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
-                        {t("connection.password")}
+                      <label
+                        htmlFor="windowsAuth"
+                        className="cursor-pointer text-xs text-zinc-600 select-none dark:text-zinc-400"
+                      >
+                        {t(
+                          "connection.windowsAuth",
+                          "Windows Authentication (Trusted Connection)",
+                        )}
                       </label>
-                      <Input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder={
-                          dbType === "redis"
-                            ? t("connection.optionalPassword")
-                            : "••••••••"
-                        }
-                        className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
-                      />
                     </div>
-                  </div>
+                  )}
+
+                  {!windowsAuth && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                          {t("connection.user")}
+                        </label>
+                        <Input
+                          type="text"
+                          value={user}
+                          onChange={(e) => setUser(e.target.value)}
+                          placeholder={
+                            dbType === "redis"
+                              ? t("connection.redisUserPlaceholder")
+                              : dbType === "mssql"
+                                ? "sa"
+                                : "username"
+                          }
+                          className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                          {t("connection.password")}
+                        </label>
+                        <Input
+                          type="password"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder={
+                            dbType === "redis"
+                              ? t("connection.optionalPassword")
+                              : "••••••••"
+                          }
+                          className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             ) : (
@@ -632,7 +666,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                           ? "mongodb://pebble:pebble@localhost:27017/pebble_test?authSource=admin"
                           : dbType === "redis"
                             ? "redis://:secret@localhost:6379/0"
-                            : "file:/path/to/database.db"
+                            : dbType === "mssql"
+                              ? "sqlserver://sa:secret@localhost:1433?database=master&encrypt=disable"
+                              : "file:/path/to/database.db"
                   }
                   className="resize-none border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                 />

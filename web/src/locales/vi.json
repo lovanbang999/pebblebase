@@ -298,7 +298,9 @@
     "redisDbIndex": "Chỉ mục DB (0-15)",
     "redisLogicalDb": "DB Logic",
     "redisUserPlaceholder": "default (tùy chọn)",
-    "optionalPassword": "tùy chọn"
+    "optionalPassword": "tùy chọn",
+    "windowsAuth": "Xác thực Windows (Trusted Connection)",
+    "windowsAuthDesc": "Kết nối bằng tài khoản Windows / domain hiện tại mà không cần tên người dùng hoặc mật khẩu."
   },
   "rowModal": {
     "titleEdit": "Chỉnh sửa Bản ghi",

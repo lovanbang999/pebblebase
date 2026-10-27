@@ -12,6 +12,7 @@ import (
 
 	"pebblebase/internal/adapter"
 	mongoadapter "pebblebase/internal/adapter/mongodb"
+	mssqladapter "pebblebase/internal/adapter/mssql"
 	mysqladapter "pebblebase/internal/adapter/mysql"
 	pgadapter "pebblebase/internal/adapter/postgres"
 	redisadapter "pebblebase/internal/adapter/redis"
@@ -272,6 +273,8 @@ func openAdapter(ctx context.Context, dbType, dsn string) (adapter.Adapter, erro
 		return sqliteadapter.New(ctx, dsn)
 	case "redis":
 		return redisadapter.New(ctx, dsn)
+	case "mssql", "sqlserver":
+		return mssqladapter.New(ctx, dsn)
 	default:
 		return nil, fmt.Errorf("unsupported database type: %q", dbType)
 	}

@@ -19,7 +19,7 @@ import {
   UploadCloud,
   Plus,
 } from "lucide-react";
-import type { TableSchema, FilterOption } from "@/lib/types";
+import type { TableSchema, FilterOption, DatabaseType } from "@/lib/types";
 import type { ExportFormat } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
@@ -55,7 +55,7 @@ export interface GridHeaderToolbarProps {
   onSubViewChange: (view: "grid" | "schema") => void;
   viewMode: "table" | "document";
   onViewModeChange: (mode: "table" | "document") => void;
-  dbType?: "postgres" | "mysql" | "mongodb" | "sqlite";
+  dbType?: DatabaseType;
   isReadOnly?: boolean;
   quickSearch: string;
   onQuickSearchChange: (val: string) => void;

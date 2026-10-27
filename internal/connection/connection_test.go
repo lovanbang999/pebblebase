@@ -179,3 +179,63 @@ func TestToDSN_SQLite_Form(t *testing.T) {
 		})
 	}
 }
+
+func TestToDSN_MSSQL_Form(t *testing.T) {
+	cases := []struct {
+		name    string
+		input   connection.ConnectionInput
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "sql server auth",
+			input: connection.ConnectionInput{
+				Type:     "mssql",
+				Mode:     "form",
+				Host:     "127.0.0.1",
+				Port:     "1433",
+				User:     "sa",
+				Password: "Password123!",
+				DBName:   "AdventureWorks",
+			},
+			want: "sqlserver://sa:Password123%21@127.0.0.1:1433?TrustServerCertificate=true&database=AdventureWorks&encrypt=disable",
+		},
+		{
+			name: "windows auth",
+			input: connection.ConnectionInput{
+				Type:        "mssql",
+				Mode:        "form",
+				Host:        "localhost",
+				DBName:      "testdb",
+				WindowsAuth: true,
+			},
+			want: "sqlserver://localhost:1433?TrustServerCertificate=true&database=testdb&encrypt=disable&trusted_connection=yes",
+		},
+		{
+			name: "missing host",
+			input: connection.ConnectionInput{
+				Type: "mssql",
+				Mode: "form",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := tc.input.ToDSN()
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("ToDSN() expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ToDSN() unexpected error: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("ToDSN() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
