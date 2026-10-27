@@ -29,6 +29,19 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "yarn"
+          cache-dependency-path: web/yarn.lock
+
+      - name: Build Web Assets for Embedded Server
+        working-directory: web
+        run: |
+          yarn install --frozen-lockfile
+          yarn build
+
       - name: Run Go Tests
         run: go test -v -count=1 ./...
 

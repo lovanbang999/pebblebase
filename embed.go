@@ -7,7 +7,7 @@ import (
 	"io/fs"
 )
 
-//go:embed web/dist/*
+//go:embed all:web/dist
 var distFS embed.FS
 
 // FrontendFS returns an fs.FS rooted at the compiled web assets (stripping "web/dist").
