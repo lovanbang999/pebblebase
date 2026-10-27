@@ -432,6 +432,8 @@
     "templateMongoFind": "MongoDB Find Query",
     "templateMongoCount": "MongoDB Count",
     "templateMongoAgg": "MongoDB Aggregation Pipeline",
+    "templateMongoUpdate": "MongoDB Update Many",
+    "templateMongoInsert": "MongoDB Insert One",
     "rowsFilter": "Filter results...",
     "collapseResults": "Collapse Results",
     "expandResults": "Expand Results",

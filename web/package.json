@@ -2,7 +2,6 @@
   "name": "pebblebase",
   "private": true,
   "version": "1.0.2",
-
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,6 +20,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@codemirror/lang-javascript": "^6.2.5",
     "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-sql": "^6.10.0",
     "@fontsource-variable/geist": "^5.3.0",

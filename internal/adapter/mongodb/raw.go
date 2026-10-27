@@ -23,13 +23,13 @@ func (a *Adapter) ExecuteRaw(ctx context.Context, query string) (adapter.RawQuer
 		return adapter.RawQueryResult{}, fmt.Errorf("query cannot be empty")
 	}
 
-	// 1. Check if it is a Mongo Shell expression: db.collection.method(...)
-	if strings.HasPrefix(cleanQuery, "db.") {
-		return a.executeShellQuery(ctx, cleanQuery, start)
+	// 1. If it starts with '{', handle as direct BSON / JSON command: {"find": "users", ...}
+	if strings.HasPrefix(cleanQuery, "{") {
+		return a.executeJSONCommand(ctx, cleanQuery, start)
 	}
 
-	// 2. Otherwise handle as JSON / BSON command: {"find": "users", ...}
-	return a.executeJSONCommand(ctx, cleanQuery, start)
+	// 2. Run through interactive Mongo Shell REPL (Goja JS runtime with 10s loop-protection timeout)
+	return a.ExecuteShell(ctx, cleanQuery)
 }
 
 func (a *Adapter) executeShellQuery(ctx context.Context, query string, start time.Time) (adapter.RawQueryResult, error) {
