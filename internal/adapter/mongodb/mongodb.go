@@ -15,8 +15,17 @@ import (
 	"pebblebase/internal/adapter"
 )
 
-// Ensure Adapter implements adapter.Adapter at compile time.
-var _ adapter.Adapter = (*Adapter)(nil)
+// Ensure Adapter implements adapter.Adapter and optional interfaces at compile time.
+var (
+	_ adapter.Adapter            = (*Adapter)(nil)
+	_ adapter.RawRunner          = (*Adapter)(nil)
+	_ adapter.StreamExporter     = (*Adapter)(nil)
+	_ adapter.BulkImporter       = (*Adapter)(nil)
+	_ adapter.QueryExplainer     = (*Adapter)(nil)
+	_ adapter.DDLProvider        = (*Adapter)(nil)
+	_ adapter.TableStatsProvider = (*Adapter)(nil)
+	_ adapter.MigrationRunner    = (*Adapter)(nil)
+)
 
 // Adapter implements adapter.Adapter for MongoDB.
 type Adapter struct {
@@ -34,7 +43,14 @@ func New(ctx context.Context, uri string) (*Adapter, error) {
 		return nil, fmt.Errorf("mongodb: %w", err)
 	}
 
-	clientOpts := options.Client().ApplyURI(uri)
+	maxPoolSize := uint64(10)
+	minPoolSize := uint64(0)
+	maxIdleTime := 5 * time.Minute
+	clientOpts := options.Client().ApplyURI(uri).
+		SetMaxPoolSize(maxPoolSize).
+		SetMinPoolSize(minPoolSize).
+		SetMaxConnIdleTime(maxIdleTime)
+
 	client, err := mongo.Connect(ctx, clientOpts)
 	if err != nil {
 		return nil, fmt.Errorf("mongodb: connect: %w", err)

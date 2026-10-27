@@ -16,6 +16,17 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+var (
+	_ adapter.Adapter            = (*SQLiteAdapter)(nil)
+	_ adapter.RawRunner          = (*SQLiteAdapter)(nil)
+	_ adapter.StreamExporter     = (*SQLiteAdapter)(nil)
+	_ adapter.BulkImporter       = (*SQLiteAdapter)(nil)
+	_ adapter.QueryExplainer     = (*SQLiteAdapter)(nil)
+	_ adapter.DDLProvider        = (*SQLiteAdapter)(nil)
+	_ adapter.TableStatsProvider = (*SQLiteAdapter)(nil)
+	_ adapter.MigrationRunner    = (*SQLiteAdapter)(nil)
+)
+
 // SQLiteAdapter implements adapter.Adapter for SQLite.
 type SQLiteAdapter struct {
 	db   *sql.DB
@@ -53,7 +64,8 @@ func New(ctx context.Context, dsn string) (*SQLiteAdapter, error) {
 	// Safe connection pool parameters for embedded file database
 	db.SetMaxOpenConns(5)
 	db.SetMaxIdleConns(2)
-	db.SetConnMaxLifetime(10 * time.Minute)
+	db.SetConnMaxIdleTime(5 * time.Minute)
+	db.SetConnMaxLifetime(30 * time.Minute)
 
 	// Execute recommended Pragmas
 	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = ON;"); err != nil {

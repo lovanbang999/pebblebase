@@ -36,9 +36,11 @@ func New(ctx context.Context, dsn string) (*ClickHouseAdapter, error) {
 	}
 
 	db := clickhouse.OpenDB(opts)
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	// Standard connection pool limits to prevent memory bloat
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(2)
+	db.SetConnMaxIdleTime(5 * time.Minute)
+	db.SetConnMaxLifetime(30 * time.Minute)
 
 	a := &ClickHouseAdapter{db: db}
 	if err := a.Ping(ctx); err != nil {

@@ -30,14 +30,15 @@ func parseRedisDSN(rawURI string) (*redis.UniversalOptions, int, error) {
 		return nil, 0, fmt.Errorf("redis: connection URI is empty")
 	}
 
-	// Default universal options with leak-prevention timeouts
+	// Default universal options with leak-prevention timeouts and standardized pool sizing
 	uOpts := &redis.UniversalOptions{
-		DialTimeout:  5 * time.Second,
-		ReadTimeout:  3 * time.Second,
-		WriteTimeout: 3 * time.Second,
-		PoolSize:     20,
-		MinIdleConns: 5,
-		MaxRetries:   3,
+		DialTimeout:     5 * time.Second,
+		ReadTimeout:     3 * time.Second,
+		WriteTimeout:    3 * time.Second,
+		PoolSize:        10,
+		MinIdleConns:    0,
+		ConnMaxIdleTime: 5 * time.Minute,
+		MaxRetries:      3,
 	}
 
 	var isTLS bool

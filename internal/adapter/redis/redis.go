@@ -10,8 +10,14 @@ import (
 	"pebblebase/internal/adapter"
 )
 
-// Ensure Adapter implements adapter.Adapter at compile time.
-var _ adapter.Adapter = (*Adapter)(nil)
+// Ensure Adapter implements adapter.Adapter and optional interfaces at compile time.
+var (
+	_ adapter.Adapter        = (*Adapter)(nil)
+	_ adapter.RawRunner      = (*Adapter)(nil)
+	_ adapter.StreamExporter = (*Adapter)(nil)
+	_ adapter.BulkImporter   = (*Adapter)(nil)
+	_ adapter.QueryExplainer = (*Adapter)(nil)
+)
 
 // Adapter implements adapter.Adapter for Redis (supporting Standalone, Cluster, and Sentinel).
 type Adapter struct {
