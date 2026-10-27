@@ -15,6 +15,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      treeshake: true,
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {

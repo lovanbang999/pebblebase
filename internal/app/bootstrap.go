@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/debug"
 	"strings"
 
 	"pebblebase/internal/ai"
@@ -152,6 +154,11 @@ func Bootstrap(dataDir string, authEnabled bool) (*Instance, error) {
 	updateSvc := autoupdate.NewService(Version, dataDir)
 	updateHandler := autoupdate.NewHandler(updateSvc)
 	updateHandler.RegisterRoutes(mux)
+
+	// 7. Post-bootstrap memory reclamation:
+	// Return transient initialization allocations to the OS to maintain a lean idle RSS (<30MB).
+	runtime.GC()
+	debug.FreeOSMemory()
 
 	return &Instance{
 		Mux:         mux,
