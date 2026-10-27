@@ -432,6 +432,8 @@
     "templateMongoFind": "Truy vấn MongoDB Find",
     "templateMongoCount": "Đếm MongoDB Count",
     "templateMongoAgg": "Pipeline Tổng hợp (Aggregate)",
+    "templateMongoUpdate": "Cập nhật document (UpdateMany)",
+    "templateMongoInsert": "Thêm mới document (InsertOne)",
     "rowsFilter": "Lọc kết quả...",
     "collapseResults": "Thu gọn kết quả",
     "expandResults": "Mở rộng kết quả",

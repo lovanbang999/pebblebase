@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
 import { keymap } from "@codemirror/view";
 import { sql, PostgreSQL, MySQL, SQLite } from "@codemirror/lang-sql";
-import { json, jsonLanguage } from "@codemirror/lang-json";
+import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   autocompletion,
@@ -119,7 +119,7 @@ import { cn } from "cn";
 // --------------------------------------------------------------------------
 const MONGO_METHODS = [
   { label: "find", type: "function", detail: "find(filter, projection)" },
-  { label: "findOne", type: "function", detail: "findOne(filter)" },
+  { label: "findOne", type: "function", detail: "findOne(filter, projection)" },
   {
     label: "countDocuments",
     type: "function",
@@ -127,11 +127,37 @@ const MONGO_METHODS = [
   },
   { label: "aggregate", type: "function", detail: "aggregate(pipeline)" },
   { label: "insertOne", type: "function", detail: "insertOne(doc)" },
+  { label: "insertMany", type: "function", detail: "insertMany([doc1, doc2])" },
+  {
+    label: "updateOne",
+    type: "function",
+    detail: "updateOne(filter, update, options)",
+  },
+  {
+    label: "updateMany",
+    type: "function",
+    detail: "updateMany(filter, update, options)",
+  },
   { label: "deleteOne", type: "function", detail: "deleteOne(filter)" },
   { label: "deleteMany", type: "function", detail: "deleteMany(filter)" },
+  { label: "distinct", type: "function", detail: "distinct(field, filter)" },
   { label: "limit", type: "function", detail: "limit(count)" },
   { label: "skip", type: "function", detail: "skip(count)" },
   { label: "sort", type: "function", detail: "sort({ field: 1 })" },
+  { label: "toArray", type: "function", detail: "toArray()" },
+  { label: "drop", type: "function", detail: "drop()" },
+  {
+    label: "getCollectionNames",
+    type: "function",
+    detail: "getCollectionNames()",
+  },
+];
+
+const MONGO_HELPERS = [
+  { label: "ObjectId", type: "function", detail: "ObjectId(hexString?)" },
+  { label: "ISODate", type: "function", detail: "ISODate(dateString?)" },
+  { label: "NumberLong", type: "function", detail: "NumberLong(value)" },
+  { label: "UUID", type: "function", detail: "UUID(uuidString?)" },
 ];
 
 const MONGO_OPERATORS = [
@@ -224,6 +250,7 @@ function createMongoCompletionSource(tables: TableSchema[]) {
     }
 
     options.push(...MONGO_METHODS);
+    options.push(...MONGO_HELPERS);
     options.push(...MONGO_OPERATORS);
 
     return {
@@ -1287,8 +1314,8 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
     if (isMongo) {
       return [
-        json(),
-        jsonLanguage.data.of({
+        javascript(),
+        javascriptLanguage.data.of({
           autocomplete: createMongoCompletionSource(tables),
         }),
         autocompletion({
@@ -1349,7 +1376,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       return [
         {
           label: t("console.templateMongoFind"),
-          query: `db.${firstTable}.find({}).limit(50)`,
+          query: `db.${firstTable}.find({}).sort({ _id: -1 }).limit(50)`,
         },
         {
           label: t("console.templateMongoCount"),
@@ -1357,7 +1384,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         },
         {
           label: t("console.templateMongoAgg"),
-          query: `db.${firstTable}.aggregate([\n  { "$match": {} },\n  { "$limit": 20 }\n])`,
+          query: `db.${firstTable}.aggregate([\n  { $match: {} },\n  { $limit: 20 }\n])`,
+        },
+        {
+          label: t("console.templateMongoUpdate"),
+          query: `db.${firstTable}.updateMany({ status: "pending" }, { $set: { status: "processed" } })`,
+        },
+        {
+          label: t("console.templateMongoInsert"),
+          query: `db.${firstTable}.insertOne({\n  name: "New Document",\n  createdAt: new Date()\n})`,
         },
       ];
     }
