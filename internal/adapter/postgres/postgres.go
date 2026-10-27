@@ -4,10 +4,22 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"pebblebase/internal/adapter"
 	"pebblebase/internal/schema"
+)
+
+var (
+	_ adapter.Adapter            = (*PostgresAdapter)(nil)
+	_ adapter.RawRunner          = (*PostgresAdapter)(nil)
+	_ adapter.StreamExporter     = (*PostgresAdapter)(nil)
+	_ adapter.BulkImporter       = (*PostgresAdapter)(nil)
+	_ adapter.QueryExplainer     = (*PostgresAdapter)(nil)
+	_ adapter.DDLProvider        = (*PostgresAdapter)(nil)
+	_ adapter.TableStatsProvider = (*PostgresAdapter)(nil)
+	_ adapter.MigrationRunner    = (*PostgresAdapter)(nil)
 )
 
 // PostgresAdapter implements adapter.Adapter for PostgreSQL.
@@ -15,9 +27,20 @@ type PostgresAdapter struct {
 	pool *pgxpool.Pool
 }
 
-// New creates a PostgresAdapter and verifies the connection with a Ping.
+// New creates a PostgresAdapter with standardized connection pool limits and verifies connectivity.
 func New(ctx context.Context, dsn string) (*PostgresAdapter, error) {
-	pool, err := pgxpool.New(ctx, dsn)
+	cfg, err := pgxpool.ParseConfig(dsn)
+	if err != nil {
+		return nil, fmt.Errorf("postgres: parse dsn: %w", err)
+	}
+
+	// Standard connection pool limits to prevent memory bloat
+	cfg.MaxConns = 10
+	cfg.MinConns = 0
+	cfg.MaxConnIdleTime = 5 * time.Minute
+	cfg.MaxConnLifetime = 30 * time.Minute
+
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("postgres: create pool: %w", err)
 	}

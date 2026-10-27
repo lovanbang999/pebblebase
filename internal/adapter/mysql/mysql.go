@@ -12,6 +12,17 @@ import (
 	"pebblebase/internal/schema"
 )
 
+var (
+	_ adapter.Adapter            = (*MySQLAdapter)(nil)
+	_ adapter.RawRunner          = (*MySQLAdapter)(nil)
+	_ adapter.StreamExporter     = (*MySQLAdapter)(nil)
+	_ adapter.BulkImporter       = (*MySQLAdapter)(nil)
+	_ adapter.QueryExplainer     = (*MySQLAdapter)(nil)
+	_ adapter.DDLProvider        = (*MySQLAdapter)(nil)
+	_ adapter.TableStatsProvider = (*MySQLAdapter)(nil)
+	_ adapter.MigrationRunner    = (*MySQLAdapter)(nil)
+)
+
 // MySQLAdapter implements adapter.Adapter for MySQL.
 type MySQLAdapter struct {
 	db *sql.DB
@@ -24,10 +35,11 @@ func New(ctx context.Context, dsn string) (*MySQLAdapter, error) {
 		return nil, fmt.Errorf("mysql: open: %w", err)
 	}
 
-	// Sane connection pool defaults
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	// Standard connection pool limits to prevent memory bloat
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(2)
+	db.SetConnMaxIdleTime(5 * time.Minute)
+	db.SetConnMaxLifetime(30 * time.Minute)
 
 	a := &MySQLAdapter{db: db}
 	if err := a.Ping(ctx); err != nil {

@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"pebblebase/internal/adapter"
 	clickhouseadapter "pebblebase/internal/adapter/clickhouse"
@@ -45,7 +46,7 @@ func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Servi
 	return &Server{
 		store:        store,
 		enc:          enc,
-		cache:        &adapterCache{entries: make(map[string]adapter.Adapter)},
+		cache:        newAdapterCache(10, 15*time.Minute),
 		authSvc:      authSvc,
 		auditLog:     auditLog,
 		querySvc:     querySvc,
@@ -182,46 +183,157 @@ func (s *Server) logAudit(r *http.Request, action audit.Action, resource, detail
 }
 
 // --------------------------------------------------------------------------
-// Adapter cache — keeps open connections alive for the server lifetime.
-// Evicted only on explicit DELETE /api/connections/:id.
+// Adapter cache — manages open database connection pools with LRU eviction
+// and idle-timeout expiration to prevent memory bloat across multiple databases.
 // --------------------------------------------------------------------------
 
+type cacheEntry struct {
+	adapter      adapter.Adapter
+	lastAccessed time.Time
+}
+
 type adapterCache struct {
-	mu      sync.RWMutex
-	entries map[string]adapter.Adapter
+	mu          sync.Mutex
+	entries     map[string]*cacheEntry
+	maxCapacity int
+	idleTTL     time.Duration
+	stopReaper  chan struct{}
+	closeOnce   sync.Once
+}
+
+func newAdapterCache(maxCapacity int, idleTTL time.Duration) *adapterCache {
+	if maxCapacity <= 0 {
+		maxCapacity = 10
+	}
+	if idleTTL <= 0 {
+		idleTTL = 15 * time.Minute
+	}
+	c := &adapterCache{
+		entries:     make(map[string]*cacheEntry),
+		maxCapacity: maxCapacity,
+		idleTTL:     idleTTL,
+		stopReaper:  make(chan struct{}),
+	}
+	c.startReaper(1 * time.Minute)
+	return c
 }
 
 func (c *adapterCache) get(id string) (adapter.Adapter, bool) {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-	a, ok := c.entries[id]
-	return a, ok
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	entry, ok := c.entries[id]
+	if !ok {
+		return nil, false
+	}
+
+	// Check if the connection has been idle beyond the configured TTL
+	if c.idleTTL > 0 && time.Since(entry.lastAccessed) > c.idleTTL {
+		if entry.adapter != nil {
+			_ = entry.adapter.Close()
+		}
+		delete(c.entries, id)
+		return nil, false
+	}
+
+	entry.lastAccessed = time.Now()
+	return entry.adapter, true
 }
 
 func (c *adapterCache) set(id string, a adapter.Adapter) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.entries[id] = a
+
+	if existing, ok := c.entries[id]; ok {
+		if existing.adapter != nil && existing.adapter != a {
+			_ = existing.adapter.Close()
+		}
+		existing.adapter = a
+		existing.lastAccessed = time.Now()
+		return
+	}
+
+	// If capacity reached, evict the least recently accessed adapter
+	if len(c.entries) >= c.maxCapacity {
+		var oldestID string
+		var oldestTime time.Time
+		first := true
+		for k, entry := range c.entries {
+			if first || entry.lastAccessed.Before(oldestTime) {
+				oldestID = k
+				oldestTime = entry.lastAccessed
+				first = false
+			}
+		}
+		if oldestID != "" {
+			if evicted := c.entries[oldestID]; evicted != nil && evicted.adapter != nil {
+				_ = evicted.adapter.Close()
+			}
+			delete(c.entries, oldestID)
+		}
+	}
+
+	c.entries[id] = &cacheEntry{
+		adapter:      a,
+		lastAccessed: time.Now(),
+	}
 }
 
 func (c *adapterCache) delete(id string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if a, ok := c.entries[id]; ok {
-		a.Close()
+	if entry, ok := c.entries[id]; ok {
+		if entry.adapter != nil {
+			_ = entry.adapter.Close()
+		}
 		delete(c.entries, id)
 	}
 }
 
 func (c *adapterCache) closeAll() {
+	c.closeOnce.Do(func() {
+		close(c.stopReaper)
+	})
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	for id, a := range c.entries {
-		if a != nil {
-			a.Close()
+	for id, entry := range c.entries {
+		if entry != nil && entry.adapter != nil {
+			_ = entry.adapter.Close()
 		}
 		delete(c.entries, id)
 	}
+}
+
+func (c *adapterCache) reapExpired() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.idleTTL <= 0 {
+		return
+	}
+	now := time.Now()
+	for id, entry := range c.entries {
+		if now.Sub(entry.lastAccessed) > c.idleTTL {
+			if entry.adapter != nil {
+				_ = entry.adapter.Close()
+			}
+			delete(c.entries, id)
+		}
+	}
+}
+
+func (c *adapterCache) startReaper(interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-c.stopReaper:
+				return
+			case <-ticker.C:
+				c.reapExpired()
+			}
+		}
+	}()
 }
 
 // Close gracefully closes all active database adapter pools.
