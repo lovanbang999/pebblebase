@@ -44,6 +44,21 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
     onContentChange?.(val);
   };
 
+  // Whitelist safe URL schemes to prevent javascript:, data:, vbscript: XSS vectors
+  const isSafeUrl = (url: string): boolean => {
+    const trimmed = url.trim().toLowerCase();
+    if (
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("mailto:") ||
+      trimmed.startsWith("#") ||
+      trimmed.startsWith("/")
+    ) {
+      return !trimmed.includes("javascript:") && !trimmed.includes("data:");
+    }
+    return false;
+  };
+
   // Render inline formatting: bold, italic, code, links
   const renderInline = (text: string) => {
     const parts: React.ReactNode[] = [];
@@ -91,17 +106,31 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         const titleMatch = token.match(/\[([^\]]+)\]/);
         const urlMatch = token.match(/\(([^)]+)\)/);
         if (titleMatch && urlMatch) {
-          parts.push(
-            <a
-              key={keyIdx++}
-              href={urlMatch[1]}
-              target="_blank"
-              rel="noreferrer"
-              className="text-blue-600 underline hover:text-blue-500 dark:text-blue-400"
-            >
-              {titleMatch[1]}
-            </a>,
-          );
+          const rawUrl = urlMatch[1];
+          if (isSafeUrl(rawUrl)) {
+            parts.push(
+              <a
+                key={keyIdx++}
+                href={rawUrl}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-blue-600 underline hover:text-blue-500 dark:text-blue-400"
+              >
+                {titleMatch[1]}
+              </a>,
+            );
+          } else {
+            // Unsafe protocol (e.g. javascript:, data:) neutralized to plain text
+            parts.push(
+              <span
+                key={keyIdx++}
+                className="text-zinc-600 dark:text-zinc-400"
+                title="Unsafe link disabled"
+              >
+                {titleMatch[1]}
+              </span>,
+            );
+          }
         } else {
           parts.push(token);
         }
