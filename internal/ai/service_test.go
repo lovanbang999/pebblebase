@@ -145,3 +145,44 @@ func TestService_Ollama_MockTagsAndChat(t *testing.T) {
 		t.Errorf("expected 2 available models, got %d", len(testRes.AvailableModels))
 	}
 }
+
+func TestBuildPrompt(t *testing.T) {
+	req := &ai.QueryAssistRequest{
+		Mode:   ai.AssistModeGenerate,
+		Engine: "postgres",
+		Prompt: "Calculate monthly revenue for 2025",
+		Schema: []ai.TableSchemaSummary{
+			{
+				Name:        "orders",
+				Columns:     []string{"id", "total", "created_at"},
+				PrimaryKeys: []string{"id"},
+			},
+		},
+	}
+
+	msgs := ai.BuildPrompt(req)
+	if len(msgs) != 2 {
+		t.Fatalf("expected 2 messages, got %d", len(msgs))
+	}
+	if msgs[0].Role != "system" || msgs[1].Role != "user" {
+		t.Errorf("unexpected roles: %s, %s", msgs[0].Role, msgs[1].Role)
+	}
+}
+
+func TestParseAssistResponse(t *testing.T) {
+	jsonRaw := "```json\n{\"query\": \"SELECT date_trunc('month', created_at), sum(total) FROM orders GROUP BY 1;\", \"explanation\": \"Aggregates monthly revenue.\", \"indexes\": [\"CREATE INDEX idx_orders_created_at ON orders(created_at);\"]}\n```"
+	resp := ai.ParseAssistResponse(jsonRaw)
+	if resp.Query == "" || resp.Explanation == "" {
+		t.Fatalf("expected query and explanation, got %+v", resp)
+	}
+	if len(resp.Indexes) != 1 {
+		t.Errorf("expected 1 index, got %d", len(resp.Indexes))
+	}
+
+	// Fallback raw sql
+	rawSQL := "SELECT * FROM users WHERE active = true;"
+	respFallback := ai.ParseAssistResponse(rawSQL)
+	if respFallback.Query != rawSQL {
+		t.Errorf("expected fallback query %q, got %q", rawSQL, respFallback.Query)
+	}
+}

@@ -775,6 +775,7 @@ function PebblebaseStudio() {
                         initialQuery={t.state?.queryText}
                         onQueryChange={handleQueryTextChange}
                         onNavigateToTable={handleNavigateToTable}
+                        onOpenAISettings={handleOpenAISettings}
                       />
                     </ErrorBoundary>
                   </Suspense>

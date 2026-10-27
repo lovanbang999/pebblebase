@@ -221,3 +221,24 @@ func (s *Service) GetSupportedProviders() []ProviderInfo {
 		},
 	}
 }
+
+// AssistQuery processes a QueryAssistRequest (generate, fix, or explain) using the active AI provider.
+func (s *Service) AssistQuery(ctx context.Context, req *QueryAssistRequest) (*QueryAssistResponse, error) {
+	if req == nil {
+		return nil, errors.New("query assist request cannot be nil")
+	}
+
+	messages := BuildPrompt(req)
+
+	compReq := &CompletionRequest{
+		Messages: messages,
+	}
+
+	resp, err := s.Generate(ctx, compReq)
+	if err != nil {
+		return nil, err
+	}
+
+	parsed := ParseAssistResponse(resp.Content)
+	return parsed, nil
+}

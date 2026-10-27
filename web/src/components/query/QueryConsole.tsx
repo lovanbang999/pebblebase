@@ -53,8 +53,15 @@ import type {
   RawQueryResult,
   QueryHistoryItem,
   ExplainResult,
+  AIQueryAssistResponse,
+  TableSchemaSummary,
 } from "@/lib/types";
-import { executeRawQuery, createSavedQuery, explainQuery } from "@/lib/api";
+import {
+  executeRawQuery,
+  createSavedQuery,
+  explainQuery,
+  queryAssist,
+} from "@/lib/api";
 import {
   STORAGE_KEYS,
   DEFAULT_QUERY_LIMIT,
@@ -453,6 +460,7 @@ interface QueryConsoleProps {
   initialQuery?: string;
   onNavigateToTable?: (tableName: string) => void;
   onQueryChange?: (query: string) => void;
+  onOpenAISettings?: () => void;
 }
 
 export const QueryConsole: FC<QueryConsoleProps> = ({
@@ -461,6 +469,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   initialQuery,
   onNavigateToTable,
   onQueryChange,
+  onOpenAISettings,
 }) => {
   const { t } = useTranslation();
   const isMongo = connection.type === "mongodb";
@@ -650,6 +659,127 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   );
   const [planExpandAll, setPlanExpandAll] = useState<boolean | null>(null);
   const [copiedPlan, setCopiedPlan] = useState(false);
+
+  // AI Query Assistant States (Prompt 3.2)
+  const [isAiBarOpen, setIsAiBarOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [aiGeneratedResult, setAiGeneratedResult] =
+    useState<AIQueryAssistResponse | null>(null);
+
+  const [isFixingWithAi, setIsFixingWithAi] = useState(false);
+  const [aiFixedResult, setAiFixedResult] =
+    useState<AIQueryAssistResponse | null>(null);
+
+  const [isOptimizingWithAi, setIsOptimizingWithAi] = useState(false);
+  const [aiOptimizationResult, setAiOptimizationResult] =
+    useState<AIQueryAssistResponse | null>(null);
+
+  const [aiErrorNotice, setAiErrorNotice] = useState<string | null>(null);
+  const [copiedIndexDdl, setCopiedIndexDdl] = useState<string | null>(null);
+  const [aiToast, setAiToast] = useState<string | null>(null);
+
+  const showAiToast = useCallback((msg: string) => {
+    setAiToast(msg);
+    setTimeout(() => setAiToast(null), TOAST_DURATION_MS);
+  }, []);
+
+  // Condensed schema context for prompt injection
+  const condensedSchema = useMemo<TableSchemaSummary[]>(() => {
+    return (tables || []).slice(0, 30).map((t) => ({
+      name: t.name,
+      columns: t.columns.map((c) => `${c.name} (${c.type})`),
+      primary_keys: t.columns
+        .filter((c) => c.is_primary_key)
+        .map((c) => c.name),
+      foreign_keys: (t.relations || []).map(
+        (r) => `${r.from_column} -> ${r.to_table}.${r.to_column}`,
+      ),
+    }));
+  }, [tables]);
+
+  // Handle Text-to-Query Generation
+  const handleGenerateQuery = async (customPrompt?: string) => {
+    const promptText = (customPrompt || aiPrompt).trim();
+    if (!promptText || isGeneratingAi) return;
+
+    setIsGeneratingAi(true);
+    setAiErrorNotice(null);
+    setAiGeneratedResult(null);
+
+    try {
+      const res = await queryAssist({
+        mode: "generate",
+        engine: connection.type,
+        prompt: promptText,
+        schema: condensedSchema,
+      });
+      setAiGeneratedResult(res);
+    } catch (err: any) {
+      setAiErrorNotice(err?.message || t("ai.generateFailed"));
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  // Handle Error Remediation
+  const handleFixWithAi = async () => {
+    if (!error || isFixingWithAi) return;
+
+    setIsFixingWithAi(true);
+    setAiErrorNotice(null);
+    setAiFixedResult(null);
+
+    try {
+      const res = await queryAssist({
+        mode: "fix",
+        engine: connection.type,
+        current_query: query,
+        error_message: error,
+        schema: condensedSchema,
+      });
+      setAiFixedResult(res);
+    } catch (err: any) {
+      setAiErrorNotice(err?.message || t("ai.fixFailed"));
+    } finally {
+      setIsFixingWithAi(false);
+    }
+  };
+
+  // Handle Query Explain Optimization
+  const handleOptimizeWithAi = async () => {
+    if (!activeTab.explainResult?.plan || isOptimizingWithAi) return;
+
+    setIsOptimizingWithAi(true);
+    setAiErrorNotice(null);
+    setAiOptimizationResult(null);
+
+    try {
+      const planStr =
+        typeof activeTab.explainResult.plan === "string"
+          ? activeTab.explainResult.plan
+          : JSON.stringify(activeTab.explainResult.plan, null, 2);
+
+      const res = await queryAssist({
+        mode: "explain",
+        engine: connection.type,
+        current_query: query,
+        explain_plan: planStr,
+        schema: condensedSchema,
+      });
+      setAiOptimizationResult(res);
+    } catch (err: any) {
+      setAiErrorNotice(err?.message || t("ai.optimizeFailed"));
+    } finally {
+      setIsOptimizingWithAi(false);
+    }
+  };
+
+  const handleCopyIndex = (ddl: string) => {
+    navigator.clipboard.writeText(ddl);
+    setCopiedIndexDdl(ddl);
+    setTimeout(() => setCopiedIndexDdl(null), 2000);
+  };
 
   // Tab management & close warning states
   const [closingTabId, setClosingTabId] = useState<string | null>(null);
@@ -1507,6 +1637,23 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             )}
           </Button>
 
+          {/* Ask AI CTA (Prompt 3.2.1) */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => setIsAiBarOpen((v) => !v)}
+            title={t("ai.askAiTooltip")}
+            className={cn(
+              "h-7 shrink-0 cursor-pointer gap-1.5 border text-xs font-semibold shadow-xs transition-all",
+              isAiBarOpen
+                ? "border-purple-500/50 bg-purple-500/15 text-purple-700 dark:border-purple-500/40 dark:bg-purple-500/20 dark:text-purple-300"
+                : "border-purple-500/30 bg-purple-500/5 text-purple-700 hover:bg-purple-500/15 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-500/20",
+            )}
+          >
+            <Sparkles className="size-3.5 text-purple-600 dark:text-purple-400" />
+            <span className="whitespace-nowrap">{t("ai.askAi")}</span>
+          </Button>
+
           {/* Explain Query CTA */}
           <Button
             type="button"
@@ -1592,6 +1739,18 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             <p className="text-[10px] font-normal text-zinc-500 dark:text-zinc-400">
               {t("savedQuery.saveSuccess")}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* AI feedback toast */}
+      {aiToast && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border border-purple-500/30 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-900 shadow-xl dark:border-purple-500/40 dark:bg-zinc-900 dark:text-zinc-100">
+          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-purple-500/30 bg-purple-500/15">
+            <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <div>
+            <p className="text-zinc-900 dark:text-zinc-100">{aiToast}</p>
           </div>
         </div>
       )}
@@ -1793,6 +1952,212 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             />
           ) : (
             <>
+              {/* Inline Ask AI Bar (Prompt 3.2.1) */}
+              {isAiBarOpen && (
+                <div className="shrink-0 border-b border-purple-500/20 bg-purple-500/5 p-3 dark:border-purple-500/30 dark:bg-purple-950/20">
+                  <div className="flex items-center justify-between pb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex size-5 items-center justify-center rounded-md bg-purple-600 text-white shadow-2xs">
+                        <Sparkles className="size-3" />
+                      </div>
+                      <span className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                        {t("ai.askAi")}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="h-4 border-purple-500/40 bg-purple-500/10 px-1 font-mono text-[9px] font-semibold text-purple-700 uppercase dark:text-purple-300"
+                      >
+                        {connection.type}
+                      </Badge>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={() => {
+                        setIsAiBarOpen(false);
+                        setAiErrorNotice(null);
+                      }}
+                      title={t("ai.closeAiBar")}
+                      className="size-5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                    >
+                      <X className="size-3.5" />
+                    </Button>
+                  </div>
+
+                  {/* AI Provider Error or Missing Notice */}
+                  {aiErrorNotice && (
+                    <Alert
+                      variant="destructive"
+                      className="mb-2.5 border-rose-300 bg-rose-50/90 py-1.5 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-300"
+                    >
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 overflow-hidden">
+                          <AlertCircle className="size-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                          <AlertDescription className="text-xs break-all">
+                            {aiErrorNotice}
+                          </AlertDescription>
+                        </div>
+                        {onOpenAISettings && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={onOpenAISettings}
+                            className="h-6 shrink-0 gap-1 border-rose-300 bg-white text-[11px] font-medium text-rose-700 shadow-2xs hover:bg-rose-100 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-300 dark:hover:bg-zinc-800"
+                          >
+                            <Sparkles className="size-3" />
+                            <span>{t("ai.openAiSettings")}</span>
+                          </Button>
+                        )}
+                      </div>
+                    </Alert>
+                  )}
+
+                  {/* Natural Language Prompt Input Bar */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type="text"
+                        value={aiPrompt}
+                        onChange={(e) => setAiPrompt(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleGenerateQuery();
+                          }
+                        }}
+                        placeholder={t("ai.askAiPlaceholder")}
+                        disabled={isGeneratingAi}
+                        className="h-8 border-purple-200 bg-white pr-8 text-xs text-zinc-900 shadow-2xs placeholder:text-zinc-400 dark:border-purple-900/60 dark:bg-zinc-900/80 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                      />
+                      {aiPrompt && (
+                        <button
+                          type="button"
+                          onClick={() => setAiPrompt("")}
+                          className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      )}
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleGenerateQuery()}
+                      disabled={isGeneratingAi || !aiPrompt.trim()}
+                      className="h-8 gap-1.5 bg-purple-600 text-xs font-semibold text-white shadow-2xs hover:bg-purple-500 disabled:opacity-50 dark:bg-purple-600 dark:hover:bg-purple-500"
+                    >
+                      {isGeneratingAi ? (
+                        <>
+                          <Loader2 className="size-3.5 animate-spin" />
+                          <span>{t("ai.generating")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="size-3.5" />
+                          <span>{t("ai.generate")}</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Quick Suggestion Chips */}
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-400">
+                    <span className="font-medium text-zinc-500 dark:text-zinc-400">
+                      💡
+                    </span>
+                    {(isMongo
+                      ? [
+                          t("ai.chipMongoCount"),
+                          t("ai.chipMongoLatest"),
+                          t("ai.chipMongoAggregate"),
+                        ]
+                      : [
+                          t("ai.chipRevenue"),
+                          t("ai.chipTopUsers"),
+                          t("ai.chipInactive"),
+                        ]
+                    ).map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          setAiPrompt(chip);
+                          handleGenerateQuery(chip);
+                        }}
+                        className="cursor-pointer rounded-md border border-purple-500/20 bg-white/70 px-2 py-0.5 text-[11px] text-purple-700 transition-colors hover:border-purple-500/40 hover:bg-purple-500/10 dark:border-purple-500/30 dark:bg-zinc-900/60 dark:text-purple-300 dark:hover:bg-purple-500/20"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Generated Result Preview Card */}
+                  {aiGeneratedResult && (
+                    <div className="mt-3 rounded-lg border border-purple-500/30 bg-white p-3 shadow-xs dark:border-purple-500/30 dark:bg-zinc-900/90">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-[11px] font-semibold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
+                          {t("ai.explanationTitle")}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              handleQueryChange(aiGeneratedResult.query);
+                              showAiToast(t("ai.fixApplied"));
+                            }}
+                            className="h-6 gap-1 border-purple-500/30 bg-purple-500/10 text-[11px] font-medium text-purple-700 hover:bg-purple-500/20 dark:text-purple-300"
+                          >
+                            <Check className="size-3" />
+                            <span>{t("ai.replace")}</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const newQ = query.trim()
+                                ? `${query.trim()}\n\n${aiGeneratedResult.query}`
+                                : aiGeneratedResult.query;
+                              handleQueryChange(newQ);
+                              showAiToast(t("ai.fixApplied"));
+                            }}
+                            className="h-6 gap-1 border-zinc-200 text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                          >
+                            <Plus className="size-3" />
+                            <span>{t("ai.insert")}</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={async () => {
+                              handleQueryChange(aiGeneratedResult.query);
+                              await executeQuery(aiGeneratedResult.query);
+                            }}
+                            className="h-6 gap-1 bg-purple-600 text-[11px] font-medium text-white hover:bg-purple-500"
+                          >
+                            <Play className="size-2.5 fill-current" />
+                            <span>{t("ai.run")}</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      {aiGeneratedResult.explanation && (
+                        <p className="mb-2 text-xs text-zinc-600 dark:text-zinc-300">
+                          {aiGeneratedResult.explanation}
+                        </p>
+                      )}
+
+                      <div className="rounded-md border border-zinc-200/80 bg-zinc-50 p-2 font-mono text-xs text-zinc-800 select-all dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                        <code>{aiGeneratedResult.query}</code>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div
                 style={{
                   height: isResultsCollapsed ? "100%" : `${editorHeight}px`,
@@ -2027,16 +2392,89 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                 <div className="custom-scrollbar flex-1 overflow-auto p-3">
                   {activeResultsTab === "results" ? (
                     <>
-                      {/* Error Alert */}
+                      {/* Error Alert with 1-Click Fix with AI */}
                       {error && (
                         <Alert
                           variant="destructive"
                           className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
                         >
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
-                            {error}
-                          </AlertDescription>
+                          <AlertCircle className="h-4 w-4 shrink-0" />
+                          <div className="flex-1 space-y-2">
+                            <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
+                              {error}
+                            </AlertDescription>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={handleFixWithAi}
+                                disabled={isFixingWithAi}
+                                className="h-6.5 gap-1.5 border-rose-300 bg-rose-100/70 text-[11px] font-semibold text-rose-900 shadow-2xs hover:bg-rose-200 dark:border-rose-800 dark:bg-rose-900/40 dark:text-rose-200 dark:hover:bg-rose-900/70"
+                              >
+                                {isFixingWithAi ? (
+                                  <>
+                                    <Loader2 className="size-3 animate-spin" />
+                                    <span>{t("ai.fixing")}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="size-3 text-purple-600 dark:text-purple-400" />
+                                    <span>{t("ai.fixWithAi")}</span>
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+
+                            {/* Render AI Fix Result */}
+                            {aiFixedResult && (
+                              <div className="mt-2 rounded-lg border border-purple-500/30 bg-white p-3 text-zinc-900 shadow-xs dark:border-purple-500/30 dark:bg-zinc-900 dark:text-zinc-100">
+                                <div className="mb-1.5 flex items-center justify-between">
+                                  <div className="flex items-center gap-1.5">
+                                    <Sparkles className="size-3.5 text-purple-600 dark:text-purple-400" />
+                                    <span className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                                      {t("ai.fixWithAi")}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        handleQueryChange(aiFixedResult.query);
+                                        showAiToast(t("ai.fixApplied"));
+                                      }}
+                                      className="h-6 gap-1 border-purple-500/30 bg-purple-500/10 text-[11px] font-medium text-purple-700 hover:bg-purple-500/20 dark:text-purple-300"
+                                    >
+                                      <Check className="size-3" />
+                                      <span>{t("ai.applyFix")}</span>
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      onClick={async () => {
+                                        handleQueryChange(aiFixedResult.query);
+                                        await executeQuery(aiFixedResult.query);
+                                      }}
+                                      className="h-6 gap-1 bg-purple-600 text-[11px] font-medium text-white hover:bg-purple-500"
+                                    >
+                                      <Play className="size-2.5 fill-current" />
+                                      <span>{t("ai.run")}</span>
+                                    </Button>
+                                  </div>
+                                </div>
+                                {aiFixedResult.explanation && (
+                                  <p className="mb-2 text-xs text-zinc-600 dark:text-zinc-300">
+                                    {aiFixedResult.explanation}
+                                  </p>
+                                )}
+                                <div className="rounded-md border border-zinc-200 bg-zinc-50 p-2 font-mono text-xs select-all dark:border-zinc-800 dark:bg-zinc-950">
+                                  <code>{aiFixedResult.query}</code>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </Alert>
                       )}
 
@@ -2341,6 +2779,26 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                   type="button"
                                   variant="outline"
                                   size="sm"
+                                  onClick={handleOptimizeWithAi}
+                                  disabled={isOptimizingWithAi}
+                                  className="h-6 gap-1 border-purple-500/40 bg-purple-500/10 px-2 font-mono text-[11px] text-purple-700 hover:bg-purple-500/20 dark:text-purple-300"
+                                >
+                                  {isOptimizingWithAi ? (
+                                    <>
+                                      <Loader2 className="size-3 animate-spin" />
+                                      <span>{t("ai.optimizing")}</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles className="size-3 text-purple-600 dark:text-purple-400" />
+                                      <span>{t("ai.optimizeWithAi")}</span>
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
                                   onClick={handleCopyPlan}
                                   className="h-6 gap-1 border-zinc-200 px-2 font-mono text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
                                 >
@@ -2360,6 +2818,69 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                 </Button>
                               </div>
                             </div>
+
+                            {/* AI Plan Optimization & Index Recommendations (Prompt 3.2.3) */}
+                            {aiOptimizationResult && (
+                              <div className="border-b border-purple-500/20 bg-purple-500/5 p-3 dark:border-purple-500/30 dark:bg-purple-950/20">
+                                <div className="mb-1 flex items-center gap-1.5">
+                                  <Sparkles className="size-3.5 text-purple-600 dark:text-purple-400" />
+                                  <span className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                                    {t("ai.optimizeWithAi")}
+                                  </span>
+                                </div>
+                                {aiOptimizationResult.explanation && (
+                                  <p className="text-xs text-zinc-700 dark:text-zinc-300">
+                                    {aiOptimizationResult.explanation}
+                                  </p>
+                                )}
+
+                                {aiOptimizationResult.indexes &&
+                                  aiOptimizationResult.indexes.length > 0 && (
+                                    <div className="mt-2.5 space-y-1.5">
+                                      <span className="text-[11px] font-semibold text-zinc-600 uppercase dark:text-zinc-400">
+                                        {t("ai.suggestedIndexes")}
+                                      </span>
+                                      {aiOptimizationResult.indexes.map(
+                                        (idx, i) => (
+                                          <div
+                                            key={i}
+                                            className="flex items-center justify-between gap-2 rounded-md border border-purple-500/20 bg-white p-2 font-mono text-xs dark:border-purple-500/30 dark:bg-zinc-900"
+                                          >
+                                            <code className="text-purple-950 dark:text-purple-200">
+                                              {idx}
+                                            </code>
+                                            <Button
+                                              type="button"
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() =>
+                                                handleCopyIndex(idx)
+                                              }
+                                              className="h-5 gap-1 px-1.5 text-[10px]"
+                                            >
+                                              {copiedIndexDdl === idx ? (
+                                                <>
+                                                  <Check className="size-3 text-emerald-500" />
+                                                  <span>
+                                                    {t("ai.indexCopied")}
+                                                  </span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Copy className="size-3" />
+                                                  <span>
+                                                    {t("ai.copyIndex")}
+                                                  </span>
+                                                </>
+                                              )}
+                                            </Button>
+                                          </div>
+                                        ),
+                                      )}
+                                    </div>
+                                  )}
+                              </div>
+                            )}
 
                             <div className="max-h-[calc(100vh-380px)] min-h-40 overflow-auto p-3 font-mono text-xs">
                               <PlanTreeNode

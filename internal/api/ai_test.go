@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,10 +23,22 @@ func setupAITestServer(t *testing.T) (*http.ServeMux, *ai.Service, *httptest.Ser
 	mockLLMServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/v1/chat/completions" || r.URL.Path == "/chat/completions" {
-			w.Write([]byte(`{
+			content := "Hello from mock AI!"
+			var body struct {
+				Messages []struct {
+					Content string `json:"content"`
+				} `json:"messages"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&body); err == nil && len(body.Messages) > 0 {
+				lastMsg := body.Messages[len(body.Messages)-1].Content
+				if lastMsg == "assist-test" {
+					content = `{"query": "SELECT * FROM orders;", "explanation": "Fetches all orders"}`
+				}
+			}
+			w.Write(fmt.Appendf(nil, `{
 				"model": "gpt-4o-mini",
-				"choices": [{"message": {"content": "Hello from mock AI!"}}]
-			}`))
+				"choices": [{"message": {"content": %q}}]
+			}`, content))
 			return
 		}
 		if r.URL.Path == "/api/tags" {
@@ -168,5 +181,26 @@ func TestAI_API_Endpoints(t *testing.T) {
 	}
 	if compResp.Content != "Hello from mock AI!" {
 		t.Errorf("unexpected content: %s", compResp.Content)
+	}
+
+	// 6. POST /api/ai/query-assist
+	assistBody, _ := json.Marshal(ai.QueryAssistRequest{
+		Mode:   ai.AssistModeGenerate,
+		Engine: "postgres",
+		Prompt: "assist-test",
+	})
+	reqAssist := httptest.NewRequest(http.MethodPost, "/api/ai/query-assist", bytes.NewReader(assistBody))
+	recAssist := httptest.NewRecorder()
+	mux.ServeHTTP(recAssist, reqAssist)
+
+	if recAssist.Code != http.StatusOK {
+		t.Fatalf("expected status 200 on query-assist, got %d: %s", recAssist.Code, recAssist.Body.String())
+	}
+	var assistResp ai.QueryAssistResponse
+	if err := json.Unmarshal(recAssist.Body.Bytes(), &assistResp); err != nil {
+		t.Fatalf("unmarshal query-assist resp: %v", err)
+	}
+	if assistResp.Query != "SELECT * FROM orders;" {
+		t.Errorf("unexpected query: %s", assistResp.Query)
 	}
 }
