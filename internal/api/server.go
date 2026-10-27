@@ -143,6 +143,7 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/ai/test", protect(http.HandlerFunc(s.handleTestAIConnection)))
 	mux.Handle("GET /api/ai/providers", protect(http.HandlerFunc(s.handleGetAIProviders)))
 	mux.Handle("POST /api/ai/generate", protect(http.HandlerFunc(s.handleAIGenerate)))
+	mux.Handle("POST /api/ai/query-assist", protect(http.HandlerFunc(s.handleAIQueryAssist)))
 }
 
 // protectMiddleware returns a middleware wrapper that enforces JWT auth when

@@ -428,3 +428,28 @@ export interface AIProviderInfo {
   requires_key: boolean;
   doc_url: string;
 }
+
+export type AIQueryAssistMode = "generate" | "fix" | "explain";
+
+export interface TableSchemaSummary {
+  name: string;
+  columns: string[];
+  primary_keys?: string[];
+  foreign_keys?: string[];
+}
+
+export interface AIQueryAssistRequest {
+  mode: AIQueryAssistMode;
+  engine: string;
+  prompt?: string;
+  current_query?: string;
+  error_message?: string;
+  explain_plan?: string;
+  schema?: TableSchemaSummary[];
+}
+
+export interface AIQueryAssistResponse {
+  query: string;
+  explanation: string;
+  indexes?: string[];
+}

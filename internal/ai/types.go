@@ -85,3 +85,38 @@ type AIProvider interface {
 	TestConnection(ctx context.Context, cfg *AIConfig, apiKey string) (*TestResult, error)
 	Generate(ctx context.Context, cfg *AIConfig, apiKey string, req *CompletionRequest) (*CompletionResponse, error)
 }
+
+// QueryAssistMode defines the type of query assistance.
+type QueryAssistMode string
+
+const (
+	AssistModeGenerate QueryAssistMode = "generate"
+	AssistModeFix      QueryAssistMode = "fix"
+	AssistModeExplain  QueryAssistMode = "explain"
+)
+
+// TableSchemaSummary represents a condensed schema for prompt injection.
+type TableSchemaSummary struct {
+	Name        string   `json:"name"`
+	Columns     []string `json:"columns"`
+	PrimaryKeys []string `json:"primary_keys,omitempty"`
+	ForeignKeys []string `json:"foreign_keys,omitempty"`
+}
+
+// QueryAssistRequest is sent to the backend for Text-to-Query, syntax remediation, or explain optimization.
+type QueryAssistRequest struct {
+	Mode         QueryAssistMode      `json:"mode"`
+	Engine       string               `json:"engine"` // postgres, mysql, sqlite, mongodb
+	Prompt       string               `json:"prompt,omitempty"`
+	CurrentQuery string               `json:"current_query,omitempty"`
+	ErrorMessage string               `json:"error_message,omitempty"`
+	ExplainPlan  string               `json:"explain_plan,omitempty"`
+	Schema       []TableSchemaSummary `json:"schema,omitempty"`
+}
+
+// QueryAssistResponse is the structured result returned to the client.
+type QueryAssistResponse struct {
+	Query       string   `json:"query"`
+	Explanation string   `json:"explanation"`
+	Indexes     []string `json:"indexes,omitempty"`
+}

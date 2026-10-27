@@ -26,6 +26,8 @@ import type {
   AISaveConfigInput,
   AITestResult,
   AIProviderInfo,
+  AIQueryAssistRequest,
+  AIQueryAssistResponse,
 } from "./types";
 import { getAuthHeaders, useAuthStore } from "./auth";
 
@@ -835,4 +837,15 @@ export async function fetchAIProviders(): Promise<AIProviderInfo[]> {
     headers: getAuthHeaders(),
   });
   return handleResponse<AIProviderInfo[]>(res);
+}
+
+export async function queryAssist(
+  req: AIQueryAssistRequest,
+): Promise<AIQueryAssistResponse> {
+  const res = await fetch(`${BASE_URL}/ai/query-assist`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(req),
+  });
+  return handleResponse<AIQueryAssistResponse>(res);
 }

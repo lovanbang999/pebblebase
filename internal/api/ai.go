@@ -121,3 +121,29 @@ func (s *Server) handleAIGenerate(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, resp)
 }
+
+// handleAIQueryAssist handles POST /api/ai/query-assist.
+func (s *Server) handleAIQueryAssist(w http.ResponseWriter, r *http.Request) {
+	if s.aiSvc == nil {
+		writeError(w, http.StatusServiceUnavailable, "AI service is not available")
+		return
+	}
+
+	var req ai.QueryAssistRequest
+	if err := decodeBody(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if req.Mode == "" {
+		req.Mode = ai.AssistModeGenerate
+	}
+
+	resp, err := s.aiSvc.AssistQuery(r.Context(), &req)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("ai query assist failed: %v", err))
+		return
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
