@@ -10,7 +10,6 @@
 *.test
 *.out
 /vendor/
-go.sum
 
 # =============================================================================
 # Frontend (Node / Vite)
@@ -18,6 +17,7 @@ go.sum
 web/node_modules/
 web/dist/*
 !web/dist/.gitkeep
+!web/dist/index.html
 web/.oxlintrc.cache
 .vite/
 npm-debug.log*
