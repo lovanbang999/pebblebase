@@ -1,5 +1,5 @@
 export type DatabaseType =
-  "postgres" | "mysql" | "mongodb" | "sqlite" | "redis";
+  "postgres" | "mysql" | "mongodb" | "sqlite" | "redis" | "mssql";
 export type EnvironmentType =
   "local" | "development" | "staging" | "production";
 
@@ -67,6 +67,8 @@ export interface ConnectionInput {
   environment?: EnvironmentType;
   raw_url?: string;
   save_password: boolean;
+  ssl_mode?: string;
+  windows_auth?: boolean;
 }
 
 export interface ColumnSchema {

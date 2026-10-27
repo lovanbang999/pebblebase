@@ -10,13 +10,15 @@ import (
 // ConnectionInput is the raw user input from the UI — either form fields or a raw URL.
 // It is the single entry point before any DSN is constructed.
 type ConnectionInput struct {
-	Type                               string // "postgres" | "mysql" | "mongodb" | "sqlite" | "redis"
+	Type                               string // "postgres" | "mysql" | "mongodb" | "sqlite" | "redis" | "mssql"
 	Mode                               string // "form" | "url"
 	Host, Port, User, Password, DBName string // used when Mode == "form"
 	Filepath                           string // used when Type == "sqlite" in form mode
 	RawURL                             string // used when Mode == "url", overrides form fields
 	SavePassword                       bool   // "Save password" checkbox per-connection
 	ReadOnly                           bool   // "Read-only" connection flag
+	SSLMode                            string // optional SSL mode or encryption
+	WindowsAuth                        bool   // Windows Authentication / trusted_connection
 }
 
 // ToDSN normalizes input into a single DSN string ready for the driver.
@@ -43,6 +45,8 @@ func (c ConnectionInput) ToDSN() (string, error) {
 		return c.sqliteDSN()
 	case "redis":
 		return c.redisDSN()
+	case "mssql", "sqlserver":
+		return c.mssqlDSN()
 	default:
 		return "", fmt.Errorf("connection: unsupported database type %q", c.Type)
 	}
@@ -139,6 +143,49 @@ func (c ConnectionInput) redisDSN() (string, error) {
 	if c.User != "" || c.Password != "" {
 		u.User = url.UserPassword(c.User, c.Password)
 	}
+	return u.String(), nil
+}
+
+// mssqlDSN builds a Microsoft SQL Server connection URL.
+// Default port: 1433. Supports SQL Server Authentication, Windows Authentication, and TLS options.
+func (c ConnectionInput) mssqlDSN() (string, error) {
+	if strings.TrimSpace(c.Host) == "" {
+		return "", fmt.Errorf("connection: host is required for mssql connections")
+	}
+	port := c.portOr("1433")
+	u := url.URL{
+		Scheme: "sqlserver",
+		Host:   fmt.Sprintf("%s:%s", c.Host, port),
+	}
+
+	if !c.WindowsAuth && (c.User != "" || c.Password != "") {
+		u.User = url.UserPassword(c.User, c.Password)
+	}
+
+	q := url.Values{}
+	if strings.TrimSpace(c.DBName) != "" {
+		q.Set("database", c.DBName)
+	}
+
+	if c.WindowsAuth {
+		q.Set("trusted_connection", "yes")
+	}
+
+	// SSL / Encryption settings
+	ssl := strings.ToLower(strings.TrimSpace(c.SSLMode))
+	switch ssl {
+	case "require", "true":
+		q.Set("encrypt", "true")
+	case "disable", "false":
+		q.Set("encrypt", "disable")
+		q.Set("TrustServerCertificate", "true")
+	default:
+		// Default to encrypt=disable and TrustServerCertificate=true for seamless local/dev connectivity
+		q.Set("encrypt", "disable")
+		q.Set("TrustServerCertificate", "true")
+	}
+
+	u.RawQuery = q.Encode()
 	return u.String(), nil
 }
 

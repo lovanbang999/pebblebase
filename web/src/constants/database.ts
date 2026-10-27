@@ -108,6 +108,17 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     badge: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
     accentColor: "#DC382D",
   },
+  {
+    type: "mssql",
+    name: "SQL Server",
+    label: "Microsoft SQL Server",
+    category: "Relational / SQL",
+    categoryKey: "sql",
+    tag: "MSSQL",
+    defaultPort: "1433",
+    badge: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+    accentColor: "#CC292B",
+  },
 ];
 
 export function getDefaultPort(type: DatabaseType): string {
