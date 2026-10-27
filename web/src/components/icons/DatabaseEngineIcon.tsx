@@ -17,6 +17,8 @@ const ENGINE_ICON_PATHS: Record<string, string> = {
   mongodb: "/icons/engines/mongodb.svg",
   sqlite: "/icons/engines/sqlite.svg",
   redis: "/icons/engines/redis.svg",
+  mssql: "/icons/engines/mssql.svg",
+  clickhouse: "/icons/engines/clickhouse.svg",
 };
 
 export const DatabaseEngineIcon: FC<DatabaseEngineIconProps> = ({

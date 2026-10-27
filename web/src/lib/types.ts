@@ -1,5 +1,11 @@
 export type DatabaseType =
-  "postgres" | "mysql" | "mongodb" | "sqlite" | "redis" | "mssql";
+  | "postgres"
+  | "mysql"
+  | "mongodb"
+  | "sqlite"
+  | "redis"
+  | "mssql"
+  | "clickhouse";
 export type EnvironmentType =
   "local" | "development" | "staging" | "production";
 

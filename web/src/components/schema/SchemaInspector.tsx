@@ -132,6 +132,15 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
             SQL Server
           </Badge>
         );
+      case "clickhouse":
+        return (
+          <Badge
+            variant="outline"
+            className="border-amber-500/20 bg-amber-500/10 font-mono text-[11px] text-amber-700 dark:text-amber-400"
+          >
+            ClickHouse
+          </Badge>
+        );
       case "redis":
         return (
           <Badge

@@ -124,7 +124,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               ? "Redis"
               : targetDbType === "mssql"
                 ? "SQL Server"
-                : "SQLite";
+                : targetDbType === "clickhouse"
+                  ? "ClickHouse"
+                  : "SQLite";
     const envLabel = targetEnv !== "local" ? ` - ${targetEnv}` : "";
     let prefix = "Local";
 
@@ -152,6 +154,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
     } else if (type === "mssql" && (dbName === "pebble_test" || !dbName)) {
       setDbName("master");
       setUser("sa");
+    } else if (type === "clickhouse" && (dbName === "pebble_test" || !dbName)) {
+      setDbName("default");
+      setUser("default");
     }
 
     if (!isNameCustom) {
@@ -622,7 +627,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                               ? t("connection.redisUserPlaceholder")
                               : dbType === "mssql"
                                 ? "sa"
-                                : "username"
+                                : dbType === "clickhouse"
+                                  ? "default"
+                                  : "username"
                           }
                           className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                         />
@@ -668,7 +675,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                             ? "redis://:secret@localhost:6379/0"
                             : dbType === "mssql"
                               ? "sqlserver://sa:secret@localhost:1433?database=master&encrypt=disable"
-                              : "file:/path/to/database.db"
+                              : dbType === "clickhouse"
+                                ? "clickhouse://default:password@localhost:9000/default"
+                                : "file:/path/to/database.db"
                   }
                   className="resize-none border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
                 />

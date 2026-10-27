@@ -47,6 +47,10 @@ import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/common";
 import { QuickStatsBar } from "./QuickStatsBar";
 import {
+  ClickHouseComplexCell,
+  detectClickHouseComplexType,
+} from "./ClickHouseComplexCell";
+import {
   PAGE_SIZE_OPTIONS,
   VIRTUALIZER_ROW_HEIGHT,
   VIRTUALIZER_OVERSCAN,
@@ -967,6 +971,26 @@ export const DataGrid: FC<DataGridProps> = ({
                 <span className="block truncate font-mono text-xs text-zinc-800 select-all dark:text-zinc-200">
                   {String(val)}
                 </span>
+              );
+            }
+
+            const chComplexKind = detectClickHouseComplexType(col.type, val);
+            if (chComplexKind) {
+              return (
+                <ClickHouseComplexCell
+                  kind={chComplexKind}
+                  columnType={col.type}
+                  value={val}
+                  onOpenDetail={() => {
+                    setCellDrawerState({
+                      isOpen: true,
+                      columnName: col.name,
+                      columnType: col.type,
+                      cellValue: val,
+                      row,
+                    });
+                  }}
+                />
               );
             }
 

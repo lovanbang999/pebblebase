@@ -8,4 +8,8 @@ export { QuickStatsBar } from "./QuickStatsBar";
 export { EmptyTableScreen } from "./EmptyTableScreen";
 export { ConnectionErrorScreen } from "./ConnectionErrorScreen";
 // ColumnAnalyticsDrawer & CellDetailDrawer are lazy-loaded to preserve code splitting; import directly from '@/components/grid/cell-inspector/CellDetailDrawer'
+export {
+  ClickHouseComplexCell,
+  detectClickHouseComplexType,
+} from "./ClickHouseComplexCell";
 export type { CellDetailDrawerProps } from "./cell-inspector";

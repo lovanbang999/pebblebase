@@ -242,6 +242,12 @@
       "expand": "Expand document",
       "collapse": "Collapse document",
       "copiedJson": "JSON copied!"
+    },
+    "complexTypes": {
+      "empty": "empty",
+      "inspectArray": "Inspect array details",
+      "inspectMap": "Inspect map details",
+      "inspectTuple": "Inspect tuple details"
     }
   },
   "connection": {
@@ -257,7 +263,8 @@
       "sql": "Relational / SQL",
       "nosql": "Document / NoSQL",
       "inmemory": "In-Memory / Cache",
-      "embedded": "Embedded / File"
+      "embedded": "Embedded / File",
+      "olap": "Analytics / OLAP"
     },
     "host": "Host",
     "port": "Port",
