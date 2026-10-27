@@ -6,11 +6,21 @@ set -e
 # Cross-compiles Pebblebase Studio for 64-bit Windows (.exe + installer) from Linux
 # ==============================================================================
 
-VERSION="0.1.1"
-ARCH="amd64"
-APP_NAME="pebblebase"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
+
+# Resolve package version dynamically from env var or web/package.json
+if [ -z "$VERSION" ]; then
+  if command -v node &> /dev/null && [ -f "web/package.json" ]; then
+    VERSION=$(node -p "require('./web/package.json').version" 2>/dev/null || echo "1.0.2")
+  else
+    VERSION="1.0.2"
+  fi
+fi
+VERSION="${VERSION#v}"
+
+ARCH="amd64"
+APP_NAME="pebblebase"
 
 echo "======================================================================"
 echo "  Pebblebase Studio - Windows Cross-Compilation Pipeline (v${VERSION})"
@@ -177,8 +187,25 @@ if command -v zip &> /dev/null; then
   echo "Portable ZIP package created: $ZIP_DEST"
 fi
 
+# ------------------------------------------------------------------------------
+# 7. Generate SHA-256 Checksums
+# ------------------------------------------------------------------------------
+echo "Generating SHA-256 checksums..."
+(
+  cd build/bin
+  for f in "${APP_NAME}_${VERSION}_windows_${ARCH}_setup.exe" "${APP_NAME}_${VERSION}_windows_${ARCH}.zip" "pebblebase.exe"; do
+    if [ -f "$f" ]; then
+      if command -v sha256sum &> /dev/null; then
+        sha256sum "$f" > "${f}.sha256"
+      elif command -v shasum &> /dev/null; then
+        shasum -a 256 "$f" > "${f}.sha256"
+      fi
+    fi
+  done
+)
+
 echo ""
 echo "======================================================================"
 echo "Windows build complete! Output files located in build/bin/:"
-ls -lh build/bin/pebblebase*.exe build/bin/pebblebase*.zip 2>/dev/null || true
+ls -lh build/bin/pebblebase*.exe build/bin/pebblebase*.zip build/bin/*.sha256 2>/dev/null || true
 echo "======================================================================"
