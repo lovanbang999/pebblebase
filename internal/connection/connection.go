@@ -10,7 +10,7 @@ import (
 // ConnectionInput is the raw user input from the UI — either form fields or a raw URL.
 // It is the single entry point before any DSN is constructed.
 type ConnectionInput struct {
-	Type                               string // "postgres" | "mysql" | "mongodb" | "sqlite" | "redis" | "mssql"
+	Type                               string // "postgres" | "mysql" | "mongodb" | "sqlite" | "redis" | "mssql" | "clickhouse"
 	Mode                               string // "form" | "url"
 	Host, Port, User, Password, DBName string // used when Mode == "form"
 	Filepath                           string // used when Type == "sqlite" in form mode
@@ -47,6 +47,8 @@ func (c ConnectionInput) ToDSN() (string, error) {
 		return c.redisDSN()
 	case "mssql", "sqlserver":
 		return c.mssqlDSN()
+	case "clickhouse":
+		return c.clickhouseDSN()
 	default:
 		return "", fmt.Errorf("connection: unsupported database type %q", c.Type)
 	}
@@ -186,6 +188,44 @@ func (c ConnectionInput) mssqlDSN() (string, error) {
 	}
 
 	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
+
+// clickhouseDSN builds a ClickHouse native connection URL.
+// Default port: 9000. Default user: default. Default database: default.
+func (c ConnectionInput) clickhouseDSN() (string, error) {
+	if strings.TrimSpace(c.Host) == "" {
+		return "", fmt.Errorf("connection: host is required for clickhouse connections")
+	}
+	port := c.portOr("9000")
+	dbName := strings.TrimSpace(c.DBName)
+	if dbName == "" {
+		dbName = "default"
+	}
+	user := strings.TrimSpace(c.User)
+	if user == "" {
+		user = "default"
+	}
+
+	u := url.URL{
+		Scheme: "clickhouse",
+		Host:   fmt.Sprintf("%s:%s", c.Host, port),
+		Path:   "/" + dbName,
+	}
+
+	if c.Password != "" {
+		u.User = url.UserPassword(user, c.Password)
+	} else if user != "" {
+		u.User = url.User(user)
+	}
+
+	q := url.Values{}
+	q.Set("dial_timeout", "10s")
+	if strings.ToLower(strings.TrimSpace(c.SSLMode)) == "require" {
+		q.Set("secure", "true")
+	}
+	u.RawQuery = q.Encode()
+
 	return u.String(), nil
 }
 

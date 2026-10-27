@@ -242,6 +242,12 @@
       "expand": "Mở rộng tài liệu",
       "collapse": "Thu gọn tài liệu",
       "copiedJson": "Đã sao chép JSON!"
+    },
+    "complexTypes": {
+      "empty": "trống",
+      "inspectArray": "Xem chi tiết mảng",
+      "inspectMap": "Xem chi tiết bản đồ key-value",
+      "inspectTuple": "Xem chi tiết tuple"
     }
   },
   "connection": {
@@ -257,7 +263,8 @@
       "sql": "Quan hệ / SQL",
       "nosql": "Tài liệu / NoSQL",
       "inmemory": "Bộ nhớ đệm / Cache",
-      "embedded": "Nhúng / Tập tin"
+      "embedded": "Nhúng / Tập tin",
+      "olap": "Phân tích / OLAP"
     },
     "host": "Máy chủ (Host)",
     "port": "Cổng (Port)",

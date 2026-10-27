@@ -1,14 +1,14 @@
 import type { DatabaseType, EnvironmentType } from "@/lib/types";
 
 export type EngineCategoryKey =
-  "all" | "sql" | "nosql" | "inmemory" | "embedded";
+  "all" | "sql" | "nosql" | "inmemory" | "embedded" | "olap";
 
 export interface DatabaseEngineDefinition {
   type: DatabaseType;
   name: string;
   label: string;
   category: string;
-  categoryKey: "sql" | "nosql" | "inmemory" | "embedded";
+  categoryKey: "sql" | "nosql" | "inmemory" | "embedded" | "olap";
   tag: string;
   defaultPort: string;
   badge: string;
@@ -46,6 +46,11 @@ export const ENGINE_CATEGORIES: EngineCategoryTab[] = [
     key: "embedded",
     labelKey: "connection.categories.embedded",
     fallbackLabel: "Embedded / File",
+  },
+  {
+    key: "olap",
+    labelKey: "connection.categories.olap",
+    fallbackLabel: "Analytics / OLAP",
   },
 ];
 
@@ -118,6 +123,18 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     defaultPort: "1433",
     badge: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
     accentColor: "#CC292B",
+  },
+  {
+    type: "clickhouse",
+    name: "ClickHouse",
+    label: "ClickHouse OLAP",
+    category: "Column-Oriented / OLAP",
+    categoryKey: "olap",
+    tag: "OLAP",
+    defaultPort: "9000",
+    badge:
+      "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+    accentColor: "#F59E0B",
   },
 ];
 

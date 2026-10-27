@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"pebblebase/internal/adapter"
+	clickhouseadapter "pebblebase/internal/adapter/clickhouse"
 	mongoadapter "pebblebase/internal/adapter/mongodb"
 	mssqladapter "pebblebase/internal/adapter/mssql"
 	mysqladapter "pebblebase/internal/adapter/mysql"
@@ -275,6 +276,8 @@ func openAdapter(ctx context.Context, dbType, dsn string) (adapter.Adapter, erro
 		return redisadapter.New(ctx, dsn)
 	case "mssql", "sqlserver":
 		return mssqladapter.New(ctx, dsn)
+	case "clickhouse":
+		return clickhouseadapter.New(ctx, dsn)
 	default:
 		return nil, fmt.Errorf("unsupported database type: %q", dbType)
 	}

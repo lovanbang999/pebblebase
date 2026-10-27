@@ -239,3 +239,72 @@ func TestToDSN_MSSQL_Form(t *testing.T) {
 		})
 	}
 }
+
+func TestToDSN_ClickHouse_Form(t *testing.T) {
+	cases := []struct {
+		name    string
+		input   connection.ConnectionInput
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "all fields with credentials",
+			input: connection.ConnectionInput{
+				Type:     "clickhouse",
+				Mode:     "form",
+				Host:     "127.0.0.1",
+				Port:     "9000",
+				User:     "analytics",
+				Password: "secretPassword",
+				DBName:   "production",
+			},
+			want: "clickhouse://analytics:secretPassword@127.0.0.1:9000/production?dial_timeout=10s",
+		},
+		{
+			name: "default values applied",
+			input: connection.ConnectionInput{
+				Type: "clickhouse",
+				Mode: "form",
+				Host: "localhost",
+			},
+			want: "clickhouse://default@localhost:9000/default?dial_timeout=10s",
+		},
+		{
+			name: "secure ssl mode",
+			input: connection.ConnectionInput{
+				Type:    "clickhouse",
+				Mode:    "form",
+				Host:    "clickhouse.cloud",
+				Port:    "9440",
+				SSLMode: "require",
+			},
+			want: "secure=true",
+		},
+		{
+			name: "missing host",
+			input: connection.ConnectionInput{
+				Type: "clickhouse",
+				Mode: "form",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := tc.input.ToDSN()
+			if tc.wantErr {
+				if err == nil {
+					t.Fatalf("ToDSN() expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ToDSN() unexpected error: %v", err)
+			}
+			if !strings.Contains(got, tc.want) {
+				t.Errorf("ToDSN() = %q, want substring %q", got, tc.want)
+			}
+		})
+	}
+}
