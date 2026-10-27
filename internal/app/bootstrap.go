@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"pebblebase/internal/ai"
 	"pebblebase/internal/api"
 	"pebblebase/internal/audit"
 	"pebblebase/internal/auth"
@@ -32,6 +33,7 @@ type Instance struct {
 	AuthEnabled bool
 	APIServer   *api.Server
 	UpdateSvc   *autoupdate.Service
+	AISvc       *ai.Service
 }
 
 // Close releases resources held by the instance, including all active database adapter pools.
@@ -126,7 +128,15 @@ func Bootstrap(dataDir string, authEnabled bool) (*Instance, error) {
 		return nil, fmt.Errorf("create migration history store: %w", err)
 	}
 
-	// 5. Build ServeMux and register all API routes.
+	// 5. Init AI BYO-Key vault and LLM provider service.
+	aiStore, err := ai.NewStore(metaDB, enc)
+	if err != nil {
+		metaDB.Close()
+		return nil, fmt.Errorf("create ai store: %w", err)
+	}
+	aiSvc := ai.NewService(aiStore, enc)
+
+	// 6. Build ServeMux and register all API routes.
 	mux := http.NewServeMux()
 
 	// Health check endpoint.
@@ -136,7 +146,7 @@ func Bootstrap(dataDir string, authEnabled bool) (*Instance, error) {
 		w.Write([]byte(`{"status":"OK"}`))
 	})
 
-	apiSrv := api.NewServer(store, enc, authSvc, auditLog, querySvc, migrationSvc, authEnabled)
+	apiSrv := api.NewServer(store, enc, authSvc, auditLog, querySvc, migrationSvc, aiSvc, authEnabled)
 	apiSrv.RegisterRoutes(mux)
 
 	updateSvc := autoupdate.NewService(Version, dataDir)
@@ -150,6 +160,7 @@ func Bootstrap(dataDir string, authEnabled bool) (*Instance, error) {
 		AuthEnabled: authEnabled,
 		APIServer:   apiSrv,
 		UpdateSvc:   updateSvc,
+		AISvc:       aiSvc,
 	}, nil
 }
 

@@ -818,7 +818,10 @@
     "openSettings": "Mở Cài Đặt & Quản Trị",
     "productTour": "Bắt Đầu Hướng Dẫn Tính Năng",
     "signOut": "Đăng Xuất",
-    "shortcutHint": "Nhấn Cmd+K hoặc Ctrl+K bất kỳ lúc nào"
+    "shortcutHint": "Nhấn Cmd+K hoặc Ctrl+K bất kỳ lúc nào",
+    "checkUpdates": "Kiểm tra bản cập nhật",
+    "navHint": "Điều hướng",
+    "selectHint": "Chọn"
   },
   "onboarding": {
     "welcomeBadge": "Hướng Dẫn Nhanh",
@@ -1228,5 +1231,41 @@
       "badge": "XREVRANGE",
       "empty": "Không có bản ghi nào trong stream này."
     }
+  },
+  "ai": {
+    "settingsTitle": "Cài đặt Trợ lý AI",
+    "byoKeyBadge": "BYO KEY",
+    "settingsSubtitle": "Sử dụng khóa API riêng hoặc kết nối Ollama cục bộ cho trợ lý SQL 100% riêng tư, không thu thập dữ liệu (zero-telemetry).",
+    "selectProvider": "Nhà cung cấp AI",
+    "selectProviderHelp": "Chọn mô hình LLM đám mây hoặc mô hình ngoại tuyến cục bộ",
+    "model": "Mô hình (Model)",
+    "modelPlaceholder": "ví dụ: gpt-4o-mini hoặc qwen2.5-coder:latest",
+    "endpointUrl": "Điểm cuối / URL cơ sở",
+    "endpointUrlPlaceholder": "https://api.openai.com/v1",
+    "resetDefaultUrl": "Mặc định",
+    "apiKey": "Khóa API (API Key)",
+    "apiKeyPlaceholder": "Dán khóa API của bạn vào đây",
+    "keyEncryptedBadge": "AES-256-GCM",
+    "keyEncryptedHelp": "Khóa API được mã hóa an toàn tại máy chủ bằng AES-256-GCM và không bao giờ gửi qua máy chủ trung gian.",
+    "keySavedMasked": "Đã lưu an toàn ({{mask}}). Để trống nếu muốn giữ nguyên khóa hiện tại.",
+    "keyRequired": "Nhà cung cấp này yêu cầu nhập khóa API.",
+    "keyNotRequired": "Ollama cục bộ không cần khóa API.",
+    "temperature": "Độ ngẫu nhiên (Temperature)",
+    "temperatureHelp": "Giá trị thấp (0.0 - 0.3) giúp câu truy vấn SQL chuẩn xác và có tính xác định cao hơn.",
+    "testConnection": "Kiểm tra kết nối",
+    "testing": "Đang kiểm tra...",
+    "saveSettings": "Lưu cài đặt",
+    "saving": "Đang lưu...",
+    "testSuccess": "Kết nối thành công ({{latency}}ms)",
+    "testFailed": "Kiểm tra kết nối thất bại",
+    "saveSuccess": "Đã lưu cấu hình AI thành công.",
+    "saveFailed": "Lưu cấu hình AI thất bại",
+    "ollamaNotice": "Hãy đảm bảo Ollama đang chạy trên máy (`ollama serve`) và đã tải mô hình.",
+    "recommendedModels": "Mô hình đề xuất",
+    "customModel": "Mô hình tùy chỉnh",
+    "getKey": "Lấy khóa API",
+    "loadFailed": "Không thể tải cấu hình AI",
+    "offlineBadge": "Ngoại tuyến",
+    "cloudBadge": "Đám mây"
   }
 }

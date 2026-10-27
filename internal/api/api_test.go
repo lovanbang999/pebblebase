@@ -47,7 +47,7 @@ func setupTestServer(t *testing.T) (*http.ServeMux, *storage.Store) {
 		w.Write([]byte(`{"status":"OK"}`))
 	})
 
-	srv := api.NewServer(store, enc, nil, nil, nil, nil, false)
+	srv := api.NewServer(store, enc, nil, nil, nil, nil, nil, false)
 	srv.RegisterRoutes(mux)
 
 	return mux, store
@@ -107,7 +107,7 @@ func TestServer_Close(t *testing.T) {
 	var key [32]byte
 	enc, _ := storage.NewEncryptor(key[:])
 	store, _ := storage.NewStore(dir, enc)
-	srv := api.NewServer(store, enc, nil, nil, nil, nil, false)
+	srv := api.NewServer(store, enc, nil, nil, nil, nil, nil, false)
 	if err := srv.Close(); err != nil {
 		t.Fatalf("expected srv.Close() to succeed, got %v", err)
 	}

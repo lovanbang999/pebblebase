@@ -29,6 +29,7 @@ import {
   Unplug,
   Type,
   Check,
+  Sparkles,
 } from "lucide-react";
 import type { Connection, TableSchema } from "@/lib/types";
 import { SHORTCUTS, getShortcutTooltip } from "@/lib/platform";
@@ -114,6 +115,7 @@ interface SidebarProps {
   onOpenChangePassword?: () => void;
   onOpenCommandPalette?: () => void;
   onOpenOnboarding?: () => void;
+  onOpenAISettings?: () => void;
 }
 
 const ENGINE_CONFIG = DATABASE_ENGINES;
@@ -199,6 +201,7 @@ export default function Sidebar({
   onOpenChangePassword,
   onOpenCommandPalette,
   onOpenOnboarding,
+  onOpenAISettings,
 }: SidebarProps) {
   const { t } = useTranslation();
   const [tableSearch, setTableSearch] = useState("");
@@ -535,6 +538,29 @@ export default function Sidebar({
                 />
                 <TooltipContent side="bottom">
                   {getShortcutTooltip("commandPalette")}
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {onOpenAISettings && (
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      onClick={onOpenAISettings}
+                      className="wails-no-drag text-zinc-500 hover:text-purple-600 dark:hover:text-purple-400"
+                      style={
+                        { WebkitAppRegion: "no-drag" } as React.CSSProperties
+                      }
+                    >
+                      <Sparkles className="size-3.5" />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">
+                  {t("ai.settingsTitle", "AI Assistant Settings")}
                 </TooltipContent>
               </Tooltip>
             )}
@@ -1154,6 +1180,18 @@ export default function Sidebar({
                   >
                     <Shield className="size-3.5 text-indigo-400" />
                     <span className="flex-1">{t("auth.adminPanel")}</span>
+                  </DropdownMenuItem>
+                )}
+
+                {onOpenAISettings && (
+                  <DropdownMenuItem
+                    onClick={onOpenAISettings}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
+                  >
+                    <Sparkles className="size-3.5 text-purple-500" />
+                    <span className="flex-1">
+                      {t("ai.settingsTitle", "AI Assistant Settings")}
+                    </span>
                   </DropdownMenuItem>
                 )}
 

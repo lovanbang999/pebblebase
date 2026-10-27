@@ -22,6 +22,10 @@ import type {
   SeedSQLRequest,
   SeedSQLResponse,
   SchemaDiffResult,
+  AIConfig,
+  AISaveConfigInput,
+  AITestResult,
+  AIProviderInfo,
 } from "./types";
 import { getAuthHeaders, useAuthStore } from "./auth";
 
@@ -795,4 +799,40 @@ export function getRedisPubSubStreamUrl(
   const token = useAuthStore.getState().token;
   if (token) sp.set("token", token);
   return `${BASE_URL}/connections/${connId}/redis/pubsub/stream?${sp.toString()}`;
+}
+
+export async function fetchAIConfig(): Promise<AIConfig> {
+  const res = await fetch(`${BASE_URL}/ai/config`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse<AIConfig>(res);
+}
+
+export async function saveAIConfig(
+  input: AISaveConfigInput,
+): Promise<AIConfig> {
+  const res = await fetch(`${BASE_URL}/ai/config`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(input),
+  });
+  return handleResponse<AIConfig>(res);
+}
+
+export async function testAIConnection(
+  input: AISaveConfigInput,
+): Promise<AITestResult> {
+  const res = await fetch(`${BASE_URL}/ai/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(input),
+  });
+  return handleResponse<AITestResult>(res);
+}
+
+export async function fetchAIProviders(): Promise<AIProviderInfo[]> {
+  const res = await fetch(`${BASE_URL}/ai/providers`, {
+    headers: getAuthHeaders(),
+  });
+  return handleResponse<AIProviderInfo[]>(res);
 }

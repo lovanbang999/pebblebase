@@ -31,6 +31,7 @@ export type CommandActionId =
   | "export_json"
   | "toggle_theme"
   | "open_settings"
+  | "open_ai_settings"
   | "product_tour"
   | "check_updates"
   | "sign_out";
@@ -156,6 +157,14 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         subtitle: "Users & Passwords",
         icon: Settings,
         action: () => onTriggerAction("open_settings"),
+      },
+      {
+        id: "action_open_ai_settings",
+        type: "action",
+        title: t("ai.settingsTitle", "AI Assistant Settings"),
+        subtitle: t("ai.byoKeyBadge", "BYO Key & Local Ollama"),
+        icon: Sparkles,
+        action: () => onTriggerAction("open_ai_settings"),
       },
       {
         id: "action_product_tour",
@@ -478,11 +487,11 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         {/* Footer info bar */}
         <div className="flex items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 py-2 text-xs text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/80">
           <div className="flex items-center gap-2">
-            <span>Navigation:</span>
+            <span>{t("palette.navHint", "Navigation")}:</span>
             <span className="rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
               ↑↓
             </span>
-            <span>Select:</span>
+            <span>{t("palette.selectHint", "Select")}:</span>
             <span className="rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
               ↵
             </span>
