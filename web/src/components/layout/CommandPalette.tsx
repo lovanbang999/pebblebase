@@ -391,6 +391,9 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("palette.title", "Command Palette")}
         className="animate-in zoom-in-95 flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl duration-150 dark:border-zinc-800 dark:bg-zinc-900"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
@@ -401,6 +404,10 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-expanded={flatItems.length > 0}
+            aria-controls="palette-listbox"
+            aria-autocomplete="list"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t(
@@ -416,7 +423,10 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
 
         {/* Results List */}
         <div
+          id="palette-listbox"
           ref={listRef}
+          role="listbox"
+          aria-label={t("palette.results", "Command Suggestions")}
           className="flex-1 space-y-4 overflow-y-auto p-2 font-sans"
         >
           {flatItems.length === 0 ? (
@@ -429,7 +439,12 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
           ) : (
             allItems.map((group) => {
               return (
-                <div key={group.groupKey} className="space-y-1">
+                <div
+                  key={group.groupKey}
+                  role="group"
+                  aria-label={group.groupLabel}
+                  className="space-y-1"
+                >
                   <div className="px-3 py-1 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
                     {group.groupLabel}
                   </div>
@@ -441,6 +456,8 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                     return (
                       <div
                         key={item.id}
+                        role="option"
+                        aria-selected={isSelected}
                         data-selected={isSelected}
                         onClick={() => {
                           item.action();

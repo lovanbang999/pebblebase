@@ -151,6 +151,9 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
 
       {/* Slide-over Drawer Panel */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("cellInspector.title", "Cell Detail Inspector")}
         className={`animate-in slide-in-from-right relative z-50 flex h-full w-full flex-col overflow-hidden border-l border-zinc-200 bg-white font-sans text-zinc-900 shadow-2xl duration-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 ${
           isWide ? "max-w-4xl" : "max-w-2xl"
         }`}

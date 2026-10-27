@@ -43,7 +43,23 @@ func spaHandler(frontendFS fs.FS) http.Handler {
 	fileServer := http.FileServer(http.FS(frontendFS))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cleanPath := strings.TrimPrefix(filepath.Clean(r.URL.Path), "/")
+		// Security Headers
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+
+		// Path Traversal Guard: Reject path traversal payloads (e.g. ../, null bytes, backslashes)
+		rawPath := r.URL.Path
+		if strings.Contains(rawPath, "..") || strings.Contains(rawPath, "\x00") || strings.Contains(rawPath, "\\") {
+			http.Error(w, "invalid path traversal sequence", http.StatusBadRequest)
+			return
+		}
+
+		cleanPath := strings.TrimPrefix(filepath.Clean(rawPath), "/")
+		if strings.HasPrefix(cleanPath, "../") || cleanPath == ".." {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
 
 		// If path corresponds to an existing static file, serve it directly.
 		if cleanPath != "" && cleanPath != "." {

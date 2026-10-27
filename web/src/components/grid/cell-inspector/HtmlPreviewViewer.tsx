@@ -31,12 +31,13 @@ export const HtmlPreviewViewer: React.FC<HtmlPreviewViewerProps> = ({
     setIframeKey((prev) => prev + 1);
   };
 
-  // Safe wrapper for iframe document: includes standard responsive viewport and reset style
+  // Safe wrapper for iframe document: includes strict CSP, responsive viewport, and reset style
   const safeIframeDocument = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: https: http:; font-src data:; form-action 'none';">
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -117,8 +118,8 @@ export const HtmlPreviewViewer: React.FC<HtmlPreviewViewerProps> = ({
             key={iframeKey}
             title={t("cellInspector.htmlPreview")}
             srcDoc={safeIframeDocument}
-            // Disallowing scripts and same-origin access prevents XSS
-            sandbox="allow-same-origin"
+            // Strict sandbox: empty string disallows scripts, same-origin storage access, and popups
+            sandbox=""
             className="h-full w-full rounded border border-zinc-200 bg-white shadow-inner dark:border-zinc-800"
           />
         ) : (

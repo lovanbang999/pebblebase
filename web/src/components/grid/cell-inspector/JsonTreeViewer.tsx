@@ -122,8 +122,14 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         {isObject ? (
           <button
             type="button"
+            aria-expanded={isExpanded}
+            aria-label={
+              isExpanded
+                ? `Collapse ${keyName || "root"}`
+                : `Expand ${keyName || "root"}`
+            }
             onClick={() => onToggleExpand(path)}
-            className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-zinc-500 hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-zinc-400 dark:hover:text-zinc-100"
           >
             {isExpanded ? (
               <ChevronDown className="h-3.5 w-3.5" />
@@ -157,12 +163,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <div className="ml-auto flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
           <button
             type="button"
+            aria-label={`Copy JSON path: ${path}`}
             title={`Copy JSON path: ${path}`}
             onClick={(e) => {
               e.stopPropagation();
               onCopyPath(path);
             }}
-            className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+            className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
           >
             <Copy className="h-3 w-3" />
           </button>
