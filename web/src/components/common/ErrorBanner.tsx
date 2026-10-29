@@ -65,9 +65,12 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
     : null;
 
   return (
-    <div className="border-b border-rose-500/30 bg-rose-500/10 text-rose-900 shadow-xs dark:bg-rose-950/40 dark:text-rose-200">
+    <div
+      role="alert"
+      className="shrink-0 border-b border-rose-500/30 bg-rose-500/10 text-rose-900 shadow-xs dark:bg-rose-950/40 dark:text-rose-200"
+    >
       {/* Primary Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-2 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 text-xs">
         {/* Left: Diagnostic Summary */}
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {parsed?.isConnectionError ? (
@@ -99,7 +102,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
           )}
 
           {/* Context Name & Summary */}
-          <span className="truncate font-mono text-xs text-rose-800 dark:text-rose-200">
+          <span className="min-w-0 text-sm break-words text-rose-800 dark:text-rose-200">
             {activeConnectionName && (
               <strong className="font-semibold">
                 {activeConnectionName}:{" "}

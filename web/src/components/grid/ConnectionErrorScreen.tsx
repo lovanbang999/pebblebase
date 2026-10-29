@@ -70,7 +70,7 @@ export const ConnectionErrorScreen: FC<ConnectionErrorScreenProps> = ({
       );
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-zinc-50/50 select-none dark:bg-zinc-950">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-zinc-50/50 select-none dark:bg-zinc-950">
       {/* Top Header Bar with Breadcrumb & Sidebar Toggle */}
       <div className="flex h-11 shrink-0 items-center justify-between border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/30">
         <div className="flex items-center gap-2.5">
@@ -110,8 +110,8 @@ export const ConnectionErrorScreen: FC<ConnectionErrorScreenProps> = ({
       </div>
 
       {/* Main Focus Canvas */}
-      <div className="flex flex-1 items-center justify-center overflow-y-auto p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-xl rounded-2xl border border-zinc-200/90 bg-white/95 p-6 shadow-xl backdrop-blur-md sm:p-8 dark:border-zinc-800/90 dark:bg-zinc-900/95">
+      <div className="flex min-h-0 flex-1 items-center-safe justify-center overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <div className="w-full max-w-xl rounded-2xl border border-zinc-200/90 bg-white/95 p-6 shadow-sm sm:p-8 dark:border-zinc-800/90 dark:bg-zinc-900/95">
           {/* Header Icon Badge */}
           <div className="mx-auto mb-5 flex size-16 items-center justify-center rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-600 shadow-sm dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-400">
             <Unplug className="size-8" />
@@ -181,7 +181,7 @@ export const ConnectionErrorScreen: FC<ConnectionErrorScreenProps> = ({
                 <span className="font-mono text-xs font-bold">!</span>
               </div>
               <div className="space-y-1">
-                <p className="font-mono text-[11px] font-semibold text-amber-700 uppercase dark:text-amber-300">
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
                   {t("diagnostics.suggestedSolution", "Suggested Resolution")}
                 </p>
                 <p className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
@@ -259,7 +259,7 @@ export const ConnectionErrorScreen: FC<ConnectionErrorScreenProps> = ({
               type="button"
               onClick={onRetry}
               disabled={isRetrying}
-              className="cursor-pointer gap-2 bg-emerald-600 px-4 py-2 font-mono text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-500 active:scale-95 disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              className="h-10 cursor-pointer gap-2 bg-emerald-700 px-4 py-2 text-sm font-semibold text-white shadow-xs transition-all hover:bg-emerald-800 active:scale-95 disabled:opacity-50 dark:bg-emerald-700 dark:hover:bg-emerald-800"
             >
               <RefreshCw
                 className={cn("size-3.5", isRetrying && "animate-spin")}
@@ -276,7 +276,7 @@ export const ConnectionErrorScreen: FC<ConnectionErrorScreenProps> = ({
                 type="button"
                 variant="outline"
                 onClick={onEditConnection}
-                className="cursor-pointer gap-2 border-zinc-200 bg-white px-4 py-2 font-mono text-xs font-semibold text-zinc-700 shadow-2xs transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                className="h-10 cursor-pointer gap-2 border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 shadow-2xs transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
               >
                 <SlidersHorizontal className="size-3.5 text-zinc-500" />
                 <span>{t("diagnostics.editConnection", "Edit Settings")}</span>

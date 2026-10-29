@@ -50,7 +50,10 @@ export const GridPaginationFooter: React.FC<GridPaginationFooterProps> =
                 value={String(pageSize)}
                 onValueChange={(val) => val && onPageSizeChange(Number(val))}
               >
-                <SelectTrigger className="h-6 w-16 px-2 py-0 font-mono text-xs">
+                <SelectTrigger
+                  aria-label={t("datagrid.perPage")}
+                  className="h-6 w-16 px-2 py-0 font-mono text-xs"
+                >
                   <SelectValue placeholder={String(pageSize)} />
                 </SelectTrigger>
                 <SelectContent side="top" align="start" className="min-w-16">
@@ -75,6 +78,8 @@ export const GridPaginationFooter: React.FC<GridPaginationFooterProps> =
                 size="icon-sm"
                 disabled={page <= 0}
                 onClick={() => onPageChange(page - 1)}
+                aria-label={t("datagrid.previousPage")}
+                title={t("datagrid.previousPage")}
                 className="text-zinc-700 dark:text-zinc-300"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -85,6 +90,8 @@ export const GridPaginationFooter: React.FC<GridPaginationFooterProps> =
                 size="icon-sm"
                 disabled={page + 1 >= totalPages}
                 onClick={() => onPageChange(page + 1)}
+                aria-label={t("datagrid.nextPage")}
+                title={t("datagrid.nextPage")}
                 className="text-zinc-700 dark:text-zinc-300"
               >
                 <ChevronRight className="h-3.5 w-3.5" />

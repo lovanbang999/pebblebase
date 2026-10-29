@@ -14,7 +14,6 @@ import {
   EyeOff,
   Sparkles,
   AlertCircle,
-  Loader2,
   Check,
 } from "lucide-react";
 
@@ -46,6 +45,7 @@ export function LoginScreen() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (loading) return;
     setError("");
     setLoading(true);
     try {
@@ -61,9 +61,9 @@ export function LoginScreen() {
   }
 
   return (
-    <div className="bg-background text-foreground relative flex h-screen w-full flex-col overflow-hidden antialiased select-none">
+    <div className="bg-background text-foreground relative flex h-dvh w-full flex-col overflow-y-auto antialiased">
       <DesktopTitleBar />
-      <div className="relative flex w-full flex-1 flex-col items-center justify-center">
+      <div className="relative flex w-full flex-1 flex-col items-center justify-center-safe px-5 pt-20 pb-12">
         {/* Top Right Header Actions (Language & Theme Controls) */}
         <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5">
           <LanguageSwitcher />
@@ -71,47 +71,53 @@ export function LoginScreen() {
         </div>
 
         {/* Main Login Card Container */}
-        <div className="relative mx-4 w-full max-w-sm">
-          {/* Brand Header */}
-          <div className="mb-6 flex flex-col items-center text-center">
-            <div className="bg-muted border-border text-foreground mb-3 flex h-10 w-10 items-center justify-center rounded-lg border p-1.5 shadow-xs">
+        <div className="relative w-full max-w-[420px]">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <div className="border-border mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border bg-emerald-500/5 p-3 shadow-sm">
               <img
                 src="/favicon.svg"
-                alt="Pebblebase Logo"
+                width={32}
+                height={32}
+                alt=""
                 className="h-full w-full object-contain"
               />
             </div>
-
-            <h1 className="text-foreground font-sans text-xl font-bold tracking-tight">
+            <h1 className="text-foreground font-sans text-2xl font-semibold tracking-tight">
               Pebblebase Studio
             </h1>
-            <p className="text-muted-foreground mt-1 text-xs">
+            <p className="text-muted-foreground mt-2 text-sm">
               {t("auth.studioSubtitle")}
             </p>
           </div>
-
-          {/* System Styled Card */}
-          <div className="bg-card text-card-foreground border-border rounded-xl border p-6 shadow-lg">
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="bg-card text-card-foreground border-border rounded-2xl border p-6 shadow-xl shadow-black/5 sm:p-8">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5"
+              aria-busy={loading}
+            >
               {/* Username Field */}
               <div>
                 <label
                   htmlFor="login-username"
-                  className="text-muted-foreground mb-1.5 block text-[11px] font-semibold tracking-wider uppercase"
+                  className="text-foreground mb-2 block text-sm font-medium"
                 >
                   {t("auth.username")}
                 </label>
                 <div className="relative">
-                  <User className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 z-10 h-4 w-4 -translate-y-1/2" />
+                  <User className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2" />
                   <Input
                     id="login-username"
                     type="text"
                     autoComplete="username"
-                    autoFocus
+                    name="username"
+                    spellCheck={false}
+                    autoCapitalize="none"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:ring-ring pl-8 dark:bg-zinc-900/60"
+                    className="bg-background text-foreground border-input placeholder:text-muted-foreground h-11 pl-11 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20"
                     placeholder="admin"
+                    aria-invalid={!!error}
+                    aria-describedby={error ? "login-error" : undefined}
                     required
                   />
                 </div>
@@ -119,10 +125,10 @@ export function LoginScreen() {
 
               {/* Password Field */}
               <div>
-                <div className="mb-1.5 flex items-center justify-between">
+                <div className="mb-2 flex items-center justify-between">
                   <label
                     htmlFor="login-password"
-                    className="text-muted-foreground block text-[11px] font-semibold tracking-wider uppercase"
+                    className="text-foreground block text-sm font-medium"
                   >
                     {t("auth.password")}
                   </label>
@@ -134,23 +140,32 @@ export function LoginScreen() {
                   )}
                 </div>
                 <div className="relative">
-                  <Lock className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 z-10 h-4 w-4 -translate-y-1/2" />
+                  <Lock className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2" />
                   <Input
                     id="login-password"
                     type={showPassword ? "text" : "password"}
+                    name="password"
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onKeyUp={handleKeyDown}
-                    className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:ring-ring pr-8 pl-8 dark:bg-zinc-900/60"
+                    className="bg-background text-foreground border-input placeholder:text-muted-foreground h-11 pr-12 pl-11 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20"
                     placeholder="••••••••"
+                    aria-invalid={!!error}
+                    aria-describedby={error ? "login-error" : undefined}
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 z-10 -translate-y-1/2 cursor-pointer rounded-md p-1 transition-colors focus:outline-none"
+                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-0 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2"
+                    aria-pressed={showPassword}
+                    aria-label={
+                      showPassword
+                        ? t("auth.hidePassword")
+                        : t("auth.showPassword")
+                    }
                     title={
                       showPassword
                         ? t("auth.hidePassword")
@@ -168,59 +183,58 @@ export function LoginScreen() {
 
               {/* Error Banner */}
               {error && (
-                <div className="bg-destructive/10 border-destructive/20 text-destructive flex items-start gap-2 rounded-lg border p-2.5 text-xs">
+                <div
+                  id="login-error"
+                  role="alert"
+                  className="bg-destructive/10 border-destructive/20 text-destructive flex items-start gap-2 rounded-lg border p-2.5 text-xs"
+                >
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
-              {/* Quick Fill Demo Button */}
-              <div className="pt-0.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleQuickFill}
-                  className="text-muted-foreground hover:text-foreground border-border bg-background h-7 w-full cursor-pointer justify-between px-2.5 text-xs font-normal"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-[11px] font-medium">
-                      {t("auth.quickFill")}
-                    </span>
-                  </div>
-                  <span className="text-muted-foreground font-mono text-[10px]">
-                    {filledFeedback ? (
-                      <span className="flex items-center gap-1 font-sans font-medium text-emerald-600 dark:text-emerald-400">
-                        <Check className="h-3 w-3" /> {t("auth.filled")}
-                      </span>
-                    ) : (
-                      "admin / pebblebase"
-                    )}
-                  </span>
-                </Button>
-              </div>
-
               {/* Primary Action Button */}
               <Button
                 type="submit"
-                disabled={loading || !username || !password}
-                className="mt-1 w-full cursor-pointer font-semibold"
+                disabled={loading}
+                className="h-11 w-full cursor-pointer justify-center bg-emerald-600 px-4 font-semibold text-white hover:bg-emerald-700 focus-visible:ring-emerald-500/30 disabled:opacity-60 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>{t("auth.signingIn")}</span>
-                  </>
-                ) : (
-                  <span>{t("auth.signIn")}</span>
-                )}
+                {loading ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
+              <div className="border-border flex flex-col items-center gap-1 border-t pt-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleQuickFill}
+                  disabled={loading}
+                  className="h-9 max-w-full gap-2 rounded-lg px-3 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-800 focus-visible:ring-emerald-500/30 dark:text-emerald-400 dark:hover:text-emerald-300"
+                >
+                  {filledFeedback ? (
+                    <Check aria-hidden="true" className="size-3.5" />
+                  ) : (
+                    <Sparkles aria-hidden="true" className="size-3.5" />
+                  )}
+                  <span
+                    className="text-center whitespace-normal"
+                    aria-live="polite"
+                  >
+                    {filledFeedback ? t("auth.filled") : t("auth.quickFill")}
+                  </span>
+                </Button>
+                <p className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 text-xs">
+                  <code className="font-mono">admin</code>
+                  <span aria-hidden="true" className="opacity-50">
+                    /
+                  </span>
+                  <code className="font-mono">pebblebase</code>
+                </p>
+              </div>
             </form>
           </div>
 
           {/* System Footer Note */}
-          <p className="text-muted-foreground mt-5 text-center font-sans text-[11px]">
+          <p className="text-muted-foreground mt-6 text-center font-sans text-xs">
             Pebblebase Studio · Engine Host v{packageJson.version}
           </p>
         </div>

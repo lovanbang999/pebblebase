@@ -258,6 +258,8 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
                     value={quickSearch}
                     onChange={(e) => onQuickSearchChange(e.target.value)}
                     placeholder={`${t("datagrid.searchPlaceholder")} (/)`}
+                    aria-label={t("datagrid.searchPlaceholder")}
+                    title={t("datagrid.searchScopeHelp")}
                     className="h-8 w-24 pr-7 pl-8 font-mono text-xs transition-all focus:w-44 sm:w-32 sm:focus:w-48 md:w-36 md:focus:w-52 lg:w-44"
                   />
                   {quickSearch && (
@@ -268,6 +270,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
                       onClick={() => onQuickSearchChange("")}
                       className="absolute right-1 h-6 w-6 text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
                       title={t("datagrid.clearSearchTooltip")}
+                      aria-label={t("datagrid.clearSearchTooltip")}
                     >
                       <X className="h-3 w-3" />
                     </Button>
