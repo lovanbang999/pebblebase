@@ -456,7 +456,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             {/* Connection Name */}
             <div>
               <div className="mb-1 flex items-center justify-between">
-                <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                <label
+                  htmlFor="connection-name"
+                  className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                >
                   {t("connection.displayName")}
                 </label>
                 {isNameCustom && (
@@ -482,6 +485,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 )}
               </div>
               <Input
+                id="connection-name"
                 type="text"
                 value={name}
                 onChange={(e) => {
@@ -517,7 +521,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 <div className="space-y-3">
                   <div>
                     <div className="mb-1 flex items-center justify-between">
-                      <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      <label
+                        htmlFor="connection-filepath"
+                        className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                      >
                         {t("connection.filepath")}
                       </label>
                       <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
@@ -525,6 +532,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       </span>
                     </div>
                     <Input
+                      id="connection-filepath"
                       type="text"
                       value={filepath}
                       onChange={(e) => handleFilepathChange(e.target.value)}
@@ -541,10 +549,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 <div className="space-y-3">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="col-span-2">
-                      <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                      <label
+                        htmlFor="connection-host"
+                        className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                      >
                         {t("connection.hostAddress")}
                       </label>
                       <Input
+                        id="connection-host"
                         type="text"
                         value={host}
                         onChange={(e) => setHost(e.target.value)}
@@ -554,10 +566,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                      <label
+                        htmlFor="connection-port"
+                        className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                      >
                         {t("connection.port")}
                       </label>
                       <Input
+                        id="connection-port"
                         type="text"
                         value={port}
                         onChange={(e) => setPort(e.target.value)}
@@ -570,7 +586,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
 
                   <div>
                     <div className="mb-1 flex items-center justify-between">
-                      <label className="text-xs text-zinc-600 dark:text-zinc-400">
+                      <label
+                        htmlFor="connection-database"
+                        className="text-xs text-zinc-600 dark:text-zinc-400"
+                      >
                         {dbType === "redis"
                           ? t("connection.redisDbIndex")
                           : t("connection.database")}
@@ -582,6 +601,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       </span>
                     </div>
                     <Input
+                      id="connection-database"
                       type="text"
                       value={dbName}
                       onChange={(e) => handleDbNameChange(e.target.value)}
@@ -615,10 +635,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   {!windowsAuth && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                        <label
+                          htmlFor="connection-user"
+                          className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                        >
                           {t("connection.user")}
                         </label>
                         <Input
+                          id="connection-user"
                           type="text"
                           value={user}
                           onChange={(e) => setUser(e.target.value)}
@@ -635,10 +659,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                        <label
+                          htmlFor="connection-password"
+                          className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                        >
                           {t("connection.password")}
                         </label>
                         <Input
+                          id="connection-password"
                           type="password"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
@@ -656,10 +684,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               )
             ) : (
               <div>
-                <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                <label
+                  htmlFor="connection-rawURL"
+                  className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                >
                   {t("connection.rawUrl")}
                 </label>
                 <Textarea
+                  id="connection-rawURL"
                   value={rawURL}
                   onChange={(e) => setRawURL(e.target.value)}
                   rows={3}

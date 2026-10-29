@@ -1,4 +1,16 @@
 {
+  "workspace": {
+    "title": "Không gian làm việc",
+    "subtitle": "Khám phá dữ liệu hoặc chọn công cụ để bắt đầu.",
+    "findAnything": "Tìm kiếm",
+    "tools": "Công cụ cơ sở dữ liệu",
+    "queryHelp": "Viết và chạy truy vấn trên cơ sở dữ liệu.",
+    "erdHelp": "Khám phá các bảng và mối quan hệ.",
+    "diffHelp": "So sánh lược đồ giữa các kết nối.",
+    "browseAll": "Xem tất cả",
+    "loading": "Đang tải không gian làm việc…",
+    "emptyTables": "Chưa có bảng để hiển thị. Làm mới hoặc đổi kết nối từ thanh bên."
+  },
   "sidebar": {
     "activeDb": "CƠ SỞ DỮ LIỆU",
     "localPostgres": "Postgres Cục bộ",
@@ -147,7 +159,8 @@
     "valuePlaceholder": "Giá trị...",
     "apply": "Áp dụng",
     "resetFilter": "Xóa lọc",
-    "searchPlaceholder": "Tìm kiếm nhanh...",
+    "searchPlaceholder": "Tìm trong trang hiện tại…",
+    "searchScopeHelp": "Chỉ tìm trong các dòng đã tải trên trang hiện tại. Dùng bộ lọc để tìm trên toàn bảng.",
     "filterButton": "Bộ lọc",
     "addRow": "Thêm bản ghi",
     "openQueryConsole": "Bảng SQL",
@@ -190,6 +203,8 @@
     "showing": "Hiển thị",
     "of": "trên",
     "records": "bản ghi",
+    "previousPage": "Trang trước",
+    "nextPage": "Trang sau",
     "perPage": "Mỗi trang:",
     "page": "Trang",
     "noData": "Không có dữ liệu",

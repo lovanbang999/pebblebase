@@ -10,6 +10,7 @@ import {
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cn } from "cn";
 import type { Connection, SavedQuery, FilterOption } from "./lib/types";
+import { WorkspaceHome } from "@/components/common/WorkspaceHome";
 import Sidebar from "@/components/layout/Sidebar";
 import {
   TabBar,
@@ -666,7 +667,7 @@ function PebblebaseStudio() {
           "--titlebar-height": isDesktop ? "38px" : "0px",
         } as React.CSSProperties
       }
-      className="flex h-screen w-screen flex-col overflow-hidden bg-white font-sans text-zinc-900 transition-colors dark:bg-zinc-950 dark:text-zinc-100"
+      className="flex h-dvh w-screen flex-col overflow-hidden bg-white font-sans text-zinc-900 transition-colors dark:bg-zinc-950 dark:text-zinc-100"
     >
       <DesktopTitleBar
         activeConnectionName={activeConnection?.name}
@@ -752,6 +753,34 @@ function PebblebaseStudio() {
             <WelcomeScreen onOpenNewConnection={handleOpenNewConnection} />
           ) : (
             <>
+              {!activeTab &&
+                (tablesError && activeConnection ? (
+                  <ConnectionErrorScreen
+                    connection={activeConnection}
+                    error={
+                      tablesError instanceof Error
+                        ? tablesError.message
+                        : String(tablesError)
+                    }
+                    onRetry={handleRefreshTables}
+                    isRetrying={isLoadingTables}
+                    onEditConnection={() =>
+                      handleCloneConnection(activeConnection)
+                    }
+                  />
+                ) : (
+                  <WorkspaceHome
+                    connection={activeConnection}
+                    tables={tables.map((table) => table.name)}
+                    isLoading={isLoadingConnections || isLoadingTables}
+                    onOpenTable={handleOpenTableWithRecent}
+                    onQuery={openQueryTab}
+                    onErd={openErdTab}
+                    onDiff={openDiffTab}
+                    onNewConnection={handleOpenNewConnection}
+                    onSearch={handleOpenCommandPalette}
+                  />
+                ))}
               {/* Open Query Tabs (Preserved in DOM with visibility toggle for instant switching) */}
               {queryTabs.map((t) => (
                 <div

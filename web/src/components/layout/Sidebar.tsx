@@ -833,7 +833,7 @@ export default function Sidebar({
                   onClick={() => onOpenQueryConsole?.()}
                   title={getShortcutTooltip("queryConsole")}
                   className={cn(
-                    "h-8 w-full cursor-pointer justify-between px-2 font-mono text-xs group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                    "h-10 w-full cursor-pointer justify-between rounded-lg px-3 font-sans text-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                     activeView === "console"
                       ? "border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
                       : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
@@ -860,14 +860,14 @@ export default function Sidebar({
                   onClick={() => onOpenERD?.()}
                   title={getShortcutTooltip("erd")}
                   className={cn(
-                    "h-8 w-full cursor-pointer justify-between px-2 font-mono text-xs group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                    "h-10 w-full cursor-pointer justify-between rounded-lg px-3 font-sans text-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                     activeView === "erd"
-                      ? "border border-indigo-500/30 bg-indigo-500/10 font-semibold text-indigo-700 dark:bg-indigo-500/15 dark:text-indigo-400"
+                      ? "border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
                       : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
                   )}
                 >
                   <div className="flex items-center gap-2 truncate leading-none">
-                    <Workflow className="size-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                    <Workflow className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span className="translate-y-px truncate leading-none group-data-[collapsible=icon]:hidden">
                       {t("erd.title")}
                     </span>
@@ -885,10 +885,10 @@ export default function Sidebar({
                   size="sm"
                   onClick={() => onOpenDiff?.()}
                   title={t("diff.title")}
-                  className="h-8 w-full cursor-pointer justify-between px-2 font-mono text-xs text-zinc-600 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  className="h-10 w-full cursor-pointer justify-between rounded-lg px-3 font-sans text-sm text-zinc-600 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 >
                   <div className="flex items-center gap-2 truncate leading-none">
-                    <GitCompare className="size-3.5 shrink-0 text-cyan-600 dark:text-cyan-400" />
+                    <GitCompare className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span className="translate-y-px truncate leading-none group-data-[collapsible=icon]:hidden">
                       {t("diff.title")}
                     </span>
@@ -899,23 +899,24 @@ export default function Sidebar({
           )}
 
         {/* Table Filter Input (Hidden when collapsed) */}
-        <div className="border-sidebar-border border-b p-2 group-data-[collapsible=icon]:hidden">
+        <div className="border-sidebar-border border-b px-3 py-3 group-data-[collapsible=icon]:hidden">
           <div className="flex items-center gap-1.5">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute top-2 left-2 size-3.5 text-zinc-400" />
+              <Search className="pointer-events-none absolute top-2.5 left-2.5 size-3.5 text-zinc-400" />
               <Input
                 type="text"
                 placeholder={t("sidebar.filterTables")}
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
-                className="h-7 pr-8 pl-7 font-mono text-xs"
+                aria-label={t("sidebar.filterTables")}
+                className="h-9 rounded-lg pr-14 pl-8 text-xs"
               />
               {onOpenCommandPalette && (
                 <button
                   type="button"
                   onClick={onOpenCommandPalette}
                   title={getShortcutTooltip("commandPalette")}
-                  className="absolute top-1 right-1.5 cursor-pointer rounded border border-zinc-200 bg-zinc-100 px-1 py-0.5 font-mono text-[9px] font-medium text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                  className="absolute top-2 right-1.5 cursor-pointer rounded border border-zinc-200 bg-zinc-100 px-1 py-0.5 font-mono text-[9px] font-medium text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
                 >
                   {SHORTCUTS.commandPalette}
                 </button>
@@ -1000,11 +1001,11 @@ export default function Sidebar({
                 ))}
               </SidebarMenu>
             ) : tablesError && tables.length === 0 ? (
-              <div className="mx-2 my-2 rounded-xl border border-rose-500/20 bg-rose-500/5 p-3 text-center group-data-[collapsible=icon]:hidden dark:border-rose-500/25 dark:bg-rose-500/10">
+              <div className="mx-2 my-2 rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center group-data-[collapsible=icon]:hidden dark:border-zinc-800 dark:bg-zinc-900/50">
                 <div className="mx-auto mb-1.5 flex size-8 items-center justify-center rounded-lg bg-rose-500/15 text-rose-500">
                   <Unplug className="size-4" />
                 </div>
-                <p className="font-mono text-xs font-semibold text-rose-600 dark:text-rose-400">
+                <p className="font-sans text-sm font-semibold text-rose-600 dark:text-rose-400">
                   {t("sidebar.connectionFailed", "Connection Failed")}
                 </p>
                 <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -1017,7 +1018,7 @@ export default function Sidebar({
                     size="xs"
                     onClick={onRefreshTables}
                     disabled={isLoadingTables || isRefreshing}
-                    className="h-6 cursor-pointer gap-1 border-rose-300/60 px-2 font-mono text-[10px] text-rose-700 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950/60"
+                    className="h-8 cursor-pointer gap-1 border-rose-300/60 px-3 text-xs text-rose-700 hover:bg-rose-100 disabled:opacity-50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950/60"
                   >
                     <RefreshCw
                       className={cn(
@@ -1033,7 +1034,7 @@ export default function Sidebar({
                       variant="ghost"
                       size="xs"
                       onClick={() => onCloneConnection(selectedConnection)}
-                      className="h-6 cursor-pointer px-2 font-mono text-[10px] text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                      className="h-8 cursor-pointer px-3 text-xs text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
                     >
                       {t("sidebar.edit", "Edit")}
                     </Button>

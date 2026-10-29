@@ -1,4 +1,16 @@
 {
+  "workspace": {
+    "title": "Workspace",
+    "subtitle": "Explore your data or pick a tool to get started.",
+    "findAnything": "Find anything",
+    "tools": "Database tools",
+    "queryHelp": "Write and run queries against your database.",
+    "erdHelp": "Explore tables and their relationships.",
+    "diffHelp": "Compare schemas across connections.",
+    "browseAll": "Browse all",
+    "loading": "Loading your workspace…",
+    "emptyTables": "No tables to show yet. Use the sidebar to refresh or switch connections."
+  },
   "sidebar": {
     "activeDb": "ACTIVE DB",
     "localPostgres": "Local Postgres",
@@ -147,7 +159,8 @@
     "valuePlaceholder": "Value...",
     "apply": "Apply",
     "resetFilter": "Reset filter",
-    "searchPlaceholder": "Search view...",
+    "searchPlaceholder": "Search loaded rows…",
+    "searchScopeHelp": "Searches only rows loaded on this page. Use filters to search across the table.",
     "filterButton": "Filter",
     "addRow": "Add Row",
     "openQueryConsole": "SQL Console",
@@ -190,6 +203,8 @@
     "showing": "Showing",
     "of": "of",
     "records": "records",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
     "perPage": "Per page:",
     "page": "Page",
     "noData": "No data available",
