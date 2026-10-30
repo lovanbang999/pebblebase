@@ -383,7 +383,7 @@ export const TabBar: FC<TabBarProps> = ({
   if (tabs.length === 0) {
     return (
       <div
-        className="wails-drag relative z-20 flex h-11 shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-100/80 px-3 select-none dark:border-zinc-800 dark:bg-zinc-900/70"
+        className="wails-drag relative z-20 flex h-8 shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-100/80 px-3 select-none dark:border-zinc-800 dark:bg-zinc-900/70"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
         <span className="pointer-events-none font-sans text-xs text-zinc-500 select-none dark:text-zinc-400">
@@ -413,7 +413,7 @@ export const TabBar: FC<TabBarProps> = ({
 
   return (
     <div
-      className="wails-drag relative z-20 flex h-11 shrink-0 items-center overflow-hidden border-b border-zinc-200 bg-zinc-100/80 px-2 select-none dark:border-zinc-800 dark:bg-zinc-900/70"
+      className="wails-drag relative z-20 flex h-8 shrink-0 items-center overflow-hidden border-b border-zinc-200 bg-zinc-100/80 px-2 select-none dark:border-zinc-800 dark:bg-zinc-900/70"
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       {/* Left Scroll Button when overflowing */}
@@ -450,7 +450,7 @@ export const TabBar: FC<TabBarProps> = ({
         ref={scrollContainerRef}
         onDragOver={handleContainerDragOver}
         onDrop={handleDrop}
-        className="no-scrollbar flex h-full flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden pt-1"
+        className="no-scrollbar flex h-full flex-1 items-center gap-0.5 overflow-x-auto overflow-y-hidden"
       >
         {tabs.map((tab, index) => {
           const isActive = tab.id === activeTabId;
@@ -464,7 +464,7 @@ export const TabBar: FC<TabBarProps> = ({
           return (
             <Fragment key={tab.id}>
               {showDropIndicatorBefore && (
-                <div className="animate-in fade-in pointer-events-none z-30 -mx-0.5 h-6 w-0.5 shrink-0 self-center rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] duration-100" />
+                <div className="animate-in fade-in bg-primary pointer-events-none z-30 -mx-0.5 h-6 w-0.5 shrink-0 self-center rounded-full duration-100" />
               )}
               <div
                 data-tab-id={tab.id}
@@ -477,9 +477,9 @@ export const TabBar: FC<TabBarProps> = ({
                 onContextMenu={(e) => handleContextMenu(e, tab.id)}
                 onMouseDown={(e) => handleMouseDown(e, tab.id)}
                 className={cn(
-                  "group wails-no-drag relative flex h-9 max-w-50 shrink-0 cursor-pointer items-center gap-2 rounded-t-lg border-t-2 px-3 font-mono text-xs transition-all duration-150 select-none",
+                  "group wails-no-drag relative flex h-8 max-w-50 shrink-0 cursor-pointer items-center gap-2 rounded-none border-t-2 px-3 font-sans text-xs transition-colors duration-150 select-none",
                   isActive
-                    ? "border-x border-zinc-200 border-t-emerald-500 bg-white font-medium text-zinc-900 shadow-xs dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+                    ? "border-t-primary border-x border-zinc-200 bg-white font-medium text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
                     : "border-x border-transparent border-t-transparent text-zinc-600 hover:bg-zinc-200/50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/40 dark:hover:text-zinc-100",
                   isDragging &&
                     "scale-[0.98] border-dashed border-zinc-400 opacity-50 dark:border-zinc-600",
@@ -540,7 +540,7 @@ export const TabBar: FC<TabBarProps> = ({
           dropTargetIndex === tabs.length &&
           dropTargetIndex !== draggedIndex &&
           dropTargetIndex !== draggedIndex + 1 && (
-            <div className="animate-in fade-in pointer-events-none z-30 -mx-0.5 h-6 w-0.5 shrink-0 self-center rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] duration-100" />
+            <div className="animate-in fade-in bg-primary pointer-events-none z-30 -mx-0.5 h-6 w-0.5 shrink-0 self-center rounded-full duration-100" />
           )}
 
         {/* Plus Button to open new Query Tab */}

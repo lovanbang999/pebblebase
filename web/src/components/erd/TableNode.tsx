@@ -5,6 +5,11 @@ import { Table, Key, Link2, ExternalLink, Sparkles } from "lucide-react";
 import type { TableSchema } from "../../lib/types";
 import { cn } from "cn";
 import {
+  ERD_NODE_WIDTH,
+  ERD_NODE_ROW_HEIGHT,
+  ERD_NODE_HEADER_HEIGHT,
+} from "@/constants/erd";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -23,48 +28,6 @@ export interface TableNodeData extends Record<string, unknown> {
 }
 
 export type TableNodeType = Node<TableNodeData, "tableNode">;
-
-/** Helper to get human-designed semantic type chips (like Prisma / TablePlus) */
-function getTypeChip(typeStr: string) {
-  const t = typeStr.toUpperCase();
-  if (
-    t.includes("INT") ||
-    t.includes("FLOAT") ||
-    t.includes("DOUBLE") ||
-    t.includes("DECIMAL") ||
-    t.includes("NUMERIC") ||
-    t.includes("SERIAL") ||
-    t.includes("REAL")
-  ) {
-    return "border-amber-200/90 bg-amber-50 text-amber-700 dark:border-amber-800/60 dark:bg-amber-950/50 dark:text-amber-300";
-  }
-  if (
-    t.includes("CHAR") ||
-    t.includes("TEXT") ||
-    t.includes("STRING") ||
-    t.includes("ENUM")
-  ) {
-    return "border-emerald-200/90 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/50 dark:text-emerald-300";
-  }
-  if (t.includes("UUID") || t.includes("GUID") || t.includes("ID")) {
-    return "border-indigo-200/90 bg-indigo-50 text-indigo-700 dark:border-indigo-800/60 dark:bg-indigo-950/50 dark:text-indigo-300";
-  }
-  if (t.includes("TIME") || t.includes("DATE")) {
-    return "border-purple-200/90 bg-purple-50 text-purple-700 dark:border-purple-800/60 dark:bg-purple-950/50 dark:text-purple-300";
-  }
-  if (t.includes("BOOL")) {
-    return "border-teal-200/90 bg-teal-50 text-teal-700 dark:border-teal-800/60 dark:bg-teal-950/50 dark:text-teal-300";
-  }
-  if (
-    t.includes("JSON") ||
-    t.includes("ARRAY") ||
-    t.includes("BLOB") ||
-    t.includes("BYTEA")
-  ) {
-    return "border-sky-200/90 bg-sky-50 text-sky-700 dark:border-sky-800/60 dark:bg-sky-950/50 dark:text-sky-300";
-  }
-  return "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
-}
 
 function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
   const { t } = useTranslation();
@@ -92,69 +55,65 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
 
   const hiddenCount = table.columns.length - displayColumns.length;
   const extraHeight = compactMode && hiddenCount > 0 ? 26 : 0;
-  const nodeHeight = 46 + displayColumns.length * 28 + extraHeight;
+  const nodeHeight =
+    ERD_NODE_HEADER_HEIGHT +
+    displayColumns.length * ERD_NODE_ROW_HEIGHT +
+    extraHeight;
 
   return (
     <div
       onDoubleClick={handleDoubleClick}
       onMouseEnter={() => onHoverTable?.(table.name)}
       onMouseLeave={() => onHoverTable?.(null)}
-      style={{ width: 260, height: nodeHeight }}
+      style={{ width: ERD_NODE_WIDTH, height: nodeHeight }}
       className={cn(
         "group relative rounded-lg select-none",
-        "bg-white dark:bg-zinc-900",
-        "border-t-[3px] border-t-indigo-500 dark:border-t-indigo-400",
-        "border-r border-b border-l border-zinc-200/90 shadow-sm transition-[border-color,box-shadow,opacity] duration-150 dark:border-zinc-800",
+        "bg-card",
+
+        "border-border border shadow-sm transition-[border-color,opacity] duration-150",
         selected || isHighlighted
-          ? "border-indigo-600 shadow-md ring-2 ring-indigo-600/20 dark:border-indigo-400 dark:ring-indigo-400/20"
+          ? "border-primary ring-primary ring-1"
           : "hover:border-zinc-300 hover:shadow-md dark:hover:border-zinc-700",
         isDimmed && "opacity-25 transition-opacity duration-150",
       )}
     >
-      {/* Middle Wrapper: Dagre layout bounds with overflow: hidden to clip 2x content */}
-      <div className="h-full w-full overflow-hidden rounded-b-[7px]">
-        {/* 2x Retina Scale Adapter Layer */}
-        <div
-          style={{
-            width: 520,
-            transform: "scale(0.5)",
-            transformOrigin: "top left",
-            willChange: "transform",
-          }}
-          className="font-mono text-[24px] select-none"
-        >
+      <div className="h-full w-full overflow-hidden rounded-md">
+        <div className="font-mono text-xs select-none">
           {/* Fallback Node-Level Handles */}
           <Handle
             type="target"
             position={Position.Left}
             id="target"
-            className="h-3.5! w-3.5! border-2! border-white! bg-zinc-400! opacity-0! transition-opacity group-hover:bg-indigo-500! group-hover:opacity-100! dark:border-zinc-900! dark:bg-zinc-500! dark:group-hover:bg-indigo-400!"
-            style={{ top: 40 }}
+            className="group-hover:bg-primary! dark:group-hover:bg-primary! h-3.5! w-3.5! border-2! border-white! bg-zinc-400! opacity-0! transition-opacity group-hover:opacity-100! dark:border-zinc-900! dark:bg-zinc-500!"
+            style={{ top: ERD_NODE_HEADER_HEIGHT / 2 }}
           />
           <Handle
             type="source"
             position={Position.Right}
             id="source"
-            className="h-3.5! w-3.5! border-2! border-white! bg-zinc-400! opacity-0! transition-opacity group-hover:bg-indigo-500! group-hover:opacity-100! dark:border-zinc-900! dark:bg-zinc-500! dark:group-hover:bg-indigo-400!"
-            style={{ top: 40 }}
+            className="group-hover:bg-primary! dark:group-hover:bg-primary! h-3.5! w-3.5! border-2! border-white! bg-zinc-400! opacity-0! transition-opacity group-hover:opacity-100! dark:border-zinc-900! dark:bg-zinc-500!"
+            style={{ top: ERD_NODE_HEADER_HEIGHT / 2 }}
           />
 
           {/* Header */}
-          <div className="flex h-23 cursor-grab items-center justify-between border-b border-zinc-200/90 bg-zinc-100/80 px-5 py-3.5 active:cursor-grabbing dark:border-zinc-800 dark:bg-zinc-800/80">
-            <div className="flex min-w-0 items-center gap-3.5 leading-none">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white text-indigo-600 shadow-2xs dark:border-zinc-700 dark:bg-zinc-900 dark:text-indigo-400">
-                <Table className="h-5 w-5" />
+          <div
+            style={{ height: ERD_NODE_HEADER_HEIGHT }}
+            className="flex cursor-grab items-center justify-between border-b border-zinc-200/90 bg-zinc-100/80 px-2.5 active:cursor-grabbing dark:border-zinc-800 dark:bg-zinc-800/80"
+          >
+            <div className="flex min-w-0 items-center gap-1.5 leading-none">
+              <div className="text-primary dark:text-primary flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white shadow-2xs dark:border-zinc-700 dark:bg-zinc-900">
+                <Table className="h-3.5 w-3.5" />
               </div>
               <span
-                className="translate-y-0.5 truncate text-[25px] leading-none font-bold tracking-tight text-zinc-900 dark:text-white"
+                className="translate-y-0.5 truncate text-[12px] leading-none font-bold tracking-tight text-zinc-900 dark:text-white"
                 title={table.name}
               >
                 {table.name}
               </span>
             </div>
 
-            <div className="nodrag flex shrink-0 items-center gap-2">
-              <span className="rounded-full border border-zinc-300/80 bg-zinc-200/80 px-2.5 py-0.5 font-mono text-[16px] font-semibold text-zinc-700 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200">
+            <div className="nodrag flex shrink-0 items-center gap-1.5">
+              <span className="rounded border border-zinc-300/80 bg-zinc-200/80 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-zinc-700 dark:border-zinc-600 dark:bg-zinc-700 dark:text-zinc-200">
                 {table.columns.length}
               </span>
 
@@ -169,9 +128,10 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                           e.stopPropagation();
                           onGenerateJoinQuery(table.name);
                         }}
-                        className="nodrag cursor-pointer rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-200/70 hover:text-indigo-600 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-indigo-400"
+                        aria-label={t("erd.generateJoinConsole")}
+                        className="nodrag hover:text-primary dark:hover:text-primary cursor-pointer rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-200/70 dark:text-zinc-400 dark:hover:bg-zinc-700"
                       >
-                        <Sparkles className="h-5 w-5" />
+                        <Sparkles className="h-3.5 w-3.5" />
                       </button>
                     }
                   />
@@ -191,9 +151,10 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                         e.stopPropagation();
                         onOpenTable?.(table.name);
                       }}
+                      aria-label={t("erd.openTable")}
                       className="nodrag cursor-pointer rounded-md p-1.5 text-zinc-400 transition-colors hover:bg-zinc-200/70 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
                     >
-                      <ExternalLink className="h-5 w-5" />
+                      <ExternalLink className="h-3.5 w-3.5" />
                     </button>
                   }
                 />
@@ -211,18 +172,19 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                 ? highlightedColumn.includes(col.name)
                 : highlightedColumn === col.name;
 
-              const typeBadgeClass = getTypeChip(col.type);
+              const typeBadgeClass = "text-muted-foreground";
 
               return (
                 <div
                   key={col.name}
+                  style={{ height: ERD_NODE_ROW_HEIGHT }}
                   onMouseEnter={() => onHoverColumn?.(table.name, col.name)}
                   onMouseLeave={() => onHoverColumn?.(table.name, null)}
                   className={cn(
-                    "relative flex h-14 items-center justify-between px-5 leading-none transition-colors",
+                    "relative flex items-center justify-between px-2.5 leading-none transition-colors",
                     "cursor-crosshair hover:bg-zinc-50 dark:hover:bg-zinc-800/40",
                     isColHighlighted &&
-                      "bg-indigo-50/80 ring-1 ring-indigo-500/50 ring-inset dark:bg-indigo-950/50",
+                      "bg-accent ring-primary/50 dark:bg-accent ring-1 ring-inset",
                   )}
                 >
                   {/* Column-Specific Connection Handles */}
@@ -230,20 +192,20 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                     type="target"
                     position={Position.Left}
                     id={`${col.name}-target`}
-                    className="left-0! h-3.5! w-3.5! -translate-x-1/2! border-2! border-white! bg-zinc-400! opacity-0! transition-opacity group-hover:bg-indigo-500! group-hover:opacity-100! dark:border-zinc-900! dark:bg-zinc-500! dark:group-hover:bg-indigo-400!"
+                    className="group-hover:bg-primary! dark:group-hover:bg-primary! left-0! h-3.5! w-3.5! -translate-x-1/2! border-2! border-white! bg-zinc-400! opacity-0! transition-opacity group-hover:opacity-100! dark:border-zinc-900! dark:bg-zinc-500!"
                   />
                   <Handle
                     type="source"
                     position={Position.Right}
                     id={`${col.name}-source`}
-                    className="right-0! h-3.5! w-3.5! translate-x-1/2! border-2! border-white! bg-zinc-400! opacity-0! transition-opacity group-hover:bg-indigo-500! group-hover:opacity-100! dark:border-zinc-900! dark:bg-zinc-500! dark:group-hover:bg-indigo-400!"
+                    className="group-hover:bg-primary! dark:group-hover:bg-primary! right-0! h-3.5! w-3.5! translate-x-1/2! border-2! border-white! bg-zinc-400! opacity-0! transition-opacity group-hover:opacity-100! dark:border-zinc-900! dark:bg-zinc-500!"
                   />
 
                   {/* Column Name & Key Badges */}
-                  <div className="flex min-w-0 items-center gap-2.5 pr-3 leading-none">
+                  <div className="flex min-w-0 items-center gap-1.5 pr-2 leading-none">
                     {isPK ? (
                       <span
-                        className="inline-flex shrink-0 items-center justify-center gap-1 rounded border border-amber-300 bg-amber-100/90 px-1.5 py-0.5 font-mono text-[15px] leading-none font-bold text-amber-900 shadow-2xs dark:border-amber-700/80 dark:bg-amber-900/40 dark:text-amber-300"
+                        className="inline-flex shrink-0 items-center justify-center gap-1 rounded border border-amber-300 bg-amber-100/90 px-1.5 py-0.5 font-mono text-[9px] leading-none font-bold text-amber-900 shadow-2xs dark:border-amber-700/80 dark:bg-amber-900/40 dark:text-amber-300"
                         title={t("datagrid.primaryKey")}
                       >
                         <Key className="h-3.5 w-3.5 shrink-0 translate-y-0.5" />
@@ -251,26 +213,26 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                       </span>
                     ) : isFK ? (
                       <span
-                        className="inline-flex shrink-0 items-center justify-center gap-1 rounded border border-sky-300 bg-sky-100/90 px-1.5 py-0.5 font-mono text-[15px] leading-none font-bold text-sky-900 shadow-2xs dark:border-sky-700/80 dark:bg-sky-900/40 dark:text-sky-300"
+                        className="inline-flex shrink-0 items-center justify-center gap-1 rounded border border-sky-300 bg-sky-100/90 px-1.5 py-0.5 font-mono text-[9px] leading-none font-bold text-sky-900 shadow-2xs dark:border-sky-700/80 dark:bg-sky-900/40 dark:text-sky-300"
                         title={t("datagrid.foreignKey")}
                       >
                         <Link2 className="h-3.5 w-3.5 shrink-0 translate-y-0.5" />
                         <span className="translate-y-0.5">FK</span>
                       </span>
                     ) : (
-                      <span className="w-4 translate-y-0.5 text-center font-mono text-[20px] leading-none text-zinc-300 select-none dark:text-zinc-600">
+                      <span className="w-4 translate-y-0.5 text-center font-mono text-[12px] leading-none text-zinc-300 select-none dark:text-zinc-600">
                         ·
                       </span>
                     )}
 
                     <span
                       className={cn(
-                        "translate-y-0.5 truncate text-[22px] leading-none",
+                        "translate-y-0.5 truncate text-[12px] leading-none",
                         isPK
                           ? "font-semibold text-zinc-950 dark:text-white"
                           : "font-medium text-zinc-800 dark:text-zinc-200",
                         isColHighlighted &&
-                          "font-bold text-indigo-600 dark:text-indigo-400",
+                          "text-primary dark:text-primary font-bold",
                       )}
                       title={col.name}
                     >
@@ -282,7 +244,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                   <div className="flex shrink-0 items-center gap-1.5 leading-none">
                     <span
                       className={cn(
-                        "max-w-36 translate-y-0.5 truncate rounded border px-1.5 py-0.5 font-mono text-[16px] leading-none font-semibold uppercase",
+                        "max-w-28 translate-y-0.5 truncate px-1 py-0.5 font-mono text-[10px] leading-none font-normal",
                         typeBadgeClass,
                       )}
                       title={col.type}
@@ -291,7 +253,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                     </span>
                     {col.nullable && (
                       <span
-                        className="translate-y-0.5 rounded bg-zinc-100 px-1 py-0.5 font-mono text-[14px] leading-none text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
+                        className="translate-y-0.5 rounded bg-zinc-100 px-1 py-0.5 font-mono text-[9px] leading-none text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
                         title={t("rowModal.nullable")}
                       >
                         ?
@@ -304,7 +266,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
 
             {/* Compact Mode Notice */}
             {compactMode && hiddenCount > 0 && (
-              <div className="flex h-13 items-center justify-center border-t border-zinc-100 bg-zinc-50/70 px-5 text-center text-[18px] text-zinc-400 italic dark:border-zinc-800/60 dark:bg-zinc-900/50 dark:text-zinc-500">
+              <div className="flex h-[26px] items-center justify-center border-t border-zinc-100 bg-zinc-50/70 px-2.5 text-center text-[11px] text-zinc-400 italic dark:border-zinc-800/60 dark:bg-zinc-900/50 dark:text-zinc-500">
                 {t("erd.columnsHidden", { count: hiddenCount })}
               </div>
             )}

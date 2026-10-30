@@ -35,7 +35,7 @@ export const GridPaginationFooter: React.FC<GridPaginationFooterProps> =
       t,
     }) => {
       return (
-        <div className="flex h-11 min-w-0 items-center justify-between gap-2 border-t border-zinc-200 bg-zinc-50/80 px-3 font-mono text-xs text-zinc-500 sm:px-4 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400">
+        <div className="flex h-8 min-w-0 shrink-0 items-center justify-between gap-2 border-t border-zinc-200 bg-zinc-50/80 px-3 font-sans text-xs text-zinc-500 sm:px-4 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-400">
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <span className="truncate">
               {totalCount === 0

@@ -7,9 +7,9 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 export const DEFAULT_QUERY_LIMIT = 50;
 
-export const VIRTUALIZER_ROW_HEIGHT = 37;
+export const VIRTUALIZER_ROW_HEIGHT = 29;
 
-export const VIRTUALIZER_QUERY_ROW_HEIGHT = 36;
+export const VIRTUALIZER_QUERY_ROW_HEIGHT = 29;
 
 export const VIRTUALIZER_OVERSCAN = 10;
 

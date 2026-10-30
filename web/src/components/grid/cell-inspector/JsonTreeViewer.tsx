@@ -396,7 +396,7 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
       </div>
 
       {copiedPath && (
-        <div className="flex items-center gap-1.5 border-b border-emerald-500/20 bg-emerald-500/10 px-3 py-1 font-mono text-[11px] text-emerald-700 dark:text-emerald-400">
+        <div className="border-primary/20 flex items-center gap-1.5 border-b bg-emerald-500/10 px-3 py-1 font-mono text-[11px] text-emerald-700 dark:text-emerald-400">
           <Check className="h-3 w-3" />
           <span>{t("cellInspector.copiedPath", { path: copiedPath })}</span>
         </div>

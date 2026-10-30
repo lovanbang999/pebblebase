@@ -31,7 +31,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "aria-invalid:border-destructive data-placeholder:text-muted-foreground flex h-7 cursor-pointer items-center justify-between gap-1.5 rounded-md border border-zinc-200 bg-white px-2 py-1 font-mono text-xs text-zinc-800 shadow-2xs transition-colors hover:bg-zinc-50 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/80",
+        "aria-invalid:border-destructive data-placeholder:text-muted-foreground focus:ring-primary flex h-7 cursor-pointer items-center justify-between gap-1.5 rounded-md border border-zinc-200 bg-white px-2 py-1 font-sans text-xs text-zinc-800 shadow-none transition-colors hover:bg-zinc-50 focus:ring-1 focus:outline-hidden disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800/80",
         className,
       )}
       {...props}
@@ -112,7 +112,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-pointer items-center justify-between rounded-md py-1.5 pr-8 pl-2 font-mono text-xs transition-colors outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-zinc-100 data-selected:font-semibold dark:data-highlighted:bg-zinc-800",
+        "relative flex w-full cursor-pointer items-center justify-between rounded-md py-1.5 pr-8 pl-2 font-sans text-xs transition-colors outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-zinc-100 data-selected:font-semibold dark:data-highlighted:bg-zinc-800",
         className,
       )}
       {...props}

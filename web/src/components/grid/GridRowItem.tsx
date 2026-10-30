@@ -68,7 +68,7 @@ export const GridRowItem: FC<GridRowItemProps> = memo(
       <TableRow
         data-index={virtualIndex}
         ref={measureElement}
-        className="group transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/60"
+        className="group transition-colors"
         onContextMenu={(e) => {
           e.preventDefault();
           onRowContextMenu(e, row.original);
@@ -88,14 +88,15 @@ export const GridRowItem: FC<GridRowItemProps> = memo(
               key={cell.id}
               tabIndex={0}
               data-cell-editing={isEditingThisCell ? "true" : undefined}
+              data-focused={isCellFocused ? "true" : undefined}
               onClick={(e) => {
                 e.stopPropagation();
                 onCellClick(e, virtualIndex, colId);
               }}
               className={cn(
-                "max-w-sm truncate border-zinc-200/80 px-3 py-2 text-xs whitespace-nowrap text-zinc-800 transition-all outline-none not-last:border-r dark:border-zinc-800/40 dark:text-zinc-200",
+                "max-w-sm truncate border-zinc-200/80 px-2.5 py-1 font-mono text-xs whitespace-nowrap text-zinc-800 transition-all outline-none not-last:border-r dark:border-zinc-800/40 dark:text-zinc-200",
                 isCellFocused &&
-                  "relative z-20 bg-emerald-500/10 font-medium ring-2 ring-emerald-500 ring-inset dark:bg-emerald-500/20 dark:ring-emerald-400",
+                  "bg-accent ring-primary relative z-20 font-medium ring-2 ring-inset",
               )}
               onContextMenu={(e) => {
                 e.preventDefault();

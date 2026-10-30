@@ -5,6 +5,12 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import en from "../locales/en.json";
 import vi from "../locales/vi.json";
 
+i18n.on("languageChanged", (language) => {
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = i18n.resolvedLanguage || language;
+  }
+});
+
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)

@@ -104,11 +104,15 @@ export async function pingConnection(id: string): Promise<{ status: string }> {
   return handleResponse<{ status: string }>(res);
 }
 
-export async function fetchTables(connId: string): Promise<TableSchema[]> {
+export async function fetchTables(
+  connId: string,
+  signal?: AbortSignal,
+): Promise<TableSchema[]> {
   const res = await fetch(
     `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables`,
     {
       headers: getAuthHeaders(),
+      signal,
     },
   );
   return handleResponse<TableSchema[]>(res);
@@ -118,6 +122,7 @@ export async function fetchRows(
   connId: string,
   table: string,
   params: RowQueryParams = {},
+  signal?: AbortSignal,
 ): Promise<QueryResult> {
   const searchParams = new URLSearchParams();
   if (params.limit !== undefined)
@@ -137,7 +142,7 @@ export async function fetchRows(
 
   const queryStr = searchParams.toString();
   const url = `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/rows${queryStr ? `?${queryStr}` : ""}`;
-  const res = await fetch(url, { headers: getAuthHeaders() });
+  const res = await fetch(url, { headers: getAuthHeaders(), signal });
   return handleResponse<QueryResult>(res);
 }
 
@@ -553,10 +558,13 @@ export async function fetchQueryHistory(
 // ERD API
 // ---------------------------------------------------------------------------
 
-export async function fetchERD(connId: string): Promise<ERDResponse> {
+export async function fetchERD(
+  connId: string,
+  signal?: AbortSignal,
+): Promise<ERDResponse> {
   const res = await fetch(
     `${BASE_URL}/connections/${encodeURIComponent(connId)}/erd`,
-    { headers: getAuthHeaders() },
+    { headers: getAuthHeaders(), signal },
   );
   return handleResponse<ERDResponse>(res);
 }
@@ -631,6 +639,7 @@ export async function generateSeedSQL(
 export async function fetchSchemaDiff(
   fromConnId: string,
   toConnId: string,
+  signal?: AbortSignal,
 ): Promise<SchemaDiffResult> {
   const sp = new URLSearchParams({
     from: fromConnId,
@@ -638,6 +647,7 @@ export async function fetchSchemaDiff(
   });
   const res = await fetch(`${BASE_URL}/diff?${sp.toString()}`, {
     headers: getAuthHeaders(),
+    signal,
   });
   return handleResponse<SchemaDiffResult>(res);
 }

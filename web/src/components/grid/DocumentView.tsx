@@ -319,7 +319,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
               className={cn(
                 "group overflow-hidden rounded-lg border bg-white transition-colors dark:bg-zinc-900",
                 editingDocIdx === globalIdx
-                  ? "border-emerald-500/60 ring-1 ring-emerald-500/20 dark:border-emerald-500/40"
+                  ? "border-primary/60 ring-primary/20 dark:border-primary/40 ring-1"
                   : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700",
               )}
               onDoubleClick={() => {
@@ -602,7 +602,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                         "rounded border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wide uppercase transition-colors",
                         isSaving || !onSaveCell || !isDocModified(row)
                           ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
-                          : "cursor-pointer border-emerald-500 bg-emerald-600 text-white hover:bg-emerald-500",
+                          : "border-primary bg-primary hover:bg-primary/90 cursor-pointer text-white",
                       )}
                     >
                       {isSaving ? "Saving..." : "Update"}

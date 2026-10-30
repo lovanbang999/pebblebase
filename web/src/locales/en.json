@@ -9,7 +9,8 @@
     "diffHelp": "Compare schemas across connections.",
     "browseAll": "Browse all",
     "loading": "Loading your workspace…",
-    "emptyTables": "No tables to show yet. Use the sidebar to refresh or switch connections."
+    "emptyTables": "No tables to show yet. Use the sidebar to refresh or switch connections.",
+    "connectionRemovedTabsClosed": "Connection {{connectionName}} was removed. {{count}} related tab(s) were closed."
   },
   "sidebar": {
     "activeDb": "ACTIVE DB",
@@ -932,7 +933,6 @@
     "updateAvailableBadge": "Update v{{version}}",
     "updateAvailableTooltip": "New update v{{version}} available!"
   },
-
   "pipeline": {
     "title": "Pipeline Builder",
     "desc": "Visually build, reorder, and execute MongoDB aggregation pipelines.",
@@ -1324,5 +1324,20 @@
     "chipMongoCount": "Count documents grouped by status",
     "chipMongoLatest": "Find latest 20 active records",
     "chipMongoAggregate": "Aggregate total amount by user"
+  },
+  "studio": {
+    "database": "Database",
+    "tools": "Workspace tools",
+    "newConnection": "New connection",
+    "aiSettings": "AI settings",
+    "toggleTheme": "Toggle color theme",
+    "statusBar": "Workspace status",
+    "loading": "Loading…",
+    "error": "Connection or data error",
+    "ready": "Ready",
+    "readOnly": "Read-only",
+    "production": "PRODUCTION",
+    "defaultPassword": "Default password",
+    "resizeSidebar": "Resize database sidebar"
   }
 }

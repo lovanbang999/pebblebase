@@ -693,7 +693,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
       case "$match":
         return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30";
       case "$group":
-        return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
+        return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-primary/30";
       case "$sort":
         return "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30";
       case "$limit":
@@ -725,7 +725,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                 value={collection}
                 onChange={(e) => setCollection(e.target.value)}
                 placeholder={t("pipeline.select_collection")}
-                className="h-7 w-44 rounded-md border border-zinc-200 bg-zinc-100 px-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="focus:ring-primary h-7 w-44 rounded-md border border-zinc-200 bg-zinc-100 px-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
               />
               <datalist id="mongo-collections-list">
                 {tables.map((tbl) => (
@@ -745,7 +745,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="h-7 cursor-pointer gap-1.5 border-emerald-500/40 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400"
+                  className="border-primary/40 hover:bg-primary/10 h-7 cursor-pointer gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400"
                 >
                   <Plus className="size-3.5" />
                   <span>{t("pipeline.stage.add")}</span>
@@ -859,7 +859,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
             size="sm"
             onClick={handleRunPipeline}
             disabled={isRunning || stages.length === 0}
-            className="h-7 cursor-pointer gap-1.5 bg-emerald-600 text-xs font-semibold text-white shadow-2xs hover:bg-emerald-500"
+            className="bg-primary hover:bg-primary/90 h-7 cursor-pointer gap-1.5 text-xs font-semibold text-white shadow-2xs"
           >
             {isRunning ? (
               <>
@@ -892,7 +892,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                 type="button"
                 size="sm"
                 onClick={() => handleAddStage("$match")}
-                className="mt-4 h-8 gap-1.5 bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-500"
+                className="bg-primary hover:bg-primary/90 mt-4 h-8 gap-1.5 text-xs font-medium text-white"
               >
                 <Plus className="size-3.5" />
                 <span>{t("pipeline.stage.add")}</span>
@@ -915,8 +915,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                     stageItem.enabled
                       ? "border-zinc-200 dark:border-zinc-800"
                       : "border-zinc-200/50 bg-zinc-50 opacity-60 dark:border-zinc-800/50 dark:bg-zinc-900/40",
-                    draggedIndex === index &&
-                      "opacity-40 ring-2 ring-emerald-500",
+                    draggedIndex === index && "ring-primary opacity-40 ring-2",
                   )}
                 >
                   {/* Card Header */}
@@ -1473,7 +1472,7 @@ const MatchStageEditor: FC<{
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={4}
-        className="w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+        className="focus:ring-primary w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
         placeholder='{ "status": "active" }'
       />
     );
@@ -1588,7 +1587,7 @@ const GroupStageEditor: FC<{
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={5}
-        className="w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+        className="focus:ring-primary w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
         placeholder='{ "_id": "$country", "count": { "$sum": 1 } }'
       />
     );
@@ -1724,7 +1723,7 @@ const SortStageEditor: FC<{
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={3}
-        className="w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+        className="focus:ring-primary w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
         placeholder='{ "count": -1 }'
       />
     );
@@ -1847,7 +1846,7 @@ const ProjectStageEditor: FC<{
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={4}
-        className="w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:ring-emerald-500 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+        className="focus:ring-primary w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
         placeholder='{ "_id": 0, "name": 1 }'
       />
     );
@@ -2044,7 +2043,7 @@ const UnwindStageEditor: FC<{
               preserveNullAndEmptyArrays: e.target.checked,
             })
           }
-          className="rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-700"
+          className="focus:ring-primary rounded border-zinc-300 text-emerald-600 dark:border-zinc-700"
         />
         <span>{t("pipeline.unwind_preserve")}</span>
       </label>

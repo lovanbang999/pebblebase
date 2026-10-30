@@ -107,7 +107,7 @@ export default function DesktopTitleBar({
       <header
         style={dragStyle}
         onDoubleClick={handleToggleMaximize}
-        className="dark:border-border/40 relative z-50 flex h-9.5 w-full shrink-0 items-center justify-between border-b border-zinc-200/80 bg-zinc-100/90 px-3 text-xs transition-colors select-none dark:bg-zinc-950/95"
+        className="dark:border-border/40 bg-card dark:bg-card relative z-50 flex h-10 w-full shrink-0 items-center justify-between border-b border-zinc-200/80 px-3 text-xs transition-colors select-none"
       >
         {/* Left: Brand Identity & Active Connection */}
         <div className="flex items-center gap-3">
@@ -123,7 +123,7 @@ export default function DesktopTitleBar({
                 type="button"
                 style={noDragStyle}
                 onClick={() => openDialogAndCheck()}
-                className="py-0.2 cursor-pointer rounded border border-emerald-500/30 bg-emerald-500/10 px-1 font-mono text-[10px] leading-none text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-500/20 dark:text-emerald-400"
+                className="py-0.2 border-primary/30 hover:bg-primary/20 dark:border-primary/20 cursor-pointer rounded border bg-emerald-500/10 px-1 font-mono text-[10px] leading-none text-emerald-700 dark:text-emerald-400"
                 title={t(
                   "titlebar.checkUpdatesTooltip",
                   "Click to check for software updates",
@@ -138,7 +138,7 @@ export default function DesktopTitleBar({
                 type="button"
                 style={noDragStyle}
                 onClick={() => openDialogAndCheck()}
-                className="flex animate-pulse cursor-pointer items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 hover:bg-emerald-500/25 dark:border-emerald-500/30 dark:bg-emerald-500/20 dark:text-emerald-300"
+                className="border-primary/40 hover:bg-primary/25 dark:border-primary/30 flex animate-pulse cursor-pointer items-center gap-1 rounded-full border bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
                 title={t("titlebar.updateAvailableTooltip", {
                   version: updateInfo.latestVersion,
                   defaultValue: `New update v${updateInfo.latestVersion} available!`,

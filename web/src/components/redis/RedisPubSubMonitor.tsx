@@ -271,7 +271,7 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
                 variant="outline"
                 className={
                   isConnected
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    ? "border-primary/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                     : isConnecting
                       ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
                       : "border-muted-foreground/30 bg-muted/40 text-muted-foreground"
@@ -616,7 +616,7 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
               <div
                 className={`flex items-start gap-2 rounded-md border p-2.5 text-xs ${
                   publishFeedback.type === "success"
-                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                    ? "border-primary/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                     : "bg-destructive/10 text-destructive border-destructive/20"
                 }`}
               >

@@ -135,6 +135,8 @@ interface DataGridProps {
   ) => void;
   isReadOnly?: boolean;
   onOpenQueryConsole?: (query?: string, title?: string) => void;
+  onScrollPositionChange?: (left: number, top: number) => void;
+  initialScrollPosition?: { left: number; top: number };
   connId?: string;
   dbType?: DatabaseType;
 }
@@ -168,6 +170,8 @@ export const DataGrid: FC<DataGridProps> = ({
   onNavigateRelation,
   isReadOnly = false,
   onOpenQueryConsole,
+  onScrollPositionChange,
+  initialScrollPosition,
   connId,
   dbType,
 }) => {
@@ -185,6 +189,24 @@ export const DataGrid: FC<DataGridProps> = ({
   );
   const [tableStats, setTableStats] = useState<TableStats | null>(null);
   const [copiedCol, setCopiedCol] = useState<string | null>(null);
+  const scrollPositionTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const element = tableContainerRef.current;
+    if (!element) return;
+    element.scrollLeft = initialScrollPosition?.left || 0;
+    element.scrollTop = initialScrollPosition?.top || 0;
+  }, [table.name, initialScrollPosition?.left, initialScrollPosition?.top]);
+
+  useEffect(
+    () => () => {
+      if (scrollPositionTimer.current)
+        clearTimeout(scrollPositionTimer.current);
+    },
+    [],
+  );
 
   // Listen for external subview switch requests (e.g. from table context menu)
   useEffect(() => {
@@ -587,7 +609,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     placeholder={t("grid.column.search.placeholder", {
                       column: col.name,
                     })}
-                    className="h-6 w-full rounded border border-emerald-500/80 bg-white py-0.5 pr-6 pl-7 font-mono text-xs text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:ring-1 focus:ring-emerald-500 focus:outline-none dark:border-emerald-500/80 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                    className="border-primary/80 focus:ring-primary dark:border-primary/80 h-6 w-full rounded border bg-white py-0.5 pr-6 pl-7 font-mono text-xs text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:ring-1 focus:outline-none dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                   />
                   <button
                     type="button"
@@ -647,7 +669,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 {hasActiveFilter && (
                   <Badge
                     variant="outline"
-                    className="h-3.5 border-emerald-500/30 bg-emerald-500/10 px-1 py-0 font-mono text-[9px] font-medium text-emerald-600 dark:text-emerald-400"
+                    className="border-primary/30 h-3.5 bg-emerald-500/10 px-1 py-0 font-mono text-[9px] font-medium text-emerald-600 dark:text-emerald-400"
                     title={`contains: ${activeSearchVal}`}
                   >
                     🔍
@@ -822,7 +844,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       }
                     }}
                     onBlur={() => saveCellEdit(row, col.name)}
-                    className="h-7 font-mono text-xs"
+                    className="h-6 font-mono text-xs"
                   />
                 </div>
               );
@@ -871,7 +893,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     }
                   }}
                   onBlur={() => saveCellEdit(row, col.name)}
-                  className="h-7 font-mono text-xs"
+                  className="h-6 font-mono text-xs"
                 />
               </div>
             );
@@ -1683,6 +1705,15 @@ export const DataGrid: FC<DataGridProps> = ({
             ref={tableContainerRef}
             data-tour="datagrid-view"
             className="relative flex flex-1 flex-col overflow-auto"
+            onScroll={(event) => {
+              if (!onScrollPositionChange) return;
+              const element = event.currentTarget;
+              if (scrollPositionTimer.current)
+                clearTimeout(scrollPositionTimer.current);
+              scrollPositionTimer.current = setTimeout(() => {
+                onScrollPositionChange(element.scrollLeft, element.scrollTop);
+              }, 120);
+            }}
           >
             {isLoading || isRefreshing ? (
               /* High-fidelity shadcn UI Table Skeleton */
@@ -1695,7 +1726,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     {table?.columns?.map((c) => (
                       <TableHead
                         key={c.name}
-                        className="h-auto border-zinc-200 px-3 py-2 text-xs font-medium whitespace-nowrap text-zinc-600 not-last:border-r dark:border-zinc-800/80 dark:text-zinc-400"
+                        className="h-auto border-zinc-200 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-zinc-600 not-last:border-r dark:border-zinc-800/80 dark:text-zinc-400"
                       >
                         <div className="flex items-center gap-1.5 py-1">
                           <Skeleton className="size-3.5 shrink-0 rounded bg-zinc-300/80 dark:bg-zinc-700/80" />
@@ -1840,7 +1871,7 @@ export const DataGrid: FC<DataGridProps> = ({
               />
             ) : (
               /* Data Table */
-              <table className="w-full caption-bottom border-collapse border-b border-zinc-200 text-left text-sm dark:border-zinc-800">
+              <table className="studio-data-table w-full caption-bottom border-collapse border-b border-zinc-200 text-left text-sm dark:border-zinc-800">
                 <TableHeader className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
                   {reactTable.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
@@ -1848,7 +1879,7 @@ export const DataGrid: FC<DataGridProps> = ({
                         <TableHead
                           key={header.id}
                           style={{ width: header.getSize() }}
-                          className="h-auto border-zinc-200 px-3 py-2 text-xs font-medium whitespace-nowrap text-zinc-600 not-last:border-r dark:border-zinc-800/80 dark:text-zinc-400"
+                          className="h-auto border-zinc-200 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-zinc-600 not-last:border-r dark:border-zinc-800/80 dark:text-zinc-400"
                         >
                           {flexRender(
                             header.column.columnDef.header,
@@ -2015,7 +2046,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
       {/* Copied Toast Notification */}
       {copiedNotification && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 flex items-center gap-2 rounded-md bg-emerald-600 px-3.5 py-2 font-mono text-xs text-white shadow-lg duration-150">
+        <div className="animate-in fade-in slide-in-from-bottom-2 bg-primary fixed right-6 bottom-6 z-50 flex items-center gap-2 rounded-md px-3.5 py-2 font-mono text-xs text-white shadow-lg duration-150">
           <Check className="h-4 w-4 shrink-0" />
           <span>{copiedNotification}</span>
         </div>

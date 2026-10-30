@@ -43,7 +43,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         {/* Brand Title & Version Badge */}
         <h1 className="mb-1.5 flex items-center gap-2 font-sans text-xl font-bold tracking-tight text-zinc-100">
           Pebblebase Studio
-          <span className="rounded-full border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-400 uppercase">
+          <span className="border-primary/25 rounded-full border bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-400 uppercase">
             {version}
           </span>
         </h1>

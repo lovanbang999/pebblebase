@@ -97,6 +97,8 @@ export interface RelationSchema {
 
 export interface TableSchema {
   name: string;
+  /** Optional qualified schema identity when an adapter supplies it. */
+  schema_name?: string;
   columns: ColumnSchema[];
   relations: RelationSchema[];
 }
@@ -169,6 +171,10 @@ export interface StudioTabState {
   sortBy: string;
   sortDesc: boolean;
   queryText?: string;
+  diffSourceConnectionId?: string;
+  diffTargetConnectionId?: string;
+  scrollLeft?: number;
+  scrollTop?: number;
 }
 
 export interface StudioTab {
@@ -176,8 +182,38 @@ export interface StudioTab {
   type: TabType;
   title: string;
   tableName?: string;
+  schemaName?: string;
+  /** Stable logical object identity; query tabs use a generated editor identity. */
+  objectId?: string;
   connectionId: string;
   state?: StudioTabState;
+}
+
+export type ExplorerSelection =
+  | { kind: "connection"; connectionId: string }
+  | {
+      kind: "table";
+      connectionId: string;
+      tableName: string;
+      schemaName?: string;
+    }
+  | null;
+
+export interface WorkspaceToolWindows {
+  database: boolean;
+  scripts: boolean;
+  output: boolean;
+  ai: boolean;
+}
+
+export interface PersistedWorkspace {
+  version: 1;
+  tabs: StudioTab[];
+  activeTabId: string | null;
+  selectedExplorerNode: ExplorerSelection;
+  expandedNodeIds: string[];
+  toolWindows: WorkspaceToolWindows;
+  initialized: boolean;
 }
 
 export interface TableIndexInfo {

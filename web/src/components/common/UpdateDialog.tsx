@@ -262,7 +262,7 @@ export default function UpdateDialog({
         {/* Header */}
         <DialogHeader className="space-y-1.5 pb-1">
           <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-600 shadow-xs dark:bg-emerald-400/10 dark:text-emerald-400">
+            <div className="border-primary/20 relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-emerald-500/10 text-emerald-600 shadow-xs dark:bg-emerald-400/10 dark:text-emerald-400">
               <Download className="h-5 w-5" />
               {hasUpdate && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -321,7 +321,7 @@ export default function UpdateDialog({
                       <span className="font-sans text-[11px] text-zinc-500 dark:text-zinc-400">
                         {t("updates.newVersion", "New:")}
                       </span>
-                      <Badge className="border-emerald-500 bg-emerald-600 px-2 py-0.5 font-mono text-xs font-semibold text-white shadow-xs">
+                      <Badge className="border-primary bg-primary px-2 py-0.5 font-mono text-xs font-semibold text-white shadow-xs">
                         v{updateInfo?.latestVersion}
                       </Badge>
                     </div>
@@ -330,7 +330,7 @@ export default function UpdateDialog({
               </div>
 
               {hasUpdate ? (
-                <Badge className="shrink-0 gap-1 border border-emerald-500/30 bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                <Badge className="border-primary/30 shrink-0 gap-1 border bg-emerald-500/15 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
                   <Sparkles className="h-3 w-3 text-emerald-500" />
                   {t("updates.updateAvailable", "Update Ready")}
                 </Badge>
@@ -444,7 +444,7 @@ export default function UpdateDialog({
                 variant="default"
                 size="sm"
                 onClick={handleRestart}
-                className="h-8.5 w-full cursor-pointer gap-2 bg-emerald-600 text-xs font-medium text-white shadow-xs hover:bg-emerald-700"
+                className="bg-primary h-8.5 w-full cursor-pointer gap-2 text-xs font-medium text-white shadow-xs hover:bg-emerald-700"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 {t("updates.restartNow", "Restart Pebblebase Studio Now")}
@@ -553,7 +553,7 @@ export default function UpdateDialog({
                 variant="default"
                 size="sm"
                 onClick={handleUpdateNow}
-                className="h-8.5 cursor-pointer gap-1.5 bg-emerald-600 px-4 text-xs font-medium text-white shadow-xs hover:bg-emerald-700"
+                className="bg-primary h-8.5 cursor-pointer gap-1.5 px-4 text-xs font-medium text-white shadow-xs hover:bg-emerald-700"
               >
                 <Download className="h-3.5 w-3.5" />
                 {t("updates.updateNow", "Update Now")}

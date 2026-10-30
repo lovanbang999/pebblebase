@@ -1,6 +1,14 @@
-import { useState, useEffect, useMemo, useCallback, type FC } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  type FC,
+} from "react";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
+import { studioEditorTheme } from "@/lib/editorTheme";
 import { sql, PostgreSQL, MySQL, SQLite } from "@codemirror/lang-sql";
 import {
   GitCompare,
@@ -50,6 +58,12 @@ import { cn } from "cn";
 interface SchemaDiffProps {
   connections: Connection[];
   activeConnectionId?: string | null;
+  sourceConnectionId?: string;
+  targetConnectionId?: string;
+  onConnectionPairChange?: (
+    sourceConnectionId: string,
+    targetConnectionId: string,
+  ) => void;
   onOpenQueryConsole?: (query?: string, title?: string) => void;
   onError?: (err: string | null) => void;
 }
@@ -57,6 +71,9 @@ interface SchemaDiffProps {
 export const SchemaDiff: FC<SchemaDiffProps> = ({
   connections,
   activeConnectionId,
+  sourceConnectionId,
+  targetConnectionId,
+  onConnectionPairChange,
   onOpenQueryConsole,
   onError,
 }) => {
@@ -67,7 +84,8 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
     return connections.filter((c) => c.type !== "mongodb");
   }, [connections]);
 
-  const [fromId, setFromId] = useState<string>(() => {
+  const [localFromId, setLocalFromId] = useState<string>(() => {
+    if (sourceConnectionId) return sourceConnectionId;
     if (
       activeConnectionId &&
       relationalConnections.some((c) => c.id === activeConnectionId)
@@ -77,10 +95,37 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
     return relationalConnections[0]?.id || "";
   });
 
-  const [toId, setToId] = useState<string>(() => {
-    const others = relationalConnections.filter((c) => c.id !== fromId);
+  const [localToId, setLocalToId] = useState<string>(() => {
+    if (targetConnectionId) return targetConnectionId;
+    const others = relationalConnections.filter((c) => c.id !== localFromId);
     return others[0]?.id || "";
   });
+  const fromId = sourceConnectionId ?? localFromId;
+  const toId = targetConnectionId ?? localToId;
+  const pairChangeRef = useRef(onConnectionPairChange);
+  const errorHandlerRef = useRef(onError);
+  const compareControllerRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    pairChangeRef.current = onConnectionPairChange;
+  }, [onConnectionPairChange]);
+  useEffect(() => {
+    errorHandlerRef.current = onError;
+  }, [onError]);
+
+  const setFromId = useCallback(
+    (next: string) => {
+      setLocalFromId(next);
+      pairChangeRef.current?.(next, toId);
+    },
+    [toId],
+  );
+  const setToId = useCallback(
+    (next: string) => {
+      setLocalToId(next);
+      pairChangeRef.current?.(fromId, next);
+    },
+    [fromId],
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const [diffResult, setDiffResult] = useState<SchemaDiffResult | null>(null);
@@ -109,19 +154,24 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
 
   const runCompare = useCallback(async () => {
     if (!fromId || !toId) {
-      onError?.(t("diff.same_connection"));
+      errorHandlerRef.current?.(t("diff.same_connection"));
       return;
     }
     if (fromId === toId) {
-      onError?.(t("diff.same_connection"));
+      errorHandlerRef.current?.(t("diff.same_connection"));
       return;
     }
 
+    compareControllerRef.current?.abort();
+    const controller = new AbortController();
+    compareControllerRef.current = controller;
     setIsLoading(true);
-    onError?.(null);
+    setDiffResult(null);
+    errorHandlerRef.current?.(null);
 
     try {
-      const res = await fetchSchemaDiff(fromId, toId);
+      const res = await fetchSchemaDiff(fromId, toId, controller.signal);
+      if (controller.signal.aborted) return;
       setDiffResult(res);
       if (res.tables && res.tables.length > 0) {
         // Select first table that has differences or first table
@@ -132,11 +182,14 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
         setSelectedTable(null);
       }
     } catch (err: any) {
-      onError?.(err?.message || t("diff.failed_compare"));
+      if (!controller.signal.aborted)
+        errorHandlerRef.current?.(err?.message || t("diff.failed_compare"));
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) setIsLoading(false);
     }
-  }, [fromId, toId, t, onError]);
+  }, [fromId, toId, t]);
+
+  useEffect(() => () => compareControllerRef.current?.abort(), []);
 
   // Initial compare on mount if two connections are available
   useEffect(() => {
@@ -147,8 +200,9 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
 
   const handleSwap = () => {
     const prevFrom = fromId;
-    setFromId(toId);
-    setToId(prevFrom);
+    setLocalFromId(toId);
+    setLocalToId(prevFrom);
+    pairChangeRef.current?.(toId, prevFrom);
   };
 
   // Filter tables in navigator
@@ -293,7 +347,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
               size="sm"
               onClick={runCompare}
               disabled={isLoading || !fromId || !toId || fromId === toId}
-              className="h-7 cursor-pointer gap-1.5 bg-emerald-600 px-3 text-xs font-medium text-white shadow-2xs transition-colors hover:bg-emerald-500 disabled:opacity-50 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-500"
+              className="bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 h-7 cursor-pointer gap-1.5 px-3 text-xs font-medium text-white shadow-2xs transition-colors disabled:opacity-50 dark:text-white"
             >
               <RefreshCw
                 className={cn("size-3.5", isLoading && "animate-spin")}
@@ -386,9 +440,9 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
       </div>
 
       {/* Main Diff Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
         {/* Left Side: Tables Navigator */}
-        <div className="flex w-72 shrink-0 flex-col border-r border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-950/50">
+        <div className="flex max-h-48 w-full shrink-0 flex-col border-b border-zinc-200 bg-zinc-50/50 md:max-h-none md:w-64 md:border-r md:border-b-0 dark:border-zinc-800 dark:bg-zinc-950/50">
           <div className="flex flex-col gap-2 border-b border-zinc-200 p-2 dark:border-zinc-800">
             <div className="relative">
               <Search className="absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
@@ -473,7 +527,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                       {tbl.status === "added" && (
                         <Badge
                           variant="outline"
-                          className="h-4 border-emerald-500/30 bg-emerald-500/10 px-1 py-0 text-[9px] text-emerald-600 dark:text-emerald-400"
+                          className="border-primary/30 h-4 bg-emerald-500/10 px-1 py-0 text-[9px] text-emerald-600 dark:text-emerald-400"
                         >
                           + {t("diff.added")}
                         </Badge>
@@ -508,7 +562,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
         </div>
 
         {/* Right Side: Side-by-side Table Columns Diff */}
-        <div className="flex flex-1 flex-col overflow-y-auto bg-white dark:bg-zinc-950">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto bg-white dark:bg-zinc-950">
           {isLoading ? (
             <div className="space-y-6 p-6">
               <div className="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-800">
@@ -584,7 +638,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                     className={cn(
                       "px-2 py-0.5 text-xs",
                       currentTableDiff.status === "added" &&
-                        "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                        "border-primary/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
                       currentTableDiff.status === "removed" &&
                         "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
                       currentTableDiff.status === "modified" &&
@@ -842,7 +896,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
                                 className={cn(
                                   "h-4 px-1.5 py-0 text-[9px] uppercase",
                                   isAdded &&
-                                    "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                                    "border-primary/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
                                   isRemoved &&
                                     "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",
                                   isModified &&
@@ -888,7 +942,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
               value={diffResult?.migration_sql || ""}
               height="350px"
               theme={isDark ? "dark" : "light"}
-              extensions={codemirrorExtensions}
+              extensions={[...codemirrorExtensions, studioEditorTheme]}
               editable={false}
               className="overflow-hidden rounded border border-zinc-800 font-mono text-xs"
             />

@@ -377,7 +377,7 @@ export const ImportModal: FC<ImportModalProps> = ({
           {activeTab === "export" ? (
             <div className="space-y-6">
               {exportSuccess && (
-                <Alert className="border-emerald-500/50 bg-emerald-50/50 px-4 py-3 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300">
+                <Alert className="border-primary/50 bg-emerald-50/50 px-4 py-3 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <AlertDescription className="ml-2 font-mono text-xs">
                     {t("export.success", {
@@ -539,7 +539,7 @@ export const ImportModal: FC<ImportModalProps> = ({
                   className={cn(
                     "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 text-center transition-all duration-200",
                     isDragOver
-                      ? "border-emerald-500 bg-emerald-500/5 dark:bg-emerald-500/10"
+                      ? "border-primary bg-emerald-500/5 dark:bg-emerald-500/10"
                       : "border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/30 dark:hover:border-zinc-700",
                   )}
                 >
@@ -781,7 +781,7 @@ export const ImportModal: FC<ImportModalProps> = ({
               type="button"
               size="sm"
               onClick={handleClose}
-              className="h-9 bg-emerald-600 px-5 text-xs font-medium text-white hover:bg-emerald-500"
+              className="bg-primary hover:bg-primary/90 h-9 px-5 text-xs font-medium text-white"
             >
               {t("datagrid.close")}
             </Button>
@@ -802,7 +802,7 @@ export const ImportModal: FC<ImportModalProps> = ({
                 size="sm"
                 onClick={handleImport}
                 disabled={!file || isSubmitting}
-                className="h-9 gap-1.5 bg-emerald-600 px-5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-500"
+                className="bg-primary hover:bg-primary/90 h-9 gap-1.5 px-5 text-xs font-semibold text-white shadow-xs"
               >
                 {isSubmitting ? (
                   <>

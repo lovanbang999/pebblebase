@@ -55,7 +55,7 @@ import {
 interface ConnectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (input: ConnectionInput) => Promise<void>;
+  onSubmit: (input: ConnectionInput) => Promise<unknown>;
   cloneData?: Connection | null;
 }
 
@@ -265,7 +265,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
         >
           {/* Header */}
           <DialogHeader className="flex shrink-0 flex-row items-center gap-3 space-y-0 border-b border-zinc-200/80 bg-zinc-50/70 px-5 py-4 dark:border-zinc-800/80 dark:bg-zinc-900/50">
-            <div className="shrink-0 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+            <div className="border-primary/30 shrink-0 rounded-lg border bg-emerald-500/10 p-2 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
               {cloneData ? (
                 <Copy className="h-4 w-4" />
               ) : (
@@ -282,7 +282,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 {cloneData && (
                   <Badge
                     variant="outline"
-                    className="h-4 border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] text-emerald-600 uppercase dark:bg-emerald-500/15 dark:text-emerald-400"
+                    className="border-primary/40 h-4 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] text-emerald-600 uppercase dark:bg-emerald-500/15 dark:text-emerald-400"
                   >
                     {t("connection.badgeDuplicating")}
                   </Badge>
@@ -317,7 +317,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   }
                 }}
               >
-                <SelectTrigger className="h-13 min-h-13 w-full cursor-pointer justify-between rounded-xl border border-zinc-200/90 bg-zinc-50/60 px-3 py-2 text-left shadow-2xs transition-all hover:border-zinc-300 hover:bg-zinc-100/70 focus:border-emerald-500/70 focus:ring-2 focus:ring-emerald-500/20 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-700 dark:hover:bg-zinc-900">
+                <SelectTrigger className="focus:border-primary/70 focus:ring-primary/20 h-13 min-h-13 w-full cursor-pointer justify-between rounded-xl border border-zinc-200/90 bg-zinc-50/60 px-3 py-2 text-left shadow-2xs transition-all hover:border-zinc-300 hover:bg-zinc-100/70 focus:ring-2 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-700 dark:hover:bg-zinc-900">
                   <SelectValue className="flex w-full min-w-0 flex-1 items-center overflow-visible">
                     {() => (
                       <div className="mr-2 flex w-full items-center justify-between gap-3">
@@ -733,7 +733,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       </span>
                       <Badge
                         variant="outline"
-                        className="h-4 border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 uppercase dark:text-emerald-400"
+                        className="border-primary/40 h-4 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 uppercase dark:text-emerald-400"
                       >
                         AES-256
                       </Badge>
@@ -749,7 +749,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   onCheckedChange={(checked) =>
                     setSavePassword(Boolean(checked))
                   }
-                  className="mt-0.5 data-checked:border-emerald-600 data-checked:bg-emerald-600 dark:data-checked:border-emerald-500 dark:data-checked:bg-emerald-500"
+                  className="data-checked:border-primary data-checked:bg-primary dark:data-checked:border-primary mt-0.5 dark:data-checked:bg-emerald-500"
                 />
               </div>
             )}
@@ -860,7 +860,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 type="submit"
                 size="sm"
                 disabled={submitting || testing}
-                className="gap-1.5 bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                className="bg-primary hover:bg-primary/90 gap-1.5 text-xs font-medium text-white dark:bg-emerald-500 dark:hover:bg-emerald-400"
               >
                 {submitting ? (
                   <>

@@ -93,7 +93,7 @@ function AuditActionBadge({ action }: { action: AuditAction | string }) {
       return (
         <Badge
           variant="secondary"
-          className="border border-emerald-500/20 bg-emerald-500/10 font-mono text-[10px] text-emerald-600 dark:border-emerald-500/25 dark:bg-emerald-500/15 dark:text-emerald-400"
+          className="border-primary/20 dark:border-primary/25 border bg-emerald-500/10 font-mono text-[10px] text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400"
         >
           connection_create
         </Badge>
@@ -624,7 +624,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                   </Alert>
                 )}
                 {createSuccess && (
-                  <Alert className="border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5 text-emerald-700 dark:text-emerald-300">
+                  <Alert className="border-primary/25 bg-emerald-500/10 px-3 py-2.5 text-emerald-700 dark:text-emerald-300">
                     <CheckCircle2 className="size-4 text-emerald-500 dark:text-emerald-400" />
                     <AlertDescription className="text-xs text-emerald-700 dark:text-emerald-300">
                       {createSuccess}
@@ -785,7 +785,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                   </Alert>
                 )}
                 {pwSuccess && (
-                  <Alert className="border-emerald-500/25 bg-emerald-500/10 px-3 py-2.5 text-emerald-700 dark:text-emerald-300">
+                  <Alert className="border-primary/25 bg-emerald-500/10 px-3 py-2.5 text-emerald-700 dark:text-emerald-300">
                     <CheckCircle2 className="size-4 text-emerald-500 dark:text-emerald-400" />
                     <AlertDescription className="text-xs text-emerald-700 dark:text-emerald-300">
                       {pwSuccess}

@@ -16,7 +16,7 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
 
   return (
     <div className="flex h-full flex-1 flex-col overflow-hidden bg-white dark:bg-zinc-950">
-      <div className="flex h-11 items-center gap-2.5 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/30">
+      <div className="flex h-9 shrink-0 items-center gap-2.5 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/30">
         <SidebarTrigger className="-ml-1 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
         <Separator
           orientation="vertical"
@@ -27,8 +27,8 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center p-8 text-center select-none">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 p-2.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-2xl">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-auto p-5 text-center select-none">
+        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 p-1.5 dark:border-zinc-800 dark:bg-zinc-900">
           <img
             src="/favicon.svg"
             alt="Pebblebase Logo"
@@ -36,10 +36,10 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
           />
         </div>
 
-        <h1 className="mb-2 font-mono text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <h1 className="mb-2 font-sans text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
           {t("app.welcomeTitle")}
         </h1>
-        <p className="mb-8 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+        <p className="mb-5 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
           {t("app.welcomeSubtitle")}
         </p>
 
@@ -47,14 +47,14 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
           type="button"
           size="lg"
           onClick={onOpenNewConnection}
-          className="flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-950/20 transition-all hover:bg-emerald-500 dark:shadow-emerald-950"
+          className="gap-2"
         >
           <Plus className="h-4 w-4" />
           {t("app.addFirstConnection")}
         </Button>
 
         {/* Feature Badges */}
-        <div className="mt-16 grid max-w-xl grid-cols-3 gap-6 border-t border-zinc-200 pt-8 text-left dark:border-zinc-900">
+        <div className="mt-8 grid max-w-xl grid-cols-1 gap-3 border-t border-zinc-200 pt-5 text-left sm:grid-cols-3 dark:border-zinc-900">
           <div className="rounded border border-zinc-200/80 bg-zinc-50 p-3 dark:border-zinc-900 dark:bg-zinc-900/40">
             <ShieldCheck className="mb-1.5 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">

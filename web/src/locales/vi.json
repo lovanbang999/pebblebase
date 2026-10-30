@@ -9,7 +9,8 @@
     "diffHelp": "So sánh lược đồ giữa các kết nối.",
     "browseAll": "Xem tất cả",
     "loading": "Đang tải không gian làm việc…",
-    "emptyTables": "Chưa có bảng để hiển thị. Làm mới hoặc đổi kết nối từ thanh bên."
+    "emptyTables": "Chưa có bảng để hiển thị. Làm mới hoặc đổi kết nối từ thanh bên.",
+    "connectionRemovedTabsClosed": "Kết nối {{connectionName}} đã bị xóa. Đã đóng {{count}} tab liên quan."
   },
   "sidebar": {
     "activeDb": "CƠ SỞ DỮ LIỆU",
@@ -932,7 +933,6 @@
     "updateAvailableBadge": "Cập nhật v{{version}}",
     "updateAvailableTooltip": "Đã có bản cập nhật mới v{{version}}!"
   },
-
   "pipeline": {
     "title": "Pipeline Builder",
     "desc": "Xây dựng trực quan, sắp xếp và thực thi aggregation pipeline trong MongoDB.",
@@ -1324,5 +1324,20 @@
     "chipMongoCount": "Đếm tài liệu theo trạng thái",
     "chipMongoLatest": "Tìm 20 bản ghi mới nhất đang kích hoạt",
     "chipMongoAggregate": "Tổng hợp doanh số theo người dùng"
+  },
+  "studio": {
+    "database": "Cơ sở dữ liệu",
+    "tools": "Công cụ không gian làm việc",
+    "newConnection": "Kết nối mới",
+    "aiSettings": "Cài đặt AI",
+    "toggleTheme": "Đổi giao diện sáng/tối",
+    "statusBar": "Trạng thái không gian làm việc",
+    "loading": "Đang tải…",
+    "error": "Lỗi kết nối hoặc dữ liệu",
+    "ready": "Sẵn sàng",
+    "readOnly": "Chỉ đọc",
+    "production": "PRODUCTION",
+    "defaultPassword": "Mật khẩu mặc định",
+    "resizeSidebar": "Đổi chiều rộng thanh cơ sở dữ liệu"
   }
 }
