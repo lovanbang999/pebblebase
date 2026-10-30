@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import {
   X,
   Copy,
@@ -21,6 +27,7 @@ import { useTranslation } from "react-i18next";
 import { JsonTreeViewer } from "./JsonTreeViewer";
 import { MarkdownViewer } from "./MarkdownViewer";
 import { HtmlPreviewViewer } from "./HtmlPreviewViewer";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export interface CellDetailDrawerProps {
   isOpen: boolean;
@@ -50,6 +57,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
   onSaveCell,
 }) => {
   const { t } = useTranslation();
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [activeTab, setActiveTab] = useState<CellContentType>("text");
   const [isWide, setIsWide] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -79,10 +87,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
         if (
           !isReadOnly &&
@@ -142,26 +147,25 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end font-sans">
-      {/* Backdrop */}
-      <div
-        className="animate-in fade-in fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-200"
-        onClick={onClose}
-      />
-
-      {/* Slide-over Drawer Panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={t("cellInspector.title", "Cell Detail Inspector")}
-        className={`animate-in slide-in-from-right relative z-50 flex h-full w-full flex-col overflow-hidden border-l border-zinc-200 bg-white font-sans text-zinc-900 shadow-2xl duration-300 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100 ${
-          isWide ? "max-w-4xl" : "max-w-2xl"
-        }`}
+    <Sheet
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <SheetContent
+        showCloseButton={false}
+        initialFocus={closeButtonRef}
+        aria-describedby={undefined}
+        className={`bg-background text-foreground flex h-full gap-0 overflow-hidden font-sans data-[side=right]:w-full ${isWide ? "data-[side=right]:sm:max-w-4xl" : "data-[side=right]:sm:max-w-[380px]"}`}
       >
+        <SheetTitle className="sr-only">
+          {t("cellInspector.title", "Cell Detail Inspector")}
+        </SheetTitle>
         {/* Top Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50 px-5 py-3.5 dark:border-zinc-800 dark:bg-zinc-900/60">
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/60">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
               <FileCode className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -197,7 +201,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
                 title={t("cellInspector.saveTooltip")}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                   isModified
-                    ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+                    ? "bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white shadow-sm"
                     : "cursor-not-allowed bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
                 }`}
               >
@@ -256,7 +260,9 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
 
             <button
               type="button"
+              ref={closeButtonRef}
               onClick={onClose}
+              aria-label={t("cellInspector.closeTooltip")}
               title={t("cellInspector.closeTooltip")}
               className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             >
@@ -398,7 +404,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
         </div>
 
         {/* Footer info bar */}
-        <div className="flex h-9 shrink-0 items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 font-mono text-[11px] text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+        <div className="flex h-7 shrink-0 items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 font-mono text-[11px] text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
           <div className="flex items-center gap-3">
             <span>
               {t("cellInspector.charCount", {
@@ -415,7 +421,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
           </div>
           <div>{t("cellInspector.pressEscClose")}</div>
         </div>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   );
 };

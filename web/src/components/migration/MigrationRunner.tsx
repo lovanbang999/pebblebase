@@ -2,6 +2,7 @@ import { useState, useMemo, type FC } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
+import { studioEditorTheme } from "@/lib/editorTheme";
 import { sql, PostgreSQL, MySQL, SQLite } from "@codemirror/lang-sql";
 import {
   Play,
@@ -357,7 +358,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
               size="sm"
               onClick={() => setConfirmRunOpen(true)}
               disabled={!ddl.trim() || isReadOnly || isExecuting}
-              className="h-8 gap-1.5 bg-emerald-600 px-3.5 font-mono text-xs font-semibold text-white shadow-xs hover:bg-emerald-500"
+              className="bg-primary hover:bg-primary/90 h-8 gap-1.5 px-3.5 font-mono text-xs font-semibold text-white shadow-xs"
             >
               <Play
                 className={cn(
@@ -382,7 +383,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
             minHeight="180px"
             maxHeight="380px"
             theme={isDark ? "dark" : "light"}
-            extensions={extensions}
+            extensions={[...extensions, studioEditorTheme]}
             placeholder={t("migration.editorPlaceholder")}
             onChange={(val) => setDdl(val)}
             basicSetup={{
@@ -449,7 +450,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                 lastResult.dry_run
                   ? "border-sky-400/40 bg-sky-500/10 text-sky-700 dark:text-sky-300"
                   : lastResult.success
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    ? "border-primary/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                     : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300",
               )}
             >
@@ -610,7 +611,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                         className={cn(
                           "font-mono text-[10px] font-bold uppercase",
                           record.success
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                            ? "border-primary/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
                             : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400",
                         )}
                       >
@@ -766,7 +767,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
             <AlertDialogAction
               onClick={() => runMutation.mutate(ddl)}
               disabled={runMutation.isPending}
-              className="gap-1.5 bg-emerald-600 font-mono text-xs font-semibold text-white hover:bg-emerald-500"
+              className="bg-primary hover:bg-primary/90 gap-1.5 font-mono text-xs font-semibold text-white"
             >
               {runMutation.isPending ? (
                 <>

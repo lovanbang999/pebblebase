@@ -349,7 +349,7 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                             {p.id === "ollama" ? (
                               <Badge
                                 variant="outline"
-                                className="h-3.5 border-emerald-500/40 bg-emerald-500/10 px-1 py-0 font-mono text-[9px] font-medium text-emerald-700 uppercase dark:text-emerald-400"
+                                className="border-primary/40 h-3.5 bg-emerald-500/10 px-1 py-0 font-mono text-[9px] font-medium text-emerald-700 uppercase dark:text-emerald-400"
                               >
                                 {t("ai.offlineBadge")}
                               </Badge>
@@ -462,7 +462,7 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                         </label>
                         <Badge
                           variant="outline"
-                          className="h-4 border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 uppercase dark:text-emerald-400"
+                          className="border-primary/40 h-4 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 uppercase dark:text-emerald-400"
                         >
                           {t("ai.keyEncryptedBadge")}
                         </Badge>
@@ -509,7 +509,7 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                     </p>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+                  <div className="border-primary/30 dark:border-primary/25 flex items-start gap-2.5 rounded-xl border bg-emerald-500/5 p-3 dark:bg-emerald-500/10">
                     <Server className="mt-0.5 size-4 text-emerald-600 dark:text-emerald-400" />
                     <div>
                       <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">

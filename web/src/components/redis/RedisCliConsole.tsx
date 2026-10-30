@@ -384,7 +384,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
                       setInputCommand(sample);
                       inputRef.current?.focus();
                     }}
-                    className="rounded border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-[11px] text-zinc-400 transition-colors hover:border-emerald-500/50 hover:text-emerald-400"
+                    className="hover:border-primary/50 rounded border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-[11px] text-zinc-400 transition-colors hover:text-emerald-400"
                   >
                     {sample}
                   </button>
@@ -542,13 +542,13 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
             }}
             onKeyDown={handleKeyDown}
             placeholder={t("redis.cli.inputPlaceholder")}
-            className="flex-1 border-zinc-800 bg-zinc-950 font-mono text-xs text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-emerald-500/50"
+            className="focus-visible:ring-primary/50 flex-1 border-zinc-800 bg-zinc-950 font-mono text-xs text-zinc-100 placeholder:text-zinc-600"
             disabled={isRunning}
             autoFocus
           />
           <Button
             size="sm"
-            className="bg-emerald-600 px-3 font-mono text-xs text-white hover:bg-emerald-700"
+            className="bg-primary px-3 font-mono text-xs text-white hover:bg-emerald-700"
             onClick={() => executeCommand(inputCommand)}
             disabled={isRunning || !inputCommand.trim()}
           >

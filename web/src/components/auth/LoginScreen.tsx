@@ -71,9 +71,9 @@ export function LoginScreen() {
         </div>
 
         {/* Main Login Card Container */}
-        <div className="relative w-full max-w-[420px]">
-          <div className="mb-8 flex flex-col items-center text-center">
-            <div className="border-border mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border bg-emerald-500/5 p-3 shadow-sm">
+        <div className="relative w-full max-w-[340px]">
+          <div className="mb-5 flex flex-col items-center text-center">
+            <div className="border-border mb-5 flex h-14 w-14 items-center justify-center rounded-lg border bg-emerald-500/5 p-3 shadow-sm">
               <img
                 src="/favicon.svg"
                 width={32}
@@ -82,17 +82,17 @@ export function LoginScreen() {
                 className="h-full w-full object-contain"
               />
             </div>
-            <h1 className="text-foreground font-sans text-2xl font-semibold tracking-tight">
+            <h1 className="text-foreground font-sans text-xl font-semibold tracking-tight">
               Pebblebase Studio
             </h1>
             <p className="text-muted-foreground mt-2 text-sm">
               {t("auth.studioSubtitle")}
             </p>
           </div>
-          <div className="bg-card text-card-foreground border-border rounded-2xl border p-6 shadow-xl shadow-black/5 sm:p-8">
+          <div className="bg-card text-card-foreground border-border rounded-lg border p-5 shadow-sm">
             <form
               onSubmit={handleSubmit}
-              className="space-y-5"
+              className="space-y-4"
               aria-busy={loading}
             >
               {/* Username Field */}
@@ -114,7 +114,7 @@ export function LoginScreen() {
                     autoCapitalize="none"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="bg-background text-foreground border-input placeholder:text-muted-foreground h-11 pl-11 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20"
+                    className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 h-9 pl-11"
                     placeholder="admin"
                     aria-invalid={!!error}
                     aria-describedby={error ? "login-error" : undefined}
@@ -150,7 +150,7 @@ export function LoginScreen() {
                     onChange={(e) => setPassword(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onKeyUp={handleKeyDown}
-                    className="bg-background text-foreground border-input placeholder:text-muted-foreground h-11 pr-12 pl-11 focus-visible:border-emerald-500 focus-visible:ring-emerald-500/20"
+                    className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 h-9 pr-12 pl-11"
                     placeholder="••••••••"
                     aria-invalid={!!error}
                     aria-describedby={error ? "login-error" : undefined}
@@ -159,7 +159,7 @@ export function LoginScreen() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-0 z-10 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2"
+                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-0 z-10 flex h-9 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2"
                     aria-pressed={showPassword}
                     aria-label={
                       showPassword
@@ -197,7 +197,7 @@ export function LoginScreen() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="h-11 w-full cursor-pointer justify-center bg-emerald-600 px-4 font-semibold text-white hover:bg-emerald-700 focus-visible:ring-emerald-500/30 disabled:opacity-60 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+                className="bg-primary focus-visible:ring-primary/30 h-9 w-full cursor-pointer justify-center px-4 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
               >
                 {loading ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
@@ -208,7 +208,7 @@ export function LoginScreen() {
                   size="sm"
                   onClick={handleQuickFill}
                   disabled={loading}
-                  className="h-9 max-w-full gap-2 rounded-lg px-3 text-xs font-medium text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-800 focus-visible:ring-emerald-500/30 dark:text-emerald-400 dark:hover:text-emerald-300"
+                  className="hover:bg-primary/10 focus-visible:ring-primary/30 h-9 max-w-full gap-2 rounded-lg px-3 text-xs font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
                 >
                   {filledFeedback ? (
                     <Check aria-hidden="true" className="size-3.5" />

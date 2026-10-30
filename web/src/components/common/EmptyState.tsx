@@ -58,7 +58,7 @@ export const EmptyState: FC<EmptyStateProps> = ({
               type="button"
               size="sm"
               onClick={action.onClick}
-              className="bg-emerald-600 font-mono text-xs text-white hover:bg-emerald-500"
+              className="bg-primary hover:bg-primary/90 font-mono text-xs text-white"
             >
               {action.icon && <action.icon className="h-3.5 w-3.5" />}
               {action.label}

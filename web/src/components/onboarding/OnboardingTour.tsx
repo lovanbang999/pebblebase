@@ -285,7 +285,7 @@ export function OnboardingTour({
             {/* Header Content */}
             <div className="p-6 pb-4">
               <div className="mb-2.5 flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-md border border-emerald-500/25 bg-emerald-500/10 text-[10px] font-bold tracking-tight text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+                <div className="border-primary/25 flex h-6 w-6 items-center justify-center rounded-md border bg-emerald-500/10 text-[10px] font-bold tracking-tight text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
                   PB
                 </div>
                 <span className="font-mono text-[11px] font-medium tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
@@ -304,7 +304,7 @@ export function OnboardingTour({
             <div className="grid grid-cols-1 gap-3 px-6 py-2 sm:grid-cols-2">
               {/* Feature 1 */}
               <div className="group flex items-start gap-3 rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3.5 transition-all duration-150 hover:border-zinc-300 dark:border-zinc-800/70 dark:bg-zinc-800/40 dark:hover:border-zinc-700/80">
-                <div className="shrink-0 rounded-lg border border-zinc-200/60 bg-zinc-100 p-2 text-zinc-600 transition-colors group-hover:border-emerald-500/30 group-hover:text-emerald-600 dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-emerald-400">
+                <div className="group-hover:border-primary/30 shrink-0 rounded-lg border border-zinc-200/60 bg-zinc-100 p-2 text-zinc-600 transition-colors group-hover:text-emerald-600 dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-emerald-400">
                   <Database className="size-4" />
                 </div>
                 <div>
@@ -319,7 +319,7 @@ export function OnboardingTour({
 
               {/* Feature 2 */}
               <div className="group flex items-start gap-3 rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3.5 transition-all duration-150 hover:border-zinc-300 dark:border-zinc-800/70 dark:bg-zinc-800/40 dark:hover:border-zinc-700/80">
-                <div className="shrink-0 rounded-lg border border-zinc-200/60 bg-zinc-100 p-2 text-zinc-600 transition-colors group-hover:border-emerald-500/30 group-hover:text-emerald-600 dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-emerald-400">
+                <div className="group-hover:border-primary/30 shrink-0 rounded-lg border border-zinc-200/60 bg-zinc-100 p-2 text-zinc-600 transition-colors group-hover:text-emerald-600 dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-emerald-400">
                   <Table2 className="size-4" />
                 </div>
                 <div>
@@ -334,7 +334,7 @@ export function OnboardingTour({
 
               {/* Feature 3 */}
               <div className="group flex items-start gap-3 rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3.5 transition-all duration-150 hover:border-zinc-300 dark:border-zinc-800/70 dark:bg-zinc-800/40 dark:hover:border-zinc-700/80">
-                <div className="shrink-0 rounded-lg border border-zinc-200/60 bg-zinc-100 p-2 text-zinc-600 transition-colors group-hover:border-emerald-500/30 group-hover:text-emerald-600 dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-emerald-400">
+                <div className="group-hover:border-primary/30 shrink-0 rounded-lg border border-zinc-200/60 bg-zinc-100 p-2 text-zinc-600 transition-colors group-hover:text-emerald-600 dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-emerald-400">
                   <Terminal className="size-4" />
                 </div>
                 <div>
@@ -349,7 +349,7 @@ export function OnboardingTour({
 
               {/* Feature 4 */}
               <div className="group flex items-start gap-3 rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3.5 transition-all duration-150 hover:border-zinc-300 dark:border-zinc-800/70 dark:bg-zinc-800/40 dark:hover:border-zinc-700/80">
-                <div className="shrink-0 rounded-lg border border-zinc-200/60 bg-zinc-100 p-2 text-zinc-600 transition-colors group-hover:border-emerald-500/30 group-hover:text-emerald-600 dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-emerald-400">
+                <div className="group-hover:border-primary/30 shrink-0 rounded-lg border border-zinc-200/60 bg-zinc-100 p-2 text-zinc-600 transition-colors group-hover:text-emerald-600 dark:border-zinc-700/50 dark:bg-zinc-800 dark:text-zinc-300 dark:group-hover:text-emerald-400">
                   <Workflow className="size-4" />
                 </div>
                 <div>
@@ -370,7 +370,7 @@ export function OnboardingTour({
                   type="checkbox"
                   checked={dontShowAgain}
                   onChange={(e) => setDontShowAgain(e.target.checked)}
-                  className="size-3.5 cursor-pointer rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500 dark:border-zinc-700"
+                  className="focus:ring-primary size-3.5 cursor-pointer rounded border-zinc-300 text-emerald-600 dark:border-zinc-700"
                 />
                 <span>{t("onboarding.dontShowAgain")}</span>
               </label>
@@ -389,7 +389,7 @@ export function OnboardingTour({
                   type="button"
                   size="sm"
                   onClick={() => handleDismissWelcome(true)}
-                  className="flex cursor-pointer items-center gap-1.5 bg-emerald-600 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-500 active:bg-emerald-700"
+                  className="bg-primary hover:bg-primary/90 flex cursor-pointer items-center gap-1.5 text-xs font-semibold text-white shadow-sm transition-all active:bg-emerald-700"
                 >
                   <span>{t("onboarding.startTour")}</span>
                   <ChevronRight className="size-3.5" />
@@ -428,7 +428,7 @@ export function OnboardingTour({
           >
             {/* Header: step badge and skip button */}
             <div className="mb-2.5 flex items-center justify-between gap-2">
-              <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+              <span className="border-primary/20 inline-flex items-center rounded-full border bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                 {t("onboarding.stepOf", {
                   current: currentStep + 1,
                   total: TOUR_STEPS.length,
@@ -497,7 +497,7 @@ export function OnboardingTour({
                   type="button"
                   size="xs"
                   onClick={handleNext}
-                  className="flex h-7 cursor-pointer items-center gap-1 bg-emerald-600 px-2.5 text-xs font-medium text-white shadow-xs hover:bg-emerald-500"
+                  className="bg-primary hover:bg-primary/90 flex h-7 cursor-pointer items-center gap-1 px-2.5 text-xs font-medium text-white shadow-xs"
                 >
                   {currentStep === TOUR_STEPS.length - 1 ? (
                     <>

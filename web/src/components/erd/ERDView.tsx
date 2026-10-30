@@ -197,18 +197,24 @@ function ERDCanvas({
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   // Load ERD data from backend
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetchERD(connectionId);
-      setData(res);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to load ERD data");
-    } finally {
-      setLoading(false);
-    }
-  }, [connectionId]);
+  const loadData = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetchERD(connectionId, signal);
+        if (!signal?.aborted) setData(res);
+      } catch (err: unknown) {
+        if (!signal?.aborted)
+          setError(
+            err instanceof Error ? err.message : "Failed to load ERD data",
+          );
+      } finally {
+        if (!signal?.aborted) setLoading(false);
+      }
+    },
+    [connectionId],
+  );
 
   const [isCopiedError, setIsCopiedError] = useState(false);
 
@@ -220,7 +226,9 @@ function ERDCanvas({
   }, [error]);
 
   useEffect(() => {
-    loadData();
+    const controller = new AbortController();
+    void loadData(controller.signal);
+    return () => controller.abort();
   }, [loadData]);
 
   const onOpenTableRef = useRef(onOpenTable);
@@ -665,7 +673,7 @@ function ERDCanvas({
   if (loading) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-zinc-50/50 text-zinc-500 dark:bg-zinc-950">
-        <div className="flex size-12 items-center justify-center rounded-2xl border border-emerald-500/20 bg-emerald-500/10 shadow-2xs dark:border-emerald-500/25 dark:bg-emerald-500/15">
+        <div className="border-primary/20 dark:border-primary/25 flex size-12 items-center justify-center rounded-2xl border bg-emerald-500/10 shadow-2xs dark:bg-emerald-500/15">
           <Loader2 className="size-6 animate-spin text-emerald-600 dark:text-emerald-400" />
         </div>
         <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
@@ -745,9 +753,9 @@ function ERDCanvas({
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Button
               type="button"
-              onClick={loadData}
+              onClick={() => loadData()}
               disabled={loading}
-              className="cursor-pointer gap-2 bg-emerald-600 px-4 py-2 font-mono text-xs font-semibold text-white shadow-xs transition-all hover:bg-emerald-500 active:scale-95 disabled:opacity-50 dark:bg-emerald-600 dark:hover:bg-emerald-500"
+              className="bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 cursor-pointer gap-2 px-4 py-2 font-mono text-xs font-semibold text-white shadow-xs transition-all active:scale-95 disabled:opacity-50"
             >
               <RefreshCw
                 className={cn("size-3.5", loading && "animate-spin")}

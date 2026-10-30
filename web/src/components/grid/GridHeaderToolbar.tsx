@@ -127,7 +127,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
     return (
       <>
         {/* Top Action Bar */}
-        <div className="flex h-11 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/30">
+        <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3 py-1 dark:border-zinc-800 dark:bg-zinc-900/30">
           <div className="flex h-full min-w-0 items-center gap-2 sm:gap-2.5">
             <SidebarTrigger className="-ml-1 shrink-0 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
             <Separator
@@ -135,7 +135,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
               className="h-4 self-center bg-zinc-200 dark:bg-zinc-800"
             />
             <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
-              <TableIcon className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+              <TableIcon className="text-primary h-4 w-4 shrink-0" />
               <h2
                 className="max-w-28 truncate font-mono text-sm font-semibold text-zinc-900 sm:max-w-36 md:max-w-48 lg:max-w-none dark:text-zinc-100"
                 title={table.name}
@@ -154,26 +154,26 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
             />
 
             {/* Sub-view switcher: [ Data Grid ] | [ Schema & DDL ] */}
-            <div className="flex shrink-0 items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80">
+            <div className="border-border bg-secondary flex shrink-0 items-center rounded border p-0.5">
               <button
                 type="button"
                 onClick={() => onSubViewChange("grid")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all sm:px-2.5",
+                  "flex items-center gap-1.5 rounded px-2 py-1 font-sans text-xs font-medium transition-colors sm:px-2.5",
                   activeSubView === "grid"
                     ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                     : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
                 )}
                 title={t("schema.dataGrid")}
               >
-                <TableIcon className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <TableIcon className="text-primary h-3.5 w-3.5 shrink-0" />
                 <span className="hidden md:inline">{t("schema.dataGrid")}</span>
               </button>
               <button
                 type="button"
                 onClick={() => onSubViewChange("schema")}
                 className={cn(
-                  "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all sm:px-2.5",
+                  "flex items-center gap-1.5 rounded px-2 py-1 font-sans text-xs font-medium transition-colors sm:px-2.5",
                   activeSubView === "schema"
                     ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                     : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
@@ -190,14 +190,14 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
             {/* View Mode toggle: Table | Document — MongoDB only */}
             {activeSubView === "grid" && dbType === "mongodb" && (
               <div
-                className="flex items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80"
+                className="border-border bg-secondary flex items-center rounded border p-0.5"
                 title={t("datagrid.viewMode.toggleTooltip")}
               >
                 <button
                   type="button"
                   onClick={() => onViewModeChange("table")}
                   className={cn(
-                    "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all",
+                    "flex items-center gap-1.5 rounded px-2 py-1 font-sans text-xs font-medium transition-colors",
                     viewMode === "table"
                       ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                       : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
@@ -210,7 +210,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
                   type="button"
                   onClick={() => onViewModeChange("document")}
                   className={cn(
-                    "flex items-center gap-1.5 rounded px-2 py-1 font-mono text-xs font-medium transition-all",
+                    "flex items-center gap-1.5 rounded px-2 py-1 font-sans text-xs font-medium transition-colors",
                     viewMode === "document"
                       ? "bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-900 dark:text-zinc-100"
                       : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
@@ -245,7 +245,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
 
           <div
             data-tour="grid-toolbar"
-            className="flex shrink-0 items-center gap-1 sm:gap-1.5 lg:gap-2"
+            className="flex min-w-0 flex-wrap items-center gap-1 sm:gap-1.5 lg:gap-2"
           >
             {activeSubView === "grid" ? (
               <>
@@ -293,7 +293,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
                         className={cn(
                           "gap-1 px-2 font-mono text-xs font-medium sm:gap-1.5 sm:px-2.5 2xl:px-3",
                           (filters.length > 0 || showFilterBuilder) &&
-                            "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-500/50 dark:bg-emerald-950/40 dark:text-emerald-300",
+                            "dark:border-primary/50 border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
                         )}
                       >
                         <FilterIcon className="h-3.5 w-3.5" />
@@ -354,7 +354,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
                           aria-label={t("datagrid.openQueryConsole")}
                           className="shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 2xl:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white"
                         >
-                          <Terminal className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                          <Terminal className="text-primary h-3.5 w-3.5 shrink-0" />
                           <span className="hidden 2xl:inline">
                             {t("datagrid.openQueryConsole")}
                           </span>
@@ -404,7 +404,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
                       className="w-52 font-mono text-xs"
                     >
                       <DropdownMenuItem onClick={() => onExport("csv")}>
-                        <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <FileSpreadsheet className="text-primary h-3.5 w-3.5" />
                         <span>{t("datagrid.exportAsCsv")}</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => onExport("json")}>
@@ -485,7 +485,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
                     "shrink-0 gap-1 px-2.5 text-xs font-semibold shadow-xs transition-colors sm:gap-1.5 sm:px-3",
                     isReadOnly
                       ? "cursor-not-allowed border border-zinc-200 bg-zinc-100 text-zinc-400 opacity-60 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500"
-                      : "bg-emerald-600 text-white hover:bg-emerald-500",
+                      : "bg-primary hover:bg-primary/90 text-white",
                   )}
                 >
                   <Plus className="h-3.5 w-3.5 shrink-0" />
@@ -509,7 +509,7 @@ export const GridHeaderToolbar: FC<GridHeaderToolbarProps> = memo(
                           aria-label={t("datagrid.openQueryConsole")}
                           className="shrink-0 gap-1 border-zinc-200 px-2 font-mono text-xs font-medium text-zinc-700 hover:text-zinc-950 sm:gap-1.5 2xl:px-3 dark:border-zinc-800 dark:text-zinc-300 dark:hover:text-white"
                         >
-                          <Terminal className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                          <Terminal className="text-primary h-3.5 w-3.5 shrink-0" />
                           <span className="hidden 2xl:inline">
                             {t("datagrid.openQueryConsole")}
                           </span>

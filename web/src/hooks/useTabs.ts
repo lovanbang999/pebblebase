@@ -1,437 +1,919 @@
-import { useState, useEffect, useCallback } from "react";
-import type { StudioTab, StudioTabState, TableSchema } from "../lib/types";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type {
+  Connection,
+  ExplorerSelection,
+  PersistedWorkspace,
+  StudioTab,
+  StudioTabState,
+  TableSchema,
+  WorkspaceToolWindows,
+} from "../lib/types";
 import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
 
-interface UseTabsOptions {
-  connectionId: string | null;
-  tables: TableSchema[];
+const DEFAULT_TOOL_WINDOWS: WorkspaceToolWindows = {
+  database: true,
+  scripts: false,
+  output: false,
+  ai: false,
+};
+
+function emptyWorkspace(): PersistedWorkspace {
+  return {
+    version: 1,
+    tabs: [],
+    activeTabId: null,
+    selectedExplorerNode: null,
+    expandedNodeIds: [],
+    toolWindows: DEFAULT_TOOL_WINDOWS,
+    initialized: false,
+  };
 }
 
-const getTabsStorageKey = (connId: string) => STORAGE_KEYS.tabs(connId);
-const getActiveTabStorageKey = (connId: string) =>
-  STORAGE_KEYS.activeTab(connId);
-
-function loadStoredTabs(
-  connectionId: string | null,
-  tables: TableSchema[],
-): { tabs: StudioTab[]; activeTabId: string | null } {
-  if (!connectionId) {
-    return { tabs: [], activeTabId: null };
-  }
-
-  const savedTabsRaw = sessionStorage.getItem(getTabsStorageKey(connectionId));
-  const savedActiveRaw = sessionStorage.getItem(
-    getActiveTabStorageKey(connectionId),
-  );
-
-  if (savedTabsRaw) {
-    try {
-      const parsedTabs: StudioTab[] = JSON.parse(savedTabsRaw);
-      if (Array.isArray(parsedTabs) && parsedTabs.length > 0) {
-        const activeExists = parsedTabs.some((t) => t.id === savedActiveRaw);
-        return {
-          tabs: parsedTabs,
-          activeTabId: activeExists ? savedActiveRaw : parsedTabs[0].id,
-        };
-      }
-    } catch {
-      // invalid session cache
+function readWorkspace(): { workspace: PersistedWorkspace; hydrated: boolean } {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEYS.WORKSPACE);
+    if (!raw) return { workspace: emptyWorkspace(), hydrated: false };
+    const parsed = JSON.parse(raw) as Partial<PersistedWorkspace>;
+    if (
+      parsed.version !== 1 ||
+      !Array.isArray(parsed.tabs) ||
+      !Array.isArray(parsed.expandedNodeIds)
+    ) {
+      return { workspace: emptyWorkspace(), hydrated: false };
     }
-  }
-
-  // Default: Open the first table if available
-  if (tables.length > 0) {
-    const firstTable = tables[0].name;
-    const initialTab: StudioTab = {
-      id: `tab_table_${firstTable}`,
-      type: "table",
-      title: firstTable,
-      tableName: firstTable,
-      connectionId,
-      state: {
-        page: 0,
-        pageSize: DEFAULT_PAGE_SIZE,
-        filters: [],
-        sortBy: "",
-        sortDesc: false,
-      },
-    };
+    const tabs = parsed.tabs.filter(isStudioTab);
+    const activeTabId =
+      typeof parsed.activeTabId === "string" &&
+      tabs.some((tab) => tab.id === parsed.activeTabId)
+        ? parsed.activeTabId
+        : (tabs[0]?.id ?? null);
     return {
-      tabs: [initialTab],
-      activeTabId: initialTab.id,
+      workspace: {
+        version: 1,
+        tabs,
+        activeTabId,
+        selectedExplorerNode: isExplorerSelection(parsed.selectedExplorerNode)
+          ? parsed.selectedExplorerNode
+          : null,
+        expandedNodeIds: parsed.expandedNodeIds.filter(
+          (item): item is string => typeof item === "string",
+        ),
+        toolWindows: {
+          ...DEFAULT_TOOL_WINDOWS,
+          ...(parsed.toolWindows || {}),
+        },
+        initialized: Boolean(parsed.initialized),
+      },
+      hydrated: true,
     };
+  } catch {
+    // Session storage can be unavailable or contain malformed JSON. Fall back
+    // to the previous per-connection keys and rewrite the versioned snapshot.
+    return { workspace: emptyWorkspace(), hydrated: false };
   }
-
-  return { tabs: [], activeTabId: null };
 }
 
-export function useTabs({ connectionId, tables }: UseTabsOptions) {
-  const [prevConnId, setPrevConnId] = useState<string | null>(connectionId);
-  const [tabs, setTabs] = useState<StudioTab[]>(
-    () => loadStoredTabs(connectionId, tables).tabs,
+function isExplorerSelection(value: unknown): value is ExplorerSelection {
+  if (value === null) return true;
+  if (!value || typeof value !== "object") return false;
+  const node = value as Record<string, unknown>;
+  if (typeof node.connectionId !== "string") return false;
+  if (node.kind === "connection") return true;
+  return (
+    node.kind === "table" &&
+    typeof node.tableName === "string" &&
+    (node.schemaName === undefined || typeof node.schemaName === "string")
   );
-  const [activeTabId, setActiveTabId] = useState<string | null>(
-    () => loadStoredTabs(connectionId, tables).activeTabId,
+}
+
+function isStudioTab(value: unknown): value is StudioTab {
+  if (!value || typeof value !== "object") return false;
+  const tab = value as Record<string, unknown>;
+  return (
+    typeof tab.id === "string" &&
+    typeof tab.title === "string" &&
+    typeof tab.connectionId === "string" &&
+    ["table", "query", "ddl", "erd", "diff"].includes(String(tab.type))
   );
+}
 
-  const [prevTablesCount, setPrevTablesCount] = useState<number>(tables.length);
+function randomObjectId(): string {
+  return (
+    globalThis.crypto?.randomUUID?.() ||
+    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+  );
+}
 
-  // If connection changed, adjust state during render
-  if (connectionId !== prevConnId) {
-    setPrevConnId(connectionId);
-    setPrevTablesCount(tables.length);
-    const restored = loadStoredTabs(connectionId, tables);
-    setTabs(restored.tabs);
-    setActiveTabId(restored.activeTabId);
-  } else if (prevTablesCount === 0 && tables.length > 0) {
-    setPrevTablesCount(tables.length);
-    if (connectionId && tabs.length === 0) {
-      const savedTabsRaw = sessionStorage.getItem(
-        STORAGE_KEYS.tabs(connectionId),
-      );
-      if (!savedTabsRaw) {
-        const firstTable = tables[0].name;
-        const initialTab: StudioTab = {
-          id: `tab_table_${firstTable}`,
-          type: "table",
-          title: firstTable,
-          tableName: firstTable,
-          connectionId,
-          state: {
-            page: 0,
-            pageSize: DEFAULT_PAGE_SIZE,
-            filters: [],
-            sortBy: "",
-            sortDesc: false,
-          },
-        };
-        setTabs([initialTab]);
-        setActiveTabId(initialTab.id);
+function objectIdentity(
+  tab: Pick<
+    StudioTab,
+    "type" | "title" | "tableName" | "schemaName" | "objectId" | "state"
+  >,
+): string {
+  if (tab.type === "table" || tab.type === "ddl") {
+    return (
+      tab.objectId ||
+      `table:${tab.schemaName || ""}:${tab.tableName || tab.title}`
+    );
+  }
+  if (tab.type === "erd") return "erd";
+  if (tab.type === "diff") {
+    return `diff:${tab.state?.diffSourceConnectionId || ""}:${tab.state?.diffTargetConnectionId || ""}`;
+  }
+  return `query:${tab.objectId || randomObjectId()}`;
+}
+
+export function stableTabId(
+  connectionId: string,
+  type: StudioTab["type"],
+  identity: string,
+): string {
+  return `workspace:${encodeURIComponent(JSON.stringify([connectionId, type, identity]))}`;
+}
+
+function defaultTableState(): StudioTabState {
+  return {
+    page: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
+    filters: [],
+    sortBy: "",
+    sortDesc: false,
+  };
+}
+
+function normalizeLegacyTab(
+  raw: unknown,
+  connectionId: string,
+): StudioTab | null {
+  if (!raw || typeof raw !== "object") return null;
+  const candidate = raw as Partial<StudioTab>;
+  if (
+    typeof candidate.title !== "string" ||
+    !["table", "query", "ddl", "erd", "diff"].includes(String(candidate.type))
+  ) {
+    return null;
+  }
+
+  const type = candidate.type as StudioTab["type"];
+  const state = candidate.state || undefined;
+  const tab: StudioTab = {
+    id: "",
+    type,
+    title: candidate.title,
+    connectionId,
+    state: state
+      ? {
+          ...defaultTableState(),
+          ...state,
+          filters: Array.isArray(state.filters) ? state.filters : [],
+        }
+      : type === "table"
+        ? defaultTableState()
+        : undefined,
+  };
+
+  if (type === "table" || type === "ddl") {
+    const tableName = candidate.tableName || candidate.title;
+    if (!tableName.trim()) return null;
+    tab.tableName = tableName;
+    tab.schemaName = candidate.schemaName;
+    // Existing table tabs are unique per table in the common case. Preserve a
+    // legacy identity only for duplicated tabs so they remain distinct.
+    tab.objectId = candidate.objectId;
+  } else if (type === "query") {
+    tab.objectId =
+      candidate.objectId || `legacy:${candidate.id || candidate.title}`;
+  } else if (type === "diff") {
+    tab.objectId = candidate.objectId || `legacy:${candidate.id || "diff"}`;
+  }
+  const identity = objectIdentity(tab);
+  tab.id = stableTabId(connectionId, type, identity);
+  return tab;
+}
+
+function migrateLegacyWorkspace(connections: Connection[]): PersistedWorkspace {
+  const workspace = emptyWorkspace();
+  const activeByConnection = new Map<string, string | null>();
+  const querySnapshots = new Map<string, unknown>();
+
+  for (const connection of connections) {
+    try {
+      const rawTabs = sessionStorage.getItem(STORAGE_KEYS.tabs(connection.id));
+      const parsed = rawTabs ? JSON.parse(rawTabs) : [];
+      if (!Array.isArray(parsed)) continue;
+      const usedIdentities = new Set<string>();
+      const migrated: StudioTab[] = [];
+      for (const raw of parsed) {
+        const tab = normalizeLegacyTab(raw, connection.id);
+        if (!tab) continue;
+        if (tab.type === "diff") {
+          const target = connections.find(
+            (item) =>
+              item.id !== connection.id &&
+              item.type !== "mongodb" &&
+              item.type !== "redis",
+          );
+          if (
+            !target ||
+            connection.type === "mongodb" ||
+            connection.type === "redis"
+          )
+            continue;
+          tab.state = {
+            ...defaultTableState(),
+            ...tab.state,
+            diffSourceConnectionId: connection.id,
+            diffTargetConnectionId: target.id,
+          };
+          tab.objectId = `diff:${connection.id}:${target.id}`;
+          tab.id = stableTabId(connection.id, "diff", tab.objectId);
+        }
+        let identity = objectIdentity(tab);
+        if (usedIdentities.has(identity)) {
+          tab.objectId = `${tab.objectId || identity}:legacy:${(raw as StudioTab).id || randomObjectId()}`;
+          identity = objectIdentity(tab);
+          tab.id = stableTabId(connection.id, tab.type, identity);
+        }
+        usedIdentities.add(identity);
+        migrated.push(tab);
       }
+      workspace.tabs.push(...migrated);
+      const activeId = sessionStorage.getItem(
+        STORAGE_KEYS.activeTab(connection.id),
+      );
+      const legacyActive = parsed.find(
+        (tab): tab is StudioTab => isStudioTab(tab) && tab.id === activeId,
+      );
+      const mappedActive = legacyActive
+        ? migrated.find(
+            (tab) =>
+              tab.title === legacyActive.title &&
+              tab.type === legacyActive.type &&
+              (tab.tableName || "") === (legacyActive.tableName || ""),
+          )?.id
+        : undefined;
+      activeByConnection.set(
+        connection.id,
+        mappedActive || migrated[0]?.id || null,
+      );
+
+      const rawQueries = sessionStorage.getItem(
+        STORAGE_KEYS.queryTabs(connection.id),
+      );
+      if (rawQueries) querySnapshots.set(connection.id, JSON.parse(rawQueries));
+    } catch {
+      // Ignore malformed legacy entries and continue migrating other sources.
     }
   }
 
-  // Sync to sessionStorage
+  // Preserve the previously active editor when consolidating several legacy
+  // per-connection workspaces; prefer its connection over an arbitrary first
+  // item returned by the connection API.
+  const preferredConnectionId = workspace.tabs.find((tab) =>
+    [...activeByConnection.values()].includes(tab.id),
+  )?.connectionId;
+  const selectedConnectionId = preferredConnectionId || connections[0]?.id;
+  workspace.selectedExplorerNode = selectedConnectionId
+    ? { kind: "connection", connectionId: selectedConnectionId }
+    : null;
+  workspace.activeTabId = selectedConnectionId
+    ? (activeByConnection.get(selectedConnectionId) ?? null)
+    : (workspace.tabs[0]?.id ?? null);
+
+  // Preserve the old nested console draft/results in the new per-workspace-tab
+  // storage namespace. Each outer query editor receives its own copy.
+  for (const tab of workspace.tabs.filter((item) => item.type === "query")) {
+    const legacy = querySnapshots.get(tab.connectionId);
+    if (!legacy) continue;
+    try {
+      const snapshot = legacy as { tabs?: unknown[]; activeTabId?: string };
+      const activeQuery = snapshot.tabs?.find(
+        (item) =>
+          item &&
+          typeof item === "object" &&
+          (item as { id?: string }).id === snapshot.activeTabId,
+      ) as { query?: string } | undefined;
+      if (typeof activeQuery?.query === "string") {
+        tab.state = {
+          ...defaultTableState(),
+          ...tab.state,
+          queryText: activeQuery.query,
+        };
+      }
+      sessionStorage.setItem(
+        STORAGE_KEYS.queryWorkspaceTabs(tab.connectionId, tab.id),
+        JSON.stringify(legacy),
+      );
+    } catch {
+      // Keep the outer tab draft even when its nested result cache is invalid.
+    }
+  }
+  return workspace;
+}
+
+function sameWorkspace(a: PersistedWorkspace, b: PersistedWorkspace): boolean {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
+export function useTabs() {
+  const initialRef = useRef<ReturnType<typeof readWorkspace> | null>(null);
+  if (!initialRef.current) initialRef.current = readWorkspace();
+  const [workspace, setWorkspace] = useState(initialRef.current.workspace);
+  const hydratedRef = useRef(initialRef.current.hydrated);
+  const workspaceRef = useRef(workspace);
+  workspaceRef.current = workspace;
+
   useEffect(() => {
-    if (!connectionId) return;
-
-    if (tabs.length > 0) {
-      try {
-        sessionStorage.setItem(
-          getTabsStorageKey(connectionId),
-          JSON.stringify(tabs),
-        );
-      } catch (err) {
-        console.warn("Failed to serialize tabs to sessionStorage:", err);
-      }
-    } else {
-      sessionStorage.removeItem(getTabsStorageKey(connectionId));
+    if (!hydratedRef.current) return;
+    try {
+      sessionStorage.setItem(STORAGE_KEYS.WORKSPACE, JSON.stringify(workspace));
+    } catch (error) {
+      console.warn("Failed to persist workspace session:", error);
     }
+  }, [workspace]);
 
-    if (activeTabId) {
-      sessionStorage.setItem(getActiveTabStorageKey(connectionId), activeTabId);
-    } else {
-      sessionStorage.removeItem(getActiveTabStorageKey(connectionId));
-    }
-  }, [tabs, activeTabId, connectionId]);
-
-  // Open or switch to a table tab
-  const openTableTab = useCallback(
-    (
-      tableName: string,
-      openInNewTab = false,
-      initialState?: Partial<StudioTabState>,
-    ) => {
-      if (!connectionId || typeof tableName !== "string") return;
-
-      if (!openInNewTab) {
-        // If existing tab matches tableName, activate it
-        const existing = tabs.find(
-          (t) =>
-            t.connectionId === connectionId &&
-            t.type === "table" &&
-            t.tableName === tableName,
-        );
-        if (existing) {
-          setActiveTabId(existing.id);
-          if (initialState) {
-            setTabs((prev) =>
-              prev.map((t) =>
-                t.id === existing.id
-                  ? {
-                      ...t,
-                      state: {
-                        page: 0,
-                        pageSize: DEFAULT_PAGE_SIZE,
-                        filters: [],
-                        sortBy: "",
-                        sortDesc: false,
-                        ...(t.state || {}),
-                        ...initialState,
-                      },
-                    }
-                  : t,
-              ),
-            );
-          }
-          return;
-        }
-      }
-
-      // Create new tab
-      const newTab: StudioTab = {
-        id: `tab_table_${tableName}_${Date.now()}`,
-        type: "table",
-        title: tableName,
-        tableName,
-        connectionId,
-        state: {
-          page: 0,
-          pageSize: DEFAULT_PAGE_SIZE,
-          filters: [],
-          sortBy: "",
-          sortDesc: false,
-          ...initialState,
-        },
-      };
-
-      setTabs((prev) => [...prev, newTab]);
-      setActiveTabId(newTab.id);
-    },
-    [connectionId, tabs],
-  );
-
-  // Open a query console tab
-  const openQueryTab = useCallback(
-    (initialQuery?: string, customTitle?: string) => {
-      if (!connectionId) return;
-
-      const queryTabs = tabs.filter((t) => t.type === "query");
-      const title =
-        typeof customTitle === "string" && customTitle.trim()
-          ? customTitle
-          : `Console ${queryTabs.length + 1}`;
-      const queryText =
-        typeof initialQuery === "string" ? initialQuery : undefined;
-
-      const newTab: StudioTab = {
-        id: `tab_query_${Date.now()}`,
-        type: "query",
-        title,
-        connectionId,
-        state: {
-          page: 0,
-          pageSize: DEFAULT_PAGE_SIZE,
-          filters: [],
-          sortBy: "",
-          sortDesc: false,
-          queryText,
-        },
-      };
-
-      setTabs((prev) => [...prev, newTab]);
-      setActiveTabId(newTab.id);
-    },
-    [connectionId, tabs],
-  );
-
-  // Open an ERD tab
-  const openErdTab = useCallback(() => {
-    if (!connectionId) return;
-
-    const existing = tabs.find(
-      (t) => t.connectionId === connectionId && t.type === "erd",
-    );
-    if (existing) {
-      setActiveTabId(existing.id);
-      return;
-    }
-
-    const newTab: StudioTab = {
-      id: `tab_erd_${connectionId}`,
-      type: "erd",
-      title: "ERD Diagram",
-      connectionId,
-    };
-
-    setTabs((prev) => [...prev, newTab]);
-    setActiveTabId(newTab.id);
-  }, [connectionId, tabs]);
-
-  // Open a Schema Diff tab
-  const openDiffTab = useCallback(() => {
-    if (!connectionId) return;
-
-    const existing = tabs.find(
-      (t) => t.connectionId === connectionId && t.type === "diff",
-    );
-    if (existing) {
-      setActiveTabId(existing.id);
-      return;
-    }
-
-    const newTab: StudioTab = {
-      id: `tab_diff_${connectionId}`,
-      type: "diff",
-      title: "Schema Diff",
-      connectionId,
-    };
-
-    setTabs((prev) => [...prev, newTab]);
-    setActiveTabId(newTab.id);
-  }, [connectionId, tabs]);
-
-  // Close a specific tab
-  const closeTab = useCallback(
-    (tabId: string) => {
-      setTabs((prev) => {
-        const index = prev.findIndex((t) => t.id === tabId);
-        if (index === -1) return prev;
-
-        const nextTabs = prev.filter((t) => t.id !== tabId);
-
-        // If closing the currently active tab, compute next active tab
-        if (activeTabId === tabId) {
-          if (nextTabs.length > 0) {
-            const nextActive = index > 0 ? nextTabs[index - 1] : nextTabs[0];
-            setActiveTabId(nextActive.id);
-          } else {
-            setActiveTabId(null);
-          }
-        }
-
-        return nextTabs;
-      });
-    },
-    [activeTabId],
-  );
-
-  // Close all other tabs except target
-  const closeOtherTabs = useCallback((tabId: string) => {
-    setTabs((prev) => prev.filter((t) => t.id === tabId));
-    setActiveTabId(tabId);
-  }, []);
-
-  // Close tabs to the right
-  const closeTabsToRight = useCallback(
-    (tabId: string) => {
-      setTabs((prev) => {
-        const idx = prev.findIndex((t) => t.id === tabId);
-        if (idx === -1) return prev;
-
-        const nextTabs = prev.slice(0, idx + 1);
-        // If current active tab was closed, switch to tabId
-        if (!nextTabs.some((t) => t.id === activeTabId)) {
-          setActiveTabId(tabId);
-        }
-        return nextTabs;
-      });
-    },
-    [activeTabId],
-  );
-
-  // Duplicate an existing tab
-  const duplicateTab = useCallback((tabId: string) => {
-    setTabs((prev) => {
-      const idx = prev.findIndex((t) => t.id === tabId);
-      if (idx === -1) return prev;
-
-      const original = prev[idx];
-      const copy: StudioTab = {
-        ...original,
-        id: `tab_${original.type}_copy_${Date.now()}`,
-        title: `${original.title} (Copy)`,
-        state: original.state
-          ? { ...original.state, filters: [...original.state.filters] }
-          : undefined,
-      };
-
-      const nextTabs = [...prev];
-      nextTabs.splice(idx + 1, 0, copy);
-      setActiveTabId(copy.id);
-      return nextTabs;
-    });
-  }, []);
-
-  // Update state for active tab (page, filters, sortBy, sortDesc, queryText)
-  const updateActiveTabState = useCallback(
-    (partial: Partial<StudioTabState>) => {
-      if (!activeTabId) return;
-
-      setTabs((prev) => {
-        const target = prev.find((t) => t.id === activeTabId);
-        if (!target) return prev;
-
-        const current = target.state || {};
-        const isChanged = Object.entries(partial).some(([key, val]) => {
-          return (current as Record<string, unknown>)[key] !== val;
-        });
-
-        if (!isChanged) return prev;
-
-        return prev.map((t) => {
-          if (t.id === activeTabId) {
-            return {
-              ...t,
-              state: {
-                page: 0,
-                pageSize: DEFAULT_PAGE_SIZE,
-                filters: [],
-                sortBy: "",
-                sortDesc: false,
-                ...current,
-                ...partial,
-              },
-            };
-          }
-          return t;
-        });
-      });
-    },
-    [activeTabId],
-  );
-
-  // Reorder tabs by moving a tab from sourceIndex to destinationIndex
-  const reorderTabs = useCallback(
-    (sourceIndex: number, destinationIndex: number) => {
-      if (sourceIndex === destinationIndex) return;
-
-      setTabs((prev) => {
-        if (
-          sourceIndex < 0 ||
-          sourceIndex >= prev.length ||
-          destinationIndex < 0 ||
-          destinationIndex >= prev.length
-        ) {
-          return prev;
-        }
-
-        const next = [...prev];
-        const [movedTab] = next.splice(sourceIndex, 1);
-        if (!movedTab) return prev;
-        next.splice(destinationIndex, 0, movedTab);
-        return next;
+  const commit = useCallback(
+    (updater: (current: PersistedWorkspace) => PersistedWorkspace) => {
+      setWorkspace((current) => {
+        const next = updater(current);
+        workspaceRef.current = next;
+        return sameWorkspace(current, next) ? current : next;
       });
     },
     [],
   );
 
-  const activeTab = tabs.find((t) => t.id === activeTabId) || null;
+  const reconcile = useCallback(
+    (input: {
+      connections: Connection[];
+      tablesByConnection: Record<string, TableSchema[]>;
+      loadedTableConnectionIds: string[];
+      connectionsLoaded: boolean;
+    }) => {
+      if (!input.connectionsLoaded) return;
+      const connections = input.connections;
+      const byId = new Map(
+        connections.map((connection) => [connection.id, connection]),
+      );
+      if (!hydratedRef.current) {
+        const migrated = migrateLegacyWorkspace(connections);
+        hydratedRef.current = true;
+        commit(() => migrated);
+      }
+      const loadedTables = new Set(input.loadedTableConnectionIds);
+      commit((current) => {
+        const tabs = current.tabs.flatMap((tab) => {
+          if (!byId.has(tab.connectionId)) return [];
+          if (tab.type === "diff") {
+            const from = tab.state?.diffSourceConnectionId;
+            const to = tab.state?.diffTargetConnectionId;
+            if (
+              !from ||
+              !to ||
+              from === to ||
+              !byId.has(from) ||
+              !byId.has(to)
+            ) {
+              return [];
+            }
+          }
+          if (tab.type === "table" || tab.type === "ddl") {
+            if (!tab.tableName) return [];
+            if (loadedTables.has(tab.connectionId)) {
+              const tables = input.tablesByConnection[tab.connectionId] || [];
+              if (
+                !tables.some(
+                  (table) =>
+                    table.name === tab.tableName &&
+                    (table.schema_name || "") === (tab.schemaName || ""),
+                )
+              )
+                return [];
+            }
+          }
+          return [tab];
+        });
+        const ids = new Set(tabs.map((tab) => tab.id));
+        const selected = current.selectedExplorerNode;
+        const selectionIsValid =
+          selected === null ||
+          (byId.has(selected.connectionId) &&
+            (selected.kind !== "table" ||
+              !loadedTables.has(selected.connectionId) ||
+              (input.tablesByConnection[selected.connectionId] || []).some(
+                (table) =>
+                  table.name === selected.tableName &&
+                  (table.schema_name || "") === (selected.schemaName || ""),
+              )));
+        const selectedExplorerNode = selectionIsValid
+          ? selected ||
+            (connections[0]
+              ? { kind: "connection" as const, connectionId: connections[0].id }
+              : null)
+          : connections[0]
+            ? { kind: "connection" as const, connectionId: connections[0].id }
+            : null;
+        const activeTabId =
+          current.activeTabId && ids.has(current.activeTabId)
+            ? current.activeTabId
+            : (tabs[0]?.id ?? null);
+        const next: PersistedWorkspace = {
+          ...current,
+          tabs,
+          activeTabId,
+          selectedExplorerNode,
+          expandedNodeIds: current.expandedNodeIds.filter((key) => {
+            const match = key.match(/^connection:(.+)$/);
+            return !match || byId.has(decodeURIComponent(match[1]));
+          }),
+        };
+        return next;
+      });
+    },
+    [commit],
+  );
+
+  const selectExplorerConnection = useCallback(
+    (connectionId: string) => {
+      commit((current) => ({
+        ...current,
+        selectedExplorerNode: { kind: "connection", connectionId },
+      }));
+    },
+    [commit],
+  );
+
+  const selectExplorerTable = useCallback(
+    (connectionId: string, tableName: string, schemaName?: string) => {
+      commit((current) => ({
+        ...current,
+        selectedExplorerNode: {
+          kind: "table",
+          connectionId,
+          tableName,
+          schemaName,
+        },
+      }));
+    },
+    [commit],
+  );
+
+  const setActiveTabId = useCallback(
+    (tabId: string | null) => {
+      commit((current) => ({
+        ...current,
+        activeTabId:
+          tabId && current.tabs.some((tab) => tab.id === tabId)
+            ? tabId
+            : current.activeTabId,
+      }));
+    },
+    [commit],
+  );
+
+  const openTableTab = useCallback(
+    (
+      connectionId: string,
+      tableName: string,
+      openInNewTab = false,
+      initialState?: Partial<StudioTabState>,
+      schemaName?: string,
+    ) => {
+      if (!connectionId || !tableName.trim()) return;
+      const state = { ...defaultTableState(), ...initialState };
+      commit((current) => {
+        const existing =
+          !openInNewTab &&
+          current.tabs.find(
+            (tab) =>
+              tab.type === "table" &&
+              tab.connectionId === connectionId &&
+              tab.tableName === tableName &&
+              (tab.schemaName || "") === (schemaName || ""),
+          );
+        const tab =
+          existing ||
+          (() => {
+            const objectId = `table:${schemaName || ""}:${tableName}${openInNewTab ? `:instance:${randomObjectId()}` : ""}`;
+            const nextTab: StudioTab = {
+              id: stableTabId(connectionId, "table", objectId),
+              type: "table",
+              title: tableName,
+              tableName,
+              schemaName,
+              objectId,
+              connectionId,
+              state,
+            };
+            return nextTab;
+          })();
+        const tabs = existing
+          ? current.tabs.map((item) =>
+              item.id === existing.id && initialState
+                ? {
+                    ...item,
+                    state: {
+                      ...defaultTableState(),
+                      ...item.state,
+                      ...initialState,
+                    },
+                  }
+                : item,
+            )
+          : [...current.tabs, tab];
+        return {
+          ...current,
+          tabs,
+          activeTabId: tab.id,
+          selectedExplorerNode: {
+            kind: "table",
+            connectionId,
+            tableName,
+            schemaName,
+          },
+          initialized: true,
+        };
+      });
+    },
+    [commit],
+  );
+
+  const openQueryTab = useCallback(
+    (connectionId: string, initialQuery?: string, customTitle?: string) => {
+      if (!connectionId) return;
+      const objectId = randomObjectId();
+      const tab: StudioTab = {
+        id: stableTabId(connectionId, "query", `query:${objectId}`),
+        objectId,
+        type: "query",
+        title: customTitle?.trim() || "Console",
+        connectionId,
+        state: { ...defaultTableState(), queryText: initialQuery },
+      };
+      commit((current) => ({
+        ...current,
+        tabs: [...current.tabs, tab],
+        activeTabId: tab.id,
+        selectedExplorerNode: { kind: "connection", connectionId },
+        initialized: true,
+      }));
+      return tab.id;
+    },
+    [commit],
+  );
+
+  const openErdTab = useCallback(
+    (connectionId: string) => {
+      if (!connectionId) return;
+      commit((current) => {
+        const existing = current.tabs.find(
+          (tab) => tab.type === "erd" && tab.connectionId === connectionId,
+        );
+        const tab = existing || {
+          id: stableTabId(connectionId, "erd", "erd"),
+          objectId: "erd",
+          type: "erd" as const,
+          title: "ERD Diagram",
+          connectionId,
+        };
+        return {
+          ...current,
+          tabs: existing ? current.tabs : [...current.tabs, tab],
+          activeTabId: tab.id,
+          selectedExplorerNode: { kind: "connection", connectionId },
+          initialized: true,
+        };
+      });
+    },
+    [commit],
+  );
+
+  const openDiffTab = useCallback(
+    (sourceConnectionId: string, targetConnectionId: string) => {
+      if (
+        !sourceConnectionId ||
+        !targetConnectionId ||
+        sourceConnectionId === targetConnectionId
+      )
+        return;
+      const identity = `diff:${sourceConnectionId}:${targetConnectionId}`;
+      const tab: StudioTab = {
+        id: stableTabId(sourceConnectionId, "diff", identity),
+        objectId: identity,
+        type: "diff",
+        title: "Schema Diff",
+        connectionId: sourceConnectionId,
+        state: {
+          ...defaultTableState(),
+          diffSourceConnectionId: sourceConnectionId,
+          diffTargetConnectionId: targetConnectionId,
+        },
+      };
+      commit((current) => {
+        const existing = current.tabs.find((item) => item.id === tab.id);
+        return {
+          ...current,
+          tabs: existing ? current.tabs : [...current.tabs, tab],
+          activeTabId: tab.id,
+          selectedExplorerNode: {
+            kind: "connection",
+            connectionId: sourceConnectionId,
+          },
+          initialized: true,
+        };
+      });
+    },
+    [commit],
+  );
+
+  const initializeWorkspace = useCallback(
+    (connectionId: string, tables: TableSchema[]) => {
+      if (!connectionId) return;
+      commit((current) => {
+        if (current.initialized || current.tabs.length > 0)
+          return { ...current, initialized: true };
+        const firstTable = tables[0];
+        if (!firstTable) return { ...current, initialized: true };
+        const tab: StudioTab = {
+          id: stableTabId(
+            connectionId,
+            "table",
+            `table:${firstTable.schema_name || ""}:${firstTable.name}`,
+          ),
+          objectId: `table:${firstTable.schema_name || ""}:${firstTable.name}`,
+          type: "table",
+          title: firstTable.name,
+          tableName: firstTable.name,
+          schemaName: firstTable.schema_name,
+          connectionId,
+          state: defaultTableState(),
+        };
+        return {
+          ...current,
+          tabs: [tab],
+          activeTabId: tab.id,
+          selectedExplorerNode: {
+            kind: "table",
+            connectionId,
+            tableName: firstTable.name,
+            schemaName: firstTable.schema_name,
+          },
+          initialized: true,
+        };
+      });
+    },
+    [commit],
+  );
+
+  const closeTab = useCallback(
+    (tabId: string) => {
+      commit((current) => {
+        const index = current.tabs.findIndex((tab) => tab.id === tabId);
+        if (index < 0) return current;
+        const tabs = current.tabs.filter((tab) => tab.id !== tabId);
+        const activeTabId =
+          current.activeTabId === tabId
+            ? (tabs[Math.max(0, index - 1)]?.id ?? null)
+            : current.activeTabId;
+        const closing = current.tabs[index];
+        if (closing.type === "query") {
+          try {
+            sessionStorage.removeItem(
+              STORAGE_KEYS.queryWorkspaceTabs(closing.connectionId, closing.id),
+            );
+          } catch {
+            /* ignore */
+          }
+        }
+        return { ...current, tabs, activeTabId };
+      });
+    },
+    [commit],
+  );
+
+  const closeOtherTabs = useCallback(
+    (tabId: string) => {
+      commit((current) => {
+        const target = current.tabs.find((tab) => tab.id === tabId);
+        if (!target) return current;
+        for (const tab of current.tabs) {
+          if (tab.id !== tabId && tab.type === "query") {
+            try {
+              sessionStorage.removeItem(
+                STORAGE_KEYS.queryWorkspaceTabs(tab.connectionId, tab.id),
+              );
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+        return { ...current, tabs: [target], activeTabId: tabId };
+      });
+    },
+    [commit],
+  );
+
+  const closeTabsToRight = useCallback(
+    (tabId: string) => {
+      commit((current) => {
+        const index = current.tabs.findIndex((tab) => tab.id === tabId);
+        if (index < 0) return current;
+        const tabs = current.tabs.slice(0, index + 1);
+        for (const tab of current.tabs.slice(index + 1)) {
+          if (tab.type === "query") {
+            try {
+              sessionStorage.removeItem(
+                STORAGE_KEYS.queryWorkspaceTabs(tab.connectionId, tab.id),
+              );
+            } catch {
+              /* ignore */
+            }
+          }
+        }
+        return {
+          ...current,
+          tabs,
+          activeTabId: tabs.some((tab) => tab.id === current.activeTabId)
+            ? current.activeTabId
+            : tabId,
+        };
+      });
+    },
+    [commit],
+  );
+
+  const duplicateTab = useCallback(
+    (tabId: string) => {
+      commit((current) => {
+        const index = current.tabs.findIndex((tab) => tab.id === tabId);
+        if (index < 0) return current;
+        const original = current.tabs[index];
+        const objectId = `${original.objectId || objectIdentity(original)}:copy:${randomObjectId()}`;
+        const copy: StudioTab = {
+          ...original,
+          id: stableTabId(original.connectionId, original.type, objectId),
+          objectId,
+          title: `${original.title} (Copy)`,
+          state: original.state
+            ? {
+                ...original.state,
+                filters: [...(original.state.filters || [])],
+              }
+            : undefined,
+        };
+        const tabs = [...current.tabs];
+        tabs.splice(index + 1, 0, copy);
+        return { ...current, tabs, activeTabId: copy.id };
+      });
+    },
+    [commit],
+  );
+
+  const updateTabState = useCallback(
+    (tabId: string, partial: Partial<StudioTabState>) => {
+      commit((current) => ({
+        ...current,
+        tabs: current.tabs.map((tab) =>
+          tab.id === tabId
+            ? {
+                ...tab,
+                state: { ...defaultTableState(), ...tab.state, ...partial },
+              }
+            : tab,
+        ),
+      }));
+    },
+    [commit],
+  );
+
+  const updateActiveTabState = useCallback(
+    (partial: Partial<StudioTabState>) => {
+      const id = workspaceRef.current.activeTabId;
+      if (id) updateTabState(id, partial);
+    },
+    [updateTabState],
+  );
+
+  const reorderTabs = useCallback(
+    (sourceIndex: number, destinationIndex: number) => {
+      commit((current) => {
+        if (
+          sourceIndex < 0 ||
+          sourceIndex >= current.tabs.length ||
+          destinationIndex < 0 ||
+          destinationIndex >= current.tabs.length ||
+          sourceIndex === destinationIndex
+        )
+          return current;
+        const tabs = [...current.tabs];
+        const [moved] = tabs.splice(sourceIndex, 1);
+        if (!moved) return current;
+        tabs.splice(destinationIndex, 0, moved);
+        return { ...current, tabs };
+      });
+    },
+    [commit],
+  );
+
+  const closeConnectionTabs = useCallback(
+    (connectionId: string) => {
+      const current = workspaceRef.current;
+      const removed = current.tabs.filter(
+        (tab) =>
+          tab.connectionId === connectionId ||
+          tab.state?.diffSourceConnectionId === connectionId ||
+          tab.state?.diffTargetConnectionId === connectionId,
+      );
+      for (const tab of removed) {
+        if (tab.type === "query") {
+          try {
+            sessionStorage.removeItem(
+              STORAGE_KEYS.queryWorkspaceTabs(tab.connectionId, tab.id),
+            );
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+      commit((state) => {
+        const tabs = state.tabs.filter(
+          (tab) => !removed.some((item) => item.id === tab.id),
+        );
+        return {
+          ...state,
+          tabs,
+          activeTabId: tabs.some((tab) => tab.id === state.activeTabId)
+            ? state.activeTabId
+            : (tabs[0]?.id ?? null),
+          selectedExplorerNode:
+            state.selectedExplorerNode?.connectionId === connectionId
+              ? null
+              : state.selectedExplorerNode,
+          expandedNodeIds: state.expandedNodeIds.filter(
+            (item) => !item.includes(encodeURIComponent(connectionId)),
+          ),
+        };
+      });
+      return removed.length;
+    },
+    [commit],
+  );
+
+  const setExpandedNodeIds = useCallback(
+    (expandedNodeIds: string[]) => {
+      commit((current) => ({
+        ...current,
+        expandedNodeIds: [...new Set(expandedNodeIds)],
+      }));
+    },
+    [commit],
+  );
+
+  const setToolWindows = useCallback(
+    (toolWindows: Partial<WorkspaceToolWindows>) => {
+      commit((current) => ({
+        ...current,
+        toolWindows: { ...current.toolWindows, ...toolWindows },
+      }));
+    },
+    [commit],
+  );
+
+  const activeTab = useMemo(
+    () =>
+      workspace.tabs.find((tab) => tab.id === workspace.activeTabId) || null,
+    [workspace.tabs, workspace.activeTabId],
+  );
 
   return {
-    tabs,
-    activeTabId,
+    tabs: workspace.tabs,
+    activeTabId: workspace.activeTabId,
     activeTab,
+    selectedExplorerNode: workspace.selectedExplorerNode,
+    expandedNodeIds: workspace.expandedNodeIds,
+    toolWindows: workspace.toolWindows,
     setActiveTabId,
+    selectExplorerConnection,
+    selectExplorerTable,
+    reconcile,
     openTableTab,
     openQueryTab,
     openErdTab,
     openDiffTab,
+    initializeWorkspace,
     closeTab,
     closeOtherTabs,
     closeTabsToRight,
+    closeConnectionTabs,
     duplicateTab,
     reorderTabs,
+    updateTabState,
     updateActiveTabState,
+    setExpandedNodeIds,
+    setToolWindows,
   };
 }

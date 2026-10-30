@@ -147,7 +147,7 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
       >
         <Badge
           variant="outline"
-          className="h-4.5 shrink-0 border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400"
+          className="border-primary/30 dark:border-primary/30 h-4.5 shrink-0 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
         >
           <span className="font-bold tracking-tighter">[&thinsp;]</span>
           <span>{count}</span>
@@ -182,7 +182,7 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
               onOpenDetail();
             }}
             className={cn(
-              "shrink-0 rounded p-0.5 text-zinc-400 transition-opacity hover:bg-emerald-500/20 hover:text-emerald-600 dark:hover:text-emerald-400",
+              "hover:bg-primary/20 shrink-0 rounded p-0.5 text-zinc-400 transition-opacity hover:text-emerald-600 dark:hover:text-emerald-400",
               isHovered ? "opacity-100" : "opacity-0",
             )}
             title={t("datagrid.complexTypes.inspectArray")}

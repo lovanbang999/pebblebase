@@ -67,7 +67,7 @@ function AlertDialogContent({
           data-slot="alert-dialog-content"
           data-size={size}
           className={cn(
-            "group/alert-dialog-content bg-popover text-popover-foreground ring-foreground/10 relative z-50 grid w-full gap-4 rounded-xl p-4 antialiased ring-1 transition-[opacity,transform] duration-150 ease-out outline-none data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-md",
+            "group/alert-dialog-content bg-popover text-popover-foreground ring-foreground/10 relative z-50 grid w-full gap-4 rounded-lg p-4 antialiased ring-1 transition-[opacity,transform] duration-150 ease-out outline-none data-ending-style:scale-[0.98] data-ending-style:opacity-0 data-starting-style:scale-[0.98] data-starting-style:opacity-0 data-[size=default]:max-w-xs data-[size=sm]:max-w-xs data-[size=default]:sm:max-w-md",
             className,
           )}
           {...props}

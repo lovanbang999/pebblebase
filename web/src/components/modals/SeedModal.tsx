@@ -111,7 +111,7 @@ export const SeedModal: FC<SeedModalProps> = ({
         <DialogHeader className="border-b border-zinc-200 bg-zinc-50/50 p-4 md:p-5 dark:border-zinc-800 dark:bg-zinc-900/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+              <div className="border-primary/20 rounded-lg border bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
@@ -119,7 +119,7 @@ export const SeedModal: FC<SeedModalProps> = ({
                   <span>{t("seed.title")}</span>
                   <Badge
                     variant="outline"
-                    className="border-emerald-500/20 bg-emerald-500/10 font-mono text-[11px] text-emerald-700 dark:text-emerald-400"
+                    className="border-primary/20 bg-emerald-500/10 font-mono text-[11px] text-emerald-700 dark:text-emerald-400"
                   >
                     {tableName}
                   </Badge>
@@ -172,7 +172,7 @@ export const SeedModal: FC<SeedModalProps> = ({
               size="sm"
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="h-8 cursor-pointer gap-1.5 bg-emerald-600 px-3.5 font-mono text-xs font-semibold text-white shadow-xs hover:bg-emerald-500"
+              className="bg-primary hover:bg-primary/90 h-8 cursor-pointer gap-1.5 px-3.5 font-mono text-xs font-semibold text-white shadow-xs"
             >
               <RefreshCw
                 className={cn("h-3.5 w-3.5", isGenerating && "animate-spin")}
@@ -211,7 +211,7 @@ export const SeedModal: FC<SeedModalProps> = ({
                           className={cn(
                             "h-4 px-1.5 py-0 font-mono text-[10px]",
                             tbl === tableName
-                              ? "border-emerald-500/30 bg-emerald-500/15 font-bold text-emerald-700 dark:text-emerald-300"
+                              ? "border-primary/30 bg-emerald-500/15 font-bold text-emerald-700 dark:text-emerald-300"
                               : "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
                           )}
                         >
@@ -273,7 +273,7 @@ export const SeedModal: FC<SeedModalProps> = ({
               className={cn(
                 "h-8 cursor-pointer gap-1.5 px-3 font-mono text-xs transition-colors",
                 copied &&
-                  "border-emerald-500 text-emerald-600 dark:text-emerald-400",
+                  "border-primary text-emerald-600 dark:text-emerald-400",
               )}
             >
               {copied ? (
@@ -295,7 +295,7 @@ export const SeedModal: FC<SeedModalProps> = ({
                 size="sm"
                 onClick={handleRunConsole}
                 disabled={!seedResult?.sql}
-                className="h-8 cursor-pointer gap-1.5 bg-emerald-600 px-3.5 font-mono text-xs font-semibold text-white shadow-xs hover:bg-emerald-500"
+                className="bg-primary hover:bg-primary/90 h-8 cursor-pointer gap-1.5 px-3.5 font-mono text-xs font-semibold text-white shadow-xs"
               >
                 <Terminal className="h-3.5 w-3.5" />
                 <span>{t("seed.run")}</span>

@@ -63,7 +63,7 @@ export function WorkspaceHome({
   ];
   return (
     <main className="bg-background text-foreground flex min-h-0 flex-1 flex-col">
-      <header className="border-border flex h-12 shrink-0 items-center gap-3 border-b px-4">
+      <header className="border-border flex h-9 shrink-0 items-center gap-3 border-b px-4">
         <SidebarTrigger />
         <span className="text-muted-foreground text-sm">
           {t("workspace.title")}
@@ -78,18 +78,15 @@ export function WorkspaceHome({
           {t("workspace.findAnything")}
         </Button>
       </header>
-      <div className="flex-1 overflow-y-auto px-5 py-10 sm:px-10 lg:py-14">
+      <div className="flex-1 overflow-y-auto px-5 py-6 sm:px-10 lg:py-8">
         <div className="mx-auto w-full max-w-4xl">
           <div className="mb-9 flex flex-wrap items-start justify-between gap-5">
             <div className="min-w-0">
               <div className="text-muted-foreground mb-3 flex items-center gap-2 text-sm">
-                <Database
-                  aria-hidden="true"
-                  className="size-4 text-emerald-600 dark:text-emerald-400"
-                />
+                <Database aria-hidden="true" className="text-primary size-4" />
                 {t("workspace.title")}
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight break-words sm:text-3xl">
+              <h1 className="text-xl font-semibold tracking-tight break-words sm:text-2xl">
                 {connection?.name || t("sidebar.pebblebaseStudio")}
               </h1>
               <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
@@ -181,7 +178,7 @@ export function WorkspaceHome({
                 ))}
               </div>
             ) : (
-              <div className="border-border text-muted-foreground rounded-xl border border-dashed px-6 py-10 text-center text-sm">
+              <div className="border-border text-muted-foreground rounded-xl border border-dashed px-6 py-6 text-center text-sm">
                 {t("workspace.emptyTables")}
               </div>
             )}

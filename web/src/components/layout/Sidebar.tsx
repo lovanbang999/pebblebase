@@ -369,7 +369,7 @@ export default function Sidebar({
           className={cn(
             "h-7 cursor-pointer px-2 pr-14 font-mono text-xs transition-colors",
             isSelected
-              ? "border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-900 dark:text-emerald-200"
+              ? "border-primary/30 border bg-emerald-500/10 font-semibold text-emerald-900 dark:text-emerald-200"
               : isMenuOpen
                 ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100"
                 : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
@@ -379,7 +379,7 @@ export default function Sidebar({
             className={cn(
               "size-3.5 shrink-0",
               isSelected
-                ? "text-emerald-600 dark:text-emerald-400"
+                ? "text-primary"
                 : isPinned
                   ? "text-amber-500 dark:text-amber-400"
                   : "text-zinc-400 dark:text-zinc-500",
@@ -416,7 +416,7 @@ export default function Sidebar({
             <Badge
               variant={isSelected ? "default" : "secondary"}
               className={cn(
-                "inline-flex h-4 min-w-4 shrink-0 items-center justify-center gap-0 rounded-full p-0 text-center font-mono text-[10px] leading-none font-medium tabular-nums select-none",
+                "inline-flex h-4 min-w-4 shrink-0 items-center justify-center gap-0 rounded p-0 text-center font-mono text-[10px] leading-none font-medium tabular-nums select-none",
                 colCount > 9 ? "min-w-5 px-1.5" : "px-0",
               )}
             >
@@ -492,7 +492,7 @@ export default function Sidebar({
 
   return (
     <SidebarPrimitive
-      collapsible="icon"
+      collapsible="offcanvas"
       className="border-sidebar-border bg-sidebar border-r transition-colors select-none"
     >
       {/* Brand Header & Quick Actions */}
@@ -500,9 +500,9 @@ export default function Sidebar({
         className="border-sidebar-border wails-drag gap-2 border-b p-2"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
-        <div className="flex h-9 items-center justify-between px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+        <div className="flex h-7 items-center justify-between px-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
           <div className="pointer-events-none flex items-center gap-2 overflow-hidden">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 p-1">
+            <div className="border-primary/30 flex size-7 shrink-0 items-center justify-center rounded-md border bg-emerald-500/10 p-1">
               <img
                 src="/favicon.svg"
                 alt="Pebblebase"
@@ -526,6 +526,7 @@ export default function Sidebar({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
+                      aria-label={t("workspace.findAnything")}
                       onClick={onOpenCommandPalette}
                       className="wails-no-drag text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
                       style={
@@ -549,6 +550,7 @@ export default function Sidebar({
                       type="button"
                       variant="ghost"
                       size="icon-xs"
+                      aria-label={t("studio.aiSettings")}
                       onClick={onOpenAISettings}
                       className="wails-no-drag text-zinc-500 hover:text-purple-600 dark:hover:text-purple-400"
                       style={
@@ -571,6 +573,7 @@ export default function Sidebar({
                     type="button"
                     variant="ghost"
                     size="icon-xs"
+                    aria-label={t("sidebar.newConnection")}
                     onClick={onOpenNewConnection}
                     className="wails-no-drag text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
                     style={
@@ -607,7 +610,7 @@ export default function Sidebar({
                     className="data-[state=open]:bg-sidebar-accent w-full cursor-pointer group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                   >
                     <div className="flex size-7 shrink-0 items-center justify-center rounded border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
-                      <HardDrive className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <HardDrive className="text-primary size-3.5" />
                     </div>
                     <div className="flex flex-1 flex-col gap-1 truncate text-left leading-none group-data-[collapsible=icon]:hidden">
                       <div className="flex items-center justify-between gap-1.5">
@@ -617,7 +620,7 @@ export default function Sidebar({
                         <div className="flex items-center gap-1">
                           {selectedConnection?.read_only && (
                             <span
-                              className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[9px] leading-none font-semibold text-amber-700 uppercase select-none dark:bg-amber-500/15 dark:text-amber-400"
+                              className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 font-mono text-[9px] leading-none font-semibold text-amber-700 uppercase select-none dark:bg-amber-500/15 dark:text-amber-400"
                               title={t("connection.readOnlyHelp")}
                             >
                               <ShieldAlert className="size-2.5 shrink-0" />
@@ -633,7 +636,7 @@ export default function Sidebar({
                               return (
                                 <span
                                   className={cn(
-                                    "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-1.5 py-0.5 font-mono text-[9px] leading-none font-semibold uppercase select-none",
+                                    "inline-flex shrink-0 items-center gap-1.5 rounded border px-1.5 py-0.5 font-mono text-[9px] leading-none font-semibold uppercase select-none",
                                     style.bg,
                                     style.text,
                                     style.border,
@@ -641,7 +644,7 @@ export default function Sidebar({
                                 >
                                   <span
                                     className={cn(
-                                      "size-1.5 shrink-0 rounded-full",
+                                      "size-1.5 shrink-0 rounded",
                                       style.dot,
                                     )}
                                   />
@@ -671,7 +674,7 @@ export default function Sidebar({
                 {/* Fixed Header (Never scrolls away) */}
                 <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/70 px-3 py-2 dark:border-zinc-800/80 dark:bg-zinc-900/60">
                   <div className="flex items-center gap-1.5">
-                    <Database className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <Database className="text-primary size-3.5" />
                     <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                       {t("sidebar.connectionsHeader")}
                     </span>
@@ -723,17 +726,17 @@ export default function Sidebar({
                               onClick={() => onSelectConnection(c)}
                               className={`my-0.5 flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 text-xs transition-colors ${
                                 isCurrent
-                                  ? "border border-emerald-500/30 bg-emerald-500/10 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                                  ? "border-primary/30 border bg-emerald-500/10 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
                                   : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-900"
                               }`}
                             >
                               <div className="flex min-w-0 flex-1 items-center gap-2.5 truncate">
                                 {isCurrent ? (
-                                  <CheckCircle2 className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                  <CheckCircle2 className="text-primary size-3.5 shrink-0" />
                                 ) : (
                                   <span
                                     className={cn(
-                                      "size-2 shrink-0 rounded-full ring-1",
+                                      "size-2 shrink-0 rounded ring-1",
                                       dotColor,
                                     )}
                                     title={`Environment: ${env}`}
@@ -805,8 +808,9 @@ export default function Sidebar({
                 {/* Fixed Footer (Always visible) */}
                 <div className="border-t border-zinc-100 bg-zinc-50/70 p-1.5 dark:border-zinc-800/80 dark:bg-zinc-900/60">
                   <DropdownMenuItem
+                    aria-label={t("sidebar.newConnection")}
                     onClick={onOpenNewConnection}
-                    className="flex cursor-pointer items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20"
+                    className="hover:bg-primary/10 dark:hover:bg-primary/20 flex cursor-pointer items-center justify-center gap-1.5 rounded-md py-1.5 text-xs font-medium text-emerald-600 transition-colors dark:text-emerald-400"
                   >
                     <Plus className="size-3.5" />
                     {t("sidebar.newConnectionEllipsis")}
@@ -833,14 +837,14 @@ export default function Sidebar({
                   onClick={() => onOpenQueryConsole?.()}
                   title={getShortcutTooltip("queryConsole")}
                   className={cn(
-                    "h-10 w-full cursor-pointer justify-between rounded-lg px-3 font-sans text-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                    "h-7 w-full cursor-pointer justify-between rounded px-3 font-sans text-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                     activeView === "console"
-                      ? "border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                      ? "border-primary/30 bg-accent text-foreground border font-medium"
                       : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
                   )}
                 >
                   <div className="flex items-center gap-2 truncate leading-none">
-                    <Terminal className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <Terminal className="text-primary size-3.5 shrink-0" />
                     <span className="translate-y-px truncate leading-none group-data-[collapsible=icon]:hidden">
                       {t("sidebar.queryConsole")}
                     </span>
@@ -860,14 +864,14 @@ export default function Sidebar({
                   onClick={() => onOpenERD?.()}
                   title={getShortcutTooltip("erd")}
                   className={cn(
-                    "h-10 w-full cursor-pointer justify-between rounded-lg px-3 font-sans text-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
+                    "h-7 w-full cursor-pointer justify-between rounded px-3 font-sans text-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0",
                     activeView === "erd"
-                      ? "border border-emerald-500/30 bg-emerald-500/10 font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+                      ? "border-primary/30 bg-accent text-foreground border font-medium"
                       : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
                   )}
                 >
                   <div className="flex items-center gap-2 truncate leading-none">
-                    <Workflow className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <Workflow className="text-primary size-4 shrink-0" />
                     <span className="translate-y-px truncate leading-none group-data-[collapsible=icon]:hidden">
                       {t("erd.title")}
                     </span>
@@ -885,10 +889,10 @@ export default function Sidebar({
                   size="sm"
                   onClick={() => onOpenDiff?.()}
                   title={t("diff.title")}
-                  className="h-10 w-full cursor-pointer justify-between rounded-lg px-3 font-sans text-sm text-zinc-600 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  className="h-7 w-full cursor-pointer justify-between rounded px-3 font-sans text-sm text-zinc-600 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 >
                   <div className="flex items-center gap-2 truncate leading-none">
-                    <GitCompare className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <GitCompare className="text-primary size-4 shrink-0" />
                     <span className="translate-y-px truncate leading-none group-data-[collapsible=icon]:hidden">
                       {t("diff.title")}
                     </span>
@@ -899,24 +903,25 @@ export default function Sidebar({
           )}
 
         {/* Table Filter Input (Hidden when collapsed) */}
-        <div className="border-sidebar-border border-b px-3 py-3 group-data-[collapsible=icon]:hidden">
+        <div className="border-sidebar-border border-b px-2 py-2 group-data-[collapsible=icon]:hidden">
           <div className="flex items-center gap-1.5">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute top-2.5 left-2.5 size-3.5 text-zinc-400" />
+              <Search className="pointer-events-none absolute top-1.5 left-2.5 size-3.5 text-zinc-400" />
               <Input
                 type="text"
                 placeholder={t("sidebar.filterTables")}
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
                 aria-label={t("sidebar.filterTables")}
-                className="h-9 rounded-lg pr-14 pl-8 text-xs"
+                className="h-7 rounded pr-14 pl-8 text-xs"
               />
               {onOpenCommandPalette && (
                 <button
                   type="button"
+                  aria-label={t("workspace.findAnything")}
                   onClick={onOpenCommandPalette}
                   title={getShortcutTooltip("commandPalette")}
-                  className="absolute top-2 right-1.5 cursor-pointer rounded border border-zinc-200 bg-zinc-100 px-1 py-0.5 font-mono text-[9px] font-medium text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+                  className="absolute top-1 right-1.5 cursor-pointer rounded border border-zinc-200 bg-zinc-100 px-1 py-0.5 font-mono text-[9px] font-medium text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
                 >
                   {SHORTCUTS.commandPalette}
                 </button>
@@ -989,12 +994,12 @@ export default function Sidebar({
                       />
                       <div className="ml-auto flex shrink-0 items-center gap-1.5 group-data-[collapsible=icon]:hidden">
                         {i % 2 === 0 && (
-                          <Skeleton className="size-2.5 rounded-full bg-amber-400/35 dark:bg-amber-400/25" />
+                          <Skeleton className="size-2.5 rounded bg-amber-400/35 dark:bg-amber-400/25" />
                         )}
                         {i % 3 === 0 && (
-                          <Skeleton className="size-2.5 rounded-full bg-sky-400/35 dark:bg-sky-400/25" />
+                          <Skeleton className="size-2.5 rounded bg-sky-400/35 dark:bg-sky-400/25" />
                         )}
-                        <Skeleton className="h-4 w-4 rounded-full bg-zinc-200/90 dark:bg-zinc-800/90" />
+                        <Skeleton className="h-4 w-4 rounded bg-zinc-200/90 dark:bg-zinc-800/90" />
                       </div>
                     </div>
                   </SidebarMenuItem>
@@ -1107,7 +1112,7 @@ export default function Sidebar({
                       <span className="font-mono text-xs font-semibold tracking-tight text-indigo-400 uppercase dark:text-indigo-300">
                         {user.username.slice(0, 2)}
                       </span>
-                      <span className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-950" />
+                      <span className="absolute -right-0.5 -bottom-0.5 size-2 rounded bg-emerald-500 ring-2 ring-white dark:ring-zinc-950" />
                     </div>
 
                     {/* User Info */}
@@ -1186,6 +1191,7 @@ export default function Sidebar({
 
                 {onOpenAISettings && (
                   <DropdownMenuItem
+                    aria-label={t("studio.aiSettings")}
                     onClick={onOpenAISettings}
                     className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
                   >
@@ -1215,13 +1221,13 @@ export default function Sidebar({
                         className={cn(
                           "flex cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-xs transition-colors",
                           fontSize === item.id
-                            ? "bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
+                            ? "text-primary bg-emerald-500/10 font-semibold"
                             : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100",
                         )}
                       >
                         <div className="flex items-center gap-2">
                           {fontSize === item.id ? (
-                            <Check className="size-3 text-emerald-600 dark:text-emerald-400" />
+                            <Check className="text-primary size-3" />
                           ) : (
                             <span className="size-3" />
                           )}
@@ -1258,7 +1264,7 @@ export default function Sidebar({
                     {t("updates.checkForUpdates", "Check for Updates...")}
                   </span>
                   {updateInfo?.hasUpdate && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    <span className="h-1.5 w-1.5 rounded bg-emerald-500" />
                   )}
                 </DropdownMenuItem>
 
@@ -1277,7 +1283,7 @@ export default function Sidebar({
         )}
 
         {/* Version + Language + Theme bar */}
-        <div className="border-sidebar-border flex h-9 items-center justify-between border-t bg-zinc-50/50 px-2.5 group-data-[collapsible=icon]:hidden dark:bg-zinc-950/40">
+        <div className="border-sidebar-border flex h-7 items-center justify-between border-t bg-zinc-50/50 px-2.5 group-data-[collapsible=icon]:hidden dark:bg-zinc-950/40">
           <div className="flex shrink-0 items-center gap-1.5">
             <span className="font-mono text-[11px] font-semibold tracking-tight text-zinc-700 dark:text-zinc-300">
               Pebblebase
@@ -1291,7 +1297,7 @@ export default function Sidebar({
                     className={cn(
                       "group/ver inline-flex h-4.5 cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[10px] leading-none transition-colors",
                       updateInfo?.hasUpdate
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-400"
+                        ? "border-primary/30 hover:bg-primary/20 dark:border-primary/30 bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
                         : "border-zinc-200/80 bg-zinc-100/70 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-200/70 hover:text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
                     )}
                   >
@@ -1300,8 +1306,8 @@ export default function Sidebar({
                     </span>
                     {updateInfo?.hasUpdate ? (
                       <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded bg-emerald-500" />
                       </span>
                     ) : (
                       <RefreshCw

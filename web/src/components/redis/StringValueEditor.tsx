@@ -126,7 +126,7 @@ export const StringValueEditor: FC<StringValueEditorProps> = ({
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="h-7 bg-emerald-600 text-xs text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-700"
+              className="bg-primary dark:bg-primary h-7 text-xs text-white hover:bg-emerald-700 dark:hover:bg-emerald-700"
             >
               {saving ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />

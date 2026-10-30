@@ -83,7 +83,7 @@ function queryPreview(q: string): string {
 
 // Tag color palette — theme-adaptive emerald, teal, sky, amber, rose, zinc
 const TAG_COLORS = [
-  "bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
+  "bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-primary/30",
   "bg-teal-500/10 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300 border-teal-500/30",
   "bg-sky-500/10 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30",
   "bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30",
@@ -168,7 +168,7 @@ function QueryHistoryTab({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("savedQuery.history.searchPlaceholder")}
-            className="h-7.5 rounded-md border-zinc-200 bg-white pl-8 text-xs text-zinc-900 shadow-2xs transition-all placeholder:text-zinc-400 focus-visible:border-emerald-500 focus-visible:ring-1 focus-visible:ring-emerald-500/30 dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+            className="focus-visible:border-primary focus-visible:ring-primary/30 h-7.5 rounded-md border-zinc-200 bg-white pl-8 text-xs text-zinc-900 shadow-2xs transition-all placeholder:text-zinc-400 focus-visible:ring-1 dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-100 dark:placeholder:text-zinc-500"
           />
           {search && (
             <button
@@ -225,7 +225,7 @@ function QueryHistoryTab({
               key={entry.id}
               className={cn(
                 "group relative flex cursor-pointer flex-col gap-1.5 px-3 py-2.5",
-                "border-l-2 border-transparent hover:border-emerald-500",
+                "hover:border-primary border-l-2 border-transparent",
                 "hover:bg-zinc-100/90 dark:hover:bg-zinc-900/60",
                 "rounded-r-md transition-all duration-150",
               )}
@@ -488,7 +488,7 @@ export default function QueryLibraryPanel({
       key={q.id}
       className={cn(
         "group relative flex cursor-pointer flex-col gap-1.5 px-3 py-2.5 transition-all duration-150",
-        "border-l-2 border-transparent hover:border-emerald-500",
+        "hover:border-primary border-l-2 border-transparent",
         "rounded-r-md hover:bg-zinc-100/90 dark:hover:bg-zinc-900/60",
         q.is_favorite &&
           "border-l-amber-500/80 bg-amber-500/5 dark:bg-amber-500/10",
@@ -577,7 +577,7 @@ export default function QueryLibraryPanel({
             className={cn(
               "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-medium",
               "cursor-pointer border transition-all hover:opacity-80",
-              activeTagFilter === tag ? "ring-1 ring-emerald-500/40" : "",
+              activeTagFilter === tag ? "ring-primary/40 ring-1" : "",
               getTagColor(tag),
             )}
           >
@@ -652,7 +652,7 @@ export default function QueryLibraryPanel({
       {/* Header */}
       <div className="relative border-b border-zinc-200 bg-white/80 px-3 pt-3 pb-2.5 dark:border-zinc-800 dark:bg-zinc-900/60">
         <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-emerald-500/25 bg-emerald-500/10">
+          <div className="border-primary/25 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border bg-emerald-500/10">
             <Library className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="min-w-0 flex-1">
@@ -719,7 +719,7 @@ export default function QueryLibraryPanel({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={t("savedQuery.search")}
-                className="h-7.5 rounded-md border-zinc-200 bg-white pl-8 text-xs text-zinc-900 shadow-2xs transition-all placeholder:text-zinc-400 focus-visible:border-emerald-500 focus-visible:ring-1 focus-visible:ring-emerald-500/30 dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                className="focus-visible:border-primary focus-visible:ring-primary/30 h-7.5 rounded-md border-zinc-200 bg-white pl-8 text-xs text-zinc-900 shadow-2xs transition-all placeholder:text-zinc-400 focus-visible:ring-1 dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
               {searchTerm && (
                 <button
@@ -748,7 +748,7 @@ export default function QueryLibraryPanel({
                     className={cn(
                       "shrink-0 cursor-pointer rounded border px-2 py-0.5 font-mono text-[9px] transition-all",
                       activeFolderFilter === "__all__"
-                        ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
+                        ? "border-primary/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
                         : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60",
                     )}
                   >
@@ -766,7 +766,7 @@ export default function QueryLibraryPanel({
                       className={cn(
                         "shrink-0 cursor-pointer rounded border px-2 py-0.5 font-mono text-[9px] transition-all",
                         activeFolderFilter === fName
-                          ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
+                          ? "border-primary/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
                           : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60",
                       )}
                     >
@@ -788,7 +788,7 @@ export default function QueryLibraryPanel({
                     className={cn(
                       "shrink-0 cursor-pointer rounded-full border px-2 py-0.5 text-[9px] font-medium transition-all",
                       activeTagFilter === "__all__"
-                        ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
+                        ? "border-primary/40 bg-emerald-500/15 font-semibold text-emerald-700 shadow-2xs dark:text-emerald-400"
                         : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60",
                     )}
                   >
@@ -826,7 +826,7 @@ export default function QueryLibraryPanel({
             {queries.length === 0 && !loading && (
               <div className="flex h-full flex-col items-center justify-center gap-3 px-4 py-10 text-center select-none">
                 <div className="relative">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10 dark:bg-emerald-500/15">
+                  <div className="border-primary/25 flex h-12 w-12 items-center justify-center rounded-2xl border bg-emerald-500/10 dark:bg-emerald-500/15">
                     <Library className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-zinc-200 bg-white shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
@@ -1042,7 +1042,7 @@ export default function QueryLibraryPanel({
         <DialogContent className="max-w-sm border-zinc-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
           <DialogHeader>
             <div className="mb-1 flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-emerald-500/25 bg-emerald-500/15">
+              <div className="border-primary/25 flex h-8 w-8 items-center justify-center rounded-full border bg-emerald-500/15">
                 <Edit2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               </div>
               <DialogTitle className="text-sm text-zinc-900 dark:text-zinc-100">
@@ -1058,7 +1058,7 @@ export default function QueryLibraryPanel({
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="border-zinc-200 bg-zinc-50 text-sm text-zinc-900 focus-visible:ring-1 focus-visible:ring-emerald-500/50 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100"
+                className="focus-visible:ring-primary/50 border-zinc-200 bg-zinc-50 text-sm text-zinc-900 focus-visible:ring-1 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100"
                 onKeyDown={(e) => e.key === "Enter" && saveEdit()}
               />
             </div>
@@ -1072,7 +1072,7 @@ export default function QueryLibraryPanel({
                 value={editFolder}
                 onChange={(e) => setEditFolder(e.target.value)}
                 placeholder={t("savedQuery.folderPlaceholder")}
-                className="border-zinc-200 bg-zinc-50 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-emerald-500/50 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                className="focus-visible:ring-primary/50 border-zinc-200 bg-zinc-50 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
             </div>
 
@@ -1085,7 +1085,7 @@ export default function QueryLibraryPanel({
                 value={editTags}
                 onChange={(e) => setEditTags(e.target.value)}
                 placeholder={t("savedQuery.tagsPlaceholder")}
-                className="border-zinc-200 bg-zinc-50 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-emerald-500/50 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                className="focus-visible:ring-primary/50 border-zinc-200 bg-zinc-50 font-mono text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 dark:border-zinc-800 dark:bg-zinc-950/60 dark:text-zinc-100 dark:placeholder:text-zinc-500"
               />
               <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
                 Separate tags with commas
@@ -1114,7 +1114,7 @@ export default function QueryLibraryPanel({
                         className={cn(
                           "cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[9px] transition-all",
                           isSelected
-                            ? "border-emerald-500/40 bg-emerald-500/15 font-semibold text-emerald-700 dark:text-emerald-400"
+                            ? "border-primary/40 bg-emerald-500/15 font-semibold text-emerald-700 dark:text-emerald-400"
                             : "border-zinc-200 bg-zinc-100 text-zinc-600 hover:bg-zinc-200/60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800",
                         )}
                       >
@@ -1141,7 +1141,7 @@ export default function QueryLibraryPanel({
               size="sm"
               onClick={saveEdit}
               disabled={!editTitle.trim()}
-              className="gap-1.5 bg-emerald-600 text-xs text-white shadow-xs hover:bg-emerald-500"
+              className="bg-primary hover:bg-primary/90 gap-1.5 text-xs text-white shadow-xs"
             >
               <Check className="h-3.5 w-3.5" />
               {t("savedQuery.save")}

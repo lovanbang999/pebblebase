@@ -2,6 +2,7 @@ import { useState, useMemo, type FC } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
+import { studioEditorTheme } from "@/lib/editorTheme";
 import { sql, PostgreSQL, MySQL, SQLite } from "@codemirror/lang-sql";
 import { json } from "@codemirror/lang-json";
 import {
@@ -118,7 +119,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
         return (
           <Badge
             variant="outline"
-            className="border-emerald-500/20 bg-emerald-500/10 font-mono text-[11px] text-emerald-700 dark:text-emerald-400"
+            className="border-primary/20 bg-emerald-500/10 font-mono text-[11px] text-emerald-700 dark:text-emerald-400"
           >
             MongoDB
           </Badge>
@@ -183,7 +184,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
       {/* Overview Top Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 pb-3 dark:border-zinc-800">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+          <div className="border-primary/20 rounded-lg border bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
             <Database className="h-5 w-5" />
           </div>
           <div>
@@ -268,7 +269,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsSeedModalOpen(true)}
-                  className="h-8 cursor-pointer gap-1.5 border-emerald-500/30 px-2.5 font-mono text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+                  className="border-primary/30 h-8 cursor-pointer gap-1.5 px-2.5 font-mono text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
                   <span>{t("seed.title")}</span>
@@ -283,8 +284,8 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                 className={cn(
                   "h-8 gap-1.5 px-3 font-mono text-xs font-semibold shadow-xs transition-all",
                   copied
-                    ? "bg-emerald-600 text-white"
-                    : "bg-emerald-600 text-white hover:bg-emerald-500",
+                    ? "bg-primary text-white"
+                    : "bg-primary hover:bg-primary/90 text-white",
                 )}
               >
                 {copied ? (
@@ -538,7 +539,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                           {idx.unique ? (
                             <Badge
                               variant="outline"
-                              className="border-emerald-500/30 bg-emerald-500/10 text-[10px] font-bold text-emerald-700 uppercase dark:text-emerald-400"
+                              className="border-primary/30 bg-emerald-500/10 text-[10px] font-bold text-emerald-700 uppercase dark:text-emerald-400"
                             >
                               {t("schema.unique")}
                             </Badge>
@@ -621,7 +622,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                   readOnly={true}
                   editable={false}
                   theme={isDark ? "dark" : "light"}
-                  extensions={extensions}
+                  extensions={[...extensions, studioEditorTheme]}
                   basicSetup={{
                     lineNumbers: true,
                     foldGutter: true,
