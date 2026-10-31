@@ -14,6 +14,7 @@ import {
   getCoreRowModel,
   flexRender,
   type ColumnDef,
+  type ColumnSizingState,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
@@ -25,7 +26,6 @@ import {
   X,
   Key,
   Layers,
-  ArrowUpRight,
   Search,
   Inbox,
   BarChart3,
@@ -96,6 +96,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { cn } from "cn";
+import { ReferenceCell } from "./ReferenceCell";
+import { invalidateReferenceCache } from "@/lib/referenceCache";
 
 interface DataGridProps {
   table: TableSchema;
@@ -125,19 +127,37 @@ interface DataGridProps {
     targetColumn: string,
     value: any,
   ) => void;
+  workspaceId?: string;
+  onNavigateReference?: (
+    connectionId: string,
+    table: string,
+    column: string,
+    value: unknown,
+    rowIdentity?: string,
+  ) => void;
   isReadOnly?: boolean;
   onOpenQueryConsole?: (query?: string, title?: string) => void;
+  onFindEverywhere?: (value?: string) => void;
+  onFocusedCellValueChange?: (value?: string) => void;
+  onFocusedCellLocationChange?: (
+    cell: { column: string; rowIdentity?: string } | undefined,
+  ) => void;
   onScrollPositionChange?: (left: number, top: number) => void;
   initialScrollPosition?: { left: number; top: number };
   connId?: string;
   workspaceTabId?: string;
+  initialSelectedCell?: { column: string; rowIdentity?: string };
   dbType?: DatabaseType;
   connectionName?: string;
   queryTimeMs?: number;
 }
 
 import { DocumentView } from "./DocumentView";
-import { GridContextMenu, type ContextMenuState } from "./GridContextMenu";
+import {
+  GridContextMenu,
+  type ContextMenuState,
+  type ExtraGridContextMenuItem,
+} from "./GridContextMenu";
 import { GridRowItem } from "./GridRowItem";
 import { TableActionToolbar } from "./TableActionToolbar";
 import { TableSubviewTabs, type TableSubview } from "./TableSubviewTabs";
@@ -145,6 +165,33 @@ import { TableFilterBar } from "./TableFilterBar";
 import { TableExecutionFooter } from "./TableExecutionFooter";
 import { ValueEditorPanel } from "./ValueEditorPanel";
 import { emitOperationEvent } from "@/lib/operationEvents";
+import {
+  createRowDraftId,
+  stageCellDraft,
+  type RowDraft,
+} from "@/lib/rowDrafts";
+
+function searchCellValue(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value !== null && typeof value === "object") {
+    try {
+      return JSON.stringify(value) ?? String(value);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value ?? "");
+}
+
+function isReferenceId(value: unknown): boolean {
+  return (
+    typeof value === "string" &&
+    (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value,
+    ) ||
+      /^[0-9a-f]{24}$/i.test(value))
+  );
+}
 
 export const DataGrid: FC<DataGridProps> = ({
   table,
@@ -167,12 +214,18 @@ export const DataGrid: FC<DataGridProps> = ({
   onCommitRow,
   onCommitDeleteRow,
   onNavigateRelation,
+  workspaceId,
+  onNavigateReference,
   isReadOnly = false,
   onOpenQueryConsole,
+  onFindEverywhere,
+  onFocusedCellValueChange,
+  onFocusedCellLocationChange,
   onScrollPositionChange,
   initialScrollPosition,
   connId,
   workspaceTabId,
+  initialSelectedCell,
   dbType,
   connectionName,
   queryTimeMs,
@@ -192,6 +245,7 @@ export const DataGrid: FC<DataGridProps> = ({
   const [tableStats, setTableStats] = useState<TableStats | null>(null);
   const [showStats, setShowStats] = useState(false);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({});
   const [copiedCol, setCopiedCol] = useState<string | null>(null);
   const scrollPositionTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -242,77 +296,53 @@ export const DataGrid: FC<DataGridProps> = ({
     columnName: "",
     cellValue: null,
   });
-  type RowDraft = {
-    id: string;
-    original: Record<string, any> | null;
-    current: Record<string, any>;
-    deleted: boolean;
-    inserted: boolean;
-  };
   const [rowDrafts, setRowDrafts] = useState<Record<string, RowDraft>>({});
+  const [draftErrors, setDraftErrors] = useState<Record<string, string>>({});
   const [isSubmittingDrafts, setIsSubmittingDrafts] = useState(false);
   const [draftSubmitError, setDraftSubmitError] = useState<string | null>(null);
   const [valueEditorOpen, setValueEditorOpen] = useState(false);
   const [valueEditorWidth, setValueEditorWidth] = useState(360);
+  const hasPrimaryKey = table.columns.some((column) => column.is_primary_key);
   const draftIdForRow = useCallback(
-    (row: Record<string, any>, _index: number) => {
-      const primaryKeys = table.columns.filter(
-        (column) => column.is_primary_key,
-      );
-      const identity = primaryKeys.length
-        ? primaryKeys.map((column) => [column.name, row[column.name]])
-        : Object.entries(row)
-            .filter(([key]) => !key.startsWith("_pb_"))
-            .sort(([a], [b]) => a.localeCompare(b));
-      return `row:${JSON.stringify(identity)}:${primaryKeys.length ? "pk" : "value"}`;
-    },
+    (row: Record<string, any>, _index: number) =>
+      createRowDraftId(row, table.columns),
     [table.columns],
   );
   const stageCellValue = useCallback(
     (row: Record<string, any>, columnName: string, value: unknown) => {
-      if (isReadOnly) return;
+      if (isReadOnly || !hasPrimaryKey) return;
       const id = row._pb_draft_id || draftIdForRow(row, 0);
-      const cleanRow = Object.fromEntries(
-        Object.entries(row).filter(([key]) => !key.startsWith("_pb_")),
-      );
-      setRowDrafts((current) => {
-        const existing = current[id];
-        const inserted = existing?.inserted ?? Boolean(row._pb_draft_inserted);
-        const original = inserted ? null : (existing?.original ?? cleanRow);
-        const next: Record<string, RowDraft> = {
-          ...current,
-          [id]: {
-            id,
-            original,
-            current: {
-              ...(existing?.current ?? cleanRow),
-              [columnName]: value,
-            },
-            deleted: false,
-            inserted,
-          },
-        };
-        if (
-          !inserted &&
-          JSON.stringify(next[id].original) === JSON.stringify(next[id].current)
-        )
-          delete next[id];
+      setDraftErrors((current) => {
+        if (!current[id]) return current;
+        const next = { ...current };
+        delete next[id];
         return next;
       });
+      setRowDrafts((current) =>
+        stageCellDraft(current, row, columnName, value, table.columns),
+      );
     },
-    [draftIdForRow, isReadOnly],
+    [draftIdForRow, hasPrimaryKey, isReadOnly, table.columns],
   );
   const displayedBaseRows = useMemo<Record<string, any>[]>(
     () =>
-      rows.map((row, index) => {
-        const id = draftIdForRow(row, index);
+      rows.map((row) => {
+        const id = draftIdForRow(row, 0);
         const draft = rowDrafts[id];
+        if (!draft) return row;
         return {
-          ...(draft?.current ?? row),
+          ...draft.current,
           _pb_draft_id: id,
-          _pb_draft_dirty: Boolean(draft),
-          _pb_draft_deleted: draft?.deleted ?? false,
-          _pb_draft_inserted: draft?.inserted ?? false,
+          _pb_draft_dirty: true,
+          _pb_draft_deleted: draft.deleted,
+          _pb_draft_inserted: draft.inserted,
+          _pb_draft_changed_columns: draft.inserted
+            ? Object.keys(draft.current)
+            : Object.keys(draft.current).filter(
+                (column) =>
+                  JSON.stringify(draft.current[column]) !==
+                  JSON.stringify(draft.original?.[column]),
+              ),
         };
       }),
     [rows, rowDrafts, draftIdForRow],
@@ -327,6 +357,7 @@ export const DataGrid: FC<DataGridProps> = ({
           _pb_draft_dirty: true,
           _pb_draft_deleted: draft.deleted,
           _pb_draft_inserted: true,
+          _pb_draft_changed_columns: Object.keys(draft.current),
         })),
     [rowDrafts],
   );
@@ -337,8 +368,14 @@ export const DataGrid: FC<DataGridProps> = ({
   const pendingDrafts = useMemo(() => Object.values(rowDrafts), [rowDrafts]);
   const stageDeleteRow = useCallback(
     (row: Record<string, any>) => {
-      if (isReadOnly) return;
+      if (isReadOnly || !hasPrimaryKey) return;
       const id = row._pb_draft_id || draftIdForRow(row, 0);
+      setDraftErrors((current) => {
+        if (!current[id]) return current;
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
       const cleanRow = Object.fromEntries(
         Object.entries(row).filter(([key]) => !key.startsWith("_pb_")),
       );
@@ -361,11 +398,11 @@ export const DataGrid: FC<DataGridProps> = ({
         };
       });
     },
-    [draftIdForRow, isReadOnly],
+    [draftIdForRow, hasPrimaryKey, isReadOnly],
   );
   const stageWholeRow = useCallback(
     (original: Record<string, any> | null, values: Record<string, any>) => {
-      if (isReadOnly) return;
+      if (isReadOnly || (original !== null && !hasPrimaryKey)) return;
       const isInsert = !original || Boolean(original._isDuplicate);
       const cleanOriginal = original
         ? Object.fromEntries(
@@ -379,6 +416,12 @@ export const DataGrid: FC<DataGridProps> = ({
         (isInsert
           ? `insert:${crypto.randomUUID()}`
           : draftIdForRow(cleanOriginal!, 0));
+      setDraftErrors((current) => {
+        if (!current[id]) return current;
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
       setRowDrafts((current) => {
         const previous = current[id];
         return {
@@ -396,7 +439,7 @@ export const DataGrid: FC<DataGridProps> = ({
         };
       });
     },
-    [draftIdForRow, isReadOnly],
+    [draftIdForRow, hasPrimaryKey, isReadOnly],
   );
   useEffect(() => {
     const onStageRow = (event: Event) => {
@@ -471,7 +514,8 @@ export const DataGrid: FC<DataGridProps> = ({
     }
     setIsSubmittingDrafts(true);
     setDraftSubmitError(null);
-    const failures: string[] = [];
+    setDraftErrors({});
+    const failures: Record<string, string> = {};
     try {
       for (const draft of pendingDrafts) {
         try {
@@ -497,14 +541,16 @@ export const DataGrid: FC<DataGridProps> = ({
             return next;
           });
         } catch (error) {
-          failures.push(error instanceof Error ? error.message : String(error));
+          failures[draft.id] =
+            error instanceof Error ? error.message : String(error);
         }
       }
-      if (failures.length)
+      setDraftErrors(failures);
+      if (Object.keys(failures).length)
         setDraftSubmitError(
           t("datagrid.partialSubmitError", {
-            count: failures.length,
-            error: failures[0],
+            count: Object.keys(failures).length,
+            error: Object.values(failures)[0],
             defaultValue:
               "{{count}} change(s) failed. Unresolved drafts remain. {{error}}",
           }),
@@ -551,6 +597,7 @@ export const DataGrid: FC<DataGridProps> = ({
       )
     ) {
       setRowDrafts({});
+      setDraftErrors({});
       setDraftSubmitError(null);
     }
   }, [pendingDrafts.length, t]);
@@ -562,7 +609,7 @@ export const DataGrid: FC<DataGridProps> = ({
   useEffect(() => {
     const handleImportCommand = (event: Event) => {
       const command = event as CustomEvent<{ tabId: string }>;
-      if (command.detail?.tabId !== workspaceTabId) return;
+      if (isReadOnly || command.detail?.tabId !== workspaceTabId) return;
       if (
         pendingDrafts.length &&
         !window.confirm(
@@ -575,6 +622,7 @@ export const DataGrid: FC<DataGridProps> = ({
         return;
       if (pendingDrafts.length) {
         setRowDrafts({});
+        setDraftErrors({});
         setDraftSubmitError(null);
       }
       setImportModalMode("import");
@@ -583,7 +631,7 @@ export const DataGrid: FC<DataGridProps> = ({
     window.addEventListener("pb:import-table", handleImportCommand);
     return () =>
       window.removeEventListener("pb:import-table", handleImportCommand);
-  }, [workspaceTabId, pendingDrafts.length, t]);
+  }, [workspaceTabId, pendingDrafts.length, isReadOnly, t]);
 
   const handleRefresh = async () => {
     if (isRefreshing || isLoading) return;
@@ -599,11 +647,13 @@ export const DataGrid: FC<DataGridProps> = ({
       return;
     if (pendingDrafts.length) {
       setRowDrafts({});
+      setDraftErrors({});
       setDraftSubmitError(null);
     }
     setIsRefreshing(true);
     try {
       await onRefresh();
+      invalidateReferenceCache(connId);
       emitOperationEvent({
         kind: "refresh",
         severity: "success",
@@ -665,7 +715,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
   const startEditingCell = useCallback(
     (row: Record<string, any>, colName: string, rowIndex: number) => {
-      if (isReadOnly) return;
+      if (isReadOnly || !hasPrimaryKey) return;
       const colSchema = table.columns.find((c) => c.name === colName);
       if (colSchema?.is_primary_key) return;
 
@@ -678,7 +728,7 @@ export const DataGrid: FC<DataGridProps> = ({
           : String(currentVal),
       );
     },
-    [isReadOnly, table.columns],
+    [hasPrimaryKey, isReadOnly, table.columns],
   );
 
   const handleRowContextMenu = useCallback(
@@ -707,6 +757,7 @@ export const DataGrid: FC<DataGridProps> = ({
       row: Record<string, any>,
       colName: string,
       cellValue: unknown,
+      rowIndex: number,
     ) => {
       setContextMenu({
         mouseX: e.clientX,
@@ -714,6 +765,7 @@ export const DataGrid: FC<DataGridProps> = ({
         row,
         colName,
         cellValue,
+        rowIndex,
       });
     },
     [],
@@ -981,6 +1033,67 @@ export const DataGrid: FC<DataGridProps> = ({
       ),
     );
   }, [workspaceRows, debouncedSearch]);
+
+  useEffect(() => {
+    const row = focusedCell ? displayedRows[focusedCell.rowIndex] : undefined;
+    onFocusedCellValueChange?.(
+      row && focusedCell
+        ? searchCellValue(row[focusedCell.colName])
+        : undefined,
+    );
+  }, [focusedCell, displayedRows, onFocusedCellValueChange]);
+  useEffect(() => {
+    const row = focusedCell ? displayedRows[focusedCell.rowIndex] : undefined;
+    const keys = table.columns.filter((column) => column.is_primary_key);
+    const rowIdentity =
+      row && keys.length
+        ? JSON.stringify(keys.map((column) => row[column.name]))
+        : undefined;
+    onFocusedCellLocationChange?.(
+      focusedCell ? { column: focusedCell.colName, rowIdentity } : undefined,
+    );
+  }, [focusedCell, displayedRows, table.columns, onFocusedCellLocationChange]);
+  useEffect(() => {
+    if (!initialSelectedCell) return;
+    const keys = table.columns.filter((column) => column.is_primary_key);
+    const rowIndex = displayedRows.findIndex(
+      (row) =>
+        keys.length &&
+        JSON.stringify(keys.map((column) => row[column.name])) ===
+          initialSelectedCell.rowIdentity,
+    );
+    if (
+      rowIndex >= 0 &&
+      table.columns.some((column) => column.name === initialSelectedCell.column)
+    )
+      setFocusedCell({ rowIndex, colName: initialSelectedCell.column });
+  }, [initialSelectedCell, displayedRows, table.columns]);
+  useEffect(() => {
+    const restore = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          tabId: string;
+          cell?: { column: string; rowIdentity?: string };
+        }>
+      ).detail;
+      if (!detail || detail.tabId !== workspaceTabId || !detail.cell) return;
+      const keys = table.columns.filter((column) => column.is_primary_key);
+      const rowIndex = displayedRows.findIndex(
+        (row) =>
+          keys.length &&
+          JSON.stringify(keys.map((column) => row[column.name])) ===
+            detail.cell?.rowIdentity,
+      );
+      const colName = table.columns.some(
+        (column) => column.name === detail.cell?.column,
+      )
+        ? detail.cell.column
+        : "_row_index";
+      if (rowIndex >= 0) setFocusedCell({ rowIndex, colName });
+    };
+    window.addEventListener("pb:restore-cell", restore);
+    return () => window.removeEventListener("pb:restore-cell", restore);
+  }, [displayedRows, table.columns, workspaceTabId]);
 
   // TanStack Table columns
   const columns = useMemo<ColumnDef<Record<string, any>>[]>(() => {
@@ -1340,30 +1453,42 @@ export const DataGrid: FC<DataGridProps> = ({
               );
             }
 
-            if (col.is_foreign_key && onNavigateRelation) {
-              const rel = table.relations?.find(
-                (r) => r.from_column === col.name,
+            const relation = col.is_foreign_key
+              ? table.relations?.find((item) => item.from_column === col.name)
+              : undefined;
+            if (
+              relation ||
+              col.is_foreign_key ||
+              (typeof val === "string" &&
+                (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+                  val,
+                ) ||
+                  /^[0-9a-f]{24}$/i.test(val)))
+            ) {
+              return (
+                <ReferenceCell
+                  value={val}
+                  connectionId={connId}
+                  workspaceId={workspaceId}
+                  tableName={table.name}
+                  declared={
+                    relation
+                      ? { table: relation.to_table, column: relation.to_column }
+                      : undefined
+                  }
+                  declaredForeignKey={col.is_foreign_key}
+                  onOpen={(match, value) =>
+                    onNavigateReference?.(
+                      match.connectionId,
+                      match.table,
+                      match.column,
+                      value,
+                      match.rowIdentity,
+                    )
+                  }
+                  onFind={onFindEverywhere}
+                />
               );
-              if (rel) {
-                return (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onNavigateRelation(rel.to_table, rel.to_column, val);
-                    }}
-                    className="group/fk inline-flex cursor-pointer items-center gap-1 rounded border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-left font-mono text-xs text-sky-600 transition-colors hover:bg-sky-100 hover:text-sky-700 hover:underline dark:border-sky-800/30 dark:bg-sky-950/20 dark:text-sky-400 dark:hover:bg-sky-950/50 dark:hover:text-sky-300"
-                    title={t("datagrid.navigateToRelation", {
-                      table: rel.to_table,
-                      column: rel.to_column,
-                      val,
-                    })}
-                  >
-                    <span className="font-semibold">{String(val)}</span>
-                    <ArrowUpRight className="h-3 w-3 shrink-0 opacity-70 transition-all group-hover/fk:translate-x-0.5 group-hover/fk:-translate-y-0.5 group-hover/fk:opacity-100" />
-                  </button>
-                );
-              }
             }
 
             if (
@@ -1484,7 +1609,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
           return (
             <div
-              onClick={(e) => {
+              onDoubleClick={(e) => {
                 e.stopPropagation();
                 startEditingCell(row, col.name, rowIndex);
               }}
@@ -1688,7 +1813,13 @@ export const DataGrid: FC<DataGridProps> = ({
     onSortChange,
     page,
     pageSize,
-    onNavigateRelation,
+    onNavigateReference,
+    onFindEverywhere,
+    connId,
+    workspaceId,
+    copiedCol,
+    startEditingCell,
+    stageCellValue,
     isReadOnly,
     t,
     editingCell,
@@ -1709,12 +1840,48 @@ export const DataGrid: FC<DataGridProps> = ({
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     manualSorting: true,
+    columnResizeMode: "onChange",
+    enableColumnResizing: true,
     state: {
+      columnSizing,
       columnVisibility: Object.fromEntries(
         hiddenColumns.map((name) => [name, false]),
       ),
     },
+    onColumnSizingChange: setColumnSizing,
   });
+
+  const numericColumnNames = useMemo(
+    () =>
+      table.columns
+        .filter((column) =>
+          /int|float|num|dec|serial|money|double|real|bigint|smallint/i.test(
+            column.type,
+          ),
+        )
+        .map((column) => column.name),
+    [table.columns],
+  );
+
+  const querySummary = useMemo(() => {
+    const operatorLabels: Record<FilterOption["operator"], string> = {
+      eq: "=",
+      neq: "≠",
+      gt: ">",
+      lt: "<",
+      contains: "contains",
+    };
+    const parts = filters.map(
+      ({ column, operator, value }) =>
+        `${column} ${operatorLabels[operator]} ${JSON.stringify(value)}`,
+    );
+    if (quickSearch.trim())
+      parts.push(`Loaded page contains ${JSON.stringify(quickSearch.trim())}`);
+    if (sortBy) parts.push(`ORDER BY ${sortBy} ${sortDesc ? "DESC" : "ASC"}`);
+    return (
+      parts.join(" · ") || t("datagrid.noActiveFilters", "No filters or sort")
+    );
+  }, [filters, quickSearch, sortBy, sortDesc, t]);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const tableRows = reactTable.getRowModel().rows;
@@ -1913,6 +2080,19 @@ export const DataGrid: FC<DataGridProps> = ({
         return;
       }
 
+      if (e.key === "F2" && !editingCell) {
+        e.preventDefault();
+        const colSchema = table.columns.find((c) => c.name === currentColName);
+        if (
+          hasPrimaryKey &&
+          !isReadOnly &&
+          !colSchema?.is_primary_key &&
+          currentColName !== "_row_index"
+        )
+          startEditingCell(currentRow, currentColName, currentRowIndex);
+        return;
+      }
+
       // Space: Open Cell Detail Inspector
       if (e.key === " " && !editingCell) {
         if (currentColName && currentColName !== "_row_index") {
@@ -2006,6 +2186,7 @@ export const DataGrid: FC<DataGridProps> = ({
     reactTable,
     table,
     isReadOnly,
+    hasPrimaryKey,
     onDuplicateRow,
     onAddRow,
     stageDeleteRow,
@@ -2065,6 +2246,7 @@ export const DataGrid: FC<DataGridProps> = ({
             return;
           if (pendingDrafts.length) {
             setRowDrafts({});
+            setDraftErrors({});
             setDraftSubmitError(null);
           }
           setImportModalMode("import");
@@ -2082,7 +2264,7 @@ export const DataGrid: FC<DataGridProps> = ({
           }
         }}
         hasSelectedRow={Boolean(
-          focusedCell && displayedRows[focusedCell.rowIndex],
+          hasPrimaryKey && focusedCell && displayedRows[focusedCell.rowIndex],
         )}
         pendingCount={pendingDrafts.length}
         isSubmittingDrafts={isSubmittingDrafts}
@@ -2090,6 +2272,20 @@ export const DataGrid: FC<DataGridProps> = ({
         onRevertDrafts={revertDrafts}
         onOpenQuery={
           onOpenQueryConsole ? () => onOpenQueryConsole() : undefined
+        }
+        onFindEverywhere={
+          onFindEverywhere
+            ? () => {
+                const row = focusedCell
+                  ? displayedRows[focusedCell.rowIndex]
+                  : undefined;
+                onFindEverywhere(
+                  row && focusedCell
+                    ? searchCellValue(row[focusedCell.colName])
+                    : undefined,
+                );
+              }
+            : undefined
         }
         page={page}
         pageSize={pageSize}
@@ -2224,7 +2420,13 @@ export const DataGrid: FC<DataGridProps> = ({
               )}
               {isLoading || isRefreshing ? (
                 /* High-fidelity shadcn UI Table Skeleton */
-                <table className="animate-in fade-in border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm duration-150">
+                <table
+                  aria-label={t("datagrid.rowsInTable", {
+                    table: table?.name,
+                    defaultValue: `Rows in ${table?.name ?? "table"}`,
+                  })}
+                  className="animate-in fade-in border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm duration-150"
+                >
                   <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
                     <TableRow>
                       <TableHead className="border-border text-muted-foreground dark:border-border/80 w-12 px-3 py-2 font-mono text-xs font-medium not-last:border-r">
@@ -2369,7 +2571,7 @@ export const DataGrid: FC<DataGridProps> = ({
                   extraColumns={extraColumns}
                   page={page}
                   pageSize={pageSize}
-                  isReadOnly={isReadOnly}
+                  isReadOnly={isReadOnly || !hasPrimaryKey}
                   onEditRow={onEditRow}
                   onDeleteRow={stageDeleteRow}
                   onSaveCell={async (row, columnName, value) =>
@@ -2380,7 +2582,13 @@ export const DataGrid: FC<DataGridProps> = ({
                 />
               ) : (
                 /* Data Table */
-                <table className="studio-data-table border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm">
+                <table
+                  aria-label={t("datagrid.rowsInTable", {
+                    table: table?.name,
+                    defaultValue: `Rows in ${table?.name ?? "table"}`,
+                  })}
+                  className="studio-data-table border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm"
+                >
                   <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
                     {reactTable.getHeaderGroups().map((headerGroup) => (
                       <TableRow key={headerGroup.id}>
@@ -2388,11 +2596,30 @@ export const DataGrid: FC<DataGridProps> = ({
                           <TableHead
                             key={header.id}
                             style={{ width: header.getSize() }}
-                            className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
+                            className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground relative h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
                           >
                             {flexRender(
                               header.column.columnDef.header,
                               header.getContext(),
+                            )}
+                            {header.column.getCanResize() && (
+                              <div
+                                onMouseDown={header.getResizeHandler()}
+                                onTouchStart={header.getResizeHandler()}
+                                onClick={(event) => event.stopPropagation()}
+                                className={cn(
+                                  "absolute top-0 right-0 h-full w-1.5 cursor-col-resize touch-none select-none",
+                                  header.column.getIsResizing()
+                                    ? "bg-primary"
+                                    : "hover:bg-primary/50",
+                                )}
+                                role="separator"
+                                aria-orientation="vertical"
+                                aria-label={t("datagrid.resizeColumn", {
+                                  column: header.column.id,
+                                  defaultValue: `Resize ${header.column.id} column`,
+                                })}
+                              />
                             )}
                           </TableHead>
                         ))}
@@ -2428,6 +2655,10 @@ export const DataGrid: FC<DataGridProps> = ({
                               measureElement={rowVirtualizer.measureElement}
                               focusedCell={focusedCell}
                               editingCell={editingCell}
+                              numericColumnNames={numericColumnNames}
+                              draftError={
+                                draftErrors[row.original._pb_draft_id]
+                              }
                               onRowContextMenu={handleRowContextMenu}
                               onCellClick={handleCellClick}
                               onCellContextMenu={handleCellContextMenu}
@@ -2478,7 +2709,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       ]
                     : cellDrawerState.cellValue
                 }
-                isReadOnly={isReadOnly}
+                isReadOnly={isReadOnly || !hasPrimaryKey}
                 width={valueEditorWidth}
                 onWidthChange={setValueEditorWidth}
                 onClose={() => setValueEditorOpen(false)}
@@ -2498,6 +2729,7 @@ export const DataGrid: FC<DataGridProps> = ({
             to={Math.min((page + 1) * pageSize, totalCount)}
             total={totalCount}
             queryTimeMs={queryTimeMs}
+            querySummary={querySummary}
             isLoading={isLoading}
             t={t}
           />
@@ -2511,6 +2743,10 @@ export const DataGrid: FC<DataGridProps> = ({
             onClose={() => setIsImportModalOpen(false)}
             connId={connId}
             table={table}
+            rows={rows}
+            isReadOnly={isReadOnly}
+            page={page}
+            pageSize={pageSize}
             initialMode={importModalMode}
             tableStats={tableStats}
             filters={filters}
@@ -2558,7 +2794,21 @@ export const DataGrid: FC<DataGridProps> = ({
         filters={filters}
         onFiltersChange={onFiltersChange}
         onEditRow={onEditRow}
+        onEditCell={(row, column, rowIndex) =>
+          startEditingCell(row, column, rowIndex)
+        }
+        onSetNull={(row, column) => stageCellValue(row, column, null)}
+        onCloneRow={(row) => {
+          const clone = Object.fromEntries(
+            Object.entries(row).filter(([key]) => !key.startsWith("_pb_")),
+          );
+          for (const column of table.columns) {
+            if (column.is_primary_key) delete clone[column.name];
+          }
+          stageWholeRow(null, clone);
+        }}
         onDeleteRow={stageDeleteRow}
+        onSortChange={onSortChange}
         onNavigateRelation={onNavigateRelation}
         onInspectCell={(colName, cellValue, row, colType) => {
           setCellDrawerState({
@@ -2574,7 +2824,73 @@ export const DataGrid: FC<DataGridProps> = ({
           setCopiedNotification(msg);
           setTimeout(() => setCopiedNotification(null), 2000);
         }}
-        isReadOnly={isReadOnly}
+        isReadOnly={isReadOnly || !hasPrimaryKey}
+        getExtraMenuItems={(context): ExtraGridContextMenuItem[] => {
+          const items: ExtraGridContextMenuItem[] = [];
+          if (onFindEverywhere)
+            items.push({
+              id: "find-everywhere",
+              label: `Find “${searchCellValue(context.cellValue).slice(0, 48)}” everywhere`,
+              onSelect: () =>
+                onFindEverywhere(searchCellValue(context.cellValue)),
+              disabled:
+                context.cellValue == null || String(context.cellValue) === "",
+            });
+          if (onNavigateReference)
+            items.push({
+              id: "go-to-referenced-row",
+              label: "Go to referenced row",
+              onSelect: async () => {
+                const rel = table.relations?.find(
+                  (item) => item.from_column === context.colName,
+                );
+                if (connId && workspaceId) {
+                  const { resolveReferences } = await import("@/lib/api");
+                  const result = await resolveReferences({
+                    workspaceId,
+                    currentConnectionId: connId,
+                    currentTable: table.name,
+                    value: String(context.cellValue ?? ""),
+                    ...(rel
+                      ? {
+                          declaredTable: rel.to_table,
+                          declaredColumn: rel.to_column,
+                        }
+                      : {}),
+                  });
+                  const match = result.matches[0];
+                  if (match)
+                    onNavigateReference(
+                      match.connectionId,
+                      match.table,
+                      match.column,
+                      context.cellValue,
+                      match.rowIdentity,
+                    );
+                }
+              },
+              disabled:
+                (context.cellValue == null &&
+                  !table.relations?.some(
+                    (item) => item.from_column === context.colName,
+                  )) ||
+                (!isReferenceId(context.cellValue) &&
+                  !table.relations?.some(
+                    (item) => item.from_column === context.colName,
+                  )),
+            });
+          return items;
+        }}
+        mutationBlockedReason={
+          isReadOnly
+            ? t("datagrid.readOnlyTooltip")
+            : !hasPrimaryKey
+              ? t(
+                  "datagrid.primaryKeyRequired",
+                  "Editing and deleting rows requires a primary key.",
+                )
+              : undefined
+        }
         t={t}
       />
 

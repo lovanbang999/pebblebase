@@ -1,42 +1,55 @@
-import tailwindcss from '@tailwindcss/vite'
-import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
 
 // https://vite.dev/config/
 export default defineConfig({
+  test: {
+    environment: "node",
+    include: ["src/**/*.test.ts"],
+    pool: "threads",
+    maxWorkers: 1,
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@': `${import.meta.dirname}/src`,
+      "@": `${import.meta.dirname}/src`,
     },
   },
   optimizeDeps: {
-    include: ['react-is', 'recharts'],
+    include: ["react-is", "recharts"],
   },
   build: {
     rollupOptions: {
       treeshake: true,
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@codemirror') || id.includes('@uiw/react-codemirror')) {
-              return 'vendor-codemirror';
-            }
-            if (id.includes('@xyflow') || id.includes('dagre') || id.includes('html-to-image')) {
-              return 'vendor-xyflow';
-            }
-            if (id.includes('recharts') || id.includes('d3-')) {
-              return 'vendor-charts';
-            }
-            if (id.includes('lucide-react')) {
-              return 'vendor-icons';
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("@codemirror") ||
+              id.includes("@uiw/react-codemirror")
+            ) {
+              return "vendor-codemirror";
             }
             if (
-              id.includes('@tanstack/react-table') ||
-              id.includes('@tanstack/react-virtual') ||
-              id.includes('@tanstack/react-query')
+              id.includes("@xyflow") ||
+              id.includes("dagre") ||
+              id.includes("html-to-image")
             ) {
-              return 'vendor-tanstack';
+              return "vendor-xyflow";
+            }
+            if (id.includes("recharts") || id.includes("d3-")) {
+              return "vendor-charts";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (
+              id.includes("@tanstack/react-table") ||
+              id.includes("@tanstack/react-virtual") ||
+              id.includes("@tanstack/react-query")
+            ) {
+              return "vendor-tanstack";
             }
           }
         },
@@ -46,10 +59,10 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
+      "/api": {
+        target: "http://localhost:8080",
         changeOrigin: true,
       },
     },
   },
-})
+});

@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Shield,
-  Trash2,
   KeyRound,
   Plus,
   Eye,
@@ -15,12 +14,19 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
+  UserCheck,
+  UserX,
 } from "lucide-react";
-import { useAuthStore, type AuthUser, type AuthRole } from "@/lib/auth";
+import {
+  canManageUsers,
+  useAuthStore,
+  type AuthUser,
+  type AuthRole,
+} from "@/lib/auth";
 import {
   fetchUsers,
   createUser,
-  deleteUser,
+  updateUserAccess,
   changePassword,
   fetchAuditLogs,
 } from "@/lib/api";
@@ -57,25 +63,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   defaultTab?: "users" | "create" | "password" | "audit";
-}
-
-function RoleBadge({ role }: { role: AuthRole }) {
-  const { t } = useTranslation();
-  return role === "admin" ? (
-    <Badge
-      variant="secondary"
-      className="border-primary/25 bg-primary/15 text-primary dark:text-primary inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] font-medium"
-    >
-      <Shield className="size-3" /> {t("auth.role.admin")}
-    </Badge>
-  ) : (
-    <Badge
-      variant="outline"
-      className="border-border bg-muted text-muted-foreground dark:border-border/40 dark:bg-muted/60 dark:text-muted-foreground inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] font-medium"
-    >
-      <Eye className="size-3" /> {t("auth.role.viewer")}
-    </Badge>
-  );
+  forcePasswordChange?: boolean;
 }
 
 function AuditActionBadge({ action }: { action: AuditAction | string }) {
@@ -186,7 +174,12 @@ function PasswordField({
   );
 }
 
-export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
+export function AdminPanel({
+  isOpen,
+  onClose,
+  defaultTab = "users",
+  forcePasswordChange = false,
+}: Props) {
   const { t } = useTranslation();
   const currentUser = useAuthStore((s) => s.user);
 
@@ -219,11 +212,11 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
   useEffect(() => {
     if (!isOpen) return;
     setActiveTab(defaultTab || "users");
-    if (currentUser?.role === "admin") {
+    if (canManageUsers(currentUser?.role) && !forcePasswordChange) {
       loadUsers();
       loadAuditLogs();
     }
-  }, [isOpen, defaultTab, currentUser?.role]);
+  }, [isOpen, defaultTab, currentUser?.role, forcePasswordChange]);
 
   async function loadUsers() {
     setLoadingUsers(true);
@@ -269,13 +262,18 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
     }
   }
 
-  async function handleDeleteUser(u: AuthUser) {
-    if (!confirm(t("auth.confirmDeleteUser", { username: u.username }))) return;
+  async function handleAccessChange(
+    u: AuthUser,
+    role: AuthRole,
+    active: boolean,
+  ) {
     try {
-      await deleteUser(u.id);
-      loadUsers();
-    } catch (err: any) {
-      alert(err.message);
+      const updated = await updateUserAccess(u.id, role, active);
+      setUsers((previous) =>
+        previous.map((user) => (user.id === updated.id ? updated : user)),
+      );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err));
     }
   }
 
@@ -306,6 +304,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
         newPw,
       );
       setPwSuccess(t("auth.passwordChanged"));
+      if (isSelf) useAuthStore.getState().setIsDefaultPassword(false);
       setOldPw("");
       setNewPw("");
       setConfirmPw("");
@@ -327,12 +326,12 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
             </div>
             <div className="space-y-0.5">
               <DialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 text-sm font-semibold sm:text-base">
-                {currentUser?.role === "admin"
+                {canManageUsers(currentUser?.role)
                   ? t("auth.adminPanel")
                   : t("auth.changePassword")}
               </DialogTitle>
               <DialogDescription className="text-muted-foreground dark:text-muted-foreground text-[11px] sm:text-xs">
-                {currentUser?.role === "admin"
+                {canManageUsers(currentUser?.role)
                   ? t("auth.adminPanelDesc")
                   : t("auth.changePasswordDesc")}
               </DialogDescription>
@@ -342,11 +341,15 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
 
         {/* Tab Navigation & Content */}
         <Tabs
-          value={currentUser?.role !== "admin" ? "password" : activeTab}
+          value={
+            !canManageUsers(currentUser?.role) || forcePasswordChange
+              ? "password"
+              : activeTab
+          }
           onValueChange={setActiveTab}
           className="flex flex-1 flex-col overflow-hidden"
         >
-          {currentUser?.role === "admin" && (
+          {canManageUsers(currentUser?.role) && !forcePasswordChange && (
             <div className="border-border bg-card/50 dark:border-border/60 dark:bg-card/20 shrink-0 overflow-x-auto border-b px-4 py-2 sm:px-6 sm:py-2.5">
               <TabsList className="border-border bg-muted dark:border-border/80 dark:bg-card/90 h-9.5 gap-1 rounded-lg border p-1 group-data-horizontal/tabs:h-9.5 sm:h-10.5 sm:gap-1.5 sm:group-data-horizontal/tabs:h-10.5">
                 <TabsTrigger
@@ -434,6 +437,9 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                         <TableHead className="text-muted-foreground dark:text-muted-foreground text-xs font-medium">
                           {t("auth.role")}
                         </TableHead>
+                        <TableHead className="text-muted-foreground text-xs font-medium">
+                          {t("auth.accountStatus", "Status")}
+                        </TableHead>
                         <TableHead className="text-muted-foreground dark:text-muted-foreground text-xs font-medium">
                           {t("auth.createdAt")}
                         </TableHead>
@@ -471,7 +477,58 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                               </div>
                             </TableCell>
                             <TableCell className="py-3">
-                              <RoleBadge role={u.role} />
+                              <Select
+                                value={u.role}
+                                onValueChange={(value) => {
+                                  if (
+                                    typeof value === "string" &&
+                                    value !== u.role
+                                  )
+                                    void handleAccessChange(
+                                      u,
+                                      value as AuthRole,
+                                      u.active,
+                                    );
+                                }}
+                                disabled={
+                                  isSelf ||
+                                  (u.role === "admin" &&
+                                    u.active &&
+                                    users.filter(
+                                      (user) =>
+                                        user.role === "admin" && user.active,
+                                    ).length <= 1)
+                                }
+                              >
+                                <SelectTrigger className="h-8 w-36 text-xs">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="admin">
+                                    {t("auth.role.admin")}
+                                  </SelectItem>
+                                  <SelectItem value="developer">
+                                    {t("auth.role.developer", "Developer")}
+                                  </SelectItem>
+                                  <SelectItem value="viewer">
+                                    {t("auth.role.viewer")}
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={u.active ? "secondary" : "outline"}
+                                className={
+                                  u.active
+                                    ? "text-success"
+                                    : "text-muted-foreground"
+                                }
+                              >
+                                {u.active
+                                  ? t("auth.active", "Active")
+                                  : t("auth.inactive", "Inactive")}
+                              </Badge>
                             </TableCell>
                             <TableCell className="text-muted-foreground dark:text-muted-foreground py-3 font-mono text-xs">
                               {new Date(u.created_at).toLocaleDateString(
@@ -501,11 +558,39 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                                   <Button
                                     variant="ghost"
                                     size="icon-sm"
-                                    onClick={() => handleDeleteUser(u)}
-                                    title={t("auth.deleteUser")}
+                                    onClick={() =>
+                                      void handleAccessChange(
+                                        u,
+                                        u.role,
+                                        !u.active,
+                                      )
+                                    }
+                                    disabled={
+                                      u.active &&
+                                      u.role === "admin" &&
+                                      users.filter(
+                                        (user) =>
+                                          user.role === "admin" && user.active,
+                                      ).length <= 1
+                                    }
+                                    title={
+                                      u.active
+                                        ? t(
+                                            "auth.deactivateUser",
+                                            "Deactivate user",
+                                          )
+                                        : t(
+                                            "auth.activateUser",
+                                            "Activate user",
+                                          )
+                                    }
                                     className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:text-destructive cursor-pointer"
                                   >
-                                    <Trash2 className="size-3.5" />
+                                    {u.active ? (
+                                      <UserX className="size-3.5" />
+                                    ) : (
+                                      <UserCheck className="size-3.5" />
+                                    )}
                                   </Button>
                                 )}
                               </div>
@@ -605,6 +690,15 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
                           </span>
                         </div>
                       </SelectItem>
+                      <SelectItem
+                        value="developer"
+                        label={t("auth.role.developer", "Developer")}
+                      >
+                        <div className="text-foreground flex items-center gap-2">
+                          <User className="text-primary size-3.5" />
+                          <span>{t("auth.role.developer", "Developer")}</span>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-muted-foreground dark:text-muted-foreground text-[11px]">
@@ -660,7 +754,7 @@ export function AdminPanel({ isOpen, onClose, defaultTab = "users" }: Props) {
               </div>
 
               <form onSubmit={handleChangePassword} className="space-y-4">
-                {currentUser?.role === "admin" && (
+                {canManageUsers(currentUser?.role) && !forcePasswordChange && (
                   <div className="space-y-1.5">
                     <label className="text-foreground dark:text-muted-foreground text-xs font-medium">
                       {t("auth.targetAccount")}

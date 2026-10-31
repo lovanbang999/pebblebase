@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	mongoadapter "pebblebase/internal/adapter/mongodb"
@@ -1095,5 +1096,32 @@ func TestConnection_RawQuery_ReadOnly_Blocked(t *testing.T) {
 
 	if delRec.Code != http.StatusForbidden {
 		t.Errorf("expected 403 Forbidden for DELETE in read-only mode, got %d: %s", delRec.Code, delRec.Body.String())
+	}
+}
+
+func TestMongoReadOnlyBlocksRowAndRawWritesBeforeDriverAccess(t *testing.T) {
+	mux, store := setupTestServer(t)
+	record, err := store.Save("Mongo read-only", "mongodb", "127.0.0.1", "27017", "", "test", "mongodb://127.0.0.1:27017/test", true, storage.SaveParams{ReadOnly: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	requests := []struct {
+		method, path, body string
+	}{
+		{http.MethodPost, "/api/connections/" + record.ID + "/tables/users/rows", `{"values":{"name":"blocked"}}`},
+		{http.MethodPatch, "/api/connections/" + record.ID + "/tables/users/rows", `{"where":{"_id":"1"},"values":{"name":"blocked"}}`},
+		{http.MethodDelete, "/api/connections/" + record.ID + "/tables/users/rows", `{"where":{"_id":"1"}}`},
+		{http.MethodPost, "/api/connections/" + record.ID + "/query", `{"query":"db.users.insertOne({name: 'blocked'})"}`},
+		{http.MethodPost, "/api/connections/" + record.ID + "/query", `{"query":"db.users.deleteMany({})"}`},
+	}
+	for _, test := range requests {
+		t.Run(test.method+test.path, func(t *testing.T) {
+			request := httptest.NewRequest(test.method, test.path, strings.NewReader(test.body))
+			response := httptest.NewRecorder()
+			mux.ServeHTTP(response, request)
+			if response.Code != http.StatusForbidden {
+				t.Fatalf("status = %d, want 403; body = %s", response.Code, response.Body.String())
+			}
+		})
 	}
 }

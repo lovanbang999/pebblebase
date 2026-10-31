@@ -2,6 +2,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type ReactNode,
   type KeyboardEvent,
   type MouseEvent,
 } from "react";
@@ -9,6 +10,8 @@ import { useTranslation } from "react-i18next";
 import {
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   Copy,
   Database,
@@ -48,6 +51,7 @@ import packageJson from "../../../package.json";
 import { cn } from "cn";
 
 interface DesktopTitleBarProps {
+  workspaceControl?: ReactNode;
   nativeOnly?: boolean;
   activeConnection?: Connection | null;
   connections?: Connection[];
@@ -55,6 +59,10 @@ interface DesktopTitleBarProps {
   activeToolWindow?: "database" | "scripts" | null;
   canRunQuery?: boolean;
   canOpenHistory?: boolean;
+  canNavigateBack?: boolean;
+  canNavigateForward?: boolean;
+  onNavigateBack?: () => void;
+  onNavigateForward?: () => void;
   isAdmin?: boolean;
   onSelectConnection?: (connection: Connection) => void;
   onOpenCommandPalette?: () => void;
@@ -86,6 +94,7 @@ const icons: Partial<Record<WorkspaceCommandId, typeof Database>> = {
 };
 
 export default function DesktopTitleBar({
+  workspaceControl,
   nativeOnly = false,
   activeConnection,
   connections = [],
@@ -93,6 +102,10 @@ export default function DesktopTitleBar({
   activeToolWindow = null,
   canRunQuery = false,
   canOpenHistory = false,
+  canNavigateBack = false,
+  canNavigateForward = false,
+  onNavigateBack = () => {},
+  onNavigateForward = () => {},
   isAdmin = false,
   onSelectConnection = () => {},
   onOpenCommandPalette = () => {},
@@ -191,6 +204,8 @@ export default function DesktopTitleBar({
   const disabled = (id: WorkspaceCommandId) => {
     const item = WORKSPACE_COMMANDS[id];
     if (item.disabled) return true;
+    if (id === "navigate_back") return !canNavigateBack;
+    if (id === "navigate_forward") return !canNavigateForward;
     if (
       id === "execute_query" ||
       id === "explain_query" ||
@@ -212,7 +227,7 @@ export default function DesktopTitleBar({
           (connection) => !["mongodb", "redis"].includes(connection.type),
         ).length < 2
       );
-    if (id === "open_settings") return !isAdmin;
+    if (id === "open_ai_settings") return !isAdmin;
     if (id === "exit_app") return !isDesktop;
     return false;
   };
@@ -228,8 +243,11 @@ export default function DesktopTitleBar({
     const Icon = icons[id];
     const isDisabled = disabled(id);
     const reason = definition.disabledReason
-      ? t(definition.disabledReason, "Unavailable in this version")
-      : "";
+      ? t(
+          definition.disabledReason,
+          definition.disabledReasonFallback || "Unavailable in this version",
+        )
+      : definition.disabledReasonFallback || "";
     return (
       <button
         key={id}
@@ -251,7 +269,11 @@ export default function DesktopTitleBar({
         <span className="min-w-0 flex-1 truncate">{label(id)}</span>
         {definition.shortcut && (
           <kbd className="text-muted-foreground font-mono text-[10px]">
-            {definition.shortcut}
+            {isMac
+              ? id === "toggle_database" || id === "toggle_scripts"
+                ? definition.shortcut.replace("Alt+", "Cmd+")
+                : definition.shortcut.replaceAll("Ctrl", "Cmd")
+              : definition.shortcut}
           </kbd>
         )}
       </button>
@@ -269,9 +291,7 @@ export default function DesktopTitleBar({
           {updateInfo?.currentVersion || packageJson.version}
         </div>
       </div>
-      {accountCommandIds
-        .filter((id) => id !== "open_settings" || isAdmin)
-        .map(menuCommand)}
+      {accountCommandIds.map(menuCommand)}
       <div className="border-border my-1 border-t" />
       {(
         [
@@ -490,6 +510,8 @@ export default function DesktopTitleBar({
                           ((menuName === "File" && [3, 5, 7].includes(index)) ||
                             (menuName === "Edit" && [2, 6].includes(index)) ||
                             (menuName === "View" && [3, 10].includes(index)) ||
+                            (menuName === "Navigate" &&
+                              [3, 5, 6, 8].includes(index)) ||
                             (menuName === "Query" && [3].includes(index)) ||
                             (menuName === "Tools" && [2, 5].includes(index)) ||
                             (menuName === "Help" && [2].includes(index))) && (
@@ -503,6 +525,7 @@ export default function DesktopTitleBar({
             </div>
           ))}
         </nav>
+        {workspaceControl}
         <div className="relative ml-1 min-w-0 max-[767px]:ml-0">
           <button
             type="button"
@@ -520,6 +543,16 @@ export default function DesktopTitleBar({
             {activeConnection && (
               <span className="text-muted-foreground shrink-0 text-[10px] uppercase">
                 {activeConnection.type}
+              </span>
+            )}
+            {activeConnection?.environment === "production" && (
+              <span className="text-destructive shrink-0 text-[9px] font-bold tracking-wide uppercase">
+                {t("studio.production", "Production")}
+              </span>
+            )}
+            {activeConnection?.read_only && (
+              <span className="text-warning shrink-0 text-[9px] font-semibold tracking-wide uppercase">
+                {t("studio.readOnly", "Read-only")}
               </span>
             )}
             <ChevronDown className="text-muted-foreground size-3 shrink-0" />
@@ -564,6 +597,22 @@ export default function DesktopTitleBar({
       </div>
 
       <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-0.5 max-[767px]:hidden">
+        <ToolbarButton
+          label={label("navigate_back")}
+          shortcut={WORKSPACE_COMMANDS.navigate_back.shortcut}
+          disabled={!canNavigateBack}
+          onClick={onNavigateBack}
+        >
+          <ChevronLeft className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label={label("navigate_forward")}
+          shortcut={WORKSPACE_COMMANDS.navigate_forward.shortcut}
+          disabled={!canNavigateForward}
+          onClick={onNavigateForward}
+        >
+          <ChevronRight className="size-4" />
+        </ToolbarButton>
         <ToolbarButton
           label={label("toggle_database")}
           active={activeToolWindow === "database"}

@@ -61,8 +61,8 @@ func (s *Server) exportTable(w http.ResponseWriter, r *http.Request) {
 	if format == "" {
 		format = "csv"
 	}
-	if format != "csv" && format != "json" && format != "jsonl" && format != "xlsx" && format != "parquet" {
-		writeError(w, http.StatusBadRequest, fmt.Sprintf("unsupported export format: %q (expected csv, json, jsonl, xlsx, or parquet)", format))
+	if format != "csv" && format != "json" && format != "jsonl" && format != "xlsx" && format != "parquet" && format != "sql" {
+		writeError(w, http.StatusBadRequest, fmt.Sprintf("unsupported export format: %q (expected csv, json, jsonl, sql, xlsx, or parquet)", format))
 		return
 	}
 
@@ -70,15 +70,74 @@ func (s *Server) exportTable(w http.ResponseWriter, r *http.Request) {
 
 	switch format {
 	case "csv":
-		s.streamCSVExport(w, r, exporter, table, opts, flusher)
+		s.streamCSVExport(w, r, exporter, table, opts, flusher, r.URL.Query().Get("header") != "false")
 	case "json":
 		s.streamJSONExport(w, r, exporter, table, opts, flusher)
 	case "jsonl":
 		s.streamJSONLExport(w, r, exporter, table, opts, flusher)
+	case "sql":
+		s.streamSQLInsertExport(w, r, exporter, table, opts, flusher)
 	case "xlsx":
 		s.streamExcelExport(w, r, exporter, table, opts)
 	case "parquet":
 		s.streamParquetExport(w, r, exporter, table, opts)
+	}
+}
+
+func (s *Server) streamSQLInsertExport(w http.ResponseWriter, r *http.Request, exporter adapter.StreamExporter, table string, opts adapter.QueryOptions, flusher http.Flusher) {
+	w.Header().Set("Content-Type", "application/sql; charset=utf-8")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", table+".sql"))
+	w.Header().Set("Cache-Control", "no-cache")
+
+	quoteIdentifier := func(value string) string { return `"` + strings.ReplaceAll(value, `"`, `""`) + `"` }
+	qualifiedTable := strings.Join(strings.Split(table, "."), `"."`)
+	qualifiedTable = `"` + qualifiedTable + `"`
+	err := exporter.StreamRows(r.Context(), table, opts, func(columns []string, rows []map[string]any) error {
+		quotedColumns := make([]string, len(columns))
+		for i, column := range columns {
+			quotedColumns[i] = quoteIdentifier(column)
+		}
+		for _, row := range rows {
+			values := make([]string, len(columns))
+			for i, column := range columns {
+				values[i] = sqlExportLiteral(row[column])
+			}
+			if _, err := fmt.Fprintf(w, "INSERT INTO %s (%s) VALUES (%s);\n", qualifiedTable, strings.Join(quotedColumns, ", "), strings.Join(values, ", ")); err != nil {
+				return err
+			}
+		}
+		if flusher != nil {
+			flusher.Flush()
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("streamSQLInsertExport error: %v", err)
+	}
+}
+
+func sqlExportLiteral(value any) string {
+	if value == nil {
+		return "NULL"
+	}
+	switch v := value.(type) {
+	case bool:
+		if v {
+			return "TRUE"
+		}
+		return "FALSE"
+	case string:
+		return "'" + strings.ReplaceAll(v, "'", "''") + "'"
+	case []byte:
+		return "'" + strings.ReplaceAll(string(v), "'", "''") + "'"
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+		return fmt.Sprint(v)
+	default:
+		encoded, err := json.Marshal(v)
+		if err != nil {
+			return "NULL"
+		}
+		return "'" + strings.ReplaceAll(string(encoded), "'", "''") + "'"
 	}
 }
 
@@ -89,6 +148,7 @@ func (s *Server) streamCSVExport(
 	table string,
 	opts adapter.QueryOptions,
 	flusher http.Flusher,
+	includeHeader bool,
 ) {
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", table+".csv"))
@@ -100,8 +160,10 @@ func (s *Server) streamCSVExport(
 
 	err := exporter.StreamRows(r.Context(), table, opts, func(columns []string, rows []map[string]any) error {
 		if firstChunk {
-			if err := csvWriter.Write(columns); err != nil {
-				return err
+			if includeHeader {
+				if err := csvWriter.Write(columns); err != nil {
+					return err
+				}
 			}
 			firstChunk = false
 		}

@@ -29,9 +29,75 @@ import type {
   AIQueryAssistRequest,
   AIQueryAssistResponse,
 } from "./types";
+import type { FindConnectionResult } from "./findEverywhere";
+import { resolveCachedReference, type ReferenceResult } from "./referenceCache";
 import { getAuthHeaders, useAuthStore } from "./auth";
 
 const BASE_URL = "/api";
+
+export async function resolveReferences(input: {
+  workspaceId: string;
+  currentConnectionId: string;
+  currentTable: string;
+  value: string;
+  declaredTable?: string;
+  declaredColumn?: string;
+}): Promise<ReferenceResult> {
+  const load = async () => {
+    const response = await fetch(`${BASE_URL}/references/resolve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(input),
+    });
+    return handleResponse<ReferenceResult>(response);
+  };
+  return input.declaredTable
+    ? load()
+    : resolveCachedReference(
+        input.workspaceId,
+        input.value,
+        load,
+        input.currentConnectionId,
+      );
+}
+
+export async function findEverywhere(
+  value: string,
+  connectionIds: string[],
+  includeProduction: boolean,
+  signal: AbortSignal,
+  onResult: (result: FindConnectionResult) => void,
+): Promise<void> {
+  const response = await fetch(`${BASE_URL}/find-everywhere`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({
+      value,
+      connectionIds,
+      includeProduction: includeProduction,
+    }),
+    signal,
+  });
+  if (!response.ok) await handleResponse<void>(response);
+  if (!response.body) throw new Error("Search streaming is unavailable.");
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let pending = "";
+  try {
+    while (true) {
+      const { value: chunk, done } = await reader.read();
+      pending += decoder.decode(chunk, { stream: !done });
+      const lines = pending.split("\n");
+      pending = lines.pop() ?? "";
+      for (const line of lines)
+        if (line.trim()) onResult(JSON.parse(line) as FindConnectionResult);
+      if (done) break;
+    }
+    if (pending.trim()) onResult(JSON.parse(pending) as FindConnectionResult);
+  } finally {
+    reader.releaseLock();
+  }
+}
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
@@ -237,7 +303,8 @@ export async function explainQuery(
   return handleResponse<ExplainResult>(res);
 }
 
-export type ExportFormat = "csv" | "json" | "jsonl" | "xlsx" | "parquet";
+export type ExportFormat =
+  "csv" | "json" | "jsonl" | "xlsx" | "parquet" | "sql";
 
 export function getTableExportUrl(
   connId: string,
@@ -249,6 +316,7 @@ export function getTableExportUrl(
   searchParams.set("format", format);
   if (params.sort_by) searchParams.set("sort_by", params.sort_by);
   if (params.sort_desc) searchParams.set("sort_desc", "true");
+  if (params.include_header === false) searchParams.set("header", "false");
   if (params.filters && params.filters.length > 0) {
     for (const f of params.filters) {
       if (f.column && f.operator && f.value !== "") {
@@ -380,6 +448,19 @@ export async function createUser(
     method: "POST",
     headers: { "Content-Type": "application/json", ...getAuthHeaders() },
     body: JSON.stringify({ username, password, role }),
+  });
+  return handleResponse(res);
+}
+
+export async function updateUserAccess(
+  id: string,
+  role: import("./auth").AuthRole,
+  active: boolean,
+): Promise<import("./auth").AuthUser> {
+  const res = await fetch(`${BASE_URL}/auth/users/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify({ role, active }),
   });
   return handleResponse(res);
 }
@@ -837,6 +918,14 @@ export async function fetchAIConfig(): Promise<AIConfig> {
   return handleResponse<AIConfig>(res);
 }
 
+export async function fetchAIConfigured(): Promise<boolean> {
+  const res = await fetch(`${BASE_URL}/ai/status`, {
+    headers: getAuthHeaders(),
+  });
+  const result = await handleResponse<{ configured: boolean }>(res);
+  return result.configured;
+}
+
 export async function saveAIConfig(
   input: AISaveConfigInput,
 ): Promise<AIConfig> {
@@ -875,4 +964,82 @@ export async function queryAssist(
     body: JSON.stringify(req),
   });
   return handleResponse<AIQueryAssistResponse>(res);
+}
+
+// Session errors retain HTTP status so expiry can be distinguished from an
+// aborted transaction. Session ids are never persisted in browser storage.
+async function consoleSessionRequest<T>(
+  path: string,
+  method: string,
+  body?: unknown,
+  keepalive = false,
+): Promise<T> {
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method,
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: body === undefined ? undefined : JSON.stringify(body),
+    keepalive,
+  });
+  try {
+    return await handleResponse<T>(response);
+  } catch (error) {
+    throw Object.assign(
+      error instanceof Error ? error : new Error("Console session failed"),
+      { status: response.status },
+    );
+  }
+}
+export const beginConsoleSession = (connectionId: string, tabId: string) =>
+  consoleSessionRequest<{ id: string; idle_timeout_seconds: number }>(
+    `/connections/${encodeURIComponent(connectionId)}/console-sessions`,
+    "POST",
+    { tab_id: tabId },
+  );
+export const executeConsoleSession = (id: string, query: string) =>
+  consoleSessionRequest<RawQueryResult>(
+    `/console-sessions/${encodeURIComponent(id)}/query`,
+    "POST",
+    { query },
+  );
+export const finishConsoleSession = (
+  id: string,
+  action: "commit" | "rollback" | "close",
+) =>
+  consoleSessionRequest<{ closed: boolean }>(
+    `/console-sessions/${encodeURIComponent(id)}${action === "close" ? "" : `/${action}`}`,
+    action === "close" ? "DELETE" : "POST",
+    undefined,
+    action === "close",
+  );
+
+export async function fetchSchemaMetadata(
+  connectionId: string,
+  table?: string,
+  signal?: AbortSignal,
+): Promise<import("./schemaMetadata").SchemaMetadata> {
+  const query = table ? `?table=${encodeURIComponent(table)}` : "";
+  const response = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connectionId)}/schema-metadata${query}`,
+    { headers: getAuthHeaders(), signal },
+  );
+  return handleResponse(response);
+}
+
+export async function fetchWorkspaces(): Promise<
+  import("./namedWorkspaces").WorkspaceDocument
+> {
+  return handleResponse(
+    await fetch(`${BASE_URL}/workspaces`, { headers: getAuthHeaders() }),
+  );
+}
+export async function saveWorkspaces(
+  document: import("./namedWorkspaces").WorkspaceDocument,
+): Promise<import("./namedWorkspaces").WorkspaceDocument> {
+  return handleResponse(
+    await fetch(`${BASE_URL}/workspaces`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+      body: JSON.stringify(document),
+    }),
+  );
 }

@@ -1,6 +1,7 @@
 import { useState, type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound, Radio, Terminal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { RedisKeyBrowser } from "./RedisKeyBrowser";
 import { RedisPubSubMonitor } from "./RedisPubSubMonitor";
 import { RedisCliConsole } from "./RedisCliConsole";
@@ -8,6 +9,11 @@ import { RedisCliConsole } from "./RedisCliConsole";
 interface RedisStudioProps {
   connId: string;
   isReadOnly?: boolean;
+  connectionName?: string;
+  environment?: string;
+  initialKeySearch?: string;
+  initialCommand?: string;
+  workspaceTabId?: string;
 }
 
 type RedisTab = "keys" | "pubsub" | "cli";
@@ -15,9 +21,16 @@ type RedisTab = "keys" | "pubsub" | "cli";
 export const RedisStudio: FC<RedisStudioProps> = ({
   connId,
   isReadOnly = false,
+  connectionName,
+  environment,
+  initialKeySearch,
+  initialCommand,
+  workspaceTabId,
 }) => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<RedisTab>("keys");
+  const [activeTab, setActiveTab] = useState<RedisTab>(
+    initialCommand ? "cli" : "keys",
+  );
 
   return (
     <div className="bg-background flex h-full w-full flex-col overflow-hidden">
@@ -63,18 +76,34 @@ export const RedisStudio: FC<RedisStudioProps> = ({
             <span>{t("redis.tabs.cli")}</span>
           </button>
         </div>
+        {isReadOnly && (
+          <Badge variant="outline" className="border-warning/40 text-warning">
+            {t("datagrid.readOnly", "Read-only")}
+          </Badge>
+        )}
       </div>
 
       {/* Tab Panels */}
       <div className="flex-1 overflow-hidden">
         {activeTab === "keys" && (
-          <RedisKeyBrowser connId={connId} isReadOnly={isReadOnly} />
+          <RedisKeyBrowser
+            connId={connId}
+            isReadOnly={isReadOnly}
+            initialKeySearch={initialKeySearch}
+          />
         )}
         {activeTab === "pubsub" && (
           <RedisPubSubMonitor connId={connId} isReadOnly={isReadOnly} />
         )}
         {activeTab === "cli" && (
-          <RedisCliConsole connId={connId} isReadOnly={isReadOnly} />
+          <RedisCliConsole
+            connId={connId}
+            isReadOnly={isReadOnly}
+            connectionName={connectionName}
+            environment={environment}
+            initialCommand={initialCommand}
+            workspaceTabId={workspaceTabId}
+          />
         )}
       </div>
     </div>

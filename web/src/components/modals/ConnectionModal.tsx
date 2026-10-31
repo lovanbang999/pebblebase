@@ -101,12 +101,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       getDefaultPort(editData?.type || cloneData?.type || "postgres"),
   );
   const [dbName, setDbName] = useState(
-    editData?.db_name || cloneData?.db_name || "pebble_test",
+    editData?.db_name ||
+      cloneData?.db_name ||
+      ((editData?.type || cloneData?.type) === "redis" ? "0" : "pebble_test"),
   );
   const [user, setUser] = useState(
     editData?.user || cloneData?.user || "pebble",
   );
-  const [password, setPassword] = useState(cloneData ? "pebble" : "");
+  const [password, setPassword] = useState("");
   const [rawURL, setRawURL] = useState("");
   const [savePassword, setSavePassword] = useState(
     editData?.save_password ?? true,
@@ -168,7 +170,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
     setTestResult(null);
     const defaultPort = getDefaultPort(type);
     setPort(defaultPort);
-    if (type === "redis" && (dbName === "pebble_test" || !dbName)) {
+    if (type === "redis") {
       setDbName("0");
     } else if (type === "mssql" && (dbName === "pebble_test" || !dbName)) {
       setDbName("master");
@@ -188,6 +190,13 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
         ),
       );
     }
+  };
+
+  const safeErrorMessage = (error: unknown, fallback: string) => {
+    const message = error instanceof Error ? error.message : fallback;
+    return (
+      password ? message.replaceAll(password, "[redacted]") : message
+    ).replace(/(\w+:\/\/)[^/@\s]+@/g, "$1[redacted]@");
   };
 
   const handleFilepathChange = (val: string) => {
@@ -269,7 +278,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
     } catch (err: any) {
       setTestResult({
         ok: false,
-        message: err.message || t("connection.connectionFailed"),
+        message: safeErrorMessage(err, t("connection.connectionFailed")),
       });
       emitOperationEvent({
         kind: "connection-test",
@@ -294,7 +303,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       await onSubmit(getPayload());
       onClose();
     } catch (err: any) {
-      setSubmitError(err.message || t("connection.saveFailed"));
+      setSubmitError(safeErrorMessage(err, t("connection.saveFailed")));
     } finally {
       setSubmitting(false);
     }
@@ -644,32 +653,30 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     </div>
                   </div>
 
-                  <div>
-                    <div className="mb-1 flex items-center justify-between">
-                      <label
-                        htmlFor="connection-database"
-                        className="text-muted-foreground dark:text-muted-foreground text-xs"
-                      >
-                        {dbType === "redis"
-                          ? t("connection.redisDbIndex")
-                          : t("connection.database")}
-                      </label>
-                      <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px]">
-                        {dbType === "redis"
-                          ? t("connection.redisLogicalDb")
-                          : t("connection.targetSchema")}
-                      </span>
+                  {dbType !== "redis" && (
+                    <div>
+                      <div className="mb-1 flex items-center justify-between">
+                        <label
+                          htmlFor="connection-database"
+                          className="text-muted-foreground dark:text-muted-foreground text-xs"
+                        >
+                          {t("connection.database")}
+                        </label>
+                        <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px]">
+                          {t("connection.targetSchema")}
+                        </span>
+                      </div>
+                      <Input
+                        id="connection-database"
+                        type="text"
+                        value={dbName}
+                        onChange={(e) => handleDbNameChange(e.target.value)}
+                        required
+                        placeholder="database_name"
+                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                      />
                     </div>
-                    <Input
-                      id="connection-database"
-                      type="text"
-                      value={dbName}
-                      onChange={(e) => handleDbNameChange(e.target.value)}
-                      required
-                      placeholder={dbType === "redis" ? "0" : "database_name"}
-                      className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
-                    />
-                  </div>
+                  )}
 
                   {dbType === "mssql" && (
                     <div className="flex items-center gap-2 py-0.5">

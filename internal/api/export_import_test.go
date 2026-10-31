@@ -48,7 +48,9 @@ func TestExport_CSV_Streaming(t *testing.T) {
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("create connection: %s", rec.Body.String())
 	}
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	// 1. Export all rows as CSV
@@ -99,6 +101,57 @@ func TestExport_CSV_Streaming(t *testing.T) {
 	if records[1][1] != "Alice" {
 		t.Errorf("expected filtered row name Alice, got %q", records[1][1])
 	}
+
+	noHeaderReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/users/export?format=csv&header=false&filter=name:eq:Alice", connResp.ID), nil)
+	noHeaderRec := httptest.NewRecorder()
+	mux.ServeHTTP(noHeaderRec, noHeaderReq)
+	if noHeaderRec.Code != http.StatusOK || strings.HasPrefix(noHeaderRec.Body.String(), "id,name") {
+		t.Fatalf("CSV header=false was not honored: status=%d body=%q", noHeaderRec.Code, noHeaderRec.Body.String())
+	}
+}
+
+func TestExport_SQLInsertEscapingAndNull(t *testing.T) {
+	mux, _ := setupTestServer(t)
+	dbFile := filepath.Join(t.TempDir(), "sql_insert_export_test.db")
+	db, err := sql.Open("sqlite", dbFile)
+	if err != nil {
+		t.Fatalf("open sqlite: %v", err)
+	}
+	_, err = db.Exec(`CREATE TABLE items (id INTEGER PRIMARY KEY, text_value TEXT, optional TEXT); INSERT INTO items VALUES (1, 'O''Reilly, "Hello"', NULL);`)
+	db.Close()
+	if err != nil {
+		t.Fatalf("seed sqlite: %v", err)
+	}
+	body, _ := json.Marshal(map[string]any{"name": "SQL Export Conn", "type": "sqlite", "filepath": dbFile})
+	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create connection: %s", rec.Body.String())
+	}
+	var conn struct {
+		ID string `json:"id"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&conn); err != nil {
+		t.Fatalf("decode connection: %v", err)
+	}
+	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/items/export?format=sql", conn.ID), nil)
+	exportRec := httptest.NewRecorder()
+	mux.ServeHTTP(exportRec, exportReq)
+	if exportRec.Code != http.StatusOK {
+		t.Fatalf("SQL export failed: %s", exportRec.Body.String())
+	}
+	for _, expected := range []string{`INSERT INTO "items"`, `'O''Reilly, "Hello"'`, `NULL`} {
+		if !strings.Contains(exportRec.Body.String(), expected) {
+			t.Errorf("SQL export missing %q: %s", expected, exportRec.Body.String())
+		}
+	}
+	csvReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/items/export?format=csv", conn.ID), nil)
+	csvRec := httptest.NewRecorder()
+	mux.ServeHTTP(csvRec, csvReq)
+	if csvRec.Code != http.StatusOK || !strings.Contains(csvRec.Body.String(), `"O'Reilly, ""Hello"""`) {
+		t.Fatalf("CSV export did not quote comma/quote values correctly: status=%d body=%q", csvRec.Code, csvRec.Body.String())
+	}
 }
 
 func TestExport_JSON_Streaming(t *testing.T) {
@@ -127,7 +180,9 @@ func TestExport_JSON_Streaming(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/items/export?format=json", connResp.ID), nil)
@@ -179,7 +234,9 @@ func TestExport_JSONL_Streaming(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/items/export?format=jsonl", connResp.ID), nil)
@@ -246,7 +303,9 @@ func TestExport_Excel_Streaming(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/products/export?format=xlsx", connResp.ID), nil)
@@ -314,7 +373,9 @@ func TestExport_Parquet_Streaming(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/users/export?format=parquet", connResp.ID), nil)
@@ -361,7 +422,9 @@ func TestExport_UnsupportedFormat(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	exportReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/connections/%s/tables/t/export?format=unknown_fmt", connResp.ID), nil)
@@ -407,7 +470,9 @@ func TestImport_CSV_SuccessAndTypeCasting(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	// CSV with 3 rows, including booleans, floats, and empty nullable values
@@ -482,7 +547,9 @@ func TestImport_CSV_WithCustomMappings(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	// CSV headers do not match table columns directly
@@ -554,7 +621,9 @@ func TestImport_CSV_ReadOnlyForbidden(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	var formBuf bytes.Buffer
@@ -599,7 +668,9 @@ func TestImport_CSV_AtomicRollback(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/api/connections", bytes.NewReader(body))
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
-	var connResp struct{ ID string `json:"id"` }
+	var connResp struct {
+		ID string `json:"id"`
+	}
 	_ = json.NewDecoder(rec.Body).Decode(&connResp)
 
 	// CSV has 'EXISTING' which violates primary key uniqueness

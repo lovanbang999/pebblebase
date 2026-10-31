@@ -9,6 +9,7 @@ import type {
   WorkspaceToolWindows,
 } from "../lib/types";
 import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
+import { readSettingsPreferences } from "@/lib/settingsPreferences";
 import {
   SIDEBAR_DEFAULT_WIDTH,
   SIDEBAR_MAX_WIDTH,
@@ -150,7 +151,7 @@ export function stableTabId(
 function defaultTableState(): StudioTabState {
   return {
     page: 0,
-    pageSize: DEFAULT_PAGE_SIZE,
+    pageSize: readSettingsPreferences().pageSize || DEFAULT_PAGE_SIZE,
     filters: [],
     sortBy: "",
     sortDesc: false,
@@ -507,6 +508,18 @@ export function useTabs() {
     ) => {
       if (!connectionId || !tableName.trim()) return;
       const state = { ...defaultTableState(), ...initialState };
+      const existing = openInNewTab
+        ? undefined
+        : workspaceRef.current.tabs.find(
+            (tab) =>
+              tab.type === "table" &&
+              tab.connectionId === connectionId &&
+              tab.tableName === tableName &&
+              (tab.schemaName || "") === (schemaName || ""),
+          );
+      const generatedObjectId = `table:${schemaName || ""}:${tableName}${openInNewTab ? `:instance:${randomObjectId()}` : ""}`;
+      const tabId =
+        existing?.id ?? stableTabId(connectionId, "table", generatedObjectId);
       commit((current) => {
         const existing =
           !openInNewTab &&
@@ -520,9 +533,9 @@ export function useTabs() {
         const tab =
           existing ||
           (() => {
-            const objectId = `table:${schemaName || ""}:${tableName}${openInNewTab ? `:instance:${randomObjectId()}` : ""}`;
+            const objectId = generatedObjectId;
             const nextTab: StudioTab = {
-              id: stableTabId(connectionId, "table", objectId),
+              id: tabId,
               type: "table",
               title: tableName,
               tableName,
@@ -560,6 +573,7 @@ export function useTabs() {
           initialized: true,
         };
       });
+      return tabId;
     },
     [commit],
   );
@@ -700,8 +714,12 @@ export function useTabs() {
         closingTab?.isDirty &&
         !window.confirm(
           t(
-            "tabs.confirmCloseDirty",
-            "This tab has unsaved staged changes. Close it and discard them?",
+            closingTab.type === "query"
+              ? "tabs.confirmCloseTransaction"
+              : "tabs.confirmCloseDirty",
+            closingTab.type === "query"
+              ? "This console has an open transaction. Close it and roll back uncommitted work?"
+              : "This tab has unsaved staged changes. Close it and discard them?",
           ),
         )
       )
@@ -1012,6 +1030,17 @@ export function useTabs() {
     [commit],
   );
 
+  const restoreWorkspace = useCallback(
+    (snapshot: PersistedWorkspace) => {
+      hydratedRef.current = true;
+      commit(() => ({
+        ...snapshot,
+        tabs: snapshot.tabs.map((tab) => ({ ...tab, isDirty: false })),
+      }));
+    },
+    [commit],
+  );
+
   const activeTab = useMemo(
     () =>
       workspace.tabs.find((tab) => tab.id === workspace.activeTabId) || null,
@@ -1019,6 +1048,8 @@ export function useTabs() {
   );
 
   return {
+    snapshot: workspace,
+    restoreWorkspace,
     tabs: workspace.tabs,
     activeTabId: workspace.activeTabId,
     activeTab,

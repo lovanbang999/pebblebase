@@ -1,239 +1,81 @@
 # Pebblebase
 
-<p align="center">
-  <strong>A modern, lightweight, self-hosted Database Studio for PostgreSQL, MySQL, and MongoDB.</strong><br>
-  Available as both a native Linux desktop application and a standalone web server with an embedded React 19 frontend.
-</p>
+Pebblebase is a desktop and self-hosted web database client. It combines a React and TypeScript interface with a Go API and adapters for PostgreSQL, MySQL, MongoDB, Redis, SQL Server, SQLite, and ClickHouse.
 
-<p align="center">
-  <a href="https://lovanbang999.github.io/pebblebase/"><img src="https://img.shields.io/badge/Documentation-Live-059669?style=flat-square&logo=astro&logoColor=white" alt="Documentation"></a>
-  <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go" alt="Go Version"></a>
-  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react" alt="React 19"></a>
-  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind-v4.0-38B2AC?style=flat-square&logo=tailwind-css" alt="Tailwind v4"></a>
-  <a href="https://wails.io/"><img src="https://img.shields.io/badge/Wails-v2-DF1A2A?style=flat-square&logo=wails" alt="Wails v2"></a>
-  <a href="https://github.com/lovanbang999/pebblebase/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License"></a>
-  <a href="https://github.com/lovanbang999/pebblebase/actions"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome"></a>
-</p>
+## Features
 
----
+- Application shell with dark/light themes, menus, command palette, resizable tool windows, and keyboard shortcuts.
+- Database explorer, connection/environment indicators, workspaces, and restorable tabs.
+- Virtualized table and collection editor with structured filters, sorting, staged edits, import/export, and read-only protection.
+- SQL and Mongo query console with statement execution, result history, and PostgreSQL/MySQL manual transactions.
+- Schema metadata, DDL and index inspection, ER diagrams, and PostgreSQL schema diff.
+- Find Everywhere across selected workspace sources, with production opt-in per search.
+- Declared and inferred reference peek/jump, app-wide back/forward navigation, and Run from Log.
+- Admin, Developer, and Viewer roles; active account controls; encrypted connection and AI credentials.
+- Settings for theme, font size, shortcuts, query defaults, and provider-managed AI assistant tools.
 
-## 📖 Official Documentation & Guides
+## Run locally
 
-Explore the live documentation site and interactive guides:  
-👉 **[https://lovanbang999.github.io/pebblebase](https://lovanbang999.github.io/pebblebase)**
+Requirements: Go 1.26, Node.js, and Yarn. Start the web development server from `web/`:
 
-- [Getting Started & Installation](https://lovanbang999.github.io/pebblebase/getting-started/installation/)
-- [Visual ERD Diagrams](https://lovanbang999.github.io/pebblebase/features/erd-diagrams/)
-- [Schema Diff & Migrations](https://lovanbang999.github.io/pebblebase/features/schema-diff/)
-- [PostgreSQL, MySQL, SQLite, and MongoDB Guides](https://lovanbang999.github.io/pebblebase/databases/postgresql/)
-- [Docker Self-Hosting Guide](https://lovanbang999.github.io/pebblebase/deployment/docker/)
-
----
-
-## Overview
-
-Pebblebase is designed around a single core constraint: **it must be trivial to run and maintain.** 
-No heavy Docker Compose stacks, no complex runtime dependencies, and no external config servers. You can run it either as a native desktop application on Linux or as a single server binary accessible from any web browser.
-
-- **Encrypted Credentials at Rest**: Connection credentials and passwords are encrypted locally using AES-256-GCM.
-- **Dual Runtime Support**: Runs seamlessly as a standalone web service or as a native frameless desktop app built on Wails v2.
-- **Single Binary Distribution**: Frontend assets are compiled and embedded directly into the Go binary using `go:embed`.
-- **Multilingual Support (i18n)**: Out-of-the-box support for Vietnamese and English with instant switching.
-- **Relational and Document Inspector**: Schema introspection, foreign key relation navigation, live WHERE filter builder, pagination, and JSON document editing.
-
----
-
-## Desktop Studio (Linux)
-
-Pebblebase Studio is available as a native desktop application for Linux distributions (Debian, Ubuntu, Linux Mint, and derivatives).
-
-### Features
-
-- **Frameless Studio Interface**: Replaces standard operating system window decorations with an integrated titlebar featuring active database indicators and quick search.
-- **Theme Adaptation**: Titlebar and window controls dynamically adapt to Light and Dark modes.
-- **Zero White Flash Startup**: Compositor frame synchronization eliminates white background flashing during window initialization.
-- **Command Palette Integration**: Fast keyboard-driven command runner and navigation accessible via `Ctrl+K`.
-
-### Installation (.deb Package)
-
-Install the pre-built Debian package directly using `apt`:
-
-```bash
-sudo apt install ./build/bin/pebblebase_0.1.1_amd64.deb
-```
-
-To upgrade or reinstall:
-
-```bash
-sudo apt install --reinstall ./build/bin/pebblebase_0.1.1_amd64.deb
-```
-
-### Building Desktop from Source
-
-Prerequisites:
-- Go 1.22+
-- Node.js 20+ and Yarn
-- Wails CLI v2 (`go install github.com/wailsapp/wails/v2/cmd/wails@latest`)
-- Linux build dependencies: `libgtk-3-dev`, `libwebkit2gtk-4.1-dev`
-
-```bash
-# 1. Build desktop binary
-wails build -s -skipbindings -clean
-
-# 2. Package installable Debian package (.deb)
-bash ./scripts/package-deb.sh
-```
-
-The resulting package will be generated at `build/bin/pebblebase_0.1.1_amd64.deb`.
-
----
-
-## Web Server Quickstart
-
-### Using Docker
-
-```bash
-docker run -d -p 8080:8080 \
-  --name pebblebase \
-  -e PEBBLEBASE_MASTER_KEY="$(openssl rand -base64 32)" \
-  -v pebblebase-data:/data \
-  ghcr.io/lovanbang999/pebblebase:latest
-```
-
-Then open **[http://localhost:8080](http://localhost:8080)** in your browser.
-
-> [!NOTE]
-> Omitting `PEBBLEBASE_MASTER_KEY` causes the server to auto-generate and persist an encryption key in the data volume. For production or team deployments, always supply an explicit key via environment variables.
-
----
-
-## Key Features
-
-- **Multi-Engine Support**: Native driver integration for PostgreSQL, MySQL, and MongoDB.
-- **Interactive Data Grid**: Virtualized high-performance data grid with sorting, filtering, and inline cell inspection.
-- **Smart Filter Builder**: Popover-based WHERE clause builder (`=`, `!=`, `>`, `<`, `CONTAINS`).
-- **Foreign Key Navigation**: Click-to-navigate relational foreign keys inspired by Prisma Studio.
-- **JSON and Schemaless Editor**: Built-in JSON editor for complex document types and dynamic fields.
-- **Dark and Light Mode**: Seamless dark and light themes with automatic system preference detection.
-- **Browser Autofill Integration**: Automatic style sanitization preventing browser credential autofill color mismatch in light mode.
-
----
-
-## Keyboard Shortcuts
-
-| Shortcut | Action | Description |
-|---|---|---|
-| `Ctrl+K` / `Cmd+K` | Command Palette | Open quick search and command palette |
-| `Alt+Q` | Query Console | Switch directly to the SQL / MongoDB query console |
-| `Alt+E` | ERD Diagram | Open entity relationship diagram view |
-| `Ctrl+B` / `Cmd+B` | Toggle Sidebar | Expand or collapse left database navigation sidebar |
-| `Ctrl+Enter` / `Cmd+Enter` | Run Query | Execute active SQL query in query editor |
-| `F11` | Fullscreen | Toggle fullscreen display mode |
-
----
-
-## Local Development
-
-### Prerequisites
-
-- **Go**: `1.22+`
-- **Node.js**: `20+`
-- **Yarn**: `1.22+` or `npm 10+`
-
-### 1. Clone Repository
-
-```bash
-git clone https://github.com/lovanbang999/pebblebase.git
-cd pebblebase
-```
-
-### 2. Run Backend (Go Server)
-
-```bash
-# Copy example environment file
-cp .env.example .env
-
-# Run Go backend server (listening on :8080)
-go run ./cmd/server
-```
-
-Health check endpoint: `curl http://localhost:8080/health`
-
-### 3. Run Frontend (React + Vite)
-
-```bash
+```sh
 cd web
-yarn install
+yarn install --frozen-lockfile
 yarn dev
 ```
 
-The Vite dev server will start on **[http://localhost:5173](http://localhost:5173)** with Hot Module Replacement (HMR).
+Run the Go API from the repository root in a second terminal:
 
-### 4. Production Web Server Build
-
-To compile a production-ready single binary with embedded frontend:
-
-```bash
-# Build frontend static assets into web/dist
-cd web && yarn build && cd ..
-
-# Compile single standalone binary
-go build -ldflags="-s -w" -o pebblebase ./cmd/server
+```sh
+go run ./cmd/server
 ```
 
----
+The desktop application uses Wails v2. Install the Wails CLI and platform build dependencies, then use the repository's Wails configuration:
 
-## Configuration Reference
-
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `8080` | HTTP listen port for the server |
-| `PEBBLEBASE_MASTER_KEY` | *(auto-generated)* | Base64-encoded 32-byte key used for AES-256-GCM encryption of stored passwords |
-| `PEBBLEBASE_DATA_DIR` | `./data` | Directory path where SQLite database and app data are stored |
-
----
-
-## Architecture
-
-```
-pebblebase/
-├── cmd/
-│   ├── server/         # Headless HTTP server & embedded web asset host
-│   └── desktop/        # Wails v2 native desktop application entrypoint
-├── internal/
-│   ├── adapter/        # DB-agnostic contract and driver adapters (Postgres, MySQL, Mongo)
-│   ├── schema/         # Unified schema models (Table, Column, Relation)
-│   ├── connection/     # Connection manager and DSN builders
-│   ├── storage/        # AES-256-GCM encryption and local SQLite store
-│   └── api/            # REST API handlers
-├── web/                # React 19 + Vite + TypeScript + Tailwind CSS v4 + Base UI
-├── scripts/
-│   └── package-deb.sh  # Automated Debian package builder (.deb)
-└── build/              # Desktop build artifacts, application icons, and Debian staging
+```sh
+wails dev
 ```
 
-The `adapter.Adapter` Go interface acts as the central contract. All UI and REST API handlers interact exclusively through this interface, ensuring database driver isolation and clean modularity.
+## Build and verify
 
----
+Run these from `web/`:
 
-## Contributing
+```sh
+yarn build          # TypeScript check and Vite production build
+yarn test           # Vitest unit tests; no listening server required
+yarn lint           # Oxlint
+yarn format:check   # Prettier check
+```
 
-Contributions, issues, and feature requests are welcome. Check out our [Contributing Guide](.github/CONTRIBUTING.md) and [Code of Conduct](.github/CODE_OF_CONDUCT.md).
+Run Go checks from the repository root:
 
-1. Fork the project
-2. Create your feature branch (`git checkout -b feat/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feat/amazing-feature`)
-5. Open a Pull Request
+```sh
+go vet ./...
+go test -v -count=1 ./...
+go build -o build/pebblebase ./cmd/server
+```
 
----
+Build the embedded web assets with `yarn build` before building or running a production Go binary.
 
-## Security Policy
+## Keyboard shortcuts
 
-See [.github/SECURITY.md](.github/SECURITY.md) for security policy and vulnerability disclosure details.
+The following entries match the Settings keymap. On macOS, `Ctrl` is displayed as `Cmd`; the `Alt+1` and `Alt+2` tool-window shortcuts use their registered `Cmd+1` and `Cmd+2` equivalents.
 
----
+| Shortcut | Action |
+| --- | --- |
+| `Ctrl+K` | Search Everywhere / command palette |
+| `Ctrl+Shift+F` | Find Everywhere |
+| `Ctrl+Shift+L` | Run from Log |
+| `Ctrl+Alt+←` / `Ctrl+Alt+→` | Navigate Back / Forward |
+| `Ctrl+Alt+1..9` | Switch workspace |
+| `Ctrl+Enter` | Run query |
+| `Ctrl+E` | Query History |
+| `Ctrl+W` | Close active tab |
+| `Alt+1` | Show/hide Database tool window |
+| `Alt+2` | Show/hide Scripts tool window |
+| `Alt+Q` | Open query console |
+| `Alt+E` | Open ER diagram |
 
-## License
+## Security notes
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+Connection writes are blocked for read-only sources. Production console writes require confirmation. API keys and connection credentials are stored through the application's encrypted secret storage and are not included in query history or exported data.

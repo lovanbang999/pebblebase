@@ -10,6 +10,7 @@ export type WorkspaceCommandId =
   | "open_ai_settings"
   | "product_tour"
   | "check_updates"
+  | "about"
   | "sign_out"
   | "open_sql_file"
   | "close_active_tab"
@@ -28,6 +29,12 @@ export type WorkspaceCommandId =
   | "toggle_database"
   | "toggle_scripts"
   | "toggle_output"
+  | "toggle_ai"
+  | "find_everywhere"
+  | "run_from_log"
+  | "navigate_back"
+  | "navigate_forward"
+  | "switch_workspace"
   | "theme_dark"
   | "theme_light"
   | "font_small"
@@ -56,6 +63,7 @@ export interface WorkspaceCommand {
   shortcut?: string;
   disabled?: boolean;
   disabledReason?: string;
+  disabledReasonFallback?: string;
 }
 
 export const WORKSPACE_COMMANDS: Record<WorkspaceCommandId, WorkspaceCommand> =
@@ -119,6 +127,11 @@ export const WORKSPACE_COMMANDS: Record<WorkspaceCommandId, WorkspaceCommand> =
       labelKey: "palette.checkUpdates",
       fallback: "Check for Updates",
     },
+    about: {
+      id: "about",
+      labelKey: "settings.about",
+      fallback: "About Pebblebase",
+    },
     sign_out: { id: "sign_out", labelKey: "auth.logout", fallback: "Sign Out" },
     open_sql_file: {
       id: "open_sql_file",
@@ -158,7 +171,7 @@ export const WORKSPACE_COMMANDS: Record<WorkspaceCommandId, WorkspaceCommand> =
       fallback: "Undo",
       shortcut: "Ctrl+Z",
       disabled: true,
-      disabledReason: "commands.editorOnly",
+      disabledReasonFallback: "Enabled in Phase 3: editor undo support.",
     },
     edit_redo: {
       id: "edit_redo",
@@ -166,7 +179,7 @@ export const WORKSPACE_COMMANDS: Record<WorkspaceCommandId, WorkspaceCommand> =
       fallback: "Redo",
       shortcut: "Ctrl+Shift+Z",
       disabled: true,
-      disabledReason: "commands.editorOnly",
+      disabledReasonFallback: "Enabled in Phase 3: editor redo support.",
     },
     edit_cut: {
       id: "edit_cut",
@@ -214,6 +227,41 @@ export const WORKSPACE_COMMANDS: Record<WorkspaceCommandId, WorkspaceCommand> =
       id: "toggle_output",
       labelKey: "commands.outputWindow",
       fallback: "Output",
+    },
+    toggle_ai: {
+      id: "toggle_ai",
+      labelKey: "operations.aiAssistant",
+      fallback: "AI Assistant",
+    },
+    find_everywhere: {
+      id: "find_everywhere",
+      labelKey: "workspace.findEverywhere",
+      fallback: "Find Everywhere…",
+      shortcut: "Ctrl+Shift+F",
+    },
+    run_from_log: {
+      id: "run_from_log",
+      labelKey: "commands.runFromLog",
+      fallback: "Run from Log…",
+      shortcut: "Ctrl+Shift+L",
+    },
+    navigate_back: {
+      id: "navigate_back",
+      labelKey: "commands.back",
+      fallback: "Back",
+      shortcut: "Ctrl+Alt+←",
+    },
+    navigate_forward: {
+      id: "navigate_forward",
+      labelKey: "commands.forward",
+      fallback: "Forward",
+      shortcut: "Ctrl+Alt+→",
+    },
+    switch_workspace: {
+      id: "switch_workspace",
+      labelKey: "commands.switchWorkspace",
+      fallback: "Switch Workspace…",
+      shortcut: "Ctrl+Alt+1..9",
     },
     theme_dark: {
       id: "theme_dark",
@@ -291,7 +339,7 @@ export const WORKSPACE_COMMANDS: Record<WorkspaceCommandId, WorkspaceCommand> =
       fallback: "Format SQL",
       shortcut: "Ctrl+Alt+L",
       disabled: true,
-      disabledReason: "commands.noFormatter",
+      disabledReasonFallback: "Enabled in Phase 3: SQL formatting.",
     },
     import_csv: {
       id: "import_csv",
@@ -309,7 +357,7 @@ export const WORKSPACE_COMMANDS: Record<WorkspaceCommandId, WorkspaceCommand> =
       labelKey: "commands.documentation",
       fallback: "Documentation",
       disabled: true,
-      disabledReason: "commands.notAvailable",
+      disabledReasonFallback: "No in-app documentation action is registered.",
     },
   };
 
@@ -340,6 +388,7 @@ export const WORKSPACE_MENUS: Record<CommandMenu, WorkspaceCommand[]> = {
     command("toggle_database"),
     command("toggle_scripts"),
     command("toggle_output"),
+    command("toggle_ai"),
     command("theme_dark"),
     command("theme_light"),
     command("font_small"),
@@ -351,6 +400,11 @@ export const WORKSPACE_MENUS: Record<CommandMenu, WorkspaceCommand[]> = {
   ],
   Navigate: [
     command("search_everywhere"),
+    command("find_everywhere"),
+    command("run_from_log"),
+    command("navigate_back"),
+    command("navigate_forward"),
+    command("switch_workspace"),
     command("next_tab"),
     command("previous_tab"),
     command("query_history"),
@@ -376,10 +430,12 @@ export const WORKSPACE_MENUS: Record<CommandMenu, WorkspaceCommand[]> = {
     command("toggle_database"),
     command("toggle_scripts"),
     command("toggle_output"),
+    command("toggle_ai"),
   ],
   Help: [
     command("keyboard_shortcuts"),
     command("documentation"),
+    command("about"),
     command("check_updates"),
     command("product_tour"),
   ],
@@ -389,6 +445,7 @@ export const PALETTE_COMMAND_IDS = [
   "open_query_console",
   "open_erd",
   "open_diff",
+  "run_from_log",
   "export_csv",
   "export_json",
   "toggle_theme",
@@ -396,5 +453,6 @@ export const PALETTE_COMMAND_IDS = [
   "open_ai_settings",
   "product_tour",
   "check_updates",
+  "about",
   "sign_out",
 ] as const satisfies readonly WorkspaceCommandId[];

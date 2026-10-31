@@ -33,6 +33,16 @@ func AuthMiddleware(svc *Service, skipPaths []string) func(http.Handler) http.Ha
 				http.Error(w, `{"error":"invalid or expired token"}`, http.StatusUnauthorized)
 				return
 			}
+			// Refresh persisted role and active state on every request. Role
+			// changes take effect immediately; disabling an account invalidates
+			// existing stateless JWTs on their next request.
+			user, err := svc.GetByID(r.Context(), claims.UserID)
+			if err != nil || !user.Active {
+				http.Error(w, `{"error":"invalid or expired token"}`, http.StatusUnauthorized)
+				return
+			}
+			claims.Role = user.Role
+			claims.Username = user.Username
 			ctx := context.WithValue(r.Context(), claimsKey, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -49,7 +59,7 @@ func ClaimsFromContext(ctx context.Context) *Claims {
 // RequireAdmin returns HTTP 403 when the caller is not an admin.
 func RequireAdmin(w http.ResponseWriter, r *http.Request) bool {
 	claims := ClaimsFromContext(r.Context())
-	if claims == nil || claims.Role != RoleAdmin {
+	if claims == nil || !CanManageUsers(claims.Role) {
 		http.Error(w, `{"error":"admin role required"}`, http.StatusForbidden)
 		return false
 	}
@@ -59,7 +69,7 @@ func RequireAdmin(w http.ResponseWriter, r *http.Request) bool {
 // IsViewer reports whether the current caller has viewer-only access.
 func IsViewer(r *http.Request) bool {
 	claims := ClaimsFromContext(r.Context())
-	return claims != nil && claims.Role == RoleViewer
+	return claims != nil && !CanWriteData(claims.Role)
 }
 
 // bearerToken extracts the token string from "Authorization: Bearer <token>"

@@ -16,6 +16,7 @@ import {
   FileCode,
   Sparkles,
   GitCompare,
+  WandSparkles,
   type LucideIcon,
 } from "lucide-react";
 import type { Connection, TableSchema, SavedQuery } from "@/lib/types";
@@ -33,6 +34,7 @@ export type CommandActionId = Extract<
   | "open_query_console"
   | "open_erd"
   | "open_diff"
+  | "run_from_log"
   | "export_csv"
   | "export_json"
   | "toggle_theme"
@@ -40,6 +42,7 @@ export type CommandActionId = Extract<
   | "open_ai_settings"
   | "product_tour"
   | "check_updates"
+  | "about"
   | "sign_out"
 >;
 
@@ -55,7 +58,9 @@ export interface CommandPaletteProps {
   onSelectSavedQuery: (query: SavedQuery) => void;
   recentItems: RecentItem[];
   onTriggerAction: (actionId: CommandActionId) => void;
+  onFindEverywhere?: (value: string) => void;
   theme: "dark" | "light";
+  canManageSettings: boolean;
 }
 
 interface PaletteItem {
@@ -78,7 +83,9 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
   onSelectSavedQuery,
   recentItems,
   onTriggerAction,
+  onFindEverywhere,
   theme,
+  canManageSettings,
 }) => {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
@@ -117,6 +124,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
       open_query_console: Terminal,
       open_erd: Workflow,
       open_diff: GitCompare,
+      run_from_log: WandSparkles,
       export_csv: FileSpreadsheet,
       export_json: FileCode,
       toggle_theme: theme === "dark" ? Sun : Moon,
@@ -124,9 +132,15 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
       open_ai_settings: Sparkles,
       product_tour: Sparkles,
       check_updates: Sparkles,
+      about: Settings,
       sign_out: LogOut,
     };
-    return PALETTE_COMMAND_IDS.map((id) => {
+    return PALETTE_COMMAND_IDS.filter(
+      (id) =>
+        id === "open_settings" ||
+        canManageSettings ||
+        id !== "open_ai_settings",
+    ).map((id) => {
       const definition = WORKSPACE_COMMANDS[id];
       return {
         id: `action_${id}`,
@@ -137,7 +151,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         action: () => onTriggerAction(id),
       };
     });
-  }, [t, theme, onTriggerAction]);
+  }, [t, theme, onTriggerAction, canManageSettings]);
 
   // Build items grouped into categories
   const allItems: {
@@ -226,6 +240,16 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
     const filteredActionItems = actionItems.filter(
       (a) => matches(a.title) || matches(a.subtitle),
     );
+    if (term && onFindEverywhere) {
+      filteredActionItems.unshift({
+        id: "find_everywhere_value",
+        type: "action",
+        title: `Find “${search.trim()}” everywhere`,
+        subtitle: "Search values in the current workspace",
+        icon: Search,
+        action: () => onFindEverywhere(search.trim()),
+      });
+    }
 
     const groups = [];
 
@@ -281,6 +305,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
     onSelectTable,
     onSelectConnection,
     onSelectSavedQuery,
+    onFindEverywhere,
   ]);
 
   // Flattened list for keyboard indexing
@@ -355,7 +380,13 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
             type="text"
             role="combobox"
             aria-expanded={flatItems.length > 0}
+            aria-haspopup="listbox"
             aria-controls="palette-listbox"
+            aria-activedescendant={
+              flatItems[selectedIndex]
+                ? `palette-option-${selectedIndex}`
+                : undefined
+            }
             aria-autocomplete="list"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -404,6 +435,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
 
                     return (
                       <div
+                        id={`palette-option-${currentIndex}`}
                         key={item.id}
                         role="option"
                         aria-selected={isSelected}

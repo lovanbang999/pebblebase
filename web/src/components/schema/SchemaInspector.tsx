@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, type FC } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useSchemaMetadata } from "@/hooks/useSchemaMetadata";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
 import { studioEditorTheme } from "@/lib/editorTheme";
@@ -19,7 +19,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { TableSchema } from "@/lib/types";
-import { fetchTableDDL } from "@/lib/api";
+
 import { MigrationRunner } from "@/components/migration/MigrationRunner";
 import { SeedModal } from "@/components/modals/SeedModal";
 import { Button } from "@/components/ui/button";
@@ -55,7 +55,7 @@ interface SchemaInspectorProps {
 
 export const SchemaInspector: FC<SchemaInspectorProps> = ({
   connId,
-  table,
+  table: sourceTable,
   view,
   isReadOnly = false,
   onNavigateRelation,
@@ -70,26 +70,36 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
   useEffect(() => setActiveSubTab("schema"), [view]);
 
   // Fetch DDL and index data
-  const { data, isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: ["table-ddl", connId, table.name],
-    queryFn: () => fetchTableDDL(connId!, table.name),
-    enabled: Boolean(connId && table.name),
-  });
+  const metadata = useSchemaMetadata(connId ?? "", sourceTable.name);
+  const { isLoading, error, isRefetching } = metadata;
+  const refetch = metadata.refresh;
+  const catalogTable = metadata.data?.tables.find(
+    (item) => item.name === sourceTable.name,
+  );
+  const table = catalogTable ?? sourceTable;
+  const data = catalogTable
+    ? {
+        ddl: catalogTable.ddl ?? "",
+        indexes: catalogTable.indexes,
+        engine: metadata.data!.engine,
+      }
+    : undefined;
 
   const isDark = document.documentElement.classList.contains("dark");
 
+  const editorEngine = metadata.data?.engine;
   const extensions = useMemo(() => {
-    if (data?.engine === "mongodb") {
+    if (editorEngine === "mongodb") {
       return [json()];
     }
     const dialect =
-      data?.engine === "mysql"
+      editorEngine === "mysql"
         ? MySQL
-        : data?.engine === "sqlite"
+        : editorEngine === "sqlite"
           ? SQLite
           : PostgreSQL;
     return [sql({ dialect })];
-  }, [data?.engine]);
+  }, [editorEngine]);
 
   const handleCopy = () => {
     if (!data?.ddl) return;
@@ -197,6 +207,15 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                   {table.name}
                 </h2>
                 {getEngineBadge(data?.engine)}
+                {catalogTable?.gaps.map((gap) => (
+                  <span
+                    key={gap}
+                    role="status"
+                    className="text-warning text-xs"
+                  >
+                    {gap}
+                  </span>
+                ))}
               </div>
               <p className="text-muted-foreground mt-0.5 font-mono text-xs">
                 {t("schema.columnsCount", { count: table.columns.length })}
@@ -494,6 +513,25 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
           {/* Section 2: Database Indexes */}
           {(!view || view === "indexes") && (
             <div className="space-y-2">
+              {catalogTable && catalogTable.constraints.length > 0 && (
+                <details className="border-border rounded border p-2 text-xs">
+                  <summary>{t("schema.constraints")}</summary>
+                  {catalogTable.constraints.map((constraint) => (
+                    <div key={constraint.name} className="py-1 font-mono">
+                      {constraint.kind} {constraint.name} (
+                      {constraint.columns.join(", ")})
+                      {constraint.reference_table && (
+                        <>
+                          {" "}
+                          → {constraint.reference_schema}.
+                          {constraint.reference_table} (
+                          {constraint.reference_columns?.join(", ")})
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </details>
+              )}
               <div className="flex items-center gap-2">
                 <Key className="text-warning dark:text-warning h-4 w-4" />
                 <h3 className="text-foreground dark:text-foreground font-mono text-xs font-semibold tracking-wider uppercase">

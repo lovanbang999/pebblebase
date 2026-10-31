@@ -7,19 +7,14 @@ import { LanguageSwitcher, ThemeToggle } from "@/components/common";
 import { DesktopTitleBar } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Lock,
-  User,
-  Eye,
-  EyeOff,
-  Sparkles,
-  AlertCircle,
-  Check,
-} from "lucide-react";
+import { Lock, User, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export function LoginScreen() {
   const { t } = useTranslation();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const rememberMe = useAuthStore((s) => s.rememberMe);
+  const setRememberMe = useAuthStore((s) => s.setRememberMe);
   const passwordInput = useRef<HTMLInputElement>(null);
 
   const [username, setUsername] = useState("admin");
@@ -28,7 +23,6 @@ export function LoginScreen() {
   const [capsLockOn, setCapsLockOn] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [filledFeedback, setFilledFeedback] = useState(false);
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     setCapsLockOn(e.getModifierState("CapsLock"));
@@ -36,14 +30,6 @@ export function LoginScreen() {
 
   function clearError() {
     if (error) setError("");
-  }
-
-  function handleQuickFill() {
-    setUsername("admin");
-    setPassword("pebblebase");
-    setError("");
-    setFilledFeedback(true);
-    window.setTimeout(() => setFilledFeedback(false), 1500);
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -57,6 +43,7 @@ export function LoginScreen() {
     try {
       const res = await apiLogin(normalizedUsername, password);
       setPassword("");
+      setRememberMe(rememberMe);
       setAuth(res.user, res.token, res.is_default_password);
     } catch (err) {
       setPassword("");
@@ -226,6 +213,14 @@ export function LoginScreen() {
                 </div>
               )}
 
+              <label className="text-muted-foreground flex w-fit cursor-pointer items-center gap-2 text-xs">
+                <Checkbox
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
+                />
+                {t("auth.rememberMe", "Remember me on this device")}
+              </label>
+
               <Button
                 type="submit"
                 disabled={loading || !username.trim() || !password}
@@ -234,36 +229,7 @@ export function LoginScreen() {
                 {loading ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
 
-              <div className="border-border flex flex-col items-center gap-1 border-t pt-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleQuickFill}
-                  disabled={loading}
-                  className="hover:bg-primary/10 focus-visible:ring-primary/30 text-primary hover:text-primary h-9 max-w-full gap-2 rounded-lg px-3 text-xs font-medium"
-                >
-                  {filledFeedback ? (
-                    <Check aria-hidden="true" className="size-3.5" />
-                  ) : (
-                    <Sparkles aria-hidden="true" className="size-3.5" />
-                  )}
-                  <span
-                    className="text-center whitespace-normal"
-                    aria-live="polite"
-                  >
-                    {filledFeedback ? t("auth.filled") : t("auth.quickFill")}
-                  </span>
-                </Button>
-                <p className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 text-xs">
-                  <code className="font-mono">admin</code>
-                  <span aria-hidden="true" className="opacity-50">
-                    /
-                  </span>
-                  <code className="font-mono">pebblebase</code>
-                </p>
-              </div>
-              <p className="text-muted-foreground text-center text-xs">
+              <p className="text-muted-foreground border-border border-t pt-3 text-center text-xs">
                 {t("auth.loginRecoveryHint")}
               </p>
             </form>

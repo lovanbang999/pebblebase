@@ -40,9 +40,42 @@ func (s *Store) migrate() error {
 			password_hash TEXT NOT NULL,
 			role          TEXT NOT NULL DEFAULT 'viewer',
 			created_at    DATETIME NOT NULL,
-			updated_at    DATETIME NOT NULL
+			updated_at    DATETIME NOT NULL,
+			active        INTEGER NOT NULL DEFAULT 1
 		)
 	`)
+	if err != nil {
+		return err
+	}
+	// Existing databases predate account activation. SQLite's DEFAULT 1 migration
+	// keeps every existing Admin and Viewer active without changing their roles.
+	rows, err := s.db.Query("PRAGMA table_info(users)")
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	hasActive := false
+	for rows.Next() {
+		var cid int
+		var name, dataType string
+		var notNull, primaryKey int
+		var defaultValue any
+		if err := rows.Scan(&cid, &name, &dataType, &notNull, &defaultValue, &primaryKey); err != nil {
+			return err
+		}
+		if name == "active" {
+			hasActive = true
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if !hasActive {
+		_, err = s.db.Exec("ALTER TABLE users ADD COLUMN active INTEGER NOT NULL DEFAULT 1")
+	}
 	return err
 }
 
@@ -82,12 +115,13 @@ func (s *Store) CreateUser(ctx context.Context, username, password string, role 
 		Username:     username,
 		PasswordHash: hash,
 		Role:         role,
+		Active:       true,
 		CreatedAt:    now,
 		UpdatedAt:    now,
 	}
 	_, err = s.db.ExecContext(ctx,
-		`INSERT INTO users (id, username, password_hash, role, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO users (id, username, password_hash, role, created_at, updated_at, active)
+		 VALUES (?, ?, ?, ?, ?, ?, 1)`,
 		u.ID, u.Username, u.PasswordHash, string(u.Role), u.CreatedAt, u.UpdatedAt,
 	)
 	if err != nil {
@@ -100,9 +134,9 @@ func (s *Store) CreateUser(ctx context.Context, username, password string, role 
 func (s *Store) GetByUsername(ctx context.Context, username string) (*User, error) {
 	u := &User{}
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at
+		`SELECT id, username, password_hash, role, created_at, updated_at, active
 		 FROM users WHERE username = ?`, username,
-	).Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+	).Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.Active)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user %q not found", username)
 	}
@@ -116,9 +150,9 @@ func (s *Store) GetByUsername(ctx context.Context, username string) (*User, erro
 func (s *Store) GetByID(ctx context.Context, id string) (*User, error) {
 	u := &User{}
 	err := s.db.QueryRowContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at
+		`SELECT id, username, password_hash, role, created_at, updated_at, active
 		 FROM users WHERE id = ?`, id,
-	).Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt)
+	).Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.Active)
 	if err == sql.ErrNoRows {
 		return nil, fmt.Errorf("user %q not found", id)
 	}
@@ -131,7 +165,7 @@ func (s *Store) GetByID(ctx context.Context, id string) (*User, error) {
 // ListUsers returns all users ordered by created_at ascending.
 func (s *Store) ListUsers(ctx context.Context) ([]User, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, username, password_hash, role, created_at, updated_at
+		`SELECT id, username, password_hash, role, created_at, updated_at, active
 		 FROM users ORDER BY created_at ASC`,
 	)
 	if err != nil {
@@ -142,7 +176,7 @@ func (s *Store) ListUsers(ctx context.Context) ([]User, error) {
 	var users []User
 	for rows.Next() {
 		var u User
-		if err := rows.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt); err != nil {
+		if err := rows.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.Role, &u.CreatedAt, &u.UpdatedAt, &u.Active); err != nil {
 			return nil, fmt.Errorf("scan user: %w", err)
 		}
 		users = append(users, u)
@@ -150,16 +184,75 @@ func (s *Store) ListUsers(ctx context.Context) ([]User, error) {
 	return users, rows.Err()
 }
 
+// UpdateAccess atomically updates a user's role and activation status. It
+// prevents self lockout and preserves at least one active administrator.
+func (s *Store) UpdateAccess(ctx context.Context, id, actorID string, role Role, active bool) (*User, error) {
+	if role != RoleAdmin && role != RoleDeveloper && role != RoleViewer {
+		return nil, fmt.Errorf("invalid role")
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	var currentRole Role
+	var currentActive bool
+	if err := tx.QueryRowContext(ctx, "SELECT role, active FROM users WHERE id = ?", id).Scan(&currentRole, &currentActive); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+	if id == actorID && !active {
+		return nil, fmt.Errorf("cannot deactivate your own account")
+	}
+	removingActiveAdmin := currentRole == RoleAdmin && currentActive && (!active || role != RoleAdmin)
+	if removingActiveAdmin {
+		var admins int
+		if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE role = ? AND active = 1", string(RoleAdmin)).Scan(&admins); err != nil {
+			return nil, err
+		}
+		if admins <= 1 {
+			return nil, fmt.Errorf("cannot deactivate or demote the last active administrator")
+		}
+	}
+	if _, err := tx.ExecContext(ctx, "UPDATE users SET role = ?, active = ?, updated_at = ? WHERE id = ?", string(role), active, time.Now().UTC(), id); err != nil {
+		return nil, err
+	}
+	if err := tx.Commit(); err != nil {
+		return nil, err
+	}
+	return s.GetByID(ctx, id)
+}
+
 // DeleteUser removes the user with the given ID.
 func (s *Store) DeleteUser(ctx context.Context, id string) error {
-	res, err := s.db.ExecContext(ctx, "DELETE FROM users WHERE id = ?", id)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var role Role
+	var active bool
+	if err := tx.QueryRowContext(ctx, "SELECT role, active FROM users WHERE id = ?", id).Scan(&role, &active); err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("user not found")
+		}
+		return err
+	}
+	if role == RoleAdmin && active {
+		var admins int
+		if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM users WHERE role = ? AND active = 1", string(RoleAdmin)).Scan(&admins); err != nil {
+			return err
+		}
+		if admins <= 1 {
+			return fmt.Errorf("cannot delete the last active administrator")
+		}
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM users WHERE id = ?", id); err != nil {
 		return fmt.Errorf("delete user: %w", err)
 	}
-	if n, _ := res.RowsAffected(); n == 0 {
-		return fmt.Errorf("user %q not found", id)
-	}
-	return nil
+	return tx.Commit()
 }
 
 // UpdatePassword replaces the password hash for the given user ID.

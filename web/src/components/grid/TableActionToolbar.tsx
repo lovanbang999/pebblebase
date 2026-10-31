@@ -15,6 +15,7 @@ import {
   Terminal,
   LayoutList,
   Table as TableIcon,
+  Search,
 } from "lucide-react";
 import type { DatabaseType, TableSchema } from "@/lib/types";
 import type { TableSubview } from "./TableSubviewTabs";
@@ -54,6 +55,7 @@ interface TableActionToolbarProps {
   onOpenImport: () => void;
   onOpenExportOptions: () => void;
   onOpenQuery?: () => void;
+  onFindEverywhere?: () => void;
   page: number;
   pageSize: number;
   totalCount: number;
@@ -94,6 +96,7 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
   onOpenImport,
   onOpenExportOptions,
   onOpenQuery,
+  onFindEverywhere,
   page,
   pageSize,
   totalCount,
@@ -116,6 +119,18 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
 }) => (
   <div className="border-border bg-background dark:border-border dark:bg-background flex min-h-10 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-1">
     <SidebarTrigger className="mr-1 size-7 shrink-0" />
+    {onFindEverywhere && (
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        title="Find this value everywhere"
+        aria-label="Find this value everywhere"
+        onClick={onFindEverywhere}
+      >
+        <Search className="size-3.5" />
+      </Button>
+    )}
     {activeView === "data" && (
       <>
         <Button
@@ -232,7 +247,14 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
           variant="ghost"
           size="icon-sm"
           disabled={isReadOnly || !hasSelectedRow}
-          title={t("datagrid.deleteRow", "Delete selected row")}
+          title={
+            isReadOnly
+              ? t("datagrid.readOnlyTooltip")
+              : t(
+                  "datagrid.deleteRow",
+                  "Select a row with a primary key to delete it",
+                )
+          }
           aria-label={t("datagrid.deleteRow", "Delete selected row")}
           onClick={onDeleteSelected}
         >
@@ -255,7 +277,14 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
           />
           <DropdownMenuContent align="start">
             {(
-              ["csv", "json", "jsonl", "xlsx", "parquet"] as ExportFormat[]
+              [
+                "csv",
+                "json",
+                "jsonl",
+                "sql",
+                "xlsx",
+                "parquet",
+              ] as ExportFormat[]
             ).map((format) => (
               <DropdownMenuItem key={format} onClick={() => onExport(format)}>
                 {format.toUpperCase()}
@@ -352,19 +381,26 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
       </Button>
     )}
     <span className="flex-1" />
-    {pendingCount > 0 && (
+    {activeView === "data" && (
       <>
-        <Badge variant="outline" className="h-6 px-2 text-[10px]">
-          {t("datagrid.pendingChanges", {
-            count: pendingCount,
-            defaultValue: "{{count}} pending",
-          })}
-        </Badge>
+        {pendingCount > 0 && (
+          <Badge variant="outline" className="h-6 px-2 text-[10px]">
+            {t("datagrid.pendingChanges", {
+              count: pendingCount,
+              defaultValue: "{{count}} pending",
+            })}
+          </Badge>
+        )}
         <Button
           type="button"
           size="sm"
           className="h-7 px-2 text-xs"
-          disabled={isReadOnly || isSubmittingDrafts}
+          disabled={pendingCount === 0 || isReadOnly || isSubmittingDrafts}
+          title={
+            isReadOnly
+              ? t("datagrid.readOnlyTooltip")
+              : t("datagrid.submitChanges", "Submit")
+          }
           onClick={onSubmitDrafts}
         >
           {t("datagrid.submitChanges", "Submit")}
@@ -374,7 +410,8 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
           variant="ghost"
           size="sm"
           className="h-7 px-2 text-xs"
-          disabled={isSubmittingDrafts}
+          disabled={pendingCount === 0 || isSubmittingDrafts}
+          title={t("datagrid.revertChanges", "Revert")}
           onClick={onRevertDrafts}
         >
           {t("datagrid.revertChanges", "Revert")}
@@ -398,7 +435,7 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
         variant="outline"
         className="border-warning/40 h-6 gap-1 px-2 text-[10px]"
       >
-        <span>RO</span>
+        <span>Read-only</span>
       </Badge>
     )}
     {dbType !== "redis" && activeView === "data" && (

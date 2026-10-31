@@ -52,11 +52,44 @@ func isMutatingQuery(dbType, query string) bool {
 		return false
 	}
 
+	if dbType == "redis" {
+		return isMutatingRedisQuery(cleanQuery)
+	}
+
 	if dbType == "mongodb" {
 		return isMutatingMongoQuery(cleanQuery)
 	}
 
 	return isMutatingSQLQuery(cleanQuery)
+}
+
+// isMutatingRedisQuery permits a single command from the bounded read-only
+// allowlist. Redis command names are case-insensitive, but command separators
+// and transaction commands are rejected so a second operation cannot follow.
+func isMutatingRedisQuery(query string) bool {
+	if strings.ContainsAny(query, ";\r\n") {
+		return true
+	}
+	tokens := strings.Fields(query)
+	if len(tokens) == 0 {
+		return false
+	}
+	command := strings.ToUpper(tokens[0])
+	if (command == "SLOWLOG" || command == "CONFIG") && len(tokens) > 1 {
+		command += " " + strings.ToUpper(tokens[1])
+	}
+	_, safe := readOnlyRedisCommands[command]
+	return !safe
+}
+
+var readOnlyRedisCommands = map[string]struct{}{
+	"GET": {}, "MGET": {}, "STRLEN": {},
+	"HGET": {}, "HGETALL": {}, "HEXISTS": {}, "HKEYS": {}, "HVALS": {}, "HLEN": {},
+	"LRANGE": {}, "LLEN": {}, "LINDEX": {},
+	"SMEMBERS": {}, "SISMEMBER": {}, "SCARD": {},
+	"ZRANGE": {}, "ZCARD": {}, "ZSCORE": {},
+	"KEYS": {}, "SCAN": {}, "TYPE": {}, "TTL": {}, "PTTL": {}, "EXISTS": {},
+	"INFO": {}, "DBSIZE": {}, "PING": {}, "TIME": {}, "SLOWLOG GET": {}, "CONFIG GET": {},
 }
 
 // isMutatingSQLQuery normalizes SQL statements (stripping comments and literals)

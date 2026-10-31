@@ -6,6 +6,7 @@ interface TableExecutionFooterProps {
   to: number;
   total: number;
   queryTimeMs?: number;
+  querySummary: string;
   isLoading: boolean;
   t: (key: string, options?: any) => string;
 }
@@ -15,10 +16,11 @@ export const TableExecutionFooter: FC<TableExecutionFooterProps> = ({
   to,
   total,
   queryTimeMs,
+  querySummary,
   isLoading,
   t,
 }) => (
-  <footer className="border-border bg-card/80 text-muted-foreground dark:border-border dark:bg-card/40 flex h-7 shrink-0 items-center gap-3 border-t px-3 text-[11px]">
+  <footer className="border-border bg-card/80 text-muted-foreground dark:border-border dark:bg-card/40 flex min-h-7 shrink-0 items-center gap-3 border-t px-3 py-1 text-[11px]">
     <span>
       {from === 0
         ? t("datagrid.zeroRows", "0 rows")
@@ -29,7 +31,9 @@ export const TableExecutionFooter: FC<TableExecutionFooterProps> = ({
             defaultValue: "{{from}}–{{to}} of {{total}} rows",
           })}
     </span>
-    <span className="flex-1" />
+    <span className="flex-1 truncate font-mono" title={querySummary}>
+      {querySummary}
+    </span>
     {isLoading ? (
       <span className="animate-pulse">
         {t("datagrid.loadingRows", "Loading rows…")}

@@ -1,30 +1,44 @@
 <!doctype html>
-<html lang="en" class="dark" style="background-color: #1e1f22; color-scheme: dark;">
+<html
+  lang="en"
+  class="dark"
+  style="background-color: #1e1f22; color-scheme: dark"
+>
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
     <title>Pebblebase Studio</title>
     <style>
-      *, *::before, *::after {
+      *,
+      *::before,
+      *::after {
         box-sizing: border-box;
       }
-      html, body {
+      html,
+      body {
         margin: 0;
         padding: 0;
         width: 100%;
         height: 100%;
         overflow: hidden;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+          Arial, sans-serif;
         user-select: none;
         -webkit-user-select: none;
       }
-      html.dark, html.dark body {
+      html.dark,
+      html.dark body {
         background-color: #1e1f22 !important;
         color: #f4f6f8;
         color-scheme: dark;
       }
-      html:not(.dark), html:not(.dark) body {
+      html:not(.dark),
+      html:not(.dark) body {
         background-color: #ffffff !important;
         color: #18181b;
         color-scheme: light;
@@ -51,7 +65,9 @@
         height: 100vh;
         background-color: #1e1f22;
         overflow: hidden;
-        transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s ease;
+        transition:
+          opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+          visibility 0.3s ease;
         pointer-events: auto;
       }
       .pb-splash-container.pb-splash-hidden {
@@ -63,7 +79,11 @@
         position: absolute;
         width: 420px;
         height: 420px;
-        background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(9, 9, 11, 0) 70%);
+        background: radial-gradient(
+          circle,
+          rgba(16, 185, 129, 0.08) 0%,
+          rgba(9, 9, 11, 0) 70%
+        );
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
@@ -86,7 +106,9 @@
         border-radius: 14px;
         background: rgba(24, 26, 34, 0.85);
         border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.4),
+          inset 0 1px 1px rgba(255, 255, 255, 0.08);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -149,33 +171,57 @@
         left: -40%;
         height: 100%;
         width: 40%;
-        background: linear-gradient(90deg, transparent, #548af7, #34d399, transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          #548af7,
+          #34d399,
+          transparent
+        );
         border-radius: 9999px;
-        animation: pb-indeterminate 1.4s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+        animation: pb-indeterminate 1.4s cubic-bezier(0.65, 0.815, 0.735, 0.395)
+          infinite;
       }
       @keyframes pb-indeterminate {
-        0% { left: -40%; width: 40%; }
-        50% { left: 40%; width: 60%; }
-        100% { left: 100%; width: 40%; }
+        0% {
+          left: -40%;
+          width: 40%;
+        }
+        50% {
+          left: 40%;
+          width: 60%;
+        }
+        100% {
+          left: 100%;
+          width: 40%;
+        }
       }
       @keyframes pb-float {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(-3px); }
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-3px);
+        }
       }
     </style>
     <script>
-      (function() {
-        var t = localStorage.getItem('pb_theme');
-        if (t === 'light') {
-          document.documentElement.classList.remove('dark');
+      (function () {
+        var t = localStorage.getItem("pb_theme");
+        if (t === "light") {
+          document.documentElement.classList.remove("dark");
         } else {
-          document.documentElement.classList.add('dark');
+          document.documentElement.classList.add("dark");
         }
 
         // Two requestAnimationFrame ticks ensure the browser compositor has flushed pixels to the screen
-        requestAnimationFrame(function() {
-          requestAnimationFrame(function() {
-            if (window.runtime && typeof window.runtime.WindowShow === 'function') {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            if (
+              window.runtime &&
+              typeof window.runtime.WindowShow === "function"
+            ) {
               window.runtime.WindowShow();
             }
           });
@@ -183,12 +229,38 @@
       })();
     </script>
   </head>
-  <body style="margin: 0; padding: 0;">
+  <body style="margin: 0; padding: 0">
     <div id="pb-splash" class="pb-splash-container">
       <div class="pb-splash-glow"></div>
       <div class="pb-splash-card">
-        <div class="pb-splash-logo-box" style="width: 64px; height: 64px; min-width: 64px; min-height: 64px; padding: 10px; box-sizing: border-box;">
-          <img src="/favicon.svg" alt="Pebblebase" width="44" height="44" style="width: 44px; height: 44px; min-width: 44px; min-height: 44px; max-width: 44px; max-height: 44px; display: block; object-fit: contain; box-sizing: border-box;" />
+        <div
+          class="pb-splash-logo-box"
+          style="
+            width: 64px;
+            height: 64px;
+            min-width: 64px;
+            min-height: 64px;
+            padding: 10px;
+            box-sizing: border-box;
+          "
+        >
+          <img
+            src="/favicon.svg"
+            alt="Pebblebase"
+            width="44"
+            height="44"
+            style="
+              width: 44px;
+              height: 44px;
+              min-width: 44px;
+              min-height: 44px;
+              max-width: 44px;
+              max-height: 44px;
+              display: block;
+              object-fit: contain;
+              box-sizing: border-box;
+            "
+          />
         </div>
         <h1 class="pb-splash-title">
           Pebblebase Studio

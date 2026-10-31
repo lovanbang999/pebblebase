@@ -2,11 +2,14 @@ package api_test
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"pebblebase/internal/ai"
@@ -76,6 +79,90 @@ func setupAITestServer(t *testing.T) (*http.ServeMux, *ai.Service, *httptest.Ser
 	srv.RegisterRoutes(mux)
 
 	return mux, aiSvc, mockLLMServer
+}
+
+type errorAIProvider struct{ message string }
+
+func (p errorAIProvider) Name() string { return "openai" }
+func (p errorAIProvider) TestConnection(_ context.Context, _ *ai.AIConfig, _ string) (*ai.TestResult, error) {
+	return nil, fmt.Errorf("upstream echoed credential: %s", p.message)
+}
+func (p errorAIProvider) Generate(context.Context, *ai.AIConfig, string, *ai.CompletionRequest) (*ai.CompletionResponse, error) {
+	return nil, fmt.Errorf("provider error")
+}
+
+func newAIEndpointTestMux(t *testing.T) (*http.ServeMux, *ai.Service) {
+	t.Helper()
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	enc, err := storage.NewEncryptor([]byte("01234567890123456789012345678901"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := ai.NewStore(db, enc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := ai.NewService(store, enc)
+	mux := http.NewServeMux()
+	api.NewServer(nil, enc, nil, nil, nil, nil, svc, false).RegisterRoutes(mux)
+	return mux, svc
+}
+
+func TestAIConfigMasksCredentialAndTestFailureDoesNotEchoIt(t *testing.T) {
+	mux, svc := newAIEndpointTestMux(t)
+	secret := "sk-live-do-not-return-this"
+	var capturedLogs bytes.Buffer
+	previousLogOutput := log.Writer()
+	log.SetOutput(&capturedLogs)
+	t.Cleanup(func() { log.SetOutput(previousLogOutput) })
+	body := fmt.Sprintf(`{"provider":"openai","model":"test-model","base_url":"https://provider.invalid","api_key":%q}`, secret)
+	save := httptest.NewRecorder()
+	mux.ServeHTTP(save, httptest.NewRequest(http.MethodPost, "/api/ai/config", strings.NewReader(body)))
+	if save.Code != http.StatusOK {
+		t.Fatalf("save config status = %d", save.Code)
+	}
+	if strings.Contains(save.Body.String(), secret) {
+		t.Fatal("save response exposed the API key")
+	}
+
+	read := httptest.NewRecorder()
+	mux.ServeHTTP(read, httptest.NewRequest(http.MethodGet, "/api/ai/config", nil))
+	if read.Code != http.StatusOK {
+		t.Fatalf("get config status = %d", read.Code)
+	}
+	if strings.Contains(read.Body.String(), secret) {
+		t.Fatal("config read exposed the API key")
+	}
+	var config ai.ConfigPayload
+	if err := json.Unmarshal(read.Body.Bytes(), &config); err != nil {
+		t.Fatal(err)
+	}
+	if !config.HasKey || config.KeyMask == "" || config.KeyMask == secret {
+		t.Fatalf("expected masked key metadata, got %+v", config)
+	}
+	status := httptest.NewRecorder()
+	mux.ServeHTTP(status, httptest.NewRequest(http.MethodGet, "/api/ai/status", nil))
+	if status.Code != http.StatusOK || !strings.Contains(status.Body.String(), `"configured":true`) || strings.Contains(status.Body.String(), secret) {
+		t.Fatalf("AI status should report readiness without credentials: status=%d body=%s", status.Code, status.Body.String())
+	}
+
+	svc.RegisterProvider(errorAIProvider{message: secret})
+	testBody := fmt.Sprintf(`{"provider":"openai","model":"test-model","base_url":"https://provider.invalid","api_key":%q}`, secret)
+	testResponse := httptest.NewRecorder()
+	mux.ServeHTTP(testResponse, httptest.NewRequest(http.MethodPost, "/api/ai/test", strings.NewReader(testBody)))
+	if strings.Contains(testResponse.Body.String(), secret) {
+		t.Fatal("connection test response echoed API key")
+	}
+	if strings.Contains(capturedLogs.String(), secret) {
+		t.Fatal("AI key was written to the application log")
+	}
+	if !strings.Contains(testResponse.Body.String(), "Connection test failed") {
+		t.Fatalf("expected sanitized failure, got %s", testResponse.Body.String())
+	}
 }
 
 func TestAI_API_Endpoints(t *testing.T) {

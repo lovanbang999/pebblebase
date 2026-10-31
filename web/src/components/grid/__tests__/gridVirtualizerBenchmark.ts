@@ -30,7 +30,7 @@ function runBenchmark() {
   );
 
   const ROW_COUNT = 100_000;
-  const ROW_HEIGHT = 37; // VIRTUALIZER_ROW_HEIGHT in DataGrid.tsx
+  const ROW_HEIGHT = 29; // 28px rendered cells + 1px row border; grid.ts
   const VIEWPORT_HEIGHT = 900; // Simulated 1080p browser window viewport
   const OVERSCAN = 10; // VIRTUALIZER_OVERSCAN in DataGrid.tsx
 

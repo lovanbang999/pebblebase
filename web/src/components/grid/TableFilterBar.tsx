@@ -56,7 +56,7 @@ export const TableFilterBar: FC<TableFilterBarProps> = ({
   onSortChange,
   t,
 }) => (
-  <div className="border-border bg-card/80 dark:border-border dark:bg-card/30 flex min-h-10 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5">
+  <div className="border-border bg-card/80 dark:border-border dark:bg-card/30 flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5">
     <div className="relative w-44 shrink-0">
       <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
       <Input
@@ -82,78 +82,78 @@ export const TableFilterBar: FC<TableFilterBarProps> = ({
     <span className="text-muted-foreground hidden text-[10px] lg:inline">
       {t("datagrid.searchScopeHelp", "Loaded page only")}
     </span>
-    <span className="bg-border h-5 w-px" />
-    <Filter className="text-muted-foreground size-3.5" />
-    <Select
-      value={filterCol}
-      onValueChange={(value) => value && onFilterColChange(value)}
+    <form
+      onSubmit={onAddFilter}
+      className="border-border bg-background dark:bg-background flex items-center gap-1 rounded-md border px-1.5 py-1"
     >
-      <SelectTrigger
-        aria-label={t("datagrid.column")}
-        className="h-7 w-36 text-xs"
+      <Filter className="text-primary ml-1 size-3.5" />
+      <span className="text-muted-foreground px-1 font-mono text-[10px] font-semibold tracking-wide uppercase">
+        WHERE
+      </span>
+      <Select
+        value={filterCol}
+        onValueChange={(value) => value && onFilterColChange(value)}
       >
-        <SelectValue placeholder={t("datagrid.column")} />
-      </SelectTrigger>
-      <SelectContent>
-        {table.columns.map((column) => (
-          <SelectItem key={column.name} value={column.name}>
-            {column.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-    <Select
-      value={filterOp}
-      onValueChange={(value) => {
-        if (
-          value === "eq" ||
-          value === "neq" ||
-          value === "gt" ||
-          value === "lt" ||
-          value === "contains"
-        )
-          onFilterOpChange(value);
-      }}
-    >
-      <SelectTrigger
-        aria-label={t("datagrid.operator")}
-        className="h-7 w-24 text-xs"
+        <SelectTrigger
+          aria-label={t("datagrid.column")}
+          className="h-7 w-32 border-transparent bg-transparent text-xs shadow-none"
+        >
+          <SelectValue placeholder={t("datagrid.column")} />
+        </SelectTrigger>
+        <SelectContent>
+          {table.columns.map((column) => (
+            <SelectItem key={column.name} value={column.name}>
+              {column.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={filterOp}
+        onValueChange={(value) => {
+          if (
+            value === "eq" ||
+            value === "neq" ||
+            value === "gt" ||
+            value === "lt" ||
+            value === "contains"
+          )
+            onFilterOpChange(value);
+        }}
       >
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="eq">=</SelectItem>
-        {dbType !== "redis" && (
-          <>
-            <SelectItem value="neq">≠</SelectItem>
-            <SelectItem value="gt">&gt;</SelectItem>
-            <SelectItem value="lt">&lt;</SelectItem>
-          </>
-        )}
-        <SelectItem value="contains">{t("datagrid.contains")}</SelectItem>
-      </SelectContent>
-    </Select>
-    <Input
-      value={filterVal}
-      onChange={(event) => onFilterValChange(event.target.value)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          onAddFilter(event as unknown as FormEvent);
-        }
-      }}
-      placeholder={t("datagrid.valuePlaceholder")}
-      className="h-7 w-36 font-mono text-xs"
-    />
-    <Button
-      type="button"
-      size="sm"
-      className="h-7 px-2.5 text-xs"
-      disabled={!filterVal}
-      onClick={(event) => onAddFilter(event as unknown as FormEvent)}
-    >
-      {t("datagrid.apply")}
-    </Button>
+        <SelectTrigger
+          aria-label={t("datagrid.operator")}
+          className="h-7 w-20 border-transparent bg-transparent text-xs shadow-none"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="eq">=</SelectItem>
+          {dbType !== "redis" && (
+            <>
+              <SelectItem value="neq">≠</SelectItem>
+              <SelectItem value="gt">&gt;</SelectItem>
+              <SelectItem value="lt">&lt;</SelectItem>
+            </>
+          )}
+          <SelectItem value="contains">{t("datagrid.contains")}</SelectItem>
+        </SelectContent>
+      </Select>
+      <Input
+        value={filterVal}
+        onChange={(event) => onFilterValChange(event.target.value)}
+        placeholder={t("datagrid.valuePlaceholder")}
+        className="h-7 w-32 border-transparent bg-transparent font-mono text-xs shadow-none"
+      />
+      <Button
+        type="submit"
+        size="sm"
+        className="h-7 px-2.5 text-xs"
+        disabled={!filterVal}
+      >
+        {t("datagrid.apply")}
+      </Button>
+    </form>
     {filters.map((filter, index) => (
       <Badge
         key={`${filter.column}-${filter.operator}-${index}`}
@@ -183,40 +183,43 @@ export const TableFilterBar: FC<TableFilterBarProps> = ({
         {t("datagrid.clearAll")}
       </Button>
     )}
-    <span className="bg-border h-5 w-px" />
-    <span className="text-muted-foreground text-[11px]">
-      {t("datagrid.sort", "Sort")}
-    </span>
-    <Select
-      value={sortBy || "none"}
-      onValueChange={(value) =>
-        onSortChange(value === "none" ? "" : value || "", sortDesc)
-      }
-    >
-      <SelectTrigger
-        aria-label={t("datagrid.sort", "Sort")}
-        className="h-7 w-36 text-xs"
+    <div className="border-border bg-background dark:bg-background flex items-center gap-1 rounded-md border px-1.5 py-1">
+      <span className="text-muted-foreground px-1 font-mono text-[10px] font-semibold tracking-wide uppercase">
+        ORDER BY
+      </span>
+      <Select
+        value={sortBy || "none"}
+        onValueChange={(value) =>
+          onSortChange(value === "none" ? "" : value || "", sortDesc)
+        }
       >
-        <SelectValue placeholder={t("datagrid.sort", "Sort")} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="none">{t("datagrid.noSort", "No sort")}</SelectItem>
-        {table.columns.map((column) => (
-          <SelectItem key={column.name} value={column.name}>
-            {column.name}
+        <SelectTrigger
+          aria-label={t("datagrid.sort", "Sort")}
+          className="h-7 w-32 border-transparent bg-transparent text-xs shadow-none"
+        >
+          <SelectValue placeholder={t("datagrid.sort", "Sort")} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="none">
+            {t("datagrid.noSort", "No sort")}
           </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-    <Button
-      type="button"
-      variant="outline"
-      size="sm"
-      disabled={!sortBy}
-      className="h-7 px-2 text-xs"
-      onClick={() => onSortChange(sortBy, !sortDesc)}
-    >
-      {sortDesc ? "↓ DESC" : "↑ ASC"}
-    </Button>
+          {table.columns.map((column) => (
+            <SelectItem key={column.name} value={column.name}>
+              {column.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={!sortBy}
+        className="h-7 px-2 text-xs"
+        onClick={() => onSortChange(sortBy, !sortDesc)}
+      >
+        {sortDesc ? "↓ DESC" : "↑ ASC"}
+      </Button>
+    </div>
   </div>
 );

@@ -2,6 +2,7 @@ import { Database, Folder, ListChecks } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { WORKSPACE_COMMANDS } from "./workspaceCommands";
+import { isMac } from "@/lib/platform";
 import {
   Tooltip,
   TooltipContent,
@@ -71,7 +72,16 @@ export function ActivityRail({
           </Button>
         }
       />
-      <TooltipContent side="right">{item.label}</TooltipContent>
+      <TooltipContent side="right">
+        {item.label}
+        {WORKSPACE_COMMANDS[item.id].shortcut && (
+          <kbd className="border-border ml-2 rounded border px-1 font-mono text-[10px]">
+            {isMac
+              ? WORKSPACE_COMMANDS[item.id].shortcut?.replace("Alt+", "Cmd+")
+              : WORKSPACE_COMMANDS[item.id].shortcut}
+          </kbd>
+        )}
+      </TooltipContent>
     </Tooltip>
   );
 

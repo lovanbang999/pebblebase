@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
@@ -20,6 +22,99 @@ func createRedisConnection(t *testing.T, store *storage.Store, mr *miniredis.Min
 		t.Fatalf("save redis connection: %v", err)
 	}
 	return rec.ID
+}
+
+func TestRedisAPI_ReadOnlyBlocksEveryMutation(t *testing.T) {
+	mux, store := setupTestServer(t)
+	record, err := store.Save("Read Only Redis", "redis", "127.0.0.1", "6379", "", "0", "redis://127.0.0.1:6379/0", true, storage.SaveParams{ReadOnly: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	connID := record.ID
+
+	mutations := []struct {
+		method, path string
+		body         string
+	}{
+		{http.MethodPut, "/redis/key", `{"key":"str","value":"v"}`},
+		{http.MethodPut, "/redis/key", `{"key":"str","ttl":60}`},
+		{http.MethodPut, "/redis/key", `{"key":"str","new_key":"renamed"}`},
+		{http.MethodDelete, "/redis/key?name=str", ""},
+		{http.MethodPost, "/redis/key/item", `{"key":"h","type":"hash","action":"add","field":"f","value":"v"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"h","type":"hash","action":"delete","field":"f"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"l","type":"list","action":"push","value":"v"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"l","type":"list","action":"set","index":0,"value":"v"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"l","type":"list","action":"delete","value":"v"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"s","type":"set","action":"add","value":"v"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"s","type":"set","action":"delete","value":"v"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"z","type":"zset","action":"add","value":"v","score":1}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"z","type":"zset","action":"delete","value":"v"}`},
+		{http.MethodPost, "/redis/pubsub/publish", `{"channel":"c","message":"v"}`},
+	}
+	for _, mutation := range mutations {
+		t.Run(mutation.method+mutation.path+mutation.body, func(t *testing.T) {
+			var body io.Reader
+			if mutation.body != "" {
+				body = strings.NewReader(mutation.body)
+			}
+			req := httptest.NewRequest(mutation.method, "/api/connections/"+connID+mutation.path, body)
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+			if rec.Code != http.StatusForbidden {
+				t.Fatalf("status=%d, want %d; body=%s", rec.Code, http.StatusForbidden, rec.Body.String())
+			}
+			const expectedError = `{"error":"connection is in read-only mode; mutations are forbidden"}`
+			if strings.TrimSpace(rec.Body.String()) != expectedError {
+				t.Fatalf("read-only response=%s, want SQL/Mongo guard payload %s", rec.Body.String(), expectedError)
+			}
+		})
+	}
+}
+
+func TestRedisAPI_WritableConnectionAllowsMutations(t *testing.T) {
+	mux, store := setupTestServer(t)
+	mr := miniredis.RunT(t)
+	defer mr.Close()
+	connID := createRedisConnection(t, store, mr)
+	_ = mr.Set("str", "old")
+	mr.HSet("h", "f", "old")
+	mr.RPush("l", "old")
+	mr.SAdd("s", "old")
+	mr.ZAdd("z", 1, "old")
+
+	mutations := []struct {
+		method, path string
+		body         string
+	}{
+		{http.MethodPut, "/redis/key", `{"key":"str","value":"new"}`},
+		{http.MethodPut, "/redis/key", `{"key":"str","ttl":60}`},
+		{http.MethodPut, "/redis/key", `{"key":"str","new_key":"renamed"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"h","type":"hash","action":"update","field":"f","value":"new"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"h","type":"hash","action":"delete","field":"f"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"l","type":"list","action":"push","value":"new"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"l","type":"list","action":"set","index":0,"value":"new"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"l","type":"list","action":"delete","value":"new"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"s","type":"set","action":"add","value":"new"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"s","type":"set","action":"delete","value":"new"}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"z","type":"zset","action":"update","value":"old","score":2}`},
+		{http.MethodPost, "/redis/key/item", `{"key":"z","type":"zset","action":"delete","value":"old"}`},
+		{http.MethodDelete, "/redis/key?name=renamed", ""},
+		{http.MethodPost, "/redis/pubsub/publish", `{"channel":"c","message":"v"}`},
+	}
+	for _, mutation := range mutations {
+		t.Run(mutation.method+mutation.path+mutation.body, func(t *testing.T) {
+			var body io.Reader
+			if mutation.body != "" {
+				body = strings.NewReader(mutation.body)
+			}
+			req := httptest.NewRequest(mutation.method, "/api/connections/"+connID+mutation.path, body)
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status=%d, want %d; body=%s", rec.Code, http.StatusOK, rec.Body.String())
+			}
+		})
+	}
 }
 
 func TestRedisAPI_ScanAndDetail(t *testing.T) {

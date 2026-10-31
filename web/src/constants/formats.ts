@@ -3,6 +3,7 @@ import type { ExportFormat } from "@/lib/api";
 export const EXPORT_FORMATS: readonly ExportFormat[] = [
   "csv",
   "json",
+  "sql",
   "jsonl",
   "xlsx",
   "parquet",
@@ -14,6 +15,7 @@ export const EXPORT_SIZE_MULTIPLIERS: Record<ExportFormat, number> = {
   csv: 0.9,
   jsonl: 1.1,
   json: 1.3,
+  sql: 1.0,
 };
 
 export const ESTIMATED_BYTES_PER_ROW = 120;

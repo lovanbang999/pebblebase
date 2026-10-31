@@ -91,10 +91,11 @@ type BulkImporter interface {
 
 // IndexInfo describes a table index and its uniqueness.
 type IndexInfo struct {
-	Name    string   `json:"name"`
-	Columns []string `json:"columns"`
-	Unique  bool     `json:"unique"`
-	Primary bool     `json:"primary,omitempty"`
+	Name       string   `json:"name"`
+	Columns    []string `json:"columns"`
+	Unique     bool     `json:"unique"`
+	Primary    bool     `json:"primary,omitempty"`
+	Definition string   `json:"definition,omitempty"`
 }
 
 // DDLProvider is implemented by database adapters capable of providing table DDL and index definitions.
@@ -171,9 +172,32 @@ type QueryResult struct {
 	QueryTimeMs float64          `json:"query_time_ms,omitempty"`
 }
 
+// ValueMatch is a bounded sample returned by the cross-database search adapter path.
+type ValueMatch struct {
+	Table     string           `json:"table"`
+	Count     int              `json:"count"`
+	Column    string           `json:"column"`
+	Rows      []map[string]any `json:"rows"`
+	Truncated bool             `json:"truncated,omitempty"`
+}
+
 // MutationOp describes an insert, update, or delete operation.
 type MutationOp struct {
 	Type   string // insert, update, delete
 	Where  map[string]any
 	Values map[string]any
+}
+
+// SchemaConstraint preserves ordered columns, including composite foreign keys.
+type SchemaConstraint struct {
+	Name             string   `json:"name"`
+	Kind             string   `json:"kind"`
+	Definition       string   `json:"definition,omitempty"`
+	Columns          []string `json:"columns"`
+	ReferenceTable   string   `json:"reference_table,omitempty"`
+	ReferenceSchema  string   `json:"reference_schema,omitempty"`
+	ReferenceColumns []string `json:"reference_columns,omitempty"`
+}
+type ConstraintProvider interface {
+	GetSchemaConstraints(context.Context) (map[string][]SchemaConstraint, error)
 }

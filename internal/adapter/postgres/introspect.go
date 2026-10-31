@@ -75,7 +75,7 @@ func fetchTables(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
 
 // fetchColumns returns the columns for a single table, annotated with
 // primary-key and foreign-key flags.
-func fetchColumns(ctx context.Context, pool *pgxpool.Pool, table string, fkCols map[string]struct{}) ([]schema.Column, error) {
+func fetchColumns(ctx context.Context, pool constraintQuerier, table string, fkCols map[string]struct{}) ([]schema.Column, error) {
 	const q = `
 		SELECT
 			c.column_name,
@@ -93,7 +93,11 @@ func fetchColumns(ctx context.Context, pool *pgxpool.Pool, table string, fkCols 
 				   AND kcu.column_name    = c.column_name
 				 LIMIT 1),
 				false
-			) AS is_primary_key
+			) AS is_primary_key,
+ (SELECT pg_catalog.format_type(a.atttypid,a.atttypmod)
+ FROM pg_catalog.pg_attribute a JOIN pg_catalog.pg_class t ON t.oid=a.attrelid
+ JOIN pg_catalog.pg_namespace n ON n.oid=t.relnamespace
+ WHERE n.nspname='public' AND t.relname=c.table_name AND a.attname=c.column_name AND NOT a.attisdropped) AS native_type
 		FROM information_schema.columns c
 		WHERE c.table_schema = 'public'
 		  AND c.table_name   = $1
@@ -113,14 +117,16 @@ func fetchColumns(ctx context.Context, pool *pgxpool.Pool, table string, fkCols 
 			isNullable string
 			defVal     *string
 			isPK       bool
+			nativeType string
 		)
-		if err := rows.Scan(&name, &rawType, &isNullable, &defVal, &isPK); err != nil {
+		if err := rows.Scan(&name, &rawType, &isNullable, &defVal, &isPK, &nativeType); err != nil {
 			return nil, fmt.Errorf("postgres: scan column: %w", err)
 		}
 		_, isFK := fkCols[table+"."+name]
 		cols = append(cols, schema.Column{
 			Name:         name,
 			Type:         normalizeType(rawType),
+			NativeType:   nativeType,
 			Nullable:     isNullable == "YES",
 			IsPrimaryKey: isPK,
 			IsForeignKey: isFK,

@@ -22,6 +22,9 @@ const (
 	ActionSchemaChange     Action = "schema_change"
 	ActionConnectionCreate Action = "connection_create"
 	ActionConnectionUpdate Action = "connection_update"
+	ActionUserRoleChange   Action = "user_role_change"
+	ActionUserDeactivate   Action = "user_deactivate"
+	ActionPasswordReset    Action = "password_reset"
 )
 
 // Entry is a single audit log record.

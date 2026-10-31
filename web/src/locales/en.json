@@ -37,7 +37,12 @@
     "aiFailed": "AI could not generate a query. Check provider settings and try again.",
     "aiDraft": "Generated draft",
     "aiDraftTitle": "AI draft",
-    "reviewInConsole": "Review in query console"
+    "reviewInConsole": "Insert into console",
+    "aiPrivacy": "Requests include your prompt and prior chat turns, active connection name and engine, and the selected table schema only. Result rows are excluded unless you attach them.",
+    "aiAttachResult": "Attach current result",
+    "aiResultAttached": "Result attached (up to 20 rows)",
+    "aiClear": "Clear conversation",
+    "aiNotConfigured": "No AI provider and API key are configured. Ask an administrator to configure one in Settings."
   },
   "workspace": {
     "confirmDeleteDirtyTabs": "This connection has tabs with unsaved staged changes. Delete the connection and discard those changes?",
@@ -242,7 +247,42 @@
     "select_table_to_view": "Select a table on the left to view differences",
     "columns_count": "{{count}} columns",
     "indexes_count": "{{count}} indexes",
-    "target_engine": "Target engine"
+    "target_engine": "Target engine",
+    "postgresRequired": "Choose two distinct, reachable PostgreSQL connections to compare schemas.",
+    "sourceLabel": "Source (desired schema)",
+    "destinationLabel": "Destination (to change)",
+    "swapPair": "Swap source and destination",
+    "refreshCatalog": "Refresh schemas",
+    "directionDescription": "Generated SQL makes destination match source. Nothing is executed here.",
+    "catalogUnavailable": "Both PostgreSQL catalogs must be reachable and complete.",
+    "loadingCatalog": "Loading shared schema metadata…",
+    "searchDifferences": "Search differences",
+    "selectAllChanges": "Select all",
+    "selectionCount": "{{selected}} of {{total}} selected (including dependencies)",
+    "destructiveDefault": "DROP TABLE/COLUMN changes are unchecked by default.",
+    "requiredDependency": "Required by another selected change",
+    "destructiveChange": "Destructive: data may be lost",
+    "focusSql": "SQL for focused difference",
+    "fullScript": "Generated migration script",
+    "copiedScript": "Script copied.",
+    "copyFailed": "Could not copy the script.",
+    "copyScript": "Copy script",
+    "openDestinationConsole": "Open in destination console",
+    "migrationTitle": "Schema migration (review before running)",
+    "noSelectedChanges": "Select differences to generate a script.",
+    "noMetadataDifferences": "No differences in the supported schema metadata.",
+    "object": {
+      "table": "Table",
+      "column": "Column",
+      "index": "Index",
+      "constraint": "Constraint"
+    },
+    "change": {
+      "added": "Added",
+      "removed": "Removed",
+      "changed": "Changed"
+    },
+    "scopeNotice": "Public-schema tables, columns, indexes and PK/FK/unique constraints only. Views, functions, sequences, triggers, identity/generated attributes and other objects are not migrated. Review type casts and external dependencies before running."
   },
   "datagrid": {
     "tableViews": "Table views",
@@ -606,14 +646,42 @@
       "copied": "Copied Plan!",
       "no_plan_title": "No Execution Plan Yet",
       "no_plan_desc": "Click Explain to analyze and visualize the query execution plan."
-    }
+    },
+    "transaction": {
+      "readOnly": "Manual mode is unavailable on read-only connections.",
+      "unsupported": "Manual transactions support PostgreSQL and MySQL only.",
+      "mode": "Transaction mode",
+      "auto": "Tx: Auto",
+      "manual": "Tx: Manual",
+      "commit": "Commit",
+      "rollback": "Rollback",
+      "aborted": "Transaction aborted — Rollback required",
+      "switchTitle": "Switch to Auto mode?",
+      "switchDescription": "Commit or roll back uncommitted work before switching to Auto mode.",
+      "switchAction": "Roll back and switch",
+      "closeWarning": "Closing this tab rolls back its uncommitted transaction. Continue?",
+      "pending": "{{count}} pending statements",
+      "failed": "Transaction operation failed",
+      "closeFailed": "Could not close transaction",
+      "expired": "Console session expired or was closed. Uncommitted work was rolled back.",
+      "abortedExecution": "Transaction aborted. Rollback is required before executing more statements.",
+      "unavailable": "Manual mode is unavailable for this connection. Roll back any open transaction.",
+      "alreadyRunning": "A statement is already running in this console.",
+      "closed": "Console tab was closed. Work was rolled back.",
+      "idle": "Console session timed out. Uncommitted work was rolled back.",
+      "rolledBack": "Transaction rolled back.",
+      "commitSwitch": "Commit and switch"
+    },
+    "storageCredentialWarning": "Credential-bearing statements cannot be stored in history or scripts.",
+    "historySuccess": "Success",
+    "historyFailed": "Failed"
   },
   "tabs": {
     "unsavedChanges": "Unsaved changes",
     "confirmCloseDirty": "This tab has unsaved staged changes. Close it and discard them?",
-    "confirmCloseAllDirty": "Tabs have unsaved staged changes. Close all tabs and discard them?",
-    "confirmCloseOthersDirty": "Other tabs have unsaved staged changes. Close them and discard those changes?",
-    "confirmCloseRightDirty": "Tabs to the right have unsaved staged changes. Close them and discard those changes?",
+    "confirmCloseAllDirty": "These tabs have unsaved changes or open transactions. Close them, discard changes and roll back uncommitted work?",
+    "confirmCloseOthersDirty": "These tabs have unsaved changes or open transactions. Close them, discard changes and roll back uncommitted work?",
+    "confirmCloseRightDirty": "These tabs have unsaved changes or open transactions. Close them, discard changes and roll back uncommitted work?",
     "confirmCloseConnectionDirty": "This connection has tabs with unsaved staged changes. Close them and discard those changes?",
     "newTab": "New Tab",
     "newQueryTab": "New SQL Console",
@@ -627,7 +695,8 @@
     "queryTabTooltip": "SQL Console",
     "noTabsOpen": "No open tabs",
     "scrollLeft": "Scroll left",
-    "scrollRight": "Scroll right"
+    "scrollRight": "Scroll right",
+    "confirmCloseTransaction": "This console has an open transaction. Close it and roll back uncommitted work?"
   },
   "schema": {
     "dataGrid": "Data Grid",
@@ -657,7 +726,8 @@
     "primary": "PRIMARY",
     "secondary": "SECONDARY",
     "unique": "UNIQUE",
-    "none": "None"
+    "none": "None",
+    "constraints": "Primary, foreign and unique constraints"
   },
   "auth": {
     "login": "Sign In",
@@ -673,7 +743,14 @@
     "userManagement": "User Management",
     "role": "Role",
     "role.admin": "Admin",
+    "role.developer": "Developer",
     "role.viewer": "Viewer",
+    "rememberMe": "Remember me on this device",
+    "accountStatus": "Status",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activateUser": "Activate user",
+    "deactivateUser": "Deactivate user",
     "defaultCredentialsWarning": "You are using the default password. Please change it immediately.",
     "changePasswordNow": "Change Now",
     "auditLog": "Audit Log",
@@ -824,7 +901,13 @@
       "load": "Load into editor",
       "executedAt": "Executed",
       "by": "by"
-    }
+    },
+    "operationFailed": "Could not save or delete the script.",
+    "editScript": "Edit / rename script",
+    "deleteScript": "Delete script",
+    "deleteConfirm": "Delete script {{title}}?",
+    "scriptTitle": "Script title",
+    "scriptBody": "Script content"
   },
   "library": {
     "folder": "Folder",
@@ -865,7 +948,10 @@
     "loadError": "Failed to Load ERD Diagram",
     "loadErrorDesc": "Unable to connect or introspect database schema and relationships.",
     "errorDetails": "Error Details",
-    "retryConnection": "Retry Connection"
+    "retryConnection": "Retry Connection",
+    "renderLimit": "Showing {{shown}} of {{total}} tables. Search narrows large schemas.",
+    "showMore": "Show 40 more",
+    "refreshCatalog": "Refresh schema"
   },
   "diagnostics": {
     "unknownConnection": "Active Database",
@@ -1272,7 +1358,9 @@
       "copyOutput": "Copy output",
       "autocompleteSuggestions": "Autocomplete Suggestions",
       "pressTabToApply": "Press Tab to apply",
-      "emptyListOrSet": "(empty list or set)"
+      "emptyListOrSet": "(empty list or set)",
+      "productionConfirm": "Run {{count}} write command(s) on production connection {{connection}}?",
+      "multilinePlaceholder": "One command per line. Enter to run, Shift+Enter for a new line."
     },
     "loadingStudio": "Loading Redis Studio...",
     "keyBrowser": "Redis Key Browser",
@@ -1498,5 +1586,49 @@
     "copyDiagnostic": "Copy diagnostic",
     "exportComplete": "Export complete",
     "activeEditorConnection": "Active editor connection"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Personal appearance and query defaults",
+    "appearance": "Appearance",
+    "keymap": "Keymap",
+    "query": "Query",
+    "about": "About",
+    "theme": "Theme",
+    "themeCurrent": "Current: {{theme}}",
+    "switchLight": "Switch to light",
+    "switchDark": "Switch to dark",
+    "fontSize": "Font size",
+    "defaultTransaction": "Default transaction mode",
+    "manualSupported": "Manual mode is supported for PostgreSQL and MySQL writable connections.",
+    "pageSize": "Default page size",
+    "aiAdminNote": "AI provider credentials and configuration are admin-managed.",
+    "updateServiceNote": "Update checking uses the configured update service.",
+    "admin": "Administration",
+    "manageUsers": "Manage users and audit log"
+  },
+  "about": {
+    "title": "About Pebblebase",
+    "description": "Desktop database client",
+    "version": "Version"
+  },
+  "workspaces": {
+    "allSources": "All sources",
+    "loading": "Loading workspaces…",
+    "showAll": "Show all data sources",
+    "create": "Create workspace",
+    "manage": "Manage workspaces",
+    "name": "Name",
+    "colour": "Colour",
+    "noOtherMembership": "No other workspaces",
+    "keepOne": "Keep at least one workspace.",
+    "delete": "Delete workspace",
+    "cancel": "Cancel",
+    "save": "Save workspace",
+    "saveFailed": "Could not save workspace changes.",
+    "loadFailed": "Workspace configuration could not be loaded.",
+    "confirmDelete": "Delete workspace {{name}}? Connections remain available in All sources.",
+    "confirmSwitch": "Switch workspace and discard pending changes? Open manual transactions will be rolled back. Query text and tab layout will be saved, but staged data changes will be lost.",
+    "snapshotFailed": "Could not save the current workspace layout. Switching was cancelled to preserve your open work."
   }
 }

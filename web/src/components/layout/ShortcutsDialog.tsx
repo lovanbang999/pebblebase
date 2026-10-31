@@ -10,6 +10,7 @@ import {
   WORKSPACE_COMMANDS,
   type WorkspaceCommandId,
 } from "./workspaceCommands";
+import { isMac } from "@/lib/platform";
 
 interface ShortcutsDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface ShortcutsDialogProps {
 
 const shortcuts: WorkspaceCommandId[] = [
   "search_everywhere",
+  "switch_workspace",
   "toggle_database",
   "toggle_scripts",
   "open_query_console",
@@ -55,7 +57,11 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
               >
                 <span>{t(command.labelKey, command.fallback)}</span>
                 <kbd className="border-border bg-muted text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 font-mono text-[10px]">
-                  {command.shortcut}
+                  {isMac
+                    ? id === "toggle_database" || id === "toggle_scripts"
+                      ? command.shortcut?.replace("Alt+", "Cmd+")
+                      : command.shortcut?.replaceAll("Ctrl", "Cmd")
+                    : command.shortcut}
                 </kbd>
               </div>
             );

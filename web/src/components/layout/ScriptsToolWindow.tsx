@@ -1,13 +1,28 @@
+import { readQueryHistory } from "@/lib/queryHistoryStore";
+import { STORAGE_KEYS } from "@/constants";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { containsCredentials } from "@/lib/queryHistoryStore";
 import { useEffect, useState } from "react";
 import { FileCode2, FolderOpen, Plus, Terminal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
   Connection,
-  QueryHistoryEntry,
+  QueryHistoryItem,
   SavedQuery,
   StudioTab,
 } from "@/lib/types";
-import { fetchQueryHistory } from "@/lib/api";
+import {
+  createSavedQuery,
+  updateSavedQuery,
+  deleteSavedQuery,
+  fetchSavedQueries,
+} from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import {
   Sidebar,
@@ -27,8 +42,9 @@ interface ScriptsToolWindowProps {
   onSelectSavedQuery: (query: SavedQuery) => void;
   activeConnectionId?: string;
   canOpenQuery: boolean;
+  onSavedQueriesChange: (queries: SavedQuery[]) => void;
   onOpenSqlFile: () => void;
-  onSelectHistory: (connectionId: string, entry: QueryHistoryEntry) => void;
+  onSelectHistory: (connectionId: string, query: string) => void;
 }
 
 export function ScriptsToolWindow({
@@ -41,27 +57,92 @@ export function ScriptsToolWindow({
   onSelectSavedQuery,
   activeConnectionId,
   canOpenQuery,
+  onSavedQueriesChange,
   onOpenSqlFile,
   onSelectHistory,
 }: ScriptsToolWindowProps) {
   const { t } = useTranslation();
   const queryTabs = tabs.filter((tab) => tab.type === "query");
-  const [history, setHistory] = useState<QueryHistoryEntry[]>([]);
-  useEffect(() => {
-    if (!activeConnectionId) {
-      setHistory([]);
+  const [scriptDialog, setScriptDialog] = useState(false);
+  const [editingScript, setEditingScript] = useState<SavedQuery | null>(null);
+  const [scriptTitle, setScriptTitle] = useState("");
+  const [scriptText, setScriptText] = useState("");
+  const [scriptError, setScriptError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const editScript = (script: SavedQuery | null) => {
+    setEditingScript(script);
+    setScriptTitle(script?.title ?? "");
+    setScriptText(
+      script?.query ??
+        tabs.find((tab) => tab.id === activeTabId)?.state?.queryText ??
+        "",
+    );
+    setScriptError("");
+    setScriptDialog(true);
+  };
+  const saveScript = async () => {
+    const connectionId = editingScript?.connection_id ?? activeConnectionId;
+    if (!connectionId || !scriptTitle.trim() || !scriptText.trim()) return;
+    if (containsCredentials(scriptText)) {
+      setScriptError(t("console.storageCredentialWarning"));
       return;
     }
-    let mounted = true;
-    fetchQueryHistory(activeConnectionId, { limit: 25 })
-      .then((result) => {
-        if (mounted) setHistory(result.entries);
-      })
-      .catch(() => {
-        if (mounted) setHistory([]);
-      });
+    setSaving(true);
+    try {
+      if (editingScript)
+        await updateSavedQuery(connectionId, editingScript.id, {
+          title: scriptTitle.trim(),
+          query: scriptText,
+        });
+      else
+        await createSavedQuery(connectionId, {
+          title: scriptTitle.trim(),
+          query: scriptText,
+          tags: [],
+          is_favorite: false,
+        });
+      onSavedQueriesChange(await fetchSavedQueries(connectionId));
+      setScriptDialog(false);
+    } catch {
+      setScriptError(t("savedQuery.operationFailed"));
+    } finally {
+      setSaving(false);
+    }
+  };
+  const deleteScript = async (script: SavedQuery) => {
+    if (!window.confirm(t("savedQuery.deleteConfirm", { title: script.title })))
+      return;
+    try {
+      await deleteSavedQuery(script.connection_id, script.id);
+      onSavedQueriesChange(await fetchSavedQueries(script.connection_id));
+    } catch {
+      setScriptError(t("savedQuery.operationFailed"));
+    }
+  };
+  const [history, setHistory] = useState<QueryHistoryItem[]>([]);
+  const [historySearch, setHistorySearch] = useState("");
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        setHistory(
+          activeConnectionId
+            ? readQueryHistory(
+                localStorage.getItem(
+                  STORAGE_KEYS.queryHistory(activeConnectionId),
+                ),
+              )
+            : [],
+        );
+      } catch {
+        setHistory([]);
+      }
+    };
+    refresh();
+    window.addEventListener("pb:query-history-changed", refresh);
+    window.addEventListener("storage", refresh);
     return () => {
-      mounted = false;
+      window.removeEventListener("pb:query-history-changed", refresh);
+      window.removeEventListener("storage", refresh);
     };
   }, [activeConnectionId]);
 
@@ -79,7 +160,11 @@ export function ScriptsToolWindow({
             type="button"
             variant="ghost"
             size="icon-xs"
-            disabled={!canOpenQuery}
+            disabled={
+              !canOpenQuery ||
+              connections.find((item) => item.id === activeConnectionId)
+                ?.type === "redis"
+            }
             onClick={onOpenSqlFile}
             aria-label={t("commands.openSqlFile", "Open SQL file")}
             title={t("commands.openSqlFile", "Open SQL file")}
@@ -137,6 +222,19 @@ export function ScriptsToolWindow({
         <div className="text-muted-foreground mt-4 mb-1 px-2 font-mono text-[10px] font-semibold tracking-wide uppercase">
           {t("commands.savedQueries", "Saved Queries")}
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!activeConnectionId}
+          onClick={() => editScript(null)}
+        >
+          {t("commands.newScript")}
+        </Button>
+        {scriptError && !scriptDialog && (
+          <p role="alert" className="text-destructive text-xs">
+            {scriptError}
+          </p>
+        )}
         <div className="min-h-0 flex-1 overflow-auto">
           <div className="space-y-0.5">
             {savedQueries
@@ -146,15 +244,34 @@ export function ScriptsToolWindow({
                   query.connection_id === activeConnectionId,
               )
               .map((query) => (
-                <button
-                  key={query.id}
-                  type="button"
-                  onClick={() => onSelectSavedQuery(query)}
-                  className="hover:bg-sidebar-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
-                >
-                  <FileCode2 className="text-muted-foreground size-3.5 shrink-0" />
-                  <span className="min-w-0 flex-1 truncate">{query.title}</span>
-                </button>
+                <div key={query.id} className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onSelectSavedQuery(query)}
+                    className="hover:bg-sidebar-accent flex h-7 min-w-0 flex-1 items-center gap-2 rounded px-2 text-left text-xs"
+                  >
+                    <FileCode2 className="size-3.5 shrink-0" />
+                    <span className="truncate">{query.title}</span>
+                  </button>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={t("savedQuery.editScript")}
+                    title={t("savedQuery.editScript")}
+                    onClick={() => editScript(query)}
+                  >
+                    ✎
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-xs"
+                    aria-label={t("savedQuery.deleteScript")}
+                    title={t("savedQuery.deleteScript")}
+                    onClick={() => void deleteScript(query)}
+                  >
+                    ×
+                  </Button>
+                </div>
               ))}
             {savedQueries.length === 0 && (
               <p className="text-muted-foreground px-2 py-2 text-[11px]">
@@ -170,28 +287,63 @@ export function ScriptsToolWindow({
         <div className="text-muted-foreground mt-4 mb-1 px-2 font-mono text-[10px] font-semibold tracking-wide uppercase">
           {t("savedQuery.tabs.history", "History")}
         </div>
+        <Input
+          aria-label={t("console.historyTitle")}
+          value={historySearch}
+          onChange={(event) => setHistorySearch(event.target.value)}
+          className="h-7 text-xs"
+        />
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={!activeConnectionId}
+          onClick={() => {
+            if (!activeConnectionId) return;
+            try {
+              localStorage.removeItem(
+                STORAGE_KEYS.queryHistory(activeConnectionId),
+              );
+            } catch {
+              /* storage unavailable */
+            }
+            setHistory([]);
+            window.dispatchEvent(new Event("pb:query-history-changed"));
+          }}
+        >
+          {t("redis.cli.clearOutput")}
+        </Button>
         <div className="max-h-48 overflow-auto">
           <div className="space-y-0.5">
-            {history.map((entry) => (
-              <button
-                key={entry.id}
-                type="button"
-                onClick={() =>
-                  activeConnectionId &&
-                  onSelectHistory(activeConnectionId, entry)
-                }
-                className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs"
-              >
-                <Terminal className="text-muted-foreground size-3.5 shrink-0" />
-                <span className="min-w-0 flex-1 truncate font-mono">
-                  {entry.detail ||
-                    t("savedQuery.history.emptyQuery", "(empty query)")}
-                </span>
-                <time className="text-muted-foreground shrink-0 text-[10px]">
-                  {new Date(entry.created_at).toLocaleTimeString()}
-                </time>
-              </button>
-            ))}
+            {history
+              .filter((entry) =>
+                entry.query.toLowerCase().includes(historySearch.toLowerCase()),
+              )
+              .map((entry) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  onClick={() =>
+                    activeConnectionId &&
+                    onSelectHistory(activeConnectionId, entry.query)
+                  }
+                  className="hover:bg-sidebar-accent flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs"
+                >
+                  <Terminal className="text-muted-foreground size-3.5 shrink-0" />
+                  <span className="min-w-0 flex-1 truncate font-mono">
+                    {entry.query ||
+                      t("savedQuery.history.emptyQuery", "(empty query)")}
+                  </span>
+                  <span className="text-muted-foreground text-[10px]">
+                    {entry.execution_time_ms ?? 0} ms ·{" "}
+                    {entry.error
+                      ? t("console.historyFailed")
+                      : t("console.historySuccess")}
+                  </span>
+                  <time className="text-muted-foreground shrink-0 text-[10px]">
+                    {new Date(entry.timestamp).toLocaleTimeString()}
+                  </time>
+                </button>
+              ))}
             {history.length === 0 && (
               <p className="text-muted-foreground px-2 py-2 text-[11px]">
                 {t("savedQuery.history.empty", "No query history")}
@@ -200,6 +352,40 @@ export function ScriptsToolWindow({
           </div>
         </div>
       </SidebarContent>
+      <Dialog
+        open={scriptDialog}
+        onOpenChange={(open) => {
+          if (!saving) setScriptDialog(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("savedQuery.editScript")}</DialogTitle>
+          </DialogHeader>
+          <Input
+            aria-label={t("savedQuery.scriptTitle")}
+            value={scriptTitle}
+            onChange={(event) => setScriptTitle(event.target.value)}
+          />
+          <textarea
+            aria-label={t("savedQuery.scriptBody")}
+            value={scriptText}
+            onChange={(event) => setScriptText(event.target.value)}
+            className="border-border bg-background min-h-48 rounded border p-2 font-mono text-xs"
+          />
+          {scriptError && (
+            <p role="alert" className="text-destructive text-xs">
+              {scriptError}
+            </p>
+          )}
+          <Button
+            disabled={saving || !scriptTitle.trim() || !scriptText.trim()}
+            onClick={() => void saveScript()}
+          >
+            {t("savedQuery.save")}
+          </Button>
+        </DialogContent>
+      </Dialog>
       <SidebarRail />
     </Sidebar>
   );

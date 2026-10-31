@@ -2,6 +2,7 @@ import { memo, type FC, type MouseEvent } from "react";
 import { flexRender, type Row } from "@tanstack/react-table";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { cn } from "cn";
+import { AlertCircle } from "lucide-react";
 
 export interface GridRowItemProps {
   row: Row<Record<string, any>>;
@@ -9,6 +10,8 @@ export interface GridRowItemProps {
   measureElement?: (el: HTMLElement | null) => void;
   focusedCell: { rowIndex: number; colName: string } | null;
   editingCell: { rowIndex: number; colName: string } | null;
+  numericColumnNames: string[];
+  draftError?: string;
   onRowContextMenu: (e: MouseEvent, row: Record<string, any>) => void;
   onCellClick: (e: MouseEvent, rowIndex: number, colName: string) => void;
   onCellContextMenu: (
@@ -16,6 +19,7 @@ export interface GridRowItemProps {
     row: Record<string, any>,
     colName: string,
     cellValue: unknown,
+    rowIndex: number,
   ) => void;
 }
 
@@ -24,7 +28,10 @@ const areEqual = (
   nextProps: GridRowItemProps,
 ): boolean => {
   if (prevProps.virtualIndex !== nextProps.virtualIndex) return false;
-  if (prevProps.row !== nextProps.row) return false;
+  if (prevProps.row.original !== nextProps.row.original) return false;
+  if (prevProps.numericColumnNames !== nextProps.numericColumnNames)
+    return false;
+  if (prevProps.draftError !== nextProps.draftError) return false;
 
   const prevIsFocused =
     prevProps.focusedCell?.rowIndex === prevProps.virtualIndex;
@@ -60,6 +67,8 @@ export const GridRowItem: FC<GridRowItemProps> = memo(
     measureElement,
     focusedCell,
     editingCell,
+    numericColumnNames,
+    draftError,
     onRowContextMenu,
     onCellClick,
     onCellContextMenu,
@@ -77,6 +86,10 @@ export const GridRowItem: FC<GridRowItemProps> = memo(
             !row.original._pb_draft_deleted &&
             "bg-warning/50 dark:bg-warning/10",
         )}
+        title={
+          draftError ||
+          (row.original._pb_draft_deleted ? "Delete pending" : undefined)
+        }
         onContextMenu={(e) => {
           e.preventDefault();
           onRowContextMenu(e, row.original);
@@ -102,16 +115,43 @@ export const GridRowItem: FC<GridRowItemProps> = memo(
                 onCellClick(e, virtualIndex, colId);
               }}
               className={cn(
-                "border-border/80 text-foreground dark:border-border/40 dark:text-foreground max-w-sm truncate px-2.5 py-1 font-mono text-xs whitespace-nowrap transition-all outline-none not-last:border-r",
+                "border-border/80 text-foreground dark:border-border/40 dark:text-foreground relative max-w-sm truncate px-2.5 py-1 font-mono text-xs whitespace-nowrap transition-all outline-none not-last:border-r",
+                numericColumnNames.includes(colId) &&
+                  "text-right tabular-nums [&>div]:justify-end",
+                row.original._pb_draft_changed_columns?.includes(colId) &&
+                  "bg-warning/10",
                 isCellFocused &&
                   "bg-accent ring-primary relative z-20 font-medium ring-2 ring-inset",
               )}
               onContextMenu={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onCellContextMenu(e, row.original, colId, cell.getValue());
+                onCellContextMenu(
+                  e,
+                  row.original,
+                  colId,
+                  cell.getValue(),
+                  virtualIndex,
+                );
               }}
             >
+              {row.original._pb_draft_changed_columns?.includes(colId) && (
+                <span
+                  aria-label="Pending change"
+                  title="Pending change"
+                  className="bg-warning absolute top-1 right-1 size-1.5 rounded-full"
+                />
+              )}
+              {draftError && colId === "_row_index" && (
+                <span
+                  role="img"
+                  aria-label={`Save failed: ${draftError}`}
+                  title={draftError}
+                  className="text-destructive absolute top-1 right-1 inline-flex"
+                >
+                  <AlertCircle className="size-3" />
+                </span>
+              )}
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </TableCell>
           );

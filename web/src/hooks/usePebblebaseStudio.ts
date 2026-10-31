@@ -25,8 +25,11 @@ import {
   deleteRow,
 } from "../lib/api";
 import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
+import { readSettingsPreferences } from "@/lib/settingsPreferences";
+import { invalidateReferenceCache } from "@/lib/referenceCache";
 
 export interface UsePebblebaseStudioOptions {
+  scopeConnections?: (connections: Connection[]) => Connection[];
   tabs: StudioTab[];
   activeTab: StudioTab | null;
   selectedExplorerNode: ExplorerSelection;
@@ -38,6 +41,7 @@ export function usePebblebaseStudio({
   activeTab,
   selectedExplorerNode,
   expandedNodeIds = [],
+  scopeConnections,
 }: UsePebblebaseStudioOptions) {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -73,15 +77,29 @@ export function usePebblebaseStudio({
     Record<string, string>
   >({});
 
-  const { data: connections = [], isLoading: isLoadingConnections } = useQuery({
-    queryKey: ["connections"],
-    queryFn: fetchConnections,
-  });
+  const { data: connectionRecords, isLoading: isLoadingConnections } = useQuery(
+    {
+      queryKey: ["connections"],
+      queryFn: fetchConnections,
+    },
+  );
 
+  const connections = connectionRecords ?? [];
+  const connectionsReady = connectionRecords !== undefined;
+  const selectableConnections = scopeConnections
+    ? scopeConnections(connections)
+    : connections;
   const selectedConnectionId =
-    selectedExplorerNode?.connectionId || connections[0]?.id || null;
+    (selectableConnections.some(
+      (connection) => connection.id === selectedExplorerNode?.connectionId,
+    )
+      ? selectedExplorerNode?.connectionId
+      : null) ||
+    selectableConnections[0]?.id ||
+    null;
   const selectedConnection =
-    connections.find((item) => item.id === selectedConnectionId) || null;
+    selectableConnections.find((item) => item.id === selectedConnectionId) ||
+    null;
   const activeConnection = activeTab
     ? connections.find((item) => item.id === activeTab.connectionId) || null
     : null;
@@ -177,7 +195,7 @@ export function usePebblebaseStudio({
     queries: rowTabs.map((tab) => {
       const state = tab.state || {
         page: 0,
-        pageSize: DEFAULT_PAGE_SIZE,
+        pageSize: readSettingsPreferences().pageSize || DEFAULT_PAGE_SIZE,
         filters: [],
         sortBy: "",
         sortDesc: false,
@@ -248,6 +266,7 @@ export function usePebblebaseStudio({
         qc.invalidateQueries({ queryKey: ["tables", id] }),
         qc.invalidateQueries({ queryKey: ["rows", id] }),
         qc.invalidateQueries({ queryKey: ["erd", id] }),
+        qc.invalidateQueries({ queryKey: ["schema-metadata", id] }),
       ]);
     },
   });
@@ -255,6 +274,7 @@ export function usePebblebaseStudio({
     mutationFn: deleteConnection,
     onSuccess: (_data, connectionId) => {
       qc.removeQueries({ queryKey: ["tables", connectionId] });
+      qc.removeQueries({ queryKey: ["schema-metadata", connectionId] });
       qc.removeQueries({ queryKey: ["rows", connectionId] });
       qc.invalidateQueries({ queryKey: ["connections"] });
     },
@@ -269,6 +289,7 @@ export function usePebblebaseStudio({
   const errorKey = (connectionId: string, tableName: string) =>
     `${connectionId}:${tableName}:write`;
   const invalidateTableRows = (connectionId: string, tableName: string) => {
+    invalidateReferenceCache(connectionId);
     void qc.invalidateQueries({ queryKey: ["rows", connectionId, tableName] });
     void qc.invalidateQueries({
       queryKey: ["table-stats", connectionId, tableName],
@@ -496,9 +517,12 @@ export function usePebblebaseStudio({
 
   const refreshConnectionTables = useCallback(
     async (connectionId: string) => {
+      await qc.invalidateQueries({
+        queryKey: ["schema-metadata", connectionId],
+      });
       await tableStatusByConnection[connectionId]?.refetch();
     },
-    [tableStatusByConnection],
+    [tableStatusByConnection, qc],
   );
   const refreshActiveRows = useCallback(async () => {
     await activeRowsQuery?.refetch();
@@ -509,6 +533,7 @@ export function usePebblebaseStudio({
     toggleTheme,
     connections,
     isLoadingConnections,
+    connectionsReady,
     selectedConnection,
     selectedConnectionId,
     activeConnection,

@@ -12,6 +12,7 @@ type Table struct {
 // Column represents a single column within a table.
 type Column struct {
 	Name         string  `json:"name"`
+	NativeType   string  `json:"native_type,omitempty"`
 	Type         string  `json:"type"` // normalized: "string","int","float","bool","datetime","json","binary","uuid","unknown"
 	Nullable     bool    `json:"nullable"`
 	IsPrimaryKey bool    `json:"is_primary_key"`

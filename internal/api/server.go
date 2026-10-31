@@ -22,6 +22,7 @@ import (
 	"pebblebase/internal/ai"
 	"pebblebase/internal/audit"
 	"pebblebase/internal/auth"
+	"pebblebase/internal/consolesession"
 	"pebblebase/internal/migration"
 	"pebblebase/internal/savedquery"
 	"pebblebase/internal/storage"
@@ -29,21 +30,27 @@ import (
 
 // Server holds shared dependencies and exposes the route-registration method.
 type Server struct {
-	store        *storage.Store
-	enc          *storage.Encryptor
-	cache        *adapterCache
-	authSvc      *auth.Service
-	auditLog     *audit.Logger
-	querySvc     *savedquery.Store
-	migrationSvc *migration.Store
-	aiSvc        *ai.Service
-	authEnabled  bool
+	store           *storage.Store
+	enc             *storage.Encryptor
+	cache           *adapterCache
+	authSvc         *auth.Service
+	auditLog        *audit.Logger
+	querySvc        *savedquery.Store
+	migrationSvc    *migration.Store
+	aiSvc           *ai.Service
+	authEnabled     bool
+	consoleSessions *consolesession.Manager
+	consoleCancel   context.CancelFunc
 }
 
 // NewServer creates a Server wired with the given dependencies.
 // Pass nil for optional services or when running in test mode.
 func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Service, auditLog *audit.Logger, querySvc *savedquery.Store, migrationSvc *migration.Store, aiSvc *ai.Service, authEnabled bool) *Server {
+	ctx, cancel := context.WithCancel(context.Background())
+	sessions := consolesession.New(4, 16)
+	go sessions.Run(ctx)
 	return &Server{
+		consoleSessions: sessions, consoleCancel: cancel,
 		store:        store,
 		enc:          enc,
 		cache:        newAdapterCache(10, 15*time.Minute),
@@ -69,23 +76,34 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 
 	// Build middleware chain for protected routes
 	protect := s.protectMiddleware()
+	adminProtect := func(handler http.Handler) http.Handler {
+		return protect(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if s.authEnabled && !auth.RequireAdmin(w, r) {
+				return
+			}
+			handler.ServeHTTP(w, r)
+		}))
+	}
 
 	// Auth user management
 	mux.Handle("GET /api/auth/me", protect(http.HandlerFunc(s.handleMe)))
-	mux.Handle("GET /api/auth/users", protect(http.HandlerFunc(s.handleListUsers)))
-	mux.Handle("POST /api/auth/users", protect(http.HandlerFunc(s.handleCreateUser)))
-	mux.Handle("DELETE /api/auth/users/{id}", protect(http.HandlerFunc(s.handleDeleteUser)))
+	mux.Handle("GET /api/auth/users", adminProtect(http.HandlerFunc(s.handleListUsers)))
+	mux.Handle("POST /api/auth/users", adminProtect(http.HandlerFunc(s.handleCreateUser)))
+	mux.Handle("PATCH /api/auth/users/{id}", adminProtect(http.HandlerFunc(s.handleUpdateUserAccess)))
+	mux.Handle("DELETE /api/auth/users/{id}", adminProtect(http.HandlerFunc(s.handleDeleteUser)))
 	mux.Handle("PATCH /api/auth/users/{id}/password", protect(http.HandlerFunc(s.handleChangePassword)))
 
 	// Audit log
-	mux.Handle("GET /api/audit/logs", protect(http.HandlerFunc(s.handleListAuditLogs)))
+	mux.Handle("GET /api/audit/logs", adminProtect(http.HandlerFunc(s.handleListAuditLogs)))
 
+	mux.Handle("GET /api/workspaces", protect(http.HandlerFunc(s.listWorkspaces)))
+	mux.Handle("PUT /api/workspaces", adminProtect(http.HandlerFunc(s.saveWorkspaces)))
 	// Connection management
-	mux.Handle("POST /api/connections/test", protect(http.HandlerFunc(s.testConnection)))
-	mux.Handle("POST /api/connections", protect(http.HandlerFunc(s.createConnection)))
-	mux.Handle("PUT /api/connections/{id}", protect(http.HandlerFunc(s.updateConnection)))
+	mux.Handle("POST /api/connections/test", adminProtect(http.HandlerFunc(s.testConnection)))
+	mux.Handle("POST /api/connections", adminProtect(http.HandlerFunc(s.createConnection)))
+	mux.Handle("PUT /api/connections/{id}", adminProtect(http.HandlerFunc(s.updateConnection)))
 	mux.Handle("GET /api/connections", protect(http.HandlerFunc(s.listConnections)))
-	mux.Handle("DELETE /api/connections/{id}", protect(http.HandlerFunc(s.deleteConnection)))
+	mux.Handle("DELETE /api/connections/{id}", adminProtect(http.HandlerFunc(s.deleteConnection)))
 	mux.Handle("POST /api/connections/{id}/ping", protect(http.HandlerFunc(s.pingConnection)))
 
 	// Schema introspection
@@ -109,6 +127,14 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /api/connections/{id}/redis/pubsub/stream", protect(http.HandlerFunc(s.handleRedisPubSubStream)))
 	mux.Handle("POST /api/connections/{id}/redis/pubsub/publish", protect(http.HandlerFunc(s.handleRedisPubSubPublish)))
 
+	mux.Handle("POST /api/connections/{id}/console-sessions", protect(http.HandlerFunc(s.beginConsoleSession)))
+	mux.Handle("POST /api/console-sessions/{session}/query", protect(http.HandlerFunc(s.executeConsoleSession)))
+	mux.Handle("POST /api/console-sessions/{session}/commit", protect(http.HandlerFunc(s.finishConsoleSession)))
+	mux.Handle("POST /api/console-sessions/{session}/rollback", protect(http.HandlerFunc(s.finishConsoleSession)))
+	mux.Handle("DELETE /api/console-sessions/{session}", protect(http.HandlerFunc(s.finishConsoleSession)))
+	mux.Handle("GET /api/connections/{id}/schema-metadata", protect(http.HandlerFunc(s.getSchemaMetadata)))
+	mux.Handle("POST /api/find-everywhere", protect(http.HandlerFunc(s.findEverywhere)))
+	mux.Handle("POST /api/references/resolve", protect(http.HandlerFunc(s.resolveReferences)))
 	// Ad-hoc raw SQL and Mongo query execution
 	mux.Handle("POST /api/connections/{id}/query", protect(http.HandlerFunc(s.executeRawQuery)))
 	mux.Handle("POST /api/connections/{id}/explain", protect(http.HandlerFunc(s.explainQuery)))
@@ -142,9 +168,10 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /api/connections/{id}/migrations/{mid}/rollback", protect(http.HandlerFunc(s.rollbackMigration)))
 
 	// Privacy-First AI BYO Key Vault & LLM Providers
-	mux.Handle("GET /api/ai/config", protect(http.HandlerFunc(s.handleGetAIConfig)))
-	mux.Handle("POST /api/ai/config", protect(http.HandlerFunc(s.handleSaveAIConfig)))
-	mux.Handle("POST /api/ai/test", protect(http.HandlerFunc(s.handleTestAIConnection)))
+	mux.Handle("GET /api/ai/config", adminProtect(http.HandlerFunc(s.handleGetAIConfig)))
+	mux.Handle("GET /api/ai/status", protect(http.HandlerFunc(s.handleAIStatus)))
+	mux.Handle("POST /api/ai/config", adminProtect(http.HandlerFunc(s.handleSaveAIConfig)))
+	mux.Handle("POST /api/ai/test", adminProtect(http.HandlerFunc(s.handleTestAIConnection)))
 	mux.Handle("GET /api/ai/providers", protect(http.HandlerFunc(s.handleGetAIProviders)))
 	mux.Handle("POST /api/ai/generate", protect(http.HandlerFunc(s.handleAIGenerate)))
 	mux.Handle("POST /api/ai/query-assist", protect(http.HandlerFunc(s.handleAIQueryAssist)))
@@ -339,6 +366,12 @@ func (c *adapterCache) startReaper(interval time.Duration) {
 
 // Close gracefully closes all active database adapter pools.
 func (s *Server) Close() error {
+	if s.consoleCancel != nil {
+		s.consoleCancel()
+	}
+	if s.consoleSessions != nil {
+		s.consoleSessions.Close()
+	}
 	if s.cache != nil {
 		s.cache.closeAll()
 	}
