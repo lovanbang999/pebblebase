@@ -203,14 +203,14 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
     const renderValue = (key: string, val: any, _row: Record<string, any>) => {
       if (val === undefined) {
         return (
-          <span className="text-[11px] text-zinc-500 italic select-none">
+          <span className="text-muted-foreground text-[11px] italic select-none">
             —
           </span>
         );
       }
       if (val === null) {
         return (
-          <span className="font-mono text-[11px] text-zinc-500 italic">
+          <span className="text-muted-foreground font-mono text-[11px] italic">
             null
           </span>
         );
@@ -243,8 +243,8 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
             className={cn(
               "rounded border px-1.5 py-px font-mono text-[11px] font-semibold",
               val
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-400"
-                : "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-transparent dark:bg-zinc-800 dark:text-zinc-400",
+                ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/40 dark:text-success"
+                : "border-border bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent",
             )}
           >
             {String(val)}
@@ -257,7 +257,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
         const isLong = json.length > 80;
         return (
           <span
-            className="cursor-help font-mono text-[11px] break-all text-amber-700 dark:text-amber-300/90"
+            className="text-warning dark:text-warning/90 cursor-help font-mono text-[11px] break-all"
             title={JSON.stringify(val, null, 2)}
           >
             {isLong ? json.slice(0, 80) + "…" : json}
@@ -267,7 +267,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
 
       if (colSchema?.is_primary_key) {
         return (
-          <span className="font-mono text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+          <span className="text-warning dark:text-warning font-mono text-[11px] font-semibold">
             {String(val)}
           </span>
         );
@@ -293,14 +293,14 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
         );
       }
       return (
-        <span className="font-mono text-[11px] text-emerald-700 dark:text-emerald-300">
+        <span className="text-success dark:text-success font-mono text-[11px]">
           &quot;{str}&quot;
         </span>
       );
     };
 
     return (
-      <div className="flex-1 space-y-2 overflow-auto bg-white p-3 dark:bg-zinc-950">
+      <div className="bg-background dark:bg-background flex-1 space-y-2 overflow-auto p-3">
         {rows.map((row, globalIdx) => {
           const rowNumber = page * pageSize + globalIdx + 1;
           const keys = allFieldKeys(row);
@@ -317,10 +317,10 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
             <div
               key={globalIdx}
               className={cn(
-                "group overflow-hidden rounded-lg border bg-white transition-colors dark:bg-zinc-900",
+                "group bg-background dark:bg-card overflow-hidden rounded-lg border transition-colors",
                 editingDocIdx === globalIdx
                   ? "border-primary/60 ring-primary/20 dark:border-primary/40 ring-1"
-                  : "border-zinc-200 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700",
+                  : "border-border hover:border-border dark:border-border dark:hover:border-border",
               )}
               onDoubleClick={() => {
                 if (!isReadOnly && editingDocIdx !== globalIdx)
@@ -328,23 +328,23 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
               }}
             >
               {/* Card Header: row# + primary key + actions */}
-              <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50/70 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/70">
+              <div className="border-border bg-card/70 dark:border-border dark:bg-card/70 flex items-center justify-between border-b px-3 py-2">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="w-6 shrink-0 text-right font-mono text-[11px] text-zinc-400 select-none dark:text-zinc-600">
+                  <span className="text-muted-foreground dark:text-muted-foreground w-6 shrink-0 text-right font-mono text-[11px] select-none">
                     {rowNumber}
                   </span>
-                  <span className="shrink-0 font-mono text-[11px] text-zinc-500 dark:text-zinc-500">
+                  <span className="text-muted-foreground dark:text-muted-foreground shrink-0 font-mono text-[11px]">
                     {pkKey}:
                   </span>
-                  <span className="truncate font-mono text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                  <span className="text-warning dark:text-warning truncate font-mono text-[11px] font-semibold">
                     {pkVal !== undefined && pkVal !== null ? (
                       String(pkVal)
                     ) : (
-                      <span className="text-zinc-400 italic">null</span>
+                      <span className="text-muted-foreground italic">null</span>
                     )}
                   </span>
                   {editingDocIdx === globalIdx && (
-                    <span className="ml-1 rounded border border-emerald-200 bg-emerald-50 px-1.5 py-px font-mono text-[10px] text-emerald-600 select-none dark:border-emerald-800/50 dark:bg-emerald-950/40 dark:text-emerald-400">
+                    <span className="border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/40 dark:text-success ml-1 rounded border px-1.5 py-px font-mono text-[10px] select-none">
                       editing
                     </span>
                   )}
@@ -354,7 +354,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                 {editingDocIdx !== globalIdx && (
                   <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                     {!isReadOnly && (
-                      <span className="mr-1 hidden font-mono text-[10px] text-zinc-400 select-none group-hover:inline dark:text-zinc-600">
+                      <span className="text-muted-foreground dark:text-muted-foreground mr-1 hidden font-mono text-[10px] select-none group-hover:inline">
                         double-click to edit
                       </span>
                     )}
@@ -362,10 +362,10 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                       type="button"
                       onClick={() => handleCopyJson(row, globalIdx)}
                       title={t("datagrid.documentView.copyJson")}
-                      className="cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-blue-600 dark:hover:bg-zinc-800 dark:hover:text-blue-400"
+                      className="text-muted-foreground hover:bg-muted dark:hover:bg-muted cursor-pointer rounded p-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
                     >
                       {copiedRow === globalIdx ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                        <Check className="text-success h-3.5 w-3.5" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" />
                       )}
@@ -376,7 +376,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                       disabled={isReadOnly}
                       title={t("datagrid.editRecordTooltip")}
                       className={cn(
-                        "cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-600 dark:hover:bg-zinc-800 dark:hover:text-emerald-400",
+                        "text-muted-foreground hover:bg-muted hover:text-success dark:hover:bg-muted dark:hover:text-success cursor-pointer rounded p-1 transition-colors",
                         isReadOnly &&
                           "pointer-events-none cursor-not-allowed opacity-40",
                       )}
@@ -389,7 +389,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                       disabled={isReadOnly}
                       title={t("datagrid.deleteRecordTooltip")}
                       className={cn(
-                        "cursor-pointer rounded p-1 text-zinc-400 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 dark:hover:text-rose-400",
+                        "text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/40 dark:hover:text-destructive cursor-pointer rounded p-1 transition-colors",
                         isReadOnly &&
                           "pointer-events-none cursor-not-allowed opacity-40",
                       )}
@@ -428,13 +428,13 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                         className={cn(
                           "flex min-w-0 items-center gap-0 border-l-2 transition-colors",
                           isEditing && isDirty
-                            ? "border-l-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/10"
+                            ? "border-l-success bg-success/40 dark:bg-success/10"
                             : "border-l-transparent",
                         )}
                       >
                         {/* Line number */}
                         {isEditing && (
-                          <span className="w-8 shrink-0 self-start pt-0.75 pr-2 text-right font-mono text-[10px] text-zinc-400 select-none dark:text-zinc-600">
+                          <span className="text-muted-foreground dark:text-muted-foreground w-8 shrink-0 self-start pt-0.75 pr-2 text-right font-mono text-[10px] select-none">
                             {fieldLineNum}
                           </span>
                         )}
@@ -442,7 +442,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                         {/* Field name */}
                         <span
                           className={cn(
-                            "shrink-0 self-start truncate font-mono text-[11px] text-zinc-500 dark:text-zinc-400",
+                            "text-muted-foreground shrink-0 self-start truncate font-mono text-[11px]",
                             isEditing
                               ? "min-w-35 px-2 pt-0.75"
                               : "min-w-30 px-3 py-px",
@@ -450,7 +450,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                         >
                           {key}
                         </span>
-                        <span className="shrink-0 self-start pt-0.75 font-mono text-[11px] text-zinc-400 dark:text-zinc-600">
+                        <span className="text-muted-foreground dark:text-muted-foreground shrink-0 self-start pt-0.75 font-mono text-[11px]">
                           :
                         </span>
 
@@ -500,10 +500,10 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                               }
                             }}
                             className={cn(
-                              "min-w-0 flex-1 resize-none overflow-hidden border-0 border-b bg-transparent px-2 py-px font-mono text-[11px] leading-5 text-zinc-900 transition-colors focus:outline-none dark:text-zinc-100",
+                              "text-foreground dark:text-foreground min-w-0 flex-1 resize-none overflow-hidden border-0 border-b bg-transparent px-2 py-px font-mono text-[11px] leading-5 transition-colors focus:outline-none",
                               isDirty
-                                ? "border-b-emerald-500 dark:border-b-emerald-400"
-                                : "border-b-zinc-200 focus:border-b-zinc-400 dark:border-b-zinc-700 dark:focus:border-b-zinc-500",
+                                ? "border-b-success dark:border-b-success"
+                                : "border-b-border focus:border-b-border dark:border-b-border dark:focus:border-b-border",
                             )}
                             autoFocus={
                               key === visibleKeys.filter((k) => k !== pkKey)[0]
@@ -514,12 +514,12 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                             className={cn(
                               "min-w-0 flex-1 font-mono text-[11px] wrap-break-word",
                               isEditing
-                                ? "px-2 py-px text-zinc-500 dark:text-zinc-500"
+                                ? "text-muted-foreground dark:text-muted-foreground px-2 py-px"
                                 : "px-2 py-px",
                             )}
                           >
                             {isEditing ? (
-                              <span className="text-amber-700 dark:text-amber-400">
+                              <span className="text-warning dark:text-warning">
                                 {String(row[key] ?? "")}
                               </span>
                             ) : (
@@ -533,8 +533,8 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                           className={cn(
                             "shrink-0 self-start pt-0.75 pl-2 font-mono text-[10px]",
                             isEditing
-                              ? "min-w-14 pr-3 text-right text-zinc-400 dark:text-zinc-500"
-                              : "min-w-14 pr-3 text-right text-zinc-300 dark:text-zinc-700",
+                              ? "text-muted-foreground min-w-14 pr-3 text-right"
+                              : "text-muted-foreground dark:text-foreground min-w-14 pr-3 text-right",
                           )}
                         >
                           {typeLabel}
@@ -548,7 +548,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                   <button
                     type="button"
                     onClick={() => toggleExpand(globalIdx)}
-                    className="mt-1.5 ml-3 flex cursor-pointer items-center gap-1 font-mono text-[11px] text-zinc-400 transition-colors select-none hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
+                    className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-muted-foreground mt-1.5 ml-3 flex cursor-pointer items-center gap-1 font-mono text-[11px] transition-colors select-none"
                   >
                     {isExpanded ? (
                       <>
@@ -572,15 +572,15 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                   className={cn(
                     "flex items-center justify-between border-t px-3 py-2 transition-colors",
                     isDocModified(row)
-                      ? "border-amber-200 bg-amber-50 dark:border-amber-800/60 dark:bg-amber-950/30"
-                      : "border-zinc-100 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/60",
+                      ? "border-warning/30 bg-warning/10 dark:border-warning/60 dark:bg-warning/30"
+                      : "border-border bg-card/60 dark:border-border dark:bg-card/60",
                   )}
                 >
                   <span
                     className={cn(
                       "font-mono text-[11px] transition-opacity",
                       isDocModified(row)
-                        ? "text-amber-700 opacity-100 dark:text-amber-400"
+                        ? "text-warning dark:text-warning opacity-100"
                         : "opacity-0 select-none",
                     )}
                   >
@@ -590,7 +590,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                     <button
                       type="button"
                       onClick={cancelEdit}
-                      className="cursor-pointer rounded border border-zinc-300 bg-white px-3 py-1.5 font-mono text-[11px] font-medium tracking-wide text-zinc-700 uppercase transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                      className="border-border bg-background text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted cursor-pointer rounded border px-3 py-1.5 font-mono text-[11px] font-medium tracking-wide uppercase transition-colors"
                     >
                       Cancel
                     </button>
@@ -601,7 +601,7 @@ export const DocumentView: FC<DocumentViewProps> = React.memo(
                       className={cn(
                         "rounded border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wide uppercase transition-colors",
                         isSaving || !onSaveCell || !isDocModified(row)
-                          ? "cursor-not-allowed border-zinc-200 bg-zinc-100 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800"
+                          ? "border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted cursor-not-allowed"
                           : "border-primary bg-primary hover:bg-primary/90 cursor-pointer text-white",
                       )}
                     >

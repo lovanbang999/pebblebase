@@ -135,23 +135,23 @@ export const AddKeyModal: FC<AddKeyModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <DialogContent className="border-border bg-background dark:border-border dark:bg-card max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-base text-zinc-900 dark:text-zinc-100">
-            <KeyRound className="h-4 w-4 text-rose-500" />
+          <DialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 text-base">
+            <KeyRound className="text-destructive h-4 w-4" />
             {t("redis.createKey.title")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {error && (
-            <div className="rounded-md border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs text-rose-600 dark:text-rose-400">
+            <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2.5 text-xs">
               {error}
             </div>
           )}
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="text-foreground dark:text-muted-foreground mb-1 block text-xs font-medium">
               {t("redis.createKey.keyName")}
             </label>
             <Input
@@ -166,7 +166,7 @@ export const AddKeyModal: FC<AddKeyModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              <label className="text-foreground dark:text-muted-foreground mb-1 block text-xs font-medium">
                 {t("redis.createKey.dataType")}
               </label>
               <Select value={type} onValueChange={(v) => setType(v as any)}>
@@ -184,7 +184,7 @@ export const AddKeyModal: FC<AddKeyModalProps> = ({
             </div>
 
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              <label className="text-foreground dark:text-muted-foreground mb-1 block text-xs font-medium">
                 {t("redis.createKey.ttl")}
               </label>
               <Input
@@ -200,7 +200,7 @@ export const AddKeyModal: FC<AddKeyModalProps> = ({
 
           {type === "hash" && (
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              <label className="text-foreground dark:text-muted-foreground mb-1 block text-xs font-medium">
                 {t("redis.createKey.fieldName")}
               </label>
               <Input
@@ -216,7 +216,7 @@ export const AddKeyModal: FC<AddKeyModalProps> = ({
 
           {type === "zset" && (
             <div>
-              <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              <label className="text-foreground dark:text-muted-foreground mb-1 block text-xs font-medium">
                 {t("redis.createKey.score")}
               </label>
               <Input
@@ -232,7 +232,7 @@ export const AddKeyModal: FC<AddKeyModalProps> = ({
           )}
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            <label className="text-foreground dark:text-muted-foreground mb-1 block text-xs font-medium">
               {getValueLabel()}
             </label>
             <Textarea
@@ -259,7 +259,7 @@ export const AddKeyModal: FC<AddKeyModalProps> = ({
               type="submit"
               size="sm"
               disabled={loading}
-              className="bg-rose-600 text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700"
+              className="bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive text-white"
             >
               {loading ? (
                 <>

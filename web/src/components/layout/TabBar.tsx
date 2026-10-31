@@ -326,8 +326,8 @@ export const TabBar: FC<TabBarProps> = ({
             className={cn(
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
+                ? "text-primary"
+                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
             )}
           />
         );
@@ -337,8 +337,8 @@ export const TabBar: FC<TabBarProps> = ({
             className={cn(
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
-                ? "text-blue-600 dark:text-blue-400"
-                : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
+                ? "text-primary"
+                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
             )}
           />
         );
@@ -348,8 +348,8 @@ export const TabBar: FC<TabBarProps> = ({
             className={cn(
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
-                ? "text-purple-600 dark:text-purple-400"
-                : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
+                ? "text-primary"
+                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
             )}
           />
         );
@@ -359,8 +359,8 @@ export const TabBar: FC<TabBarProps> = ({
             className={cn(
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
-                ? "text-indigo-600 dark:text-indigo-400"
-                : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
+                ? "text-primary"
+                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
             )}
           />
         );
@@ -371,7 +371,7 @@ export const TabBar: FC<TabBarProps> = ({
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
                 ? "text-cyan-600 dark:text-cyan-400"
-                : "text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-300",
+                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
             )}
           />
         );
@@ -383,10 +383,10 @@ export const TabBar: FC<TabBarProps> = ({
   if (tabs.length === 0) {
     return (
       <div
-        className="wails-drag relative z-20 flex h-8 shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-100/80 px-3 select-none dark:border-zinc-800 dark:bg-zinc-900/70"
+        className="wails-drag border-border bg-muted/80 dark:border-border dark:bg-card/70 relative z-20 flex h-8 shrink-0 items-center justify-between border-b px-3 select-none"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
-        <span className="pointer-events-none font-sans text-xs text-zinc-500 select-none dark:text-zinc-400">
+        <span className="text-muted-foreground dark:text-muted-foreground pointer-events-none font-sans text-xs select-none">
           {t("tabs.noTabsOpen")}
         </span>
         <Tooltip>
@@ -398,7 +398,7 @@ export const TabBar: FC<TabBarProps> = ({
                 size="icon-xs"
                 onClick={onNewQueryTab}
                 aria-label={t("tabs.newQueryTab")}
-                className="wails-no-drag h-7 w-7 shrink-0 rounded-md text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100"
+                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 dark:hover:text-foreground h-7 w-7 shrink-0 rounded-md"
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -413,13 +413,13 @@ export const TabBar: FC<TabBarProps> = ({
 
   return (
     <div
-      className="wails-drag relative z-20 flex h-8 shrink-0 items-center overflow-hidden border-b border-zinc-200 bg-zinc-100/80 px-2 select-none dark:border-zinc-800 dark:bg-zinc-900/70"
+      className="wails-drag border-border bg-muted/80 dark:border-border dark:bg-card/70 relative z-20 flex h-[34px] shrink-0 items-center overflow-hidden border-b px-2 select-none"
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       {/* Left Scroll Button when overflowing */}
       {canScrollLeft && (
         <div className="relative z-30 flex shrink-0 items-center">
-          <div className="pointer-events-none absolute top-0 bottom-0 left-0 -ml-2 w-8 bg-linear-to-r from-zinc-100 via-zinc-100/90 to-transparent dark:from-zinc-900 dark:via-zinc-900/90" />
+          <div className="from-background via-background/90 dark:from-background dark:via-background/90 pointer-events-none absolute top-0 bottom-0 left-0 -ml-2 w-8 bg-linear-to-r to-transparent" />
           <Tooltip>
             <TooltipTrigger
               render={
@@ -431,7 +431,7 @@ export const TabBar: FC<TabBarProps> = ({
                     e.stopPropagation();
                     handleScrollBy("left");
                   }}
-                  className="wails-no-drag relative z-10 ml-1 h-6 w-5 shrink-0 cursor-pointer rounded border border-zinc-200 bg-white/95 text-zinc-600 shadow-xs hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800/95 dark:text-zinc-300 dark:hover:text-zinc-100"
+                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:border-border dark:bg-muted/95 dark:text-foreground dark:hover:text-foreground relative z-10 ml-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
                   style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -477,16 +477,23 @@ export const TabBar: FC<TabBarProps> = ({
                 onContextMenu={(e) => handleContextMenu(e, tab.id)}
                 onMouseDown={(e) => handleMouseDown(e, tab.id)}
                 className={cn(
-                  "group wails-no-drag relative flex h-8 max-w-50 shrink-0 cursor-pointer items-center gap-2 rounded-none border-t-2 px-3 font-sans text-xs transition-colors duration-150 select-none",
+                  "group wails-no-drag relative flex h-full max-w-50 shrink-0 cursor-pointer items-center gap-2 rounded-none border-t-0 border-b-2 px-3 font-sans text-xs transition-colors duration-150 select-none",
                   isActive
-                    ? "border-t-primary border-x border-zinc-200 bg-white font-medium text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
-                    : "border-x border-transparent border-t-transparent text-zinc-600 hover:bg-zinc-200/50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/40 dark:hover:text-zinc-100",
+                    ? "border-b-primary border-border bg-background text-foreground dark:border-border dark:bg-background dark:text-foreground border-x font-medium"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/40 dark:hover:text-foreground border-x border-transparent border-b-transparent",
                   isDragging &&
-                    "scale-[0.98] border-dashed border-zinc-400 opacity-50 dark:border-zinc-600",
+                    "border-border dark:border-border scale-[0.98] border-dashed opacity-50",
                 )}
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 {getTabIcon(tab, isActive)}
+                {tab.isDirty && (
+                  <span
+                    aria-label={t("tabs.unsavedChanges", "Unsaved changes")}
+                    title={t("tabs.unsavedChanges", "Unsaved changes")}
+                    className="bg-warning size-1.5 shrink-0 rounded-full"
+                  />
+                )}
 
                 <span
                   className="min-w-0 flex-1 truncate font-medium"
@@ -516,7 +523,7 @@ export const TabBar: FC<TabBarProps> = ({
                           onCloseTab(tab.id);
                         }}
                         className={cn(
-                          "flex h-4 w-4 shrink-0 items-center justify-center rounded text-zinc-400 transition-opacity hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100",
+                          "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded transition-opacity",
                           isActive
                             ? "opacity-100"
                             : "opacity-0 group-hover:opacity-100",
@@ -554,7 +561,7 @@ export const TabBar: FC<TabBarProps> = ({
                 draggable={false}
                 onDragStart={(e) => e.stopPropagation()}
                 onClick={() => onNewQueryTab()}
-                className="wails-no-drag ml-1 h-7 w-7 shrink-0 cursor-pointer rounded-md text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-100"
+                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 dark:hover:text-foreground ml-1 h-7 w-7 shrink-0 cursor-pointer rounded-md"
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -568,7 +575,7 @@ export const TabBar: FC<TabBarProps> = ({
       {/* Right Scroll Button when overflowing */}
       {canScrollRight && (
         <div className="relative z-30 flex shrink-0 items-center">
-          <div className="pointer-events-none absolute top-0 right-0 bottom-0 -mr-2 w-8 bg-linear-to-l from-zinc-100 via-zinc-100/90 to-transparent dark:from-zinc-900 dark:via-zinc-900/90" />
+          <div className="from-background via-background/90 dark:from-background dark:via-background/90 pointer-events-none absolute top-0 right-0 bottom-0 -mr-2 w-8 bg-linear-to-l to-transparent" />
           <Tooltip>
             <TooltipTrigger
               render={
@@ -580,7 +587,7 @@ export const TabBar: FC<TabBarProps> = ({
                     e.stopPropagation();
                     handleScrollBy("right");
                   }}
-                  className="wails-no-drag relative z-10 mr-1 h-6 w-5 shrink-0 cursor-pointer rounded border border-zinc-200 bg-white/95 text-zinc-600 shadow-xs hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800/95 dark:text-zinc-300 dark:hover:text-zinc-100"
+                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:border-border dark:bg-muted/95 dark:text-foreground dark:hover:text-foreground relative z-10 mr-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
                   style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -605,7 +612,7 @@ export const TabBar: FC<TabBarProps> = ({
               WebkitAppRegion: "no-drag",
             } as React.CSSProperties
           }
-          className="animate-in fade-in-50 zoom-in-95 wails-no-drag fixed z-50 min-w-42.5 rounded-lg border border-zinc-200 bg-white p-1 font-mono text-xs text-zinc-700 shadow-xl duration-100 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200"
+          className="animate-in fade-in-50 zoom-in-95 wails-no-drag border-border bg-background text-foreground dark:border-border dark:bg-background dark:text-foreground fixed z-50 min-w-42.5 rounded-lg border p-1 font-mono text-xs shadow-xl duration-100"
         >
           <button
             type="button"
@@ -613,9 +620,9 @@ export const TabBar: FC<TabBarProps> = ({
               onCloseTab(contextMenu.tabId);
               setContextMenu(null);
             }}
-            className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="hover:bg-muted dark:hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors"
           >
-            <X className="h-3.5 w-3.5 text-zinc-400" />
+            <X className="text-muted-foreground h-3.5 w-3.5" />
             <span>{t("tabs.close")}</span>
           </button>
 
@@ -626,9 +633,9 @@ export const TabBar: FC<TabBarProps> = ({
               setContextMenu(null);
             }}
             disabled={tabs.length <= 1}
-            className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-zinc-100 disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-zinc-800"
+            className="hover:bg-muted dark:hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors disabled:pointer-events-none disabled:opacity-40"
           >
-            <Layers className="h-3.5 w-3.5 text-zinc-400" />
+            <Layers className="text-muted-foreground h-3.5 w-3.5" />
             <span>{t("tabs.closeOthers")}</span>
           </button>
 
@@ -638,13 +645,13 @@ export const TabBar: FC<TabBarProps> = ({
               onCloseTabsToRight(contextMenu.tabId);
               setContextMenu(null);
             }}
-            className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="hover:bg-muted dark:hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors"
           >
-            <ArrowRight className="h-3.5 w-3.5 text-zinc-400" />
+            <ArrowRight className="text-muted-foreground h-3.5 w-3.5" />
             <span>{t("tabs.closeToRight")}</span>
           </button>
 
-          <div className="my-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+          <div className="bg-muted dark:bg-muted my-1 h-px" />
 
           <button
             type="button"
@@ -652,7 +659,7 @@ export const TabBar: FC<TabBarProps> = ({
               onDuplicateTab(contextMenu.tabId);
               setContextMenu(null);
             }}
-            className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left font-medium text-emerald-600 transition-colors hover:bg-zinc-100 dark:text-emerald-400 dark:hover:bg-zinc-800"
+            className="text-primary hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left font-medium transition-colors"
           >
             <Copy className="h-3.5 w-3.5" />
             <span>{t("tabs.duplicate")}</span>

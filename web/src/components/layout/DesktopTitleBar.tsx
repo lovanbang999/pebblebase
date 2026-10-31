@@ -1,247 +1,760 @@
-import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { Minus, Square, Copy, X, Search, Sparkles } from "lucide-react";
 import {
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Check,
+  ChevronDown,
+  Clock3,
+  Copy,
+  Database,
+  FileCode2,
+  Folder,
+  GitCompare,
+  Minus,
+  MoreHorizontal,
+  Play,
+  Search,
+  Settings2,
+  Sparkles,
+  Square,
+  Terminal,
+  Workflow,
+  X,
+} from "lucide-react";
+import {
+  closeDesktopWindow,
   isDesktopApp,
+  isMac,
+  isDesktopWindowMaximized,
   minimizeDesktopWindow,
   toggleMaximizeDesktopWindow,
-  isDesktopWindowMaximized,
-  closeDesktopWindow,
 } from "@/lib/platform";
 import { useUpdateStore } from "@/lib/updateStore";
+import { useAuthStore } from "@/lib/auth";
+import { FONT_SIZES, useFontSizeStore } from "@/lib/fontSizeStore";
+import type { Connection, StudioTab } from "@/lib/types";
+import {
+  WORKSPACE_COMMANDS,
+  WORKSPACE_MENUS,
+  type CommandMenu,
+  type WorkspaceCommandId,
+} from "./workspaceCommands";
 import packageJson from "../../../package.json";
+import { cn } from "cn";
 
 interface DesktopTitleBarProps {
-  activeConnectionName?: string;
-  activeDatabaseType?: string;
+  nativeOnly?: boolean;
+  activeConnection?: Connection | null;
+  connections?: Connection[];
+  activeTab?: StudioTab | null;
+  activeToolWindow?: "database" | "scripts" | null;
+  canRunQuery?: boolean;
+  canOpenHistory?: boolean;
+  isAdmin?: boolean;
+  onSelectConnection?: (connection: Connection) => void;
   onOpenCommandPalette?: () => void;
+  onCommand?: (command: WorkspaceCommandId) => void;
 }
 
+const MENUS: CommandMenu[] = [
+  "File",
+  "Edit",
+  "View",
+  "Navigate",
+  "Query",
+  "Tools",
+  "Window",
+  "Help",
+];
+
+const icons: Partial<Record<WorkspaceCommandId, typeof Database>> = {
+  toggle_database: Database,
+  toggle_scripts: Folder,
+  execute_query: Play,
+  query_history: Clock3,
+  open_query_console: Terminal,
+  open_erd: Workflow,
+  open_diff: GitCompare,
+  search_everywhere: Search,
+  manage_connections: Database,
+  open_sql_file: FileCode2,
+};
+
 export default function DesktopTitleBar({
-  activeConnectionName,
-  activeDatabaseType,
-  onOpenCommandPalette,
+  nativeOnly = false,
+  activeConnection,
+  connections = [],
+  activeTab = null,
+  activeToolWindow = null,
+  canRunQuery = false,
+  canOpenHistory = false,
+  isAdmin = false,
+  onSelectConnection = () => {},
+  onOpenCommandPalette = () => {},
+  onCommand = () => {},
 }: DesktopTitleBarProps) {
   const { t } = useTranslation();
   const isDesktop = isDesktopApp();
+  const user = useAuthStore((state) => state.user);
+  const { updateInfo, checkOnStartup } = useUpdateStore();
+  const fontSize = useFontSizeStore((state) => state.fontSize);
   const [isMaximized, setIsMaximized] = useState(true);
-  const { updateInfo, openDialogAndCheck, checkOnStartup } = useUpdateStore();
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const rootRef = useRef<HTMLElement>(null);
+  const accountCommandIds: WorkspaceCommandId[] = [
+    "change_password",
+    "open_settings",
+    "open_ai_settings",
+    "check_updates",
+    "sign_out",
+  ];
 
-  // Auto-check for updates on startup
   useEffect(() => {
     checkOnStartup();
   }, [checkOnStartup]);
 
-  // Sync window maximized state reactively without polling
   useEffect(() => {
     if (!isDesktop) return;
-
     let mounted = true;
-    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const checkMaximized = async () => {
-      try {
-        const maximized = await isDesktopWindowMaximized();
-        if (mounted) setIsMaximized(maximized);
-      } catch {
-        // ignore check errors
-      }
+    const updateWindowState = () => {
+      void isDesktopWindowMaximized()
+        .then((value) => {
+          if (mounted) setIsMaximized(value);
+        })
+        .catch(() => {});
     };
-
-    checkMaximized();
-
-    const handleResize = () => {
-      if (resizeTimer) clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(checkMaximized, 100);
-    };
-
-    window.addEventListener("resize", handleResize);
-
+    updateWindowState();
+    window.addEventListener("resize", updateWindowState);
     return () => {
       mounted = false;
-      if (resizeTimer) clearTimeout(resizeTimer);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", updateWindowState);
     };
   }, [isDesktop]);
 
-  if (!isDesktop) {
-    return null;
-  }
+  useEffect(() => {
+    if (!openMenu) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpenMenu(null);
+    };
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        const trigger = rootRef.current?.querySelector<HTMLButtonElement>(
+          'button[aria-expanded="true"]',
+        );
+        setOpenMenu(null);
+        trigger?.focus();
+        return;
+      }
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      const menu = rootRef.current?.querySelector<HTMLElement>(
+        `[data-command-menu="${openMenu}"]`,
+      );
+      const items = menu
+        ? [
+            ...menu.querySelectorAll<HTMLButtonElement>(
+              "[role=menuitem]:not(:disabled), [role=menuitemradio]:not(:disabled)",
+            ),
+          ]
+        : [];
+      if (!items.length) return;
+      event.preventDefault();
+      const current = items.indexOf(
+        document.activeElement as HTMLButtonElement,
+      );
+      const next =
+        event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? items.length - 1
+            : (current + (event.key === "ArrowDown" ? 1 : -1) + items.length) %
+              items.length;
+      items[next]?.focus();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [openMenu]);
 
-  const handleMinimize = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    minimizeDesktopWindow();
+  const label = (id: WorkspaceCommandId) => {
+    const definition = WORKSPACE_COMMANDS[id];
+    return t(definition.labelKey, definition.fallback);
   };
 
-  const handleToggleMaximize = async (e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
+  const disabled = (id: WorkspaceCommandId) => {
+    const item = WORKSPACE_COMMANDS[id];
+    if (item.disabled) return true;
+    if (
+      id === "execute_query" ||
+      id === "explain_query" ||
+      id === "query_history"
+    )
+      return !canRunQuery || (id === "query_history" && !canOpenHistory);
+    if (id === "export_csv" || id === "export_json" || id === "import_csv")
+      return activeTab?.type !== "table";
+    if (id === "open_query_console" || id === "open_sql_file")
+      return !activeConnection;
+    if (id === "open_erd")
+      return !activeConnection || activeConnection.type === "redis";
+    if (id === "close_active_tab") return !activeTab;
+    if (id === "close_all_tabs") return connections.length === 0 || !activeTab;
+    if (id === "save_query_file") return activeTab?.type !== "query";
+    if (id === "open_diff")
+      return (
+        connections.filter(
+          (connection) => !["mongodb", "redis"].includes(connection.type),
+        ).length < 2
+      );
+    if (id === "open_settings") return !isAdmin;
+    if (id === "exit_app") return !isDesktop;
+    return false;
+  };
+
+  const dispatch = (id: WorkspaceCommandId) => {
+    if (disabled(id)) return;
+    setOpenMenu(null);
+    onCommand(id);
+  };
+
+  const menuCommand = (id: WorkspaceCommandId) => {
+    const definition = WORKSPACE_COMMANDS[id];
+    const Icon = icons[id];
+    const isDisabled = disabled(id);
+    const reason = definition.disabledReason
+      ? t(definition.disabledReason, "Unavailable in this version")
+      : "";
+    return (
+      <button
+        key={id}
+        type="button"
+        role="menuitem"
+        disabled={isDisabled}
+        title={isDisabled ? reason || label(id) : undefined}
+        onClick={() => dispatch(id)}
+        className="text-foreground hover:bg-accent focus-visible:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs outline-none disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {Icon ? (
+          <Icon
+            aria-hidden="true"
+            className="text-muted-foreground size-3.5 shrink-0"
+          />
+        ) : (
+          <span className="size-3.5 shrink-0" />
+        )}
+        <span className="min-w-0 flex-1 truncate">{label(id)}</span>
+        {definition.shortcut && (
+          <kbd className="text-muted-foreground font-mono text-[10px]">
+            {definition.shortcut}
+          </kbd>
+        )}
+      </button>
+    );
+  };
+
+  const accountMenu = () => (
+    <div className="min-w-56 space-y-0.5 p-1.5">
+      <div className="border-border mb-1 border-b px-2 py-1.5">
+        <div className="truncate text-xs font-semibold">
+          {user?.username || t("auth.account", "Account")}
+        </div>
+        <div className="text-muted-foreground text-[10px]">
+          {user?.role || ""} · v
+          {updateInfo?.currentVersion || packageJson.version}
+        </div>
+      </div>
+      {accountCommandIds
+        .filter((id) => id !== "open_settings" || isAdmin)
+        .map(menuCommand)}
+      <div className="border-border my-1 border-t" />
+      {(
+        [
+          "font_small",
+          "font_default",
+          "font_large",
+          "font_extra_large",
+        ] as const
+      ).map((id) => (
+        <button
+          key={id}
+          type="button"
+          role="menuitemradio"
+          aria-checked={
+            fontSize ===
+            (
+              {
+                font_small: "sm",
+                font_default: "md",
+                font_large: "lg",
+                font_extra_large: "xl",
+              } as const
+            )[id]
+          }
+          onClick={() => dispatch(id)}
+          className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
+        >
+          <span className="size-3.5">
+            {fontSize ===
+              (
+                {
+                  font_small: "sm",
+                  font_default: "md",
+                  font_large: "lg",
+                  font_extra_large: "xl",
+                } as const
+              )[id] && <Check className="size-3.5" />}
+          </span>
+          <span className="flex-1">
+            {t(
+              WORKSPACE_COMMANDS[id].labelKey,
+              WORKSPACE_COMMANDS[id].fallback,
+            )}
+          </span>
+          <span className="text-muted-foreground">
+            {
+              FONT_SIZES.find(
+                (item) =>
+                  item.id ===
+                  (
+                    {
+                      font_small: "sm",
+                      font_default: "md",
+                      font_large: "lg",
+                      font_extra_large: "xl",
+                    } as const
+                  )[id],
+              )?.scale
+            }
+          </span>
+        </button>
+      ))}
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => dispatch("toggle_theme")}
+        className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
+      >
+        <Sparkles className="size-3.5" />
+        {label("toggle_theme")}
+      </button>
+    </div>
+  );
+
+  const menuSurface = (
+    name: string,
+    children: React.ReactNode,
+    align: "left" | "right" = "left",
+  ) => (
+    <div
+      data-command-menu={name}
+      role="menu"
+      aria-label={name}
+      className={cn(
+        "border-border bg-popover text-popover-foreground absolute top-full z-50 mt-1 min-w-56 rounded-md border p-1.5 shadow-xl",
+        align === "right" ? "right-0" : "left-0",
+      )}
+    >
+      {children}
+    </div>
+  );
+
+  const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Tab") setOpenMenu(null);
+  };
+  const handleWindowToggle = async (event?: MouseEvent<HTMLButtonElement>) => {
+    event?.stopPropagation();
     toggleMaximizeDesktopWindow();
-    // Optimistic toggle followed by verified state
-    setIsMaximized((prev) => !prev);
-    setTimeout(async () => {
-      try {
-        const maximized = await isDesktopWindowMaximized();
-        setIsMaximized(maximized);
-      } catch {
-        // ignore check errors
-      }
+    setIsMaximized((current) => !current);
+    window.setTimeout(() => {
+      void isDesktopWindowMaximized()
+        .then(setIsMaximized)
+        .catch(() => {});
     }, 150);
   };
 
-  const handleClose = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    closeDesktopWindow();
-  };
-
-  // Only render or show drag bar if in desktop or web
-  const dragStyle = {
-    "--wails-draggable": "drag",
-  } as React.CSSProperties;
-
-  const noDragStyle = {
-    "--wails-draggable": "no-drag",
-  } as React.CSSProperties;
+  if (nativeOnly) {
+    if (!isDesktop) return null;
+    return (
+      <header
+        className="border-border flex h-10 w-full shrink-0 items-stretch justify-end border-b"
+        style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
+      >
+        <div
+          className="flex"
+          style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+        >
+          <button
+            type="button"
+            aria-label={t("titlebar.minimize", "Minimize")}
+            onClick={minimizeDesktopWindow}
+            className="text-muted-foreground hover:bg-accent flex w-10 items-center justify-center"
+          >
+            <Minus className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label={
+              isMaximized
+                ? t("titlebar.restore", "Restore")
+                : t("titlebar.maximize", "Maximize")
+            }
+            onClick={(event) => void handleWindowToggle(event)}
+            className="text-muted-foreground hover:bg-accent flex w-10 items-center justify-center"
+          >
+            {isMaximized ? (
+              <Copy className="size-3" />
+            ) : (
+              <Square className="size-3" />
+            )}
+          </button>
+          <button
+            type="button"
+            aria-label={t("titlebar.close", "Close")}
+            onClick={closeDesktopWindow}
+            className="text-muted-foreground flex w-10 items-center justify-center hover:bg-red-600 hover:text-white"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
+      </header>
+    );
+  }
 
   return (
-    <>
-      <header
-        style={dragStyle}
-        onDoubleClick={handleToggleMaximize}
-        className="dark:border-border/40 bg-card dark:bg-card relative z-50 flex h-10 w-full shrink-0 items-center justify-between border-b border-zinc-200/80 px-3 text-xs transition-colors select-none"
+    <header
+      ref={rootRef}
+      onDoubleClick={(event) => {
+        if (isDesktop && !(event.target as HTMLElement).closest("button"))
+          void handleWindowToggle();
+      }}
+      style={
+        {
+          "--wails-draggable": isDesktop ? "drag" : "no-drag",
+        } as React.CSSProperties
+      }
+      className="bg-card border-border relative z-50 flex h-10 w-full shrink-0 items-center gap-2 border-b px-2 text-xs select-none"
+    >
+      <div
+        className="flex min-w-0 flex-1 items-center gap-1"
+        style={
+          {
+            WebkitAppRegion: isDesktop ? "drag" : "no-drag",
+          } as React.CSSProperties
+        }
       >
-        {/* Left: Brand Identity & Active Connection */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <img
-              src="/favicon.svg"
-              alt="Pebblebase Logo"
-              className="pointer-events-none h-4 w-4 object-contain"
-            />
-            <span className="flex items-center gap-1.5 text-xs font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">
-              Pebblebase Studio
+        <img
+          src="/favicon.svg"
+          alt="Pebblebase"
+          className="mx-1 size-4 shrink-0"
+        />
+        <nav
+          aria-label={t("commands.applicationMenu", "Application menu")}
+          className="hidden shrink-0 items-center gap-0.5 min-[768px]:flex"
+        >
+          {MENUS.map((menuName) => (
+            <div
+              key={menuName}
+              className="relative"
+              onMouseEnter={() => {
+                if (openMenu && MENUS.includes(openMenu as CommandMenu))
+                  setOpenMenu(menuName);
+              }}
+            >
               <button
                 type="button"
-                style={noDragStyle}
-                onClick={() => openDialogAndCheck()}
-                className="py-0.2 border-primary/30 hover:bg-primary/20 dark:border-primary/20 cursor-pointer rounded border bg-emerald-500/10 px-1 font-mono text-[10px] leading-none text-emerald-700 dark:text-emerald-400"
-                title={t(
-                  "titlebar.checkUpdatesTooltip",
-                  "Click to check for software updates",
+                aria-haspopup="menu"
+                aria-expanded={openMenu === menuName}
+                onClick={() =>
+                  setOpenMenu(openMenu === menuName ? null : menuName)
+                }
+                className={cn(
+                  "hover:bg-accent focus-visible:ring-ring h-7 rounded px-2 text-xs focus-visible:ring-1 focus-visible:outline-none",
+                  openMenu === menuName && "bg-accent",
                 )}
               >
-                v{updateInfo?.currentVersion || packageJson.version}
+                {t(`commands.menu.${menuName.toLowerCase()}`, menuName)}
               </button>
-            </span>
-
-            {updateInfo?.hasUpdate && (
-              <button
-                type="button"
-                style={noDragStyle}
-                onClick={() => openDialogAndCheck()}
-                className="border-primary/40 hover:bg-primary/25 dark:border-primary/30 flex animate-pulse cursor-pointer items-center gap-1 rounded-full border bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
-                title={t("titlebar.updateAvailableTooltip", {
-                  version: updateInfo.latestVersion,
-                  defaultValue: `New update v${updateInfo.latestVersion} available!`,
-                })}
-              >
-                <Sparkles className="h-2.5 w-2.5 text-emerald-600 dark:text-emerald-400" />
-                <span>
-                  {t("titlebar.updateAvailableBadge", {
-                    version: updateInfo.latestVersion,
-                    defaultValue: `Update v${updateInfo.latestVersion}`,
-                  })}
-                </span>
-              </button>
-            )}
-          </div>
-
-          {activeConnectionName && (
-            <div
-              style={noDragStyle}
-              className="hidden items-center gap-1.5 rounded-full border border-zinc-200/90 bg-white/90 px-2 py-0.5 text-[11px] text-zinc-700 shadow-2xs sm:flex dark:border-zinc-800 dark:bg-zinc-900/90 dark:text-zinc-300"
-            >
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-              <span className="max-w-40 truncate font-medium text-zinc-800 dark:text-zinc-200">
-                {activeConnectionName}
-              </span>
-              {activeDatabaseType && (
-                <span className="font-mono text-[10px] text-zinc-400 uppercase dark:text-zinc-500">
-                  {activeDatabaseType}
-                </span>
-              )}
+              {openMenu === menuName &&
+                menuSurface(
+                  menuName,
+                  <div onKeyDown={handleMenuKeyDown} className="space-y-0.5">
+                    {WORKSPACE_MENUS[menuName].map((item, index) => (
+                      <div key={`${item.id}-${index}`}>
+                        {index > 0 &&
+                          ((menuName === "File" && [3, 5, 7].includes(index)) ||
+                            (menuName === "Edit" && [2, 6].includes(index)) ||
+                            (menuName === "View" && [3, 10].includes(index)) ||
+                            (menuName === "Query" && [3].includes(index)) ||
+                            (menuName === "Tools" && [2, 5].includes(index)) ||
+                            (menuName === "Help" && [2].includes(index))) && (
+                            <div className="border-border my-1 border-t" />
+                          )}
+                        {menuCommand(item.id)}
+                      </div>
+                    ))}
+                  </div>,
+                )}
             </div>
-          )}
-        </div>
-
-        {/* Center: Quick Search / Command Palette Trigger (Mathematically Centered in Titlebar) */}
-        {onOpenCommandPalette && (
-          <div className="pointer-events-none absolute left-1/2 w-64 max-w-[calc(100vw-420px)] -translate-x-1/2 sm:w-72 md:w-80">
-            <button
-              type="button"
-              style={noDragStyle}
-              onClick={onOpenCommandPalette}
-              className="group pointer-events-auto flex h-6.5 w-full cursor-pointer items-center justify-between rounded-md border border-zinc-200/90 bg-white/80 px-2.5 text-[11px] text-zinc-500 shadow-2xs transition-colors hover:border-zinc-300 hover:bg-white hover:text-zinc-800 dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:text-zinc-400 dark:hover:border-zinc-700/80 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200"
-            >
-              <span className="flex items-center gap-1.5 truncate">
-                <Search className="h-3 w-3 shrink-0 text-zinc-400 group-hover:text-zinc-600 dark:text-zinc-500 dark:group-hover:text-zinc-300" />
-                <span className="truncate">
-                  {t("titlebar.searchPlaceholder", "Search or run commands...")}
-                </span>
+          ))}
+        </nav>
+        <div className="relative ml-1 min-w-0 max-[767px]:ml-0">
+          <button
+            type="button"
+            aria-haspopup="menu"
+            aria-expanded={openMenu === "connection"}
+            onClick={() =>
+              setOpenMenu(openMenu === "connection" ? null : "connection")
+            }
+            className="border-border bg-background hover:bg-accent flex h-7 max-w-64 items-center gap-1.5 rounded border px-2 max-[767px]:max-w-36"
+          >
+            <span className="bg-success size-1.5 shrink-0 rounded-full" />
+            <span className="truncate font-medium">
+              {activeConnection?.name || t("sidebar.noActiveConn")}
+            </span>
+            {activeConnection && (
+              <span className="text-muted-foreground shrink-0 text-[10px] uppercase">
+                {activeConnection.type}
               </span>
-              <kbd className="py-0.2 hidden shrink-0 rounded border border-zinc-200/80 bg-zinc-100 px-1.5 font-mono text-[9px] text-zinc-500 sm:inline-block dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:text-zinc-400">
-                Ctrl K
-              </kbd>
-            </button>
-          </div>
-        )}
+            )}
+            <ChevronDown className="text-muted-foreground size-3 shrink-0" />
+          </button>
+          {openMenu === "connection" &&
+            menuSurface(
+              "connection",
+              <div className="max-h-80 overflow-auto">
+                {connections.map((connection) => (
+                  <button
+                    key={connection.id}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={connection.id === activeConnection?.id}
+                    onClick={() => {
+                      setOpenMenu(null);
+                      onSelectConnection(connection);
+                    }}
+                    className="hover:bg-accent flex h-8 w-full items-center gap-2 rounded px-2 text-left text-xs"
+                  >
+                    <span
+                      className={cn(
+                        "size-1.5 rounded-full",
+                        connection.id === activeConnection?.id
+                          ? "bg-success"
+                          : "bg-muted-foreground/50",
+                      )}
+                    />
+                    <span className="min-w-0 flex-1 truncate">
+                      {connection.name}
+                    </span>
+                    <span className="text-muted-foreground font-mono text-[10px]">
+                      {connection.type.toUpperCase()}
+                    </span>
+                  </button>
+                ))}
+                <div className="border-border my-1 border-t" />
+                {menuCommand("manage_connections")}
+              </div>,
+            )}
+        </div>
+      </div>
 
-        {/* Right: Window Controls (Desktop Only) */}
-        <div className="flex items-center gap-0.5">
-          <div style={noDragStyle} className="flex items-center">
-            {/* Minimize */}
+      <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-0.5 max-[767px]:hidden">
+        <ToolbarButton
+          label={label("toggle_database")}
+          active={activeToolWindow === "database"}
+          onClick={() => dispatch("toggle_database")}
+        >
+          <Database className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label={label("execute_query")}
+          shortcut={WORKSPACE_COMMANDS.execute_query.shortcut}
+          disabled={disabled("execute_query")}
+          onClick={() => dispatch("execute_query")}
+        >
+          <Play className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label={label("query_history")}
+          shortcut={WORKSPACE_COMMANDS.query_history.shortcut}
+          disabled={disabled("query_history")}
+          onClick={() => dispatch("query_history")}
+        >
+          <Clock3 className="size-4" />
+        </ToolbarButton>
+        <ToolbarButton
+          label={label("toggle_scripts")}
+          active={activeToolWindow === "scripts"}
+          onClick={() => dispatch("toggle_scripts")}
+        >
+          <Folder className="size-4" />
+        </ToolbarButton>
+        <div className="relative">
+          <ToolbarButton
+            label={t("commands.more", "More")}
+            onClick={() => setOpenMenu(openMenu === "More" ? null : "More")}
+          >
+            <MoreHorizontal className="size-4" />
+          </ToolbarButton>
+          {openMenu === "More" &&
+            menuSurface(
+              "More",
+              <div className="space-y-0.5">
+                {[
+                  "open_query_console",
+                  "open_erd",
+                  "open_diff",
+                  "manage_connections",
+                  "toggle_theme",
+                  "reset_layout",
+                ].map((id) => menuCommand(id as WorkspaceCommandId))}
+              </div>,
+              "right",
+            )}
+        </div>
+      </div>
+
+      <div className="ml-auto flex shrink-0 items-center gap-0.5">
+        <button
+          type="button"
+          aria-label={label("search_everywhere")}
+          title={`${label("search_everywhere")} (${isMac ? "⌘K" : "Ctrl+K"})`}
+          onClick={onOpenCommandPalette}
+          className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-7 items-center justify-center rounded"
+        >
+          <Search className="size-4" />
+        </button>
+        <div className="relative">
+          <button
+            type="button"
+            aria-label={t("auth.account", "Account and settings")}
+            aria-haspopup="menu"
+            aria-expanded={openMenu === "account"}
+            onClick={() =>
+              setOpenMenu(openMenu === "account" ? null : "account")
+            }
+            className="hover:bg-accent flex h-7 items-center gap-1 rounded px-1.5"
+          >
+            <Settings2 className="size-4" />
+            <span className="max-w-24 truncate">{user?.username || ""}</span>
+          </button>
+          {openMenu === "account" &&
+            menuSurface("account", accountMenu(), "right")}
+        </div>
+        <div className="relative min-[768px]:hidden">
+          <ToolbarButton
+            label={t("commands.more", "More actions")}
+            onClick={() =>
+              setOpenMenu(openMenu === "MoreMobile" ? null : "MoreMobile")
+            }
+          >
+            <MoreHorizontal className="size-4" />
+          </ToolbarButton>
+          {openMenu === "MoreMobile" &&
+            menuSurface(
+              "MoreMobile",
+              <div className="space-y-0.5">
+                {[
+                  "toggle_database",
+                  "execute_query",
+                  "query_history",
+                  "toggle_scripts",
+                  "open_query_console",
+                  "open_erd",
+                  "open_diff",
+                  "manage_connections",
+                  "toggle_theme",
+                  "reset_layout",
+                ].map((id) => menuCommand(id as WorkspaceCommandId))}
+              </div>,
+              "right",
+            )}
+        </div>
+        {isDesktop && (
+          <div
+            className="ml-1 flex h-10 items-stretch"
+            style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
+          >
             <button
               type="button"
-              onClick={handleMinimize}
-              className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
-              title={t("titlebar.minimize", "Minimize")}
-              aria-label="Minimize Window"
+              aria-label={t("titlebar.minimize", "Minimize")}
+              onClick={(event) => {
+                event.stopPropagation();
+                minimizeDesktopWindow();
+              }}
+              className="text-muted-foreground hover:bg-accent flex w-9 items-center justify-center"
             >
-              <Minus className="h-3.5 w-3.5" />
+              <Minus className="size-3.5" />
             </button>
-
-            {/* Maximize / Restore */}
             <button
               type="button"
-              onClick={handleToggleMaximize}
-              className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200/80 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-100"
-              title={
+              aria-label={
                 isMaximized
                   ? t("titlebar.restore", "Restore")
                   : t("titlebar.maximize", "Maximize")
               }
-              aria-label="Maximize or Restore Window"
+              onClick={(event) => void handleWindowToggle(event)}
+              className="text-muted-foreground hover:bg-accent flex w-9 items-center justify-center"
             >
               {isMaximized ? (
-                <Copy className="h-3 w-3 rotate-180" />
+                <Copy className="size-3" />
               ) : (
-                <Square className="h-3 w-3" />
+                <Square className="size-3" />
               )}
             </button>
-
-            {/* Close */}
             <button
               type="button"
-              onClick={handleClose}
-              className="flex h-6 w-8 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-red-600 hover:text-white dark:text-zinc-400 dark:hover:bg-red-600 dark:hover:text-white"
-              title={t("titlebar.close", "Close")}
-              aria-label="Close Window"
+              aria-label={t("titlebar.close", "Close")}
+              onClick={(event) => {
+                event.stopPropagation();
+                closeDesktopWindow();
+              }}
+              className="text-muted-foreground flex w-9 items-center justify-center hover:bg-red-600 hover:text-white"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="size-3.5" />
             </button>
           </div>
-        </div>
-      </header>
-    </>
+        )}
+      </div>
+    </header>
+  );
+}
+
+function ToolbarButton({
+  label,
+  shortcut,
+  active = false,
+  disabled = false,
+  onClick,
+  children,
+}: {
+  label: string;
+  shortcut?: string;
+  active?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={active}
+      title={shortcut ? `${label} (${shortcut})` : label}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        "text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-8 items-center justify-center rounded disabled:cursor-not-allowed disabled:opacity-35",
+        active && "bg-accent text-foreground",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

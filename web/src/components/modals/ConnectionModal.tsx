@@ -19,6 +19,7 @@ import type {
 } from "@/lib/types";
 import { useTranslation } from "react-i18next";
 import { testConnection } from "@/lib/api";
+import { emitOperationEvent } from "@/lib/operationEvents";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -57,6 +58,7 @@ interface ConnectionModalProps {
   onClose: () => void;
   onSubmit: (input: ConnectionInput) => Promise<unknown>;
   cloneData?: Connection | null;
+  editData?: Connection | null;
 }
 
 const ENVIRONMENTS = DATABASE_ENVIRONMENTS;
@@ -67,34 +69,51 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
   onClose,
   onSubmit,
   cloneData,
+  editData,
 }) => {
   const { t } = useTranslation();
   const [dbType, setDbType] = useState<DatabaseType>(
-    cloneData?.type || "postgres",
+    editData?.type || cloneData?.type || "postgres",
   );
-  const [mode, setMode] = useState<"form" | "url">("form");
+  const [mode, setMode] = useState<"form" | "url">(editData?.mode || "form");
   const [environment, setEnvironment] = useState<EnvironmentType>(
-    cloneData?.environment || "local",
+    editData?.environment || cloneData?.environment || "local",
   );
 
   // Form fields
   const [name, setName] = useState(
     cloneData
       ? `${cloneData.name} (${t("connection.copySuffix")})`
-      : "Local Postgres",
+      : editData?.name || "Local Postgres",
   );
-  const [isNameCustom, setIsNameCustom] = useState(Boolean(cloneData));
-  const [filepath, setFilepath] = useState(cloneData?.filepath || "");
-  const [host, setHost] = useState(cloneData?.host || "localhost");
+  const [isNameCustom, setIsNameCustom] = useState(
+    Boolean(cloneData || editData),
+  );
+  const [filepath, setFilepath] = useState(
+    editData?.filepath || cloneData?.filepath || "",
+  );
+  const [host, setHost] = useState(
+    editData?.host || cloneData?.host || "localhost",
+  );
   const [port, setPort] = useState(
-    cloneData?.port || getDefaultPort(cloneData?.type || "postgres"),
+    editData?.port ||
+      cloneData?.port ||
+      getDefaultPort(editData?.type || cloneData?.type || "postgres"),
   );
-  const [dbName, setDbName] = useState(cloneData?.db_name || "pebble_test");
-  const [user, setUser] = useState(cloneData?.user || "pebble");
-  const [password, setPassword] = useState("pebble");
+  const [dbName, setDbName] = useState(
+    editData?.db_name || cloneData?.db_name || "pebble_test",
+  );
+  const [user, setUser] = useState(
+    editData?.user || cloneData?.user || "pebble",
+  );
+  const [password, setPassword] = useState(cloneData ? "pebble" : "");
   const [rawURL, setRawURL] = useState("");
-  const [savePassword, setSavePassword] = useState(true);
-  const [readOnly, setReadOnly] = useState(cloneData?.read_only ?? false);
+  const [savePassword, setSavePassword] = useState(
+    editData?.save_password ?? true,
+  );
+  const [readOnly, setReadOnly] = useState(
+    editData?.read_only ?? cloneData?.read_only ?? false,
+  );
   const [windowsAuth, setWindowsAuth] = useState(false);
 
   // Statuses
@@ -201,6 +220,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       name: name.trim() || `${dbType.toUpperCase()} Connection`,
       type: dbType,
       mode,
+      connection_id: editData?.id,
+      preserve_existing_dsn: Boolean(
+        editData?.save_password && mode === "url" && !rawURL.trim(),
+      ),
       environment,
       read_only: readOnly,
       filepath: isSqlite && mode === "form" ? filepath.trim() : undefined,
@@ -209,7 +232,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       db_name: !isSqlite && mode === "form" ? dbName : undefined,
       user: !isSqlite && mode === "form" && !windowsAuth ? user : undefined,
       password:
-        !isSqlite && mode === "form" && !windowsAuth ? password : undefined,
+        !isSqlite && mode === "form" && !windowsAuth
+          ? password || undefined
+          : undefined,
       raw_url: mode === "url" ? rawURL : undefined,
       save_password: isSqlite || windowsAuth ? true : savePassword,
       ssl_mode: dbType === "mssql" ? "disable" : undefined,
@@ -230,10 +255,31 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
         message: t("connection.connectionSuccess", { elapsed }),
         latency: elapsed,
       });
+      emitOperationEvent({
+        kind: "connection-test",
+        severity: "success",
+        title: t(
+          "operations.connectionTestSucceeded",
+          "Connection test succeeded",
+        ),
+        message:
+          getPayload().name || t("connection.newConnection", "Connection"),
+        connectionName: getPayload().name,
+      });
     } catch (err: any) {
       setTestResult({
         ok: false,
         message: err.message || t("connection.connectionFailed"),
+      });
+      emitOperationEvent({
+        kind: "connection-test",
+        severity: "error",
+        title: t("operations.connectionTestFailed", "Connection test failed"),
+        message: t(
+          "operations.genericFailure",
+          "The operation could not be completed.",
+        ),
+        connectionName: getPayload().name,
       });
     } finally {
       setTesting(false);
@@ -258,15 +304,17 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 shadow-2xl sm:max-w-xl dark:border-zinc-800 dark:bg-zinc-950">
+      <DialogContent className="border-border bg-background dark:border-border dark:bg-card flex max-h-[90vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
         <form
           onSubmit={handleSubmit}
           className="flex max-h-[90vh] flex-col overflow-hidden"
         >
           {/* Header */}
-          <DialogHeader className="flex shrink-0 flex-row items-center gap-3 space-y-0 border-b border-zinc-200/80 bg-zinc-50/70 px-5 py-4 dark:border-zinc-800/80 dark:bg-zinc-900/50">
-            <div className="border-primary/30 shrink-0 rounded-lg border bg-emerald-500/10 p-2 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
-              {cloneData ? (
+          <DialogHeader className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/50 flex shrink-0 flex-row items-center gap-3 space-y-0 border-b px-5 py-4">
+            <div className="border-primary/30 bg-success/10 text-success dark:bg-success/15 dark:text-success shrink-0 rounded-lg border p-2">
+              {editData ? (
+                <Database className="h-4 w-4" />
+              ) : cloneData ? (
                 <Copy className="h-4 w-4" />
               ) : (
                 <Database className="h-4 w-4" />
@@ -274,24 +322,33 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                  {cloneData
-                    ? t("connection.titleClone")
-                    : t("connection.titleNew")}
+                <DialogTitle className="text-foreground dark:text-foreground text-sm font-semibold">
+                  {editData
+                    ? t("connection.editTitle", "Edit connection")
+                    : cloneData
+                      ? t("connection.titleClone")
+                      : t("connection.titleNew")}
                 </DialogTitle>
-                {cloneData && (
+                {(cloneData || editData) && (
                   <Badge
                     variant="outline"
-                    className="border-primary/40 h-4 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] text-emerald-600 uppercase dark:bg-emerald-500/15 dark:text-emerald-400"
+                    className="border-primary/40 bg-success/10 text-success dark:bg-success/15 dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] uppercase"
                   >
-                    {t("connection.badgeDuplicating")}
+                    {editData
+                      ? t("connection.editTitle", "Editing")
+                      : t("connection.badgeDuplicating")}
                   </Badge>
                 )}
               </div>
-              <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
-                {cloneData
-                  ? t("connection.descClone", { name: cloneData.name })
-                  : t("connection.descNew")}
+              <DialogDescription className="text-muted-foreground dark:text-muted-foreground text-xs">
+                {editData
+                  ? t("connection.editDescription", {
+                      name: editData.name,
+                      defaultValue: `Update ${editData.name}. Leave the password blank to keep the saved password.`,
+                    })
+                  : cloneData
+                    ? t("connection.descClone", { name: cloneData.name })
+                    : t("connection.descNew")}
               </DialogDescription>
             </div>
           </DialogHeader>
@@ -301,10 +358,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             {/* Step 1: Database Engine Selector */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-xs font-semibold tracking-wider text-zinc-600 uppercase dark:text-zinc-300">
+                <label className="text-muted-foreground dark:text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   {t("connection.driver")}
                 </label>
-                <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500">
+                <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[11px]">
                   {t("connection.selectDriverHelp")}
                 </span>
               </div>
@@ -317,12 +374,15 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   }
                 }}
               >
-                <SelectTrigger className="focus:border-primary/70 focus:ring-primary/20 h-13 min-h-13 w-full cursor-pointer justify-between rounded-xl border border-zinc-200/90 bg-zinc-50/60 px-3 py-2 text-left shadow-2xs transition-all hover:border-zinc-300 hover:bg-zinc-100/70 focus:ring-2 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-700 dark:hover:bg-zinc-900">
+                <SelectTrigger
+                  disabled={Boolean(editData)}
+                  className="focus:border-primary/70 focus:ring-primary/20 border-border/90 bg-card/60 hover:border-border hover:bg-muted/70 dark:border-border dark:bg-card/60 dark:hover:border-border dark:hover:bg-muted h-13 min-h-13 w-full cursor-pointer justify-between rounded-xl border px-3 py-2 text-left shadow-2xs transition-all focus:ring-2 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible"
+                >
                   <SelectValue className="flex w-full min-w-0 flex-1 items-center overflow-visible">
                     {() => (
                       <div className="mr-2 flex w-full items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2.5">
-                          <div className="flex size-8.5 shrink-0 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-100 p-1 shadow-2xs dark:border-zinc-700/80 dark:bg-zinc-800">
+                          <div className="border-border/80 bg-muted dark:border-border/80 dark:bg-muted flex size-8.5 shrink-0 items-center justify-center rounded-lg border p-1 shadow-2xs">
                             <DatabaseEngineIcon
                               type={currentEngine.type}
                               className="size-5"
@@ -330,23 +390,23 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                           </div>
                           <div className="flex flex-col text-left">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                              <span className="text-foreground dark:text-foreground text-sm font-semibold">
                                 {currentEngine.name}
                               </span>
                               <Badge
                                 variant="outline"
-                                className="h-4 border-zinc-200/90 bg-zinc-100 px-1.5 py-0 font-mono text-[10px] font-semibold text-zinc-600 uppercase dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                                className="border-border/90 bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                               >
                                 {currentEngine.tag}
                               </Badge>
                             </div>
-                            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                            <span className="text-muted-foreground dark:text-muted-foreground text-xs">
                               {currentEngine.category}
                             </span>
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5">
-                          <span className="font-mono text-xs font-medium text-zinc-400 dark:text-zinc-500">
+                          <span className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-medium">
                             :{currentEngine.defaultPort}
                           </span>
                         </div>
@@ -358,7 +418,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 <SelectContent
                   side="bottom"
                   align="start"
-                  className="z-50 max-h-80 w-(--anchor-width) min-w-90 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl dark:border-zinc-800 dark:bg-zinc-950"
+                  className="border-border bg-background dark:border-border dark:bg-card z-50 max-h-80 w-(--anchor-width) min-w-90 rounded-xl border p-1.5 shadow-xl"
                 >
                   {ENGINE_CATEGORIES.filter((c) => c.key !== "all").map(
                     (cat, idx) => {
@@ -369,30 +429,30 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       return (
                         <SelectGroup key={cat.key}>
                           {idx > 0 && (
-                            <SelectSeparator className="my-1 border-zinc-100 dark:border-zinc-800/60" />
+                            <SelectSeparator className="border-border dark:border-border/60 my-1" />
                           )}
-                          <SelectLabel className="px-2.5 pt-2 pb-1 font-mono text-[10px] font-semibold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
+                          <SelectLabel className="text-muted-foreground dark:text-muted-foreground px-2.5 pt-2 pb-1 font-mono text-[10px] font-semibold tracking-wider uppercase">
                             {t(cat.labelKey, cat.fallbackLabel)}
                           </SelectLabel>
                           {engines.map((engine) => (
                             <SelectItem
                               key={engine.type}
                               value={engine.type}
-                              className="cursor-pointer rounded-lg py-2 pr-8 pl-2.5 font-sans transition-colors data-highlighted:bg-zinc-100/90 **:data-[slot=select-item-text]:block **:data-[slot=select-item-text]:w-full dark:data-highlighted:bg-zinc-800/80"
+                              className="data-highlighted:bg-muted/90 dark:data-highlighted:bg-muted/80 cursor-pointer rounded-lg py-2 pr-8 pl-2.5 font-sans transition-colors **:data-[slot=select-item-text]:block **:data-[slot=select-item-text]:w-full"
                             >
                               <div className="flex w-full items-center justify-between gap-3">
                                 <div className="flex min-w-0 items-center gap-2.5">
-                                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200/80 bg-zinc-100 p-1 shadow-2xs dark:border-zinc-700/80 dark:bg-zinc-800">
+                                  <div className="border-border/80 bg-muted dark:border-border/80 dark:bg-muted flex size-8 shrink-0 items-center justify-center rounded-lg border p-1 shadow-2xs">
                                     <DatabaseEngineIcon
                                       type={engine.type}
                                       className="size-4.5"
                                     />
                                   </div>
                                   <div className="flex flex-col truncate text-left">
-                                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                                    <span className="text-foreground dark:text-foreground text-xs font-semibold">
                                       {engine.name}
                                     </span>
-                                    <span className="truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                                    <span className="text-muted-foreground dark:text-muted-foreground truncate text-[11px]">
                                       {engine.category}
                                     </span>
                                   </div>
@@ -400,11 +460,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                                 <div className="flex shrink-0 items-center gap-2">
                                   <Badge
                                     variant="outline"
-                                    className="h-4 border-zinc-200/90 bg-zinc-100 px-1.5 py-0 font-mono text-[10px] font-semibold text-zinc-600 uppercase dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                                    className="border-border/90 bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                                   >
                                     {engine.tag}
                                   </Badge>
-                                  <span className="font-mono text-xs font-medium text-zinc-400 dark:text-zinc-500">
+                                  <span className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-medium">
                                     :{engine.defaultPort}
                                   </span>
                                 </div>
@@ -422,10 +482,10 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             {/* Environment Picker */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-xs font-semibold tracking-wider text-zinc-600 uppercase dark:text-zinc-300">
+                <label className="text-muted-foreground dark:text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   {t("connection.envTier")}
                 </label>
-                <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                <span className="text-muted-foreground dark:text-muted-foreground text-[11px]">
                   {t("connection.envTierHelp")}
                 </span>
               </div>
@@ -436,7 +496,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 }
                 className="w-full"
               >
-                <TabsList className="grid h-9 w-full grid-cols-4 bg-zinc-100/90 p-1 dark:bg-zinc-900/90">
+                <TabsList className="bg-muted/90 dark:bg-card/90 grid h-9 w-full grid-cols-4 p-1">
                   {ENVIRONMENTS.map((env) => (
                     <TabsTrigger
                       key={env.key}
@@ -458,7 +518,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               <div className="mb-1 flex items-center justify-between">
                 <label
                   htmlFor="connection-name"
-                  className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                  className="text-foreground dark:text-muted-foreground text-xs font-medium"
                 >
                   {t("connection.displayName")}
                 </label>
@@ -478,7 +538,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                         ),
                       );
                     }}
-                    className="h-5 px-1.5 font-mono text-[10px] text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-300"
+                    className="text-success hover:bg-success/10 hover:text-success dark:text-success dark:hover:bg-success/40 dark:hover:text-success h-5 px-1.5 font-mono text-[10px]"
                   >
                     {t("connection.resetAutoName")}
                   </Button>
@@ -494,7 +554,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 }}
                 placeholder="e.g. Analytics DB (PostgreSQL - staging)"
                 required
-                className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
               />
             </div>
 
@@ -504,7 +564,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               onValueChange={(val) => setMode(val as "form" | "url")}
               className="w-full"
             >
-              <TabsList className="grid h-9 w-full grid-cols-2 bg-zinc-100/90 p-1 dark:bg-zinc-900/90">
+              <TabsList className="bg-muted/90 dark:bg-card/90 grid h-9 w-full grid-cols-2 p-1">
                 <TabsTrigger value="form" className="gap-2 text-xs font-medium">
                   <Server className="size-3.5 shrink-0" />
                   <span>{t("connection.formParameters")}</span>
@@ -523,11 +583,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     <div className="mb-1 flex items-center justify-between">
                       <label
                         htmlFor="connection-filepath"
-                        className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                        className="text-foreground dark:text-muted-foreground text-xs font-medium"
                       >
                         {t("connection.filepath")}
                       </label>
-                      <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
+                      <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px]">
                         .db / .sqlite / .sqlite3
                       </span>
                     </div>
@@ -538,9 +598,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       onChange={(e) => handleFilepathChange(e.target.value)}
                       required
                       placeholder="/absolute/path/to/database.db or ./app.db"
-                      className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                      className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                     />
-                    <p className="mt-1.5 text-[11px] leading-normal text-zinc-400 dark:text-zinc-500">
+                    <p className="text-muted-foreground dark:text-muted-foreground mt-1.5 text-[11px] leading-normal">
                       {t("connection.sqliteFilePathHelp")}
                     </p>
                   </div>
@@ -551,7 +611,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     <div className="col-span-2">
                       <label
                         htmlFor="connection-host"
-                        className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                        className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
                       >
                         {t("connection.hostAddress")}
                       </label>
@@ -562,13 +622,13 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                         onChange={(e) => setHost(e.target.value)}
                         required
                         placeholder="localhost"
-                        className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                       />
                     </div>
                     <div>
                       <label
                         htmlFor="connection-port"
-                        className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                        className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
                       >
                         {t("connection.port")}
                       </label>
@@ -579,7 +639,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                         onChange={(e) => setPort(e.target.value)}
                         required
                         placeholder="5432"
-                        className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                       />
                     </div>
                   </div>
@@ -588,13 +648,13 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                     <div className="mb-1 flex items-center justify-between">
                       <label
                         htmlFor="connection-database"
-                        className="text-xs text-zinc-600 dark:text-zinc-400"
+                        className="text-muted-foreground dark:text-muted-foreground text-xs"
                       >
                         {dbType === "redis"
                           ? t("connection.redisDbIndex")
                           : t("connection.database")}
                       </label>
-                      <span className="font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
+                      <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px]">
                         {dbType === "redis"
                           ? t("connection.redisLogicalDb")
                           : t("connection.targetSchema")}
@@ -607,7 +667,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       onChange={(e) => handleDbNameChange(e.target.value)}
                       required
                       placeholder={dbType === "redis" ? "0" : "database_name"}
-                      className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                      className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                     />
                   </div>
 
@@ -618,11 +678,11 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                         id="windowsAuth"
                         checked={windowsAuth}
                         onChange={(e) => setWindowsAuth(e.target.checked)}
-                        className="rounded border-zinc-300 text-blue-600 focus:ring-blue-500"
+                        className="border-border rounded text-blue-600 focus:ring-blue-500"
                       />
                       <label
                         htmlFor="windowsAuth"
-                        className="cursor-pointer text-xs text-zinc-600 select-none dark:text-zinc-400"
+                        className="text-muted-foreground dark:text-muted-foreground cursor-pointer text-xs select-none"
                       >
                         {t(
                           "connection.windowsAuth",
@@ -637,7 +697,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                       <div>
                         <label
                           htmlFor="connection-user"
-                          className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                          className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
                         >
                           {t("connection.user")}
                         </label>
@@ -655,13 +715,13 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                                   ? "default"
                                   : "username"
                           }
-                          className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                          className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                         />
                       </div>
                       <div>
                         <label
                           htmlFor="connection-password"
-                          className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                          className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
                         >
                           {t("connection.password")}
                         </label>
@@ -671,11 +731,16 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           placeholder={
-                            dbType === "redis"
-                              ? t("connection.optionalPassword")
-                              : "••••••••"
+                            editData
+                              ? t(
+                                  "connection.keepPasswordPlaceholder",
+                                  "Leave blank to keep saved password",
+                                )
+                              : dbType === "redis"
+                                ? t("connection.optionalPassword")
+                                : "••••••••"
                           }
-                          className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                          className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                         />
                       </div>
                     </div>
@@ -686,7 +751,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               <div>
                 <label
                   htmlFor="connection-rawURL"
-                  className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400"
+                  className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
                 >
                   {t("connection.rawUrl")}
                 </label>
@@ -695,7 +760,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   value={rawURL}
                   onChange={(e) => setRawURL(e.target.value)}
                   rows={3}
-                  required
+                  required={!(editData?.save_password && !rawURL.trim())}
                   placeholder={
                     dbType === "postgres"
                       ? "postgres://pebble:pebble@localhost:5432/pebble_test?sslmode=disable"
@@ -711,34 +776,42 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                                 ? "clickhouse://default:password@localhost:9000/default"
                                 : "file:/path/to/database.db"
                   }
-                  className="resize-none border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                  className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground resize-none font-mono text-xs"
                 />
+                {editData && mode === "url" && !rawURL && (
+                  <p className="text-muted-foreground mt-1 text-[11px]">
+                    {t(
+                      "connection.savedUrlPreserved",
+                      "Saved URL and authentication options are kept private. Leave this blank to keep them, or enter a replacement URL.",
+                    )}
+                  </p>
+                )}
               </div>
             )}
 
             {/* Save password option */}
             {dbType !== "sqlite" && (
-              <div className="flex items-start justify-between rounded-xl border border-zinc-200/90 bg-zinc-50/60 p-3 shadow-2xs transition-all hover:bg-zinc-100/60 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:bg-zinc-900/70">
+              <div className="border-border/90 bg-card/60 hover:bg-muted/60 dark:border-border dark:bg-card/40 dark:hover:bg-muted/70 flex items-start justify-between rounded-xl border p-3 shadow-2xs transition-all">
                 <label
                   htmlFor="savePassword"
                   className="flex flex-1 cursor-pointer items-start gap-2.5 pr-3"
                 >
-                  <div className="shrink-0 rounded-lg border border-zinc-200/80 bg-zinc-100 p-1.5 text-zinc-600 shadow-2xs dark:border-zinc-700/80 dark:bg-zinc-800 dark:text-zinc-300">
+                  <div className="border-border/80 bg-muted text-muted-foreground dark:border-border/80 dark:bg-muted dark:text-muted-foreground shrink-0 rounded-lg border p-1.5 shadow-2xs">
                     <Lock className="size-4" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      <span className="text-foreground dark:text-foreground text-xs font-semibold">
                         {t("connection.savePasswordSecurely")}
                       </span>
                       <Badge
                         variant="outline"
-                        className="border-primary/40 h-4 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 uppercase dark:text-emerald-400"
+                        className="border-primary/40 bg-success/10 text-success dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                       >
                         AES-256
                       </Badge>
                     </div>
-                    <p className="mt-0.5 text-[11px] leading-normal text-zinc-500 dark:text-zinc-400">
+                    <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px] leading-normal">
                       {t("connection.savePasswordDesc")}
                     </p>
                   </div>
@@ -749,33 +822,33 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                   onCheckedChange={(checked) =>
                     setSavePassword(Boolean(checked))
                   }
-                  className="data-checked:border-primary data-checked:bg-primary dark:data-checked:border-primary mt-0.5 dark:data-checked:bg-emerald-500"
+                  className="data-checked:border-primary data-checked:bg-primary dark:data-checked:border-primary dark:data-checked:bg-success mt-0.5"
                 />
               </div>
             )}
 
             {/* Read-Only Protection Switch */}
-            <div className="flex items-start justify-between rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 shadow-2xs transition-all hover:bg-amber-500/10 dark:border-amber-500/25 dark:bg-amber-500/10 dark:hover:bg-amber-500/15">
+            <div className="border-warning/30 bg-warning/5 hover:bg-warning/10 dark:border-warning/25 dark:bg-warning/10 dark:hover:bg-warning/15 flex items-start justify-between rounded-xl border p-3 shadow-2xs transition-all">
               <label
                 htmlFor="readOnlyMode"
                 className="flex flex-1 cursor-pointer items-start gap-2.5 pr-3"
               >
-                <div className="shrink-0 rounded-lg border border-amber-500/30 bg-amber-500/10 p-1.5 text-amber-600 shadow-2xs dark:border-amber-500/40 dark:bg-amber-500/20 dark:text-amber-400">
+                <div className="border-warning/30 bg-warning/10 text-warning dark:border-warning/40 dark:bg-warning/20 dark:text-warning shrink-0 rounded-lg border p-1.5 shadow-2xs">
                   <Shield className="size-4" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                    <span className="text-foreground dark:text-foreground text-xs font-semibold">
                       {t("connection.readOnly")}
                     </span>
                     <Badge
                       variant="outline"
-                      className="h-4 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-amber-700 uppercase dark:text-amber-400"
+                      className="border-warning/40 bg-warning/10 text-warning dark:text-warning h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                     >
                       {t("connection.readOnlyBadge")}
                     </Badge>
                   </div>
-                  <p className="mt-0.5 text-[11px] leading-normal text-zinc-500 dark:text-zinc-400">
+                  <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px] leading-normal">
                     {t("connection.readOnlyHelp")}
                   </p>
                 </div>
@@ -784,7 +857,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 id="readOnlyMode"
                 checked={readOnly}
                 onCheckedChange={(checked) => setReadOnly(Boolean(checked))}
-                className="mt-0.5 data-checked:border-amber-600 data-checked:bg-amber-600 dark:data-checked:border-amber-500 dark:data-checked:bg-amber-500"
+                className="data-checked:border-warning data-checked:bg-warning dark:data-checked:border-warning dark:data-checked:bg-warning mt-0.5"
               />
             </div>
 
@@ -793,15 +866,15 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
               <Alert
                 className={`text-xs ${
                   testResult.ok
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-300"
-                    : "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300"
+                    ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30 dark:text-success"
+                    : "border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive"
                 }`}
                 variant={testResult.ok ? "default" : "destructive"}
               >
                 {testResult.ok ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <CheckCircle2 className="text-success dark:text-success h-4 w-4 shrink-0" />
                 ) : (
-                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                  <AlertCircle className="text-destructive dark:text-destructive h-4 w-4 shrink-0" />
                 )}
                 <AlertDescription className="font-mono text-xs break-all">
                   {testResult.message}
@@ -812,9 +885,9 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
             {submitError && (
               <Alert
                 variant="destructive"
-                className="border-rose-200 bg-rose-50 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300"
+                className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive text-xs"
               >
-                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                <AlertCircle className="text-destructive dark:text-destructive h-4 w-4 shrink-0" />
                 <AlertDescription className="font-mono text-xs break-all">
                   {submitError}
                 </AlertDescription>
@@ -823,14 +896,14 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
           </div>
 
           {/* Actions */}
-          <DialogFooter className="m-0 flex shrink-0 items-center justify-between rounded-none border-t border-zinc-200/80 bg-zinc-50/70 px-5 py-3 sm:flex-row sm:justify-between dark:border-zinc-800/80 dark:bg-zinc-900/50">
+          <DialogFooter className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/50 m-0 flex shrink-0 items-center justify-between rounded-none border-t px-5 py-3 sm:flex-row sm:justify-between">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleTest}
               disabled={testing || submitting}
-              className="gap-1.5 border-zinc-200 bg-white text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card/60 dark:text-muted-foreground dark:hover:bg-muted gap-1.5 text-xs font-medium"
             >
               {testing ? (
                 <>
@@ -839,7 +912,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 </>
               ) : (
                 <>
-                  <Radio className="h-3.5 w-3.5 text-zinc-500 dark:text-zinc-400" />
+                  <Radio className="text-muted-foreground dark:text-muted-foreground h-3.5 w-3.5" />
                   {t("connection.testConnection")}
                 </>
               )}
@@ -852,7 +925,7 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 size="sm"
                 onClick={onClose}
                 disabled={submitting}
-                className="text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground text-xs"
               >
                 {t("rowModal.cancel")}
               </Button>
@@ -860,13 +933,15 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
                 type="submit"
                 size="sm"
                 disabled={submitting || testing}
-                className="bg-primary hover:bg-primary/90 gap-1.5 text-xs font-medium text-white dark:bg-emerald-500 dark:hover:bg-emerald-400"
+                className="bg-primary hover:bg-primary/90 dark:bg-success dark:hover:bg-success gap-1.5 text-xs font-medium text-white"
               >
                 {submitting ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     {t("common.loading")}
                   </>
+                ) : editData ? (
+                  t("connection.saveChanges", "Save changes")
                 ) : (
                   t("connection.saveConnection")
                 )}

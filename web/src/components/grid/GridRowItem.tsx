@@ -68,7 +68,15 @@ export const GridRowItem: FC<GridRowItemProps> = memo(
       <TableRow
         data-index={virtualIndex}
         ref={measureElement}
-        className="group transition-colors"
+        className={cn(
+          "group transition-colors",
+          row.original._pb_draft_inserted && "bg-success/70 dark:bg-success/20",
+          row.original._pb_draft_deleted && "line-through opacity-45",
+          row.original._pb_draft_dirty &&
+            !row.original._pb_draft_inserted &&
+            !row.original._pb_draft_deleted &&
+            "bg-warning/50 dark:bg-warning/10",
+        )}
         onContextMenu={(e) => {
           e.preventDefault();
           onRowContextMenu(e, row.original);
@@ -94,7 +102,7 @@ export const GridRowItem: FC<GridRowItemProps> = memo(
                 onCellClick(e, virtualIndex, colId);
               }}
               className={cn(
-                "max-w-sm truncate border-zinc-200/80 px-2.5 py-1 font-mono text-xs whitespace-nowrap text-zinc-800 transition-all outline-none not-last:border-r dark:border-zinc-800/40 dark:text-zinc-200",
+                "border-border/80 text-foreground dark:border-border/40 dark:text-foreground max-w-sm truncate px-2.5 py-1 font-mono text-xs whitespace-nowrap transition-all outline-none not-last:border-r",
                 isCellFocused &&
                   "bg-accent ring-primary relative z-20 font-medium ring-2 ring-inset",
               )}

@@ -20,6 +20,7 @@ type Record struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
 	Type         string    `json:"type"` // postgres | mysql | mongodb | sqlite | redis
+	Mode         string    `json:"mode,omitempty"`
 	Host         string    `json:"host"`
 	Port         string    `json:"port"`
 	User         string    `json:"user"`
@@ -35,6 +36,7 @@ type Record struct {
 // SaveParams specifies optional parameters when saving a connection.
 type SaveParams struct {
 	Environment string
+	Mode        string
 	Filepath    string
 	ReadOnly    bool
 }
@@ -73,6 +75,7 @@ func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePas
 	env := "local"
 	var fp string
 	var ro bool
+	mode := "form"
 
 	for _, arg := range extra {
 		switch v := arg.(type) {
@@ -85,6 +88,9 @@ func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePas
 		case bool:
 			ro = v
 		case SaveParams:
+			if v.Mode != "" {
+				mode = v.Mode
+			}
 			if v.Environment != "" {
 				env = v.Environment
 			}
@@ -99,6 +105,7 @@ func (s *Store) Save(name, dbType, host, port, user, dbName, dsn string, savePas
 		ID:           uuid.New().String(),
 		Name:         name,
 		Type:         dbType,
+		Mode:         mode,
 		Host:         host,
 		Port:         port,
 		User:         user,
@@ -185,6 +192,43 @@ func (s *Store) Delete(id string) error {
 		return fmt.Errorf("storage: connection %q not found", id)
 	}
 	return s.persist(filtered)
+}
+
+// Update replaces a saved profile while retaining its ID and creation time.
+// The caller supplies the already validated DSN; credentials remain encrypted
+// at rest and are never included in the public record.
+func (s *Store) Update(id string, updated Record, dsn string) (Record, error) {
+	updated.ID = id
+	if updated.Environment == "" {
+		updated.Environment = "local"
+	}
+	updated.CreatedAt = time.Now().UTC()
+	if updated.SavePassword {
+		encrypted, err := s.encryptor.Encrypt(dsn)
+		if err != nil {
+			return Record{}, fmt.Errorf("storage: encrypt DSN: %w", err)
+		}
+		updated.EncryptedDSN = encrypted
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	records, err := s.load()
+	if err != nil {
+		return Record{}, err
+	}
+	for index, existing := range records {
+		if existing.ID != id {
+			continue
+		}
+		updated.CreatedAt = existing.CreatedAt
+		records[index] = updated
+		if err := s.persist(records); err != nil {
+			return Record{}, err
+		}
+		return updated, nil
+	}
+	return Record{}, fmt.Errorf("storage: connection %q not found", id)
 }
 
 // load reads and parses the JSON store file. Returns an empty slice if the file

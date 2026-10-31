@@ -72,6 +72,8 @@ import {
   TOAST_DURATION_MS,
 } from "@/constants";
 import { PipelineBuilder } from "./PipelineBuilder";
+import { emitOperationEvent } from "@/lib/operationEvents";
+import { QUERY_EDITOR_MIN_HEIGHT } from "@/constants/workspaceLayout";
 
 export interface ConsoleTab {
   id: string;
@@ -393,22 +395,22 @@ const PlanTreeNode: FC<{
         : depth < 2;
 
   if (!isObject) {
-    let valueColor = "text-emerald-600 dark:text-emerald-400";
+    let valueColor = "text-syntax-string";
     if (typeof value === "number") {
-      valueColor = "text-amber-600 dark:text-amber-400 font-semibold";
+      valueColor = "text-syntax-number font-semibold";
     } else if (typeof value === "boolean") {
       valueColor = "text-sky-600 dark:text-sky-400 font-semibold";
     } else if (value === null) {
-      valueColor = "text-zinc-400 dark:text-zinc-500 italic";
+      valueColor = "text-muted-foreground italic";
     }
 
     return (
       <div
-        className="flex items-baseline gap-2 rounded px-1 py-0.5 font-mono text-xs hover:bg-zinc-100/50 dark:hover:bg-zinc-800/30"
+        className="hover:bg-muted/50 dark:hover:bg-muted/30 flex items-baseline gap-2 rounded px-1 py-0.5 font-mono text-xs"
         style={{ paddingLeft: `${depth * 16}px` }}
       >
         {keyName && (
-          <span className="shrink-0 font-medium text-zinc-600 dark:text-zinc-400">
+          <span className="text-muted-foreground dark:text-muted-foreground shrink-0 font-medium">
             {keyName}:
           </span>
         )}
@@ -432,27 +434,27 @@ const PlanTreeNode: FC<{
     <div className="font-mono text-xs">
       <div
         onClick={() => setIsOpenState(!isOpen)}
-        className="group flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 select-none hover:bg-zinc-100/70 dark:hover:bg-zinc-800/40"
+        className="group hover:bg-muted/70 dark:hover:bg-muted/40 flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 select-none"
         style={{ paddingLeft: `${depth * 16}px` }}
       >
         {isOpen ? (
-          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
+          <ChevronDown className="text-muted-foreground group-hover:text-foreground dark:group-hover:text-foreground h-3.5 w-3.5 shrink-0" />
         ) : (
-          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200" />
+          <ChevronRight className="text-muted-foreground group-hover:text-foreground dark:group-hover:text-foreground h-3.5 w-3.5 shrink-0" />
         )}
 
         {keyName && (
-          <span className="shrink-0 font-medium text-indigo-600 dark:text-indigo-400">
+          <span className="text-primary dark:text-primary shrink-0 font-medium">
             {keyName}:
           </span>
         )}
 
-        <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+        <span className="text-muted-foreground text-[11px]">
           {isArray ? `Array(${count})` : `{${count} fields}`}
         </span>
 
         {!isOpen && !isArray && value && (
-          <span className="ml-1 truncate font-sans text-[11px] text-zinc-500 dark:text-zinc-400">
+          <span className="text-muted-foreground ml-1 truncate font-sans text-[11px]">
             {String(
               value["Node Type"] ||
                 value["type"] ||
@@ -466,7 +468,7 @@ const PlanTreeNode: FC<{
       </div>
 
       {isOpen && (
-        <div className="ml-2 border-l border-zinc-200/60 dark:border-zinc-800/60">
+        <div className="border-border/60 ml-2 border-l">
           {entries.map(([k, v]) => (
             <PlanTreeNode
               key={k}
@@ -987,34 +989,36 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   });
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleMouseDownResizer = useCallback(
-    (e: React.MouseEvent) => {
+  const handlePointerDownResizer = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
       e.preventDefault();
       setIsDragging(true);
       const startY = e.clientY;
       const startHeight = editorHeight;
 
-      const handleMouseMove = (moveEvent: MouseEvent) => {
+      const handlePointerMove = (moveEvent: globalThis.PointerEvent) => {
         const deltaY = moveEvent.clientY - startY;
         const maxAllowedHeight =
           typeof window !== "undefined"
             ? Math.max(160, window.innerHeight - 200)
             : 700;
         const newHeight = Math.min(
-          Math.max(80, startHeight + deltaY),
+          Math.max(QUERY_EDITOR_MIN_HEIGHT, startHeight + deltaY),
           maxAllowedHeight,
         );
         setEditorHeight(newHeight);
       };
 
-      const handleMouseUp = () => {
+      const handlePointerUp = () => {
         setIsDragging(false);
-        window.removeEventListener("mousemove", handleMouseMove);
-        window.removeEventListener("mouseup", handleMouseUp);
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", handlePointerUp);
+        window.removeEventListener("pointercancel", handlePointerUp);
       };
 
-      window.addEventListener("mousemove", handleMouseMove);
-      window.addEventListener("mouseup", handleMouseUp);
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", handlePointerUp);
+      window.addEventListener("pointercancel", handlePointerUp);
     },
     [editorHeight],
   );
@@ -1187,6 +1191,19 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           is_mutation: res.is_mutation,
           row_count: res.rows.length,
         });
+        emitOperationEvent({
+          kind: "query",
+          severity: "success",
+          title: t("operations.querySucceeded", "Query completed"),
+          message: t("operations.queryResultSummary", {
+            rows: res.rows.length,
+            time: exactTime,
+            defaultValue: "{{rows}} rows · {{time}} ms",
+          }),
+          connectionId: connection.id,
+          connectionName: connection.name,
+          tabId: targetTabId,
+        });
       } catch (err: any) {
         const msg = err.message || "Execution error";
         setTabs((prev) =>
@@ -1196,11 +1213,23 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           query: trimmed,
           error: msg,
         });
+        emitOperationEvent({
+          kind: "query",
+          severity: "error",
+          title: t("operations.queryFailed", "Query failed"),
+          message: t(
+            "operations.queryFailureSafe",
+            "The query could not be completed. See the query console for details.",
+          ),
+          connectionId: connection.id,
+          connectionName: connection.name,
+          tabId: targetTabId,
+        });
       } finally {
         setIsRunning(false);
       }
     },
-    [isRunning, activeTab.id, connection.id, saveHistory],
+    [isRunning, activeTab.id, connection.id, connection.name, saveHistory, t],
   );
 
   // Run Query handler (validates LIMIT for SELECT queries)
@@ -1286,17 +1315,38 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     setTimeout(() => setCopiedPlan(false), 2000);
   }, [activeTab.explainResult]);
 
-  // Global shortcut: Cmd/Ctrl + Enter or F5 to run
+  // Shell commands are routed to one workspace tab by ID. This avoids hidden
+  // query consoles reacting to the same global run/history shortcut.
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (((e.metaKey || e.ctrlKey) && e.key === "Enter") || e.key === "F5") {
-        e.preventDefault();
-        handleRun();
-      }
+    const handleWorkspaceQueryCommand = (event: Event) => {
+      const commandEvent = event as CustomEvent<{
+        tabId: string;
+        command: "run" | "explain" | "history";
+      }>;
+      if (commandEvent.detail?.tabId !== activeTab.id) return;
+      if (commandEvent.detail.command === "run") void handleRun();
+      if (commandEvent.detail.command === "explain") void handleExplain();
+      if (commandEvent.detail.command === "history") setIsHistoryOpen(true);
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleRun]);
+    window.addEventListener("pb:query-command", handleWorkspaceQueryCommand);
+    return () =>
+      window.removeEventListener(
+        "pb:query-command",
+        handleWorkspaceQueryCommand,
+      );
+  }, [activeTab.id, handleExplain, handleRun]);
+
+  useEffect(() => {
+    const handleReviewAIDraft = (event: Event) => {
+      const detail = (event as CustomEvent<{ tabId: string; query: string }>)
+        .detail;
+      if (detail?.tabId === workspaceTabId && typeof detail.query === "string")
+        handleQueryChange(detail.query);
+    };
+    window.addEventListener("pb:review-ai-query", handleReviewAIDraft);
+    return () =>
+      window.removeEventListener("pb:review-ai-query", handleReviewAIDraft);
+  }, [workspaceTabId, handleQueryChange]);
 
   // CodeMirror Extensions with Dialect, Keymaps & Dynamic Autocomplete
   const extensions = useMemo(() => {
@@ -1501,9 +1551,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   }, [history, historySearch]);
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-white select-text dark:bg-zinc-950">
+    <div className="bg-background dark:bg-background flex h-full flex-1 flex-col overflow-hidden select-text">
       {/* Top Header */}
-      <div className="flex min-h-9 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-white px-3 py-1 dark:border-zinc-800 dark:bg-zinc-900/40">
+      <div className="border-border bg-background dark:border-border dark:bg-card/40 flex min-h-9 shrink-0 flex-wrap items-center justify-between gap-2 border-b px-3 py-1">
         <div className="flex shrink-0 items-center gap-2">
           {onNavigateToTable && tables.length > 0 && (
             <Button
@@ -1511,7 +1561,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               variant="ghost"
               size="sm"
               onClick={() => onNavigateToTable(tables[0].name)}
-              className="-ml-1 h-7 shrink-0 gap-1 font-mono text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              className="text-muted-foreground hover:text-foreground dark:hover:text-foreground -ml-1 h-7 shrink-0 gap-1 font-mono text-xs"
             >
               <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
               <span className="whitespace-nowrap">
@@ -1521,29 +1571,29 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           )}
 
           <div className="ml-1 flex shrink-0 items-center gap-1.5">
-            <Terminal className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            <span className="font-mono text-xs font-semibold whitespace-nowrap text-zinc-900 dark:text-zinc-100">
+            <Terminal className="text-success dark:text-success h-4 w-4 shrink-0" />
+            <span className="text-foreground font-mono text-xs font-semibold whitespace-nowrap">
               {t("console.title")}
             </span>
           </div>
 
           <Badge
             variant="outline"
-            className="border-primary/30 h-4 shrink-0 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] text-emerald-700 uppercase dark:text-emerald-400"
+            className="border-primary/30 bg-success/10 text-success dark:text-success h-4 shrink-0 px-1.5 py-0 font-mono text-[10px] uppercase"
           >
             {connection.type}
           </Badge>
 
           {isMongo && (
-            <div className="ml-2 flex shrink-0 items-center rounded-md border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-700/60 dark:bg-zinc-800/80">
+            <div className="border-border bg-muted dark:border-border/60 dark:bg-muted/80 ml-2 flex shrink-0 items-center rounded-md border p-0.5">
               <button
                 type="button"
                 onClick={() => setActiveMode("console")}
                 className={cn(
                   "flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 font-mono text-xs transition-all",
                   activeMode === "console"
-                    ? "bg-white font-semibold text-zinc-900 shadow-2xs dark:bg-zinc-900 dark:text-zinc-100"
-                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200",
+                    ? "bg-background text-foreground dark:bg-card dark:text-foreground font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
                 )}
               >
                 <Terminal className="size-3" />
@@ -1555,11 +1605,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                 className={cn(
                   "flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 font-mono text-xs transition-all",
                   activeMode === "pipeline"
-                    ? "bg-white font-semibold text-emerald-600 shadow-2xs dark:bg-zinc-900 dark:text-emerald-400"
-                    : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200",
+                    ? "bg-background text-success dark:bg-card dark:text-success font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
                 )}
               >
-                <Layers className="size-3 text-emerald-500" />
+                <Layers className="text-success size-3" />
                 <span>{t("pipeline.title")}</span>
               </button>
             </div>
@@ -1568,9 +1618,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           {connection.read_only && (
             <Badge
               variant="outline"
-              className="h-4 shrink-0 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 py-0 font-mono text-[10px] text-amber-700 uppercase dark:text-amber-400"
+              className="border-warning/40 bg-warning/10 text-warning dark:text-warning h-4 shrink-0 gap-1 px-1.5 py-0 font-mono text-[10px] uppercase"
             >
-              <ShieldAlert className="h-2.5 w-2.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <ShieldAlert className="text-warning dark:text-warning h-2.5 w-2.5 shrink-0" />
               <span>{t("connection.readOnlyBadge")}</span>
             </Badge>
           )}
@@ -1586,9 +1636,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   variant="outline"
                   size="sm"
                   title={t("console.sampleTemplates")}
-                  className="h-7 shrink-0 gap-1 border-zinc-200 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
+                  className="border-border text-muted-foreground dark:border-border dark:text-foreground h-7 shrink-0 gap-1 font-mono text-xs"
                 >
-                  <Sparkles className="h-3 w-3 shrink-0 text-amber-500" />
+                  <Sparkles className="text-warning h-3 w-3 shrink-0" />
                   <span className="hidden whitespace-nowrap xl:inline">
                     {t("console.sampleTemplates")}
                   </span>
@@ -1616,14 +1666,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             size="sm"
             onClick={() => setIsHistoryOpen(true)}
             title={t("console.history")}
-            className="h-7 shrink-0 gap-1 border-zinc-200 font-mono text-xs text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
+            className="border-border text-muted-foreground dark:border-border dark:text-foreground h-7 shrink-0 gap-1 font-mono text-xs"
           >
             <History className="h-3 w-3 shrink-0" />
             <span className="hidden whitespace-nowrap sm:inline">
               {t("console.history")}
             </span>
             {history.length > 0 && (
-              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-200 px-1 text-center font-sans text-[10px] leading-none font-semibold text-zinc-700 tabular-nums select-none dark:bg-zinc-800 dark:text-zinc-300">
+              <span className="bg-muted text-foreground dark:bg-muted dark:text-foreground inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-center font-sans text-[10px] leading-none font-semibold tabular-nums select-none">
                 {history.length}
               </span>
             )}
@@ -1639,7 +1689,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               setShowLimitWarning(false);
             }}
             title={t("console.clear")}
-            className="inline-flex h-7 shrink-0 items-center justify-center gap-1.5 font-mono text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground inline-flex h-7 shrink-0 items-center justify-center gap-1.5 font-mono text-xs"
           >
             <Trash2 className="size-3.5 shrink-0" />
             <span className="hidden translate-y-px leading-none whitespace-nowrap md:inline">
@@ -1670,7 +1720,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                 <span className="whitespace-nowrap">
                   {t("console.runQuery")}
                 </span>
-                <kbd className="hidden items-center rounded bg-emerald-700/80 px-1.5 py-0.5 font-mono text-[9px] leading-none font-medium tracking-tight text-emerald-100 sm:inline-flex">
+                <kbd className="bg-success/80 text-success hidden items-center rounded px-1.5 py-0.5 font-mono text-[9px] leading-none font-medium tracking-tight sm:inline-flex">
                   {SHORTCUTS.runQuery}
                 </kbd>
               </>
@@ -1686,11 +1736,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             className={cn(
               "h-7 shrink-0 cursor-pointer gap-1.5 border text-xs font-semibold shadow-xs transition-all",
               isAiBarOpen
-                ? "border-purple-500/50 bg-purple-500/15 text-purple-700 dark:border-purple-500/40 dark:bg-purple-500/20 dark:text-purple-300"
-                : "border-purple-500/30 bg-purple-500/5 text-purple-700 hover:bg-purple-500/15 dark:border-purple-500/30 dark:bg-purple-500/10 dark:text-purple-300 dark:hover:bg-purple-500/20",
+                ? "border-primary/50 bg-primary/15 text-primary dark:border-primary/40 dark:bg-primary/20 dark:text-primary"
+                : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 dark:border-primary/30 dark:bg-primary/10 dark:text-primary dark:hover:bg-primary/20",
             )}
           >
-            <Sparkles className="size-3.5 text-purple-600 dark:text-purple-400" />
+            <Sparkles className="text-primary dark:text-primary size-3.5" />
             <span className="whitespace-nowrap">{t("ai.askAi")}</span>
           </Button>
 
@@ -1701,7 +1751,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             onClick={handleExplain}
             disabled={isExplaining || isRunning || !query.trim()}
             title={t("console.explain.tooltip")}
-            className="h-7 shrink-0 cursor-pointer gap-1.5 bg-amber-600 text-xs font-semibold text-white shadow-xs transition-all hover:bg-amber-500"
+            className="bg-warning hover:bg-warning h-7 shrink-0 cursor-pointer gap-1.5 text-xs font-semibold text-white shadow-xs transition-all"
           >
             {isExplaining ? (
               <>
@@ -1749,14 +1799,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             className={cn(
               "h-7 shrink-0 gap-1.5 border text-xs font-semibold transition-all",
               isLibraryOpen
-                ? "border-primary/30 hover:bg-primary/25 bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                : "border-zinc-200 bg-transparent text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800",
+                ? "border-primary/30 hover:bg-primary/25 bg-success/15 text-success dark:text-success"
+                : "border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-muted-foreground dark:hover:bg-muted bg-transparent",
             )}
           >
             <BookOpen
               className={cn(
                 "h-3 w-3 shrink-0",
-                isLibraryOpen ? "text-emerald-600 dark:text-emerald-400" : "",
+                isLibraryOpen ? "text-success dark:text-success" : "",
               )}
             />
             <span className="hidden whitespace-nowrap lg:inline">
@@ -1768,15 +1818,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
       {/* Save toast — bottom-right floating */}
       {saveToast && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-900 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100">
-          <div className="border-primary/30 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border bg-emerald-500/15">
-            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+        <div className="animate-in fade-in slide-in-from-bottom-2 border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-xl">
+          <div className="border-primary/30 bg-success/15 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border">
+            <CheckCircle2 className="text-success dark:text-success h-3.5 w-3.5" />
           </div>
           <div>
-            <p className="text-zinc-900 dark:text-zinc-100">
-              {t("savedQuery.saved")}
-            </p>
-            <p className="text-[10px] font-normal text-zinc-500 dark:text-zinc-400">
+            <p className="text-foreground">{t("savedQuery.saved")}</p>
+            <p className="text-muted-foreground text-[10px] font-normal">
               {t("savedQuery.saveSuccess")}
             </p>
           </div>
@@ -1785,20 +1833,20 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
       {/* AI feedback toast */}
       {aiToast && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border border-purple-500/30 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-900 shadow-xl dark:border-purple-500/40 dark:bg-zinc-900 dark:text-zinc-100">
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-purple-500/30 bg-purple-500/15">
-            <Sparkles className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+        <div className="animate-in fade-in slide-in-from-bottom-2 border-primary/30 bg-background text-foreground dark:border-primary/40 dark:bg-card dark:text-foreground fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-xl">
+          <div className="border-primary/30 bg-primary/15 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border">
+            <Sparkles className="text-primary dark:text-primary h-3.5 w-3.5" />
           </div>
           <div>
-            <p className="text-zinc-900 dark:text-zinc-100">{aiToast}</p>
+            <p className="text-foreground">{aiToast}</p>
           </div>
         </div>
       )}
 
       {/* Read-Only Safety Notice */}
       {connection.read_only && (
-        <div className="flex items-center gap-2 border-b border-amber-500/25 bg-amber-500/10 px-3 py-1 font-mono text-[11px] text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-          <ShieldAlert className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="border-warning/25 bg-warning/10 text-warning dark:bg-warning/15 dark:text-warning flex items-center gap-2 border-b px-3 py-1 font-mono text-[11px]">
+          <ShieldAlert className="text-warning dark:text-warning h-3 w-3 shrink-0" />
           <span>{t("console.readOnlyWarn")}</span>
         </div>
       )}
@@ -1807,10 +1855,10 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       {showLimitWarning && (
         <div
           role="alert"
-          className="animate-in fade-in slide-in-from-top-1 flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-xs text-amber-900 dark:bg-amber-500/15 dark:text-amber-200"
+          className="animate-in fade-in slide-in-from-top-1 border-warning/30 bg-warning/10 text-warning dark:bg-warning/15 dark:text-warning flex flex-wrap items-center justify-between gap-2 border-b px-3 py-1.5 font-mono text-xs"
         >
           <div className="flex min-w-0 items-center gap-2">
-            <AlertTriangle className="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <AlertTriangle className="text-warning dark:text-warning size-3.5 shrink-0" />
             <span className="leading-snug">{t("query.warn.no_limit")}</span>
           </div>
 
@@ -1821,7 +1869,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               size="sm"
               onClick={handleRunAnyway}
               disabled={isRunning}
-              className="h-6 cursor-pointer border-amber-500/40 bg-transparent text-[11px] font-medium text-amber-900 hover:bg-amber-500/20 dark:text-amber-200"
+              className="border-warning/40 text-warning hover:bg-warning/20 dark:text-warning h-6 cursor-pointer bg-transparent text-[11px] font-medium"
             >
               {t("query.warn.run_anyway")}
             </Button>
@@ -1830,14 +1878,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               size="sm"
               onClick={handleAddLimit}
               disabled={isRunning}
-              className="h-6 cursor-pointer bg-amber-600 text-[11px] font-semibold text-white shadow-2xs hover:bg-amber-500"
+              className="bg-warning hover:bg-warning h-6 cursor-pointer text-[11px] font-semibold text-white shadow-2xs"
             >
               {t("query.warn.add_limit")}
             </Button>
             <button
               type="button"
               onClick={() => setShowLimitWarning(false)}
-              className="cursor-pointer rounded p-0.5 text-amber-700/60 transition-colors hover:bg-amber-500/15 hover:text-amber-900 dark:text-amber-400/60 dark:hover:text-amber-100"
+              className="text-warning/60 hover:bg-warning/15 hover:text-warning dark:text-warning/60 dark:hover:text-warning cursor-pointer rounded p-0.5 transition-colors"
               aria-label="Dismiss warning"
             >
               <X className="size-3.5" />
@@ -1850,7 +1898,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       <div className="flex flex-1 overflow-hidden">
         {/* Query Library Panel */}
         {isLibraryOpen && (
-          <div className="w-72 shrink-0 overflow-hidden border-r border-zinc-200 dark:border-zinc-800">
+          <div className="border-border w-72 shrink-0 overflow-hidden border-r">
             <QueryLibraryPanel
               connectionId={connection.id}
               onLoadQuery={(q) => handleQueryChange(q)}
@@ -1862,7 +1910,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         {/* Editor + Results column */}
         <div className="relative flex flex-1 flex-col overflow-hidden">
           {/* Query Console Tab Bar */}
-          <div className="flex h-8.5 shrink-0 items-center justify-between gap-1 overflow-x-auto border-b border-zinc-200 bg-zinc-100/90 px-2 select-none dark:border-zinc-800 dark:bg-zinc-900/90">
+          <div className="border-border bg-muted/90 dark:border-border dark:bg-card/90 flex h-8.5 shrink-0 items-center justify-between gap-1 overflow-x-auto border-b px-2 select-none">
             <div className="no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto py-0.5">
               {tabs.map((tab) => {
                 const isActive =
@@ -1880,8 +1928,8 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                     className={cn(
                       "group relative flex h-7 cursor-pointer items-center gap-1.5 rounded-t border-x border-t px-2.5 font-mono text-xs transition-all",
                       isActive
-                        ? "z-1 border-t-2 border-x-zinc-200 border-t-emerald-500 bg-white font-medium text-zinc-900 shadow-2xs dark:border-x-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
-                        : "border-t-2 border-transparent border-t-transparent bg-transparent text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-200",
+                        ? "border-x-border border-t-success bg-background text-foreground dark:border-x-border dark:bg-background dark:text-foreground z-1 border-t-2 font-medium shadow-2xs"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/50 dark:hover:text-foreground border-t-2 border-transparent border-t-transparent bg-transparent",
                     )}
                     title={isEditing ? undefined : t("console.tab.rename")}
                   >
@@ -1900,7 +1948,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         }}
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
-                        className="border-primary h-4.5 w-24 rounded border bg-zinc-100 px-1 py-0 font-mono text-xs text-zinc-900 outline-hidden dark:bg-zinc-900 dark:text-zinc-100"
+                        className="border-primary bg-muted text-foreground dark:bg-card dark:text-foreground h-4.5 w-24 rounded border px-1 py-0 font-mono text-xs outline-hidden"
                       />
                     ) : (
                       <span className="max-w-32 truncate select-none">
@@ -1913,7 +1961,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       tab.results.rows &&
                       tab.results.rows.length > 0 && (
                         <span
-                          className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+                          className="bg-success h-1.5 w-1.5 shrink-0 rounded-full"
                           title={`${tab.results.rows.length} rows`}
                         />
                       )}
@@ -1923,7 +1971,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       type="button"
                       onClick={(e) => handleRequestCloseTab(e, tab.id)}
                       className={cn(
-                        "ml-0.5 cursor-pointer rounded-sm p-0.5 text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
+                        "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground ml-0.5 cursor-pointer rounded-sm p-0.5 transition-colors",
                         isActive
                           ? "opacity-100"
                           : "opacity-0 group-hover:opacity-100",
@@ -1944,7 +1992,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       <button
                         type="button"
                         onClick={handleNewTab}
-                        className="ml-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                        className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground ml-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors"
                       >
                         <Plus className="size-3.5" />
                       </button>
@@ -1963,12 +2011,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   className={cn(
                     "group relative ml-1.5 flex h-7 cursor-pointer items-center gap-1.5 rounded-t border-x border-t px-2.5 font-mono text-xs transition-all",
                     activeMode === "pipeline"
-                      ? "z-1 border-t-2 border-x-zinc-200 border-t-emerald-500 bg-white font-semibold text-emerald-600 shadow-2xs dark:border-x-zinc-800 dark:bg-zinc-950 dark:text-emerald-400"
-                      : "border-t-2 border-transparent border-t-transparent bg-transparent text-zinc-500 hover:bg-zinc-200/50 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800/50 dark:hover:text-zinc-200",
+                      ? "border-x-border border-t-success bg-background text-success dark:border-x-border dark:bg-background dark:text-success z-1 border-t-2 font-semibold shadow-2xs"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/50 dark:hover:text-foreground border-t-2 border-transparent border-t-transparent bg-transparent",
                   )}
                   title={t("pipeline.title")}
                 >
-                  <Layers className="size-3.5 text-emerald-500" />
+                  <Layers className="text-success size-3.5" />
                   <span className="truncate select-none">
                     {t("pipeline.title")}
                   </span>
@@ -1977,7 +2025,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             </div>
 
             {/* Tab Counter */}
-            <div className="shrink-0 pr-1 font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
+            <div className="text-muted-foreground shrink-0 pr-1 font-mono text-[10px]">
               {tabs.length}/8
             </div>
           </div>
@@ -1994,18 +2042,18 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             <>
               {/* Inline Ask AI Bar (Prompt 3.2.1) */}
               {isAiBarOpen && (
-                <div className="shrink-0 border-b border-purple-500/20 bg-purple-500/5 p-3 dark:border-purple-500/30 dark:bg-purple-950/20">
+                <div className="border-primary/20 bg-primary/5 dark:border-primary/30 dark:bg-primary/20 shrink-0 border-b p-3">
                   <div className="flex items-center justify-between pb-2">
                     <div className="flex items-center gap-2">
-                      <div className="flex size-5 items-center justify-center rounded-md bg-purple-600 text-white shadow-2xs">
+                      <div className="bg-primary flex size-5 items-center justify-center rounded-md text-white shadow-2xs">
                         <Sparkles className="size-3" />
                       </div>
-                      <span className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                      <span className="text-primary dark:text-primary text-xs font-semibold">
                         {t("ai.askAi")}
                       </span>
                       <Badge
                         variant="outline"
-                        className="h-4 border-purple-500/40 bg-purple-500/10 px-1 font-mono text-[9px] font-semibold text-purple-700 uppercase dark:text-purple-300"
+                        className="border-primary/40 bg-primary/10 text-primary dark:text-primary h-4 px-1 font-mono text-[9px] font-semibold uppercase"
                       >
                         {connection.type}
                       </Badge>
@@ -2019,7 +2067,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         setAiErrorNotice(null);
                       }}
                       title={t("ai.closeAiBar")}
-                      className="size-5 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                      className="text-muted-foreground hover:text-foreground dark:hover:text-foreground size-5"
                     >
                       <X className="size-3.5" />
                     </Button>
@@ -2029,11 +2077,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   {aiErrorNotice && (
                     <Alert
                       variant="destructive"
-                      className="mb-2.5 border-rose-300 bg-rose-50/90 py-1.5 text-xs text-rose-800 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-300"
+                      className="border-destructive/30 bg-destructive/90 text-destructive dark:border-destructive/60 dark:bg-destructive/50 dark:text-destructive mb-2.5 py-1.5 text-xs"
                     >
                       <div className="flex w-full items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 overflow-hidden">
-                          <AlertCircle className="size-3.5 shrink-0 text-rose-600 dark:text-rose-400" />
+                          <AlertCircle className="text-destructive dark:text-destructive size-3.5 shrink-0" />
                           <AlertDescription className="text-xs break-all">
                             {aiErrorNotice}
                           </AlertDescription>
@@ -2044,7 +2092,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                             size="sm"
                             variant="outline"
                             onClick={onOpenAISettings}
-                            className="h-6 shrink-0 gap-1 border-rose-300 bg-white text-[11px] font-medium text-rose-700 shadow-2xs hover:bg-rose-100 dark:border-rose-800 dark:bg-zinc-900 dark:text-rose-300 dark:hover:bg-zinc-800"
+                            className="border-destructive/30 bg-background text-destructive hover:bg-destructive/10 dark:border-destructive dark:bg-card dark:text-destructive dark:hover:bg-muted h-6 shrink-0 gap-1 text-[11px] font-medium shadow-2xs"
                           >
                             <Sparkles className="size-3" />
                             <span>{t("ai.openAiSettings")}</span>
@@ -2069,13 +2117,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         }}
                         placeholder={t("ai.askAiPlaceholder")}
                         disabled={isGeneratingAi}
-                        className="h-8 border-purple-200 bg-white pr-8 text-xs text-zinc-900 shadow-2xs placeholder:text-zinc-400 dark:border-purple-900/60 dark:bg-zinc-900/80 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                        className="border-primary/30 bg-background text-foreground placeholder:text-muted-foreground dark:border-primary/60 dark:bg-card/80 dark:text-foreground dark:placeholder:text-muted-foreground h-8 pr-8 text-xs shadow-2xs"
                       />
                       {aiPrompt && (
                         <button
                           type="button"
                           onClick={() => setAiPrompt("")}
-                          className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                          className="text-muted-foreground hover:text-muted-foreground dark:hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer"
                         >
                           <X className="size-3" />
                         </button>
@@ -2086,7 +2134,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       size="sm"
                       onClick={() => handleGenerateQuery()}
                       disabled={isGeneratingAi || !aiPrompt.trim()}
-                      className="h-8 gap-1.5 bg-purple-600 text-xs font-semibold text-white shadow-2xs hover:bg-purple-500 disabled:opacity-50 dark:bg-purple-600 dark:hover:bg-purple-500"
+                      className="bg-primary hover:bg-primary dark:bg-primary dark:hover:bg-primary h-8 gap-1.5 text-xs font-semibold text-white shadow-2xs disabled:opacity-50"
                     >
                       {isGeneratingAi ? (
                         <>
@@ -2103,8 +2151,8 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   </div>
 
                   {/* Quick Suggestion Chips */}
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-400">
-                    <span className="font-medium text-zinc-500 dark:text-zinc-400">
+                  <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                    <span className="text-muted-foreground font-medium">
                       💡
                     </span>
                     {(isMongo
@@ -2126,7 +2174,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                           setAiPrompt(chip);
                           handleGenerateQuery(chip);
                         }}
-                        className="cursor-pointer rounded-md border border-purple-500/20 bg-white/70 px-2 py-0.5 text-[11px] text-purple-700 transition-colors hover:border-purple-500/40 hover:bg-purple-500/10 dark:border-purple-500/30 dark:bg-zinc-900/60 dark:text-purple-300 dark:hover:bg-purple-500/20"
+                        className="border-primary/20 bg-background/70 text-primary hover:border-primary/40 hover:bg-primary/10 dark:border-primary/30 dark:bg-card/60 dark:text-primary dark:hover:bg-primary/20 cursor-pointer rounded-md border px-2 py-0.5 text-[11px] transition-colors"
                       >
                         {chip}
                       </button>
@@ -2135,9 +2183,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
                   {/* Generated Result Preview Card */}
                   {aiGeneratedResult && (
-                    <div className="mt-3 rounded-lg border border-purple-500/30 bg-white p-3 shadow-xs dark:border-purple-500/30 dark:bg-zinc-900/90">
+                    <div className="border-primary/30 bg-background dark:border-primary/30 dark:bg-card/90 mt-3 rounded-lg border p-3 shadow-xs">
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-[11px] font-semibold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
+                        <span className="text-foreground dark:text-foreground text-[11px] font-semibold tracking-wider uppercase">
                           {t("ai.explanationTitle")}
                         </span>
                         <div className="flex items-center gap-1.5">
@@ -2149,7 +2197,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                               handleQueryChange(aiGeneratedResult.query);
                               showAiToast(t("ai.fixApplied"));
                             }}
-                            className="h-6 gap-1 border-purple-500/30 bg-purple-500/10 text-[11px] font-medium text-purple-700 hover:bg-purple-500/20 dark:text-purple-300"
+                            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 dark:text-primary h-6 gap-1 text-[11px] font-medium"
                           >
                             <Check className="size-3" />
                             <span>{t("ai.replace")}</span>
@@ -2165,7 +2213,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                               handleQueryChange(newQ);
                               showAiToast(t("ai.fixApplied"));
                             }}
-                            className="h-6 gap-1 border-zinc-200 text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                            className="border-border text-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted h-6 gap-1 text-[11px] font-medium"
                           >
                             <Plus className="size-3" />
                             <span>{t("ai.insert")}</span>
@@ -2177,7 +2225,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                               handleQueryChange(aiGeneratedResult.query);
                               await executeQuery(aiGeneratedResult.query);
                             }}
-                            className="h-6 gap-1 bg-purple-600 text-[11px] font-medium text-white hover:bg-purple-500"
+                            className="bg-primary hover:bg-primary h-6 gap-1 text-[11px] font-medium text-white"
                           >
                             <Play className="size-2.5 fill-current" />
                             <span>{t("ai.run")}</span>
@@ -2186,12 +2234,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       </div>
 
                       {aiGeneratedResult.explanation && (
-                        <p className="mb-2 text-xs text-zinc-600 dark:text-zinc-300">
+                        <p className="text-muted-foreground dark:text-foreground mb-2 text-xs">
                           {aiGeneratedResult.explanation}
                         </p>
                       )}
 
-                      <div className="rounded-md border border-zinc-200/80 bg-zinc-50 p-2 font-mono text-xs text-zinc-800 select-all dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-200">
+                      <div className="border-border/80 bg-card text-foreground dark:border-border dark:bg-background dark:text-foreground rounded-md border p-2 font-mono text-xs select-all">
                         <code>{aiGeneratedResult.query}</code>
                       </div>
                     </div>
@@ -2203,7 +2251,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   height: isResultsCollapsed ? "100%" : `${editorHeight}px`,
                 }}
                 className={cn(
-                  "shrink-0 overflow-hidden border-b border-zinc-200 bg-zinc-50/50 transition-all duration-75 dark:border-zinc-800 dark:bg-zinc-950/80",
+                  "border-border bg-card/50 dark:border-border dark:bg-background/80 shrink-0 overflow-hidden border-b transition-all duration-75",
                   isResultsCollapsed && "flex-1 border-b-0",
                 )}
               >
@@ -2232,35 +2280,75 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               {/* Drag Resizer Handle Bar (Visible when not collapsed) */}
               {!isResultsCollapsed && (
                 <div
-                  onMouseDown={handleMouseDownResizer}
+                  onPointerDown={handlePointerDownResizer}
+                  role="separator"
+                  aria-label={t(
+                    "console.resizePanels",
+                    "Resize query editor and results",
+                  )}
+                  aria-orientation="horizontal"
+                  aria-valuemin={QUERY_EDITOR_MIN_HEIGHT}
+                  aria-valuemax={
+                    typeof window === "undefined"
+                      ? 700
+                      : Math.max(160, window.innerHeight - 200)
+                  }
+                  aria-valuenow={editorHeight}
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (
+                      !["ArrowUp", "ArrowDown", "Home", "End"].includes(
+                        event.key,
+                      )
+                    )
+                      return;
+                    event.preventDefault();
+                    const maximum =
+                      typeof window === "undefined"
+                        ? 700
+                        : Math.max(160, window.innerHeight - 200);
+                    if (event.key === "Home")
+                      setEditorHeight(QUERY_EDITOR_MIN_HEIGHT);
+                    else if (event.key === "End") setEditorHeight(maximum);
+                    else
+                      setEditorHeight((height) =>
+                        Math.min(
+                          maximum,
+                          Math.max(
+                            QUERY_EDITOR_MIN_HEIGHT,
+                            height + (event.key === "ArrowDown" ? 16 : -16),
+                          ),
+                        ),
+                      );
+                  }}
                   className={cn(
-                    "group hover:bg-primary/40 dark:hover:bg-primary/50 relative z-10 flex h-1 w-full shrink-0 cursor-row-resize items-center justify-center bg-zinc-200/80 transition-colors select-none dark:bg-zinc-800/80",
+                    "group hover:bg-primary/40 dark:hover:bg-primary/50 bg-muted/80 dark:bg-muted/80 relative z-10 flex h-1 w-full shrink-0 cursor-row-resize items-center justify-center transition-colors select-none",
                     isDragging && "bg-primary/60",
                   )}
                   title="Drag up or down to resize editor and results panel"
                 >
-                  <div className="group-hover:bg-primary/90 h-1 w-10 rounded-full bg-zinc-400/80 transition-colors dark:bg-zinc-600/80" />
+                  <div className="group-hover:bg-primary/90 bg-muted/80 dark:bg-muted/80 h-1 w-10 rounded-full transition-colors" />
                 </div>
               )}
 
               {/* Execution Metrics & Results Status Bar */}
-              <div className="flex h-8 shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-100/70 px-3 font-mono text-xs text-zinc-600 select-none dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+              <div className="border-border bg-muted/70 text-muted-foreground dark:border-border dark:bg-card/60 dark:text-muted-foreground flex h-8 shrink-0 items-center justify-between border-b px-3 font-mono text-xs select-none">
                 <div className="flex items-center gap-3">
                   {/* Tab Selector: Results vs Execution Plan */}
-                  <div className="flex items-center gap-0.5 rounded-md bg-zinc-200/70 p-0.5 dark:bg-zinc-800/80">
+                  <div className="bg-muted/70 dark:bg-muted/80 flex items-center gap-0.5 rounded-md p-0.5">
                     <button
                       type="button"
                       onClick={() => setActiveResultsTab("results")}
                       className={cn(
                         "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-0.5 font-sans text-[11px] font-medium transition-colors",
                         activeResultsTab === "results"
-                          ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100"
-                          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200",
+                          ? "bg-background text-foreground dark:bg-muted dark:text-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
                       )}
                     >
                       <span>{t("console.explain.results_tab", "Results")}</span>
                       {result && (
-                        <span className="py-0.2 rounded bg-zinc-100 px-1 font-mono text-[9px] text-zinc-700 dark:bg-zinc-800/90 dark:text-zinc-300">
+                        <span className="py-0.2 bg-muted text-foreground dark:bg-muted/90 dark:text-foreground rounded px-1 font-mono text-[9px]">
                           {result.is_mutation
                             ? result.rows_affected
                             : result.rows.length}
@@ -2274,14 +2362,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       className={cn(
                         "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-0.5 font-sans text-[11px] font-medium transition-colors",
                         activeResultsTab === "plan"
-                          ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100"
-                          : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200",
+                          ? "bg-background text-foreground dark:bg-muted dark:text-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
                       )}
                     >
-                      <FileSearch className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                      <FileSearch className="text-warning dark:text-warning h-3 w-3" />
                       <span>{t("console.explain.plan", "Execution Plan")}</span>
                       {activeTab.explainResult && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        <span className="bg-warning h-1.5 w-1.5 rounded-full" />
                       )}
                     </button>
                   </div>
@@ -2291,14 +2379,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       {result && (
                         <>
                           <div
-                            className="flex cursor-help items-center gap-1 font-semibold text-emerald-700 dark:text-emerald-400"
+                            className="text-success dark:text-success flex cursor-help items-center gap-1 font-semibold"
                             title={
                               result.round_trip_ms
                                 ? `Database query: ${formatLatency(result.execution_time_ms)}ms | Network round-trip: ${formatLatency(result.round_trip_ms)}ms`
                                 : `Database query: ${formatLatency(result.execution_time_ms)}ms`
                             }
                           >
-                            <Zap className="h-3 w-3 fill-emerald-500/20 text-emerald-600 dark:text-emerald-400" />
+                            <Zap className="fill-success/20 text-success dark:text-success h-3 w-3" />
                             <span>
                               {t("console.latency", {
                                 ms: formatLatency(result.execution_time_ms),
@@ -2306,12 +2394,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                             </span>
                           </div>
 
-                          <span className="text-zinc-300 dark:text-zinc-700">
+                          <span className="text-muted-foreground dark:text-foreground">
                             |
                           </span>
 
                           {result.is_mutation ? (
-                            <span className="font-medium text-amber-700 dark:text-amber-400">
+                            <span className="text-warning dark:text-warning font-medium">
                               {t("console.rowsAffected", {
                                 count: result.rows_affected,
                               })}
@@ -2326,7 +2414,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
                           {result.columns && result.columns.length > 0 && (
                             <>
-                              <span className="text-zinc-300 dark:text-zinc-700">
+                              <span className="text-muted-foreground dark:text-foreground">
                                 |
                               </span>
                               <span>{result.columns.length} columns</span>
@@ -2336,7 +2424,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       )}
 
                       {!result && !error && !isRunning && (
-                        <span className="text-[11px] text-zinc-400 italic dark:text-zinc-500">
+                        <span className="text-muted-foreground dark:text-muted-foreground text-[11px] italic">
                           {t("console.emptyPrompt")}
                         </span>
                       )}
@@ -2346,18 +2434,18 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                     <>
                       {activeTab.explainResult && (
                         <>
-                          <div className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300">
-                            <Clock className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                          <div className="text-foreground flex items-center gap-1.5">
+                            <Clock className="text-warning dark:text-warning h-3 w-3" />
                             <span>
                               {activeTab.explainResult.execution_time_ms
                                 ? `${formatLatency(activeTab.explainResult.execution_time_ms)} ms`
                                 : "—"}
                             </span>
                           </div>
-                          <span className="text-zinc-300 dark:text-zinc-700">
+                          <span className="text-muted-foreground dark:text-foreground">
                             |
                           </span>
-                          <span className="text-zinc-500 dark:text-zinc-400">
+                          <span className="text-muted-foreground">
                             {activeTab.explainResult.format}
                           </span>
                         </>
@@ -2373,13 +2461,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       <>
                         {/* Quick Filter across results */}
                         <div className="relative flex items-center">
-                          <Search className="pointer-events-none absolute left-2 h-3 w-3 text-zinc-400" />
+                          <Search className="text-muted-foreground pointer-events-none absolute left-2 h-3 w-3" />
                           <Input
                             type="text"
                             value={resultFilter}
                             onChange={(e) => setResultFilter(e.target.value)}
                             placeholder={t("console.rowsFilter")}
-                            className="h-6 w-40 border-zinc-200 bg-white pr-2 pl-6 font-mono text-[11px] dark:border-zinc-800 dark:bg-zinc-950"
+                            className="border-border bg-background dark:border-border dark:bg-background h-6 w-40 pr-2 pl-6 font-mono text-[11px]"
                           />
                         </div>
 
@@ -2389,9 +2477,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                           variant="outline"
                           size="sm"
                           onClick={handleExportCSV}
-                          className="h-6 gap-1 border-zinc-200 px-2 font-mono text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
+                          className="border-border text-muted-foreground dark:border-border dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
                         >
-                          <FileSpreadsheet className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                          <FileSpreadsheet className="text-success dark:text-success h-3 w-3" />
                           <span>{t("console.exportResults")}</span>
                         </Button>
                       </>
@@ -2408,7 +2496,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                           onClick={() =>
                             setIsResultsCollapsed(!isResultsCollapsed)
                           }
-                          className="h-6 w-6 cursor-pointer text-zinc-500 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                          className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground h-6 w-6 cursor-pointer"
                         >
                           {isResultsCollapsed ? (
                             <ChevronUp className="h-3.5 w-3.5" />
@@ -2436,7 +2524,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       {error && (
                         <Alert
                           variant="destructive"
-                          className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
+                          className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 dark:text-destructive"
                         >
                           <AlertCircle className="h-4 w-4 shrink-0" />
                           <div className="flex-1 space-y-2">
@@ -2450,7 +2538,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                 variant="outline"
                                 onClick={handleFixWithAi}
                                 disabled={isFixingWithAi}
-                                className="h-6.5 gap-1.5 border-rose-300 bg-rose-100/70 text-[11px] font-semibold text-rose-900 shadow-2xs hover:bg-rose-200 dark:border-rose-800 dark:bg-rose-900/40 dark:text-rose-200 dark:hover:bg-rose-900/70"
+                                className="border-destructive/30 bg-destructive/70 text-destructive hover:bg-destructive/10 dark:border-destructive dark:bg-destructive/40 dark:text-destructive dark:hover:bg-destructive/70 h-6.5 gap-1.5 text-[11px] font-semibold shadow-2xs"
                               >
                                 {isFixingWithAi ? (
                                   <>
@@ -2459,7 +2547,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                   </>
                                 ) : (
                                   <>
-                                    <Sparkles className="size-3 text-purple-600 dark:text-purple-400" />
+                                    <Sparkles className="text-primary dark:text-primary size-3" />
                                     <span>{t("ai.fixWithAi")}</span>
                                   </>
                                 )}
@@ -2468,11 +2556,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
                             {/* Render AI Fix Result */}
                             {aiFixedResult && (
-                              <div className="mt-2 rounded-lg border border-purple-500/30 bg-white p-3 text-zinc-900 shadow-xs dark:border-purple-500/30 dark:bg-zinc-900 dark:text-zinc-100">
+                              <div className="border-primary/30 bg-background text-foreground dark:border-primary/30 dark:bg-card dark:text-foreground mt-2 rounded-lg border p-3 shadow-xs">
                                 <div className="mb-1.5 flex items-center justify-between">
                                   <div className="flex items-center gap-1.5">
-                                    <Sparkles className="size-3.5 text-purple-600 dark:text-purple-400" />
-                                    <span className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                                    <Sparkles className="text-primary dark:text-primary size-3.5" />
+                                    <span className="text-primary dark:text-primary text-xs font-semibold">
                                       {t("ai.fixWithAi")}
                                     </span>
                                   </div>
@@ -2485,7 +2573,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                         handleQueryChange(aiFixedResult.query);
                                         showAiToast(t("ai.fixApplied"));
                                       }}
-                                      className="h-6 gap-1 border-purple-500/30 bg-purple-500/10 text-[11px] font-medium text-purple-700 hover:bg-purple-500/20 dark:text-purple-300"
+                                      className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 dark:text-primary h-6 gap-1 text-[11px] font-medium"
                                     >
                                       <Check className="size-3" />
                                       <span>{t("ai.applyFix")}</span>
@@ -2497,7 +2585,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                         handleQueryChange(aiFixedResult.query);
                                         await executeQuery(aiFixedResult.query);
                                       }}
-                                      className="h-6 gap-1 bg-purple-600 text-[11px] font-medium text-white hover:bg-purple-500"
+                                      className="bg-primary hover:bg-primary h-6 gap-1 text-[11px] font-medium text-white"
                                     >
                                       <Play className="size-2.5 fill-current" />
                                       <span>{t("ai.run")}</span>
@@ -2505,11 +2593,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                   </div>
                                 </div>
                                 {aiFixedResult.explanation && (
-                                  <p className="mb-2 text-xs text-zinc-600 dark:text-zinc-300">
+                                  <p className="text-muted-foreground dark:text-foreground mb-2 text-xs">
                                     {aiFixedResult.explanation}
                                   </p>
                                 )}
-                                <div className="rounded-md border border-zinc-200 bg-zinc-50 p-2 font-mono text-xs select-all dark:border-zinc-800 dark:bg-zinc-950">
+                                <div className="border-border bg-card dark:border-border dark:bg-background rounded-md border p-2 font-mono text-xs select-all">
                                   <code>{aiFixedResult.query}</code>
                                 </div>
                               </div>
@@ -2520,8 +2608,8 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
                       {/* Mutation Success Notice */}
                       {result?.is_mutation && !error && (
-                        <Alert className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <Alert className="border-success/30 bg-success/10 text-success dark:border-success dark:bg-success/40 dark:text-success">
+                          <CheckCircle2 className="text-success dark:text-success h-4 w-4" />
                           <AlertDescription className="font-mono text-xs">
                             {t("console.mutationSuccess")} (
                             {t("console.rowsAffected", {
@@ -2538,18 +2626,18 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         displayedRows.length > 0 && (
                           <div
                             ref={resultsContainerRef}
-                            className="max-h-[calc(100vh-380px)] min-h-40 overflow-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/40"
+                            className="border-border bg-background dark:border-border dark:bg-card/40 max-h-[calc(100vh-380px)] min-h-40 overflow-auto rounded-lg border"
                           >
                             <Table className="studio-data-table w-full border-collapse text-left">
-                              <TableHeader className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
+                              <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
                                 <TableRow>
-                                  <TableHead className="h-7 w-12 text-center font-mono text-xs text-zinc-400">
+                                  <TableHead className="text-muted-foreground h-7 w-12 text-center font-mono text-xs">
                                     #
                                   </TableHead>
                                   {result.columns.map((col) => (
                                     <TableHead
                                       key={col}
-                                      className="border-r border-zinc-200/50 px-2.5 py-1 font-mono text-xs font-semibold text-zinc-700 last:border-r-0 dark:border-zinc-800/50 dark:text-zinc-300"
+                                      className="border-border/50 text-foreground dark:border-border/50 dark:text-foreground border-r px-2.5 py-1 font-mono text-xs font-semibold last:border-r-0"
                                     >
                                       {col}
                                     </TableHead>
@@ -2585,9 +2673,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                             key={idx}
                                             data-index={virtualRow.index}
                                             ref={rowVirtualizer.measureElement}
-                                            className="border-b border-zinc-100 transition-colors hover:bg-zinc-50/80 dark:border-zinc-800/60 dark:hover:bg-zinc-800/40"
+                                            className="border-border hover:bg-card/80 dark:border-border/60 dark:hover:bg-muted/40 border-b transition-colors"
                                           >
-                                            <TableCell className="bg-zinc-50/30 text-center font-mono text-xs text-zinc-400 select-none dark:bg-zinc-900/30">
+                                            <TableCell className="bg-card/30 text-muted-foreground dark:bg-card/30 text-center font-mono text-xs select-none">
                                               {idx + 1}
                                             </TableCell>
                                             {result.columns.map((col) => {
@@ -2607,11 +2695,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                                     )
                                                   }
                                                   title="Click to copy value"
-                                                  className="group relative max-w-xs cursor-pointer truncate border-r border-zinc-100 px-2.5 py-1 font-mono text-xs last:border-r-0 dark:border-zinc-800/60"
+                                                  className="group border-border dark:border-border/60 relative max-w-xs cursor-pointer truncate border-r px-2.5 py-1 font-mono text-xs last:border-r-0"
                                                 >
                                                   {val === null ||
                                                   val === undefined ? (
-                                                    <span className="text-zinc-400 italic dark:text-zinc-600">
+                                                    <span className="text-muted-foreground dark:text-muted-foreground italic">
                                                       NULL
                                                     </span>
                                                   ) : typeof val ===
@@ -2621,19 +2709,19 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                                       className={cn(
                                                         "px-1 py-0 font-mono text-[10px] font-medium",
                                                         val
-                                                          ? "border-primary/30 bg-emerald-500/10 text-emerald-600"
-                                                          : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+                                                          ? "border-primary/30 bg-success/10 text-success"
+                                                          : "bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground",
                                                       )}
                                                     >
                                                       {String(val)}
                                                     </Badge>
                                                   ) : typeof val ===
                                                     "object" ? (
-                                                    <span className="text-amber-700 dark:text-amber-300">
+                                                    <span className="text-warning dark:text-warning">
                                                       {JSON.stringify(val)}
                                                     </span>
                                                   ) : (
-                                                    <span className="text-zinc-900 dark:text-zinc-100">
+                                                    <span className="text-foreground">
                                                       {String(val)}
                                                     </span>
                                                   )}
@@ -2685,11 +2773,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         !result.is_mutation &&
                         !error && (
                           <div className="flex h-48 flex-col items-center justify-center p-6 text-center">
-                            <CheckCircle2 className="mb-2 h-8 w-8 text-zinc-400 opacity-50" />
-                            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                            <CheckCircle2 className="text-muted-foreground mb-2 h-8 w-8 opacity-50" />
+                            <h3 className="text-foreground text-sm font-semibold">
                               {t("console.noResults")}
                             </h3>
-                            <p className="mt-1 text-xs text-zinc-500">
+                            <p className="text-muted-foreground mt-1 text-xs">
                               Query returned 0 rows in{" "}
                               {formatLatency(result.execution_time_ms)}ms.
                             </p>
@@ -2703,7 +2791,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       {error && (
                         <Alert
                           variant="destructive"
-                          className="border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300"
+                          className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 dark:text-destructive"
                         >
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
@@ -2717,11 +2805,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                           {/* Metric Summary Cards */}
                           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                             {/* Estimated Rows */}
-                            <div className="rounded-lg border border-zinc-200 bg-white/70 p-2.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/60">
-                              <div className="font-mono text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                            <div className="border-border bg-background/70 dark:border-border dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
+                              <div className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                                 {t("console.explain.estimated_rows")}
                               </div>
-                              <div className="mt-1 font-mono text-base font-bold text-zinc-900 dark:text-zinc-100">
+                              <div className="text-foreground mt-1 font-mono text-base font-bold">
                                 {activeTab.explainResult.estimated_rows !==
                                 undefined
                                   ? activeTab.explainResult.estimated_rows.toLocaleString()
@@ -2730,11 +2818,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                             </div>
 
                             {/* Actual Rows */}
-                            <div className="rounded-lg border border-zinc-200 bg-white/70 p-2.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/60">
-                              <div className="font-mono text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                            <div className="border-border bg-background/70 dark:border-border dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
+                              <div className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                                 {t("console.explain.actual_rows")}
                               </div>
-                              <div className="mt-1 font-mono text-base font-bold text-zinc-900 dark:text-zinc-100">
+                              <div className="text-foreground mt-1 font-mono text-base font-bold">
                                 {activeTab.explainResult.actual_rows !==
                                 undefined
                                   ? activeTab.explainResult.actual_rows.toLocaleString()
@@ -2743,11 +2831,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                             </div>
 
                             {/* Execution Time */}
-                            <div className="rounded-lg border border-zinc-200 bg-white/70 p-2.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/60">
-                              <div className="font-mono text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                            <div className="border-border bg-background/70 dark:border-border dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
+                              <div className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                                 {t("console.explain.execution_time")}
                               </div>
-                              <div className="mt-1 font-mono text-base font-bold text-emerald-600 dark:text-emerald-400">
+                              <div className="text-success dark:text-success mt-1 font-mono text-base font-bold">
                                 {activeTab.explainResult.execution_time_ms
                                   ? `${formatLatency(activeTab.explainResult.execution_time_ms)} ms`
                                   : "—"}
@@ -2755,15 +2843,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                             </div>
 
                             {/* Index Used */}
-                            <div className="rounded-lg border border-zinc-200 bg-white/70 p-2.5 shadow-xs dark:border-zinc-800 dark:bg-zinc-900/60">
-                              <div className="font-mono text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+                            <div className="border-border bg-background/70 dark:border-border dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
+                              <div className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                                 {t("console.explain.index_used")}
                               </div>
                               <div className="mt-1 flex items-center gap-1.5 truncate">
                                 {activeTab.explainResult.index_used ? (
                                   <Badge
                                     variant="outline"
-                                    className="border-primary/30 max-w-full truncate bg-emerald-500/10 font-mono text-[11px] font-semibold text-emerald-600 dark:text-emerald-400"
+                                    className="border-primary/30 bg-success/10 text-success dark:text-success max-w-full truncate font-mono text-[11px] font-semibold"
                                     title={activeTab.explainResult.index_used}
                                   >
                                     {activeTab.explainResult.index_used}
@@ -2771,7 +2859,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                 ) : (
                                   <Badge
                                     variant="outline"
-                                    className="truncate border-amber-500/30 bg-amber-500/10 font-mono text-[11px] font-medium text-amber-600 dark:text-amber-400"
+                                    className="border-warning/30 bg-warning/10 text-warning dark:text-warning truncate font-mono text-[11px] font-medium"
                                   >
                                     {t("console.explain.no_index")}
                                   </Badge>
@@ -2781,16 +2869,16 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                           </div>
 
                           {/* Execution Plan Tree Container */}
-                          <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xs dark:border-zinc-800 dark:bg-zinc-950/60">
-                            <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+                          <div className="border-border bg-background dark:border-border dark:bg-background/60 overflow-hidden rounded-lg border shadow-xs">
+                            <div className="border-border bg-card dark:border-border dark:bg-card flex items-center justify-between border-b px-3 py-2">
                               <div className="flex items-center gap-2">
-                                <FileSearch className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                                <span className="font-mono text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                <FileSearch className="text-warning dark:text-warning h-3.5 w-3.5" />
+                                <span className="text-foreground font-mono text-xs font-semibold">
                                   {t("console.explain.plan")}
                                 </span>
                                 <Badge
                                   variant="secondary"
-                                  className="bg-zinc-200 px-1.5 py-0 font-mono text-[10px] text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-300"
+                                  className="bg-muted text-muted-foreground dark:bg-muted dark:text-foreground px-1.5 py-0 font-mono text-[10px] uppercase"
                                 >
                                   {activeTab.explainResult.format}
                                 </Badge>
@@ -2802,7 +2890,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setPlanExpandAll(true)}
-                                  className="h-6 border-zinc-200 px-2 font-mono text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400"
+                                  className="border-border text-muted-foreground dark:border-border dark:text-muted-foreground h-6 px-2 font-mono text-[11px]"
                                 >
                                   {t("console.explain.expand_all")}
                                 </Button>
@@ -2811,7 +2899,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setPlanExpandAll(false)}
-                                  className="h-6 border-zinc-200 px-2 font-mono text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400"
+                                  className="border-border text-muted-foreground dark:border-border dark:text-muted-foreground h-6 px-2 font-mono text-[11px]"
                                 >
                                   {t("console.explain.collapse_all")}
                                 </Button>
@@ -2821,7 +2909,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                   size="sm"
                                   onClick={handleOptimizeWithAi}
                                   disabled={isOptimizingWithAi}
-                                  className="h-6 gap-1 border-purple-500/40 bg-purple-500/10 px-2 font-mono text-[11px] text-purple-700 hover:bg-purple-500/20 dark:text-purple-300"
+                                  className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 dark:text-primary h-6 gap-1 px-2 font-mono text-[11px]"
                                 >
                                   {isOptimizingWithAi ? (
                                     <>
@@ -2830,7 +2918,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                     </>
                                   ) : (
                                     <>
-                                      <Sparkles className="size-3 text-purple-600 dark:text-purple-400" />
+                                      <Sparkles className="text-primary dark:text-primary size-3" />
                                       <span>{t("ai.optimizeWithAi")}</span>
                                     </>
                                   )}
@@ -2840,11 +2928,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                   variant="outline"
                                   size="sm"
                                   onClick={handleCopyPlan}
-                                  className="h-6 gap-1 border-zinc-200 px-2 font-mono text-[11px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-300"
+                                  className="border-border text-muted-foreground dark:border-border dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
                                 >
                                   {copiedPlan ? (
                                     <>
-                                      <Check className="h-3 w-3 text-emerald-500" />
+                                      <Check className="text-success h-3 w-3" />
                                       <span>{t("console.explain.copied")}</span>
                                     </>
                                   ) : (
@@ -2861,15 +2949,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
                             {/* AI Plan Optimization & Index Recommendations (Prompt 3.2.3) */}
                             {aiOptimizationResult && (
-                              <div className="border-b border-purple-500/20 bg-purple-500/5 p-3 dark:border-purple-500/30 dark:bg-purple-950/20">
+                              <div className="border-primary/20 bg-primary/5 dark:border-primary/30 dark:bg-primary/20 border-b p-3">
                                 <div className="mb-1 flex items-center gap-1.5">
-                                  <Sparkles className="size-3.5 text-purple-600 dark:text-purple-400" />
-                                  <span className="text-xs font-semibold text-purple-900 dark:text-purple-200">
+                                  <Sparkles className="text-primary dark:text-primary size-3.5" />
+                                  <span className="text-primary dark:text-primary text-xs font-semibold">
                                     {t("ai.optimizeWithAi")}
                                   </span>
                                 </div>
                                 {aiOptimizationResult.explanation && (
-                                  <p className="text-xs text-zinc-700 dark:text-zinc-300">
+                                  <p className="text-foreground text-xs">
                                     {aiOptimizationResult.explanation}
                                   </p>
                                 )}
@@ -2877,16 +2965,16 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                 {aiOptimizationResult.indexes &&
                                   aiOptimizationResult.indexes.length > 0 && (
                                     <div className="mt-2.5 space-y-1.5">
-                                      <span className="text-[11px] font-semibold text-zinc-600 uppercase dark:text-zinc-400">
+                                      <span className="text-muted-foreground dark:text-muted-foreground text-[11px] font-semibold uppercase">
                                         {t("ai.suggestedIndexes")}
                                       </span>
                                       {aiOptimizationResult.indexes.map(
                                         (idx, i) => (
                                           <div
                                             key={i}
-                                            className="flex items-center justify-between gap-2 rounded-md border border-purple-500/20 bg-white p-2 font-mono text-xs dark:border-purple-500/30 dark:bg-zinc-900"
+                                            className="border-primary/20 bg-background dark:border-primary/30 dark:bg-card flex items-center justify-between gap-2 rounded-md border p-2 font-mono text-xs"
                                           >
-                                            <code className="text-purple-950 dark:text-purple-200">
+                                            <code className="text-primary dark:text-primary">
                                               {idx}
                                             </code>
                                             <Button
@@ -2900,7 +2988,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                             >
                                               {copiedIndexDdl === idx ? (
                                                 <>
-                                                  <Check className="size-3 text-emerald-500" />
+                                                  <Check className="text-success size-3" />
                                                   <span>
                                                     {t("ai.indexCopied")}
                                                   </span>
@@ -2932,15 +3020,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         </div>
                       ) : (
                         /* Empty State: No Execution Plan Yet */
-                        <div className="flex h-56 flex-col items-center justify-center rounded-lg border border-dashed border-zinc-200 p-6 text-center dark:border-zinc-800">
-                          <FileSearch className="mb-2.5 h-9 w-9 text-zinc-400 opacity-60" />
-                          <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                        <div className="border-border dark:border-border flex h-56 flex-col items-center justify-center rounded-lg border border-dashed p-6 text-center">
+                          <FileSearch className="text-muted-foreground mb-2.5 h-9 w-9 opacity-60" />
+                          <h3 className="text-foreground text-sm font-semibold">
                             {t(
                               "console.explain.no_plan_title",
                               "No Execution Plan Yet",
                             )}
                           </h3>
-                          <p className="mt-1 max-w-sm text-xs text-zinc-500">
+                          <p className="text-muted-foreground mt-1 max-w-sm text-xs">
                             {t(
                               "console.explain.no_plan_desc",
                               "Click the Explain button to analyze and visualize the query execution plan.",
@@ -2953,7 +3041,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                             disabled={
                               isExplaining || isRunning || !query.trim()
                             }
-                            className="mt-3.5 h-7 cursor-pointer gap-1.5 bg-amber-600 text-xs font-semibold text-white hover:bg-amber-500"
+                            className="bg-warning hover:bg-warning mt-3.5 h-7 cursor-pointer gap-1.5 text-xs font-semibold text-white"
                           >
                             {isExplaining ? (
                               <>
@@ -2984,15 +3072,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         open={Boolean(closingTabId)}
         onOpenChange={(open) => !open && setClosingTabId(null)}
       >
-        <DialogContent className="rounded-xl border border-zinc-200 bg-white shadow-xl sm:max-w-md dark:border-zinc-800 dark:bg-zinc-950">
+        <DialogContent className="border-border bg-background dark:border-border dark:bg-background rounded-xl border shadow-xl sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
-              <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <AlertTriangle className="text-warning h-4 w-4 shrink-0" />
+              <DialogTitle className="text-foreground text-sm font-semibold">
                 {t("console.tab.close")}
               </DialogTitle>
             </div>
-            <DialogDescription className="pt-2 text-xs text-zinc-600 dark:text-zinc-400">
+            <DialogDescription className="text-muted-foreground dark:text-muted-foreground pt-2 text-xs">
               {t("console.tab.unsaved_warning")}
             </DialogDescription>
           </DialogHeader>
@@ -3025,25 +3113,25 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
       {/* Save Query Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-        <DialogContent className="max-w-sm overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 text-zinc-900 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100">
+        <DialogContent className="border-border bg-background text-foreground dark:border-border dark:bg-background dark:text-foreground max-w-sm overflow-hidden rounded-xl border p-0 shadow-2xl">
           {/* Dialog header with gradient */}
-          <div className="border-b border-zinc-200 bg-zinc-50/75 px-5 pt-5 pb-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+          <div className="border-border bg-card/75 dark:border-border dark:bg-card/50 border-b px-5 pt-5 pb-4">
             <div className="mb-1 flex items-center gap-3">
-              <div className="border-primary/30 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-emerald-500/15">
-                <Save className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="border-primary/30 bg-success/15 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
+                <Save className="text-success dark:text-success h-4 w-4" />
               </div>
               <div>
-                <DialogTitle className="text-sm leading-tight font-semibold text-zinc-900 dark:text-zinc-100">
+                <DialogTitle className="text-foreground text-sm leading-tight font-semibold">
                   {t("savedQuery.saveQuery")}
                 </DialogTitle>
-                <DialogDescription className="mt-0.5 text-[10px] text-zinc-500 dark:text-zinc-400">
+                <DialogDescription className="text-muted-foreground mt-0.5 text-[10px]">
                   Save to your personal query library
                 </DialogDescription>
               </div>
             </div>
 
             {/* SQL snippet preview */}
-            <div className="mt-3 truncate rounded-md border border-zinc-200 bg-zinc-100/80 px-2.5 py-2 font-mono text-[10px] text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400">
+            <div className="border-border bg-muted/80 text-muted-foreground dark:border-border dark:bg-card dark:text-muted-foreground mt-3 truncate rounded-md border px-2.5 py-2 font-mono text-[10px]">
               {query.trim().split("\n")[0]?.slice(0, 60) ?? ""}
               {(query.trim().split("\n")[0]?.length ?? 0) > 60 ? "…" : ""}
             </div>
@@ -3052,14 +3140,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           <div className="space-y-4 px-5 py-4">
             {/* Title field */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 {t("savedQuery.title")} <span className="text-red-500">*</span>
               </label>
               <Input
                 value={saveTitle}
                 onChange={(e) => setSaveTitle(e.target.value)}
                 placeholder={t("savedQuery.titlePlaceholder")}
-                className="focus-visible:border-primary focus-visible:ring-primary/40 border-zinc-200 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground text-sm focus-visible:ring-1"
                 onKeyDown={(e) => e.key === "Enter" && handleSaveQuery()}
                 autoFocus
               />
@@ -3067,29 +3155,29 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
             {/* Folder field */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 {t("savedQuery.folder")}
               </label>
               <Input
                 value={saveFolder}
                 onChange={(e) => setSaveFolder(e.target.value)}
                 placeholder={t("savedQuery.folderPlaceholder")}
-                className="focus-visible:border-primary focus-visible:ring-primary/40 border-zinc-200 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground text-sm focus-visible:ring-1"
               />
             </div>
 
             {/* Tags field */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 {t("savedQuery.tags")}
               </label>
               <Input
                 value={saveTags}
                 onChange={(e) => setSaveTags(e.target.value)}
                 placeholder={t("savedQuery.tagsPlaceholder")}
-                className="focus-visible:border-primary focus-visible:ring-primary/40 border-zinc-200 bg-white text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground text-sm focus-visible:ring-1"
               />
-              <p className="text-[9px] text-zinc-400 dark:text-zinc-500">
+              <p className="text-muted-foreground text-[9px]">
                 Separate multiple tags with commas
               </p>
             </div>
@@ -3101,14 +3189,14 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               className={cn(
                 "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-all",
                 saveIsFavorite
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400"
-                  : "border-zinc-200 bg-zinc-50/50 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200",
+                  ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
+                  : "border-border bg-card/50 text-muted-foreground hover:bg-muted hover:text-foreground dark:border-border dark:bg-card/50 dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground",
               )}
             >
               <Star
                 className={cn(
                   "h-3.5 w-3.5 shrink-0",
-                  saveIsFavorite ? "fill-amber-500 text-amber-500" : "",
+                  saveIsFavorite ? "fill-warning text-warning" : "",
                 )}
               />
               <span className="text-xs font-medium">
@@ -3121,12 +3209,12 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
           </div>
 
           {/* Footer */}
-          <div className="flex justify-end gap-2 border-t border-zinc-200 bg-zinc-50/50 px-5 py-3.5 dark:border-zinc-800 dark:bg-zinc-900/50">
+          <div className="border-border bg-card/50 dark:border-border dark:bg-card/50 flex justify-end gap-2 border-t px-5 py-3.5">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsSaveDialogOpen(false)}
-              className="border-zinc-200 text-xs text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border text-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted text-xs"
             >
               {t("savedQuery.cancel")}
             </Button>
@@ -3145,11 +3233,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
       {/* History Dialog */}
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 shadow-2xl sm:max-w-xl dark:border-zinc-800 dark:bg-zinc-950">
-          <DialogHeader className="flex flex-row items-center justify-between space-y-0 border-b border-zinc-200 bg-zinc-50 py-3 pr-12 pl-5 dark:border-zinc-800 dark:bg-zinc-900/50">
+        <DialogContent className="border-border bg-background dark:border-border dark:bg-background flex max-h-[85vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
+          <DialogHeader className="border-border bg-card dark:border-border dark:bg-card/50 flex flex-row items-center justify-between space-y-0 border-b py-3 pr-12 pl-5">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-              <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <Clock className="text-success dark:text-success h-4 w-4" />
+              <DialogTitle className="text-foreground text-sm font-semibold">
                 {t("console.historyTitle")}
               </DialogTitle>
               <Badge
@@ -3168,7 +3256,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={clearHistory}
-                className="h-7 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/40"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/40 h-7 px-2 text-xs"
               >
                 <Trash2 className="mr-1 h-3.5 w-3.5" />
                 {t("console.clearHistory")}
@@ -3176,9 +3264,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             )}
           </DialogHeader>
 
-          <div className="border-b border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30">
+          <div className="border-border bg-card/50 dark:border-border dark:bg-card/30 border-b p-3">
             <div className="relative flex items-center">
-              <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-zinc-400" />
+              <Search className="text-muted-foreground pointer-events-none absolute left-2.5 h-3.5 w-3.5" />
               <Input
                 type="text"
                 value={historySearch}
@@ -3190,7 +3278,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                 <button
                   type="button"
                   onClick={() => setHistorySearch("")}
-                  className="absolute right-2 rounded p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                  className="text-muted-foreground hover:text-muted-foreground dark:hover:text-foreground absolute right-2 rounded p-1"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -3200,7 +3288,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
           <div className="custom-scrollbar max-h-96 flex-1 space-y-2.5 overflow-y-auto p-3">
             {filteredHistory.length === 0 ? (
-              <div className="py-8 text-center font-mono text-xs text-zinc-500">
+              <div className="text-muted-foreground py-8 text-center font-mono text-xs">
                 {historySearch
                   ? t("console.noHistoryMatch", { term: historySearch })
                   : t("console.noHistory")}
@@ -3209,13 +3297,13 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               filteredHistory.map((item) => (
                 <div
                   key={item.id}
-                  className="group hover:border-primary/40 flex items-start justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50/60 p-3 shadow-xs transition-all dark:border-zinc-800 dark:bg-zinc-900/40"
+                  className="group hover:border-primary/40 border-border bg-card/60 dark:border-border dark:bg-card/40 flex items-start justify-between gap-3 rounded-lg border p-3 shadow-xs transition-all"
                 >
                   <div className="min-w-0 flex-1">
-                    <pre className="line-clamp-3 rounded border border-zinc-200/60 bg-zinc-100/70 p-2 font-mono text-xs break-all whitespace-pre-wrap text-zinc-800 dark:border-zinc-800/60 dark:bg-zinc-950/60 dark:text-zinc-200">
+                    <pre className="border-border/60 bg-muted/70 text-foreground dark:border-border/60 dark:bg-background/60 dark:text-foreground line-clamp-3 rounded border p-2 font-mono text-xs break-all whitespace-pre-wrap">
                       {item.query}
                     </pre>
-                    <div className="mt-2 flex items-center gap-2 font-mono text-[10px] text-zinc-400">
+                    <div className="text-muted-foreground mt-2 flex items-center gap-2 font-mono text-[10px]">
                       <span>
                         {new Date(item.timestamp).toLocaleTimeString()}
                       </span>
@@ -3227,7 +3315,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                               ? `Query: ${formatLatency(item.execution_time_ms)}ms | Total: ${formatLatency(item.round_trip_ms)}ms`
                               : `Query execution: ${formatLatency(item.execution_time_ms)}ms`
                           }
-                          className="border-primary/30 h-4 cursor-help gap-0.5 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] text-emerald-700 dark:text-emerald-400"
+                          className="border-primary/30 bg-success/10 text-success dark:text-success h-4 cursor-help gap-0.5 px-1.5 py-0 font-mono text-[10px]"
                         >
                           <Zap className="h-2.5 w-2.5 fill-current" />
                           <span>{formatLatency(item.execution_time_ms)}ms</span>
@@ -3236,7 +3324,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       {item.row_count !== undefined && !item.error && (
                         <Badge
                           variant="outline"
-                          className="h-4 border-zinc-200 px-1.5 py-0 font-mono text-[10px] text-zinc-600 dark:border-zinc-800 dark:text-zinc-400"
+                          className="border-border text-muted-foreground dark:border-border dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px]"
                         >
                           {item.row_count} rows
                         </Badge>
@@ -3244,7 +3332,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       {item.error && (
                         <Badge
                           variant="outline"
-                          className="h-4 gap-0.5 border-rose-500/30 bg-rose-500/10 px-1.5 py-0 font-mono text-[10px] text-rose-700 dark:text-rose-400"
+                          className="border-destructive/30 bg-destructive/10 text-destructive dark:text-destructive h-4 gap-0.5 px-1.5 py-0 font-mono text-[10px]"
                         >
                           <AlertCircle className="h-2.5 w-2.5" />
                           <span>{item.error}</span>
@@ -3260,10 +3348,10 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                       size="icon-xs"
                       onClick={() => handleCopyHistory(item.id, item.query)}
                       title={t("console.copyQuery")}
-                      className="h-7 w-7 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                      className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-7 w-7"
                     >
                       {copiedHistoryId === item.id ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                        <Check className="text-success h-3.5 w-3.5" />
                       ) : (
                         <Copy className="h-3.5 w-3.5" />
                       )}
@@ -3276,7 +3364,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         handleQueryChange(item.query);
                         setIsHistoryOpen(false);
                       }}
-                      className="hover:bg-primary/20 h-7 gap-1 border-zinc-200 bg-emerald-500/10 px-2.5 font-mono text-xs text-emerald-700 dark:border-zinc-800 dark:text-emerald-400"
+                      className="hover:bg-primary/20 border-border bg-success/10 text-success dark:border-border dark:text-success h-7 gap-1 px-2.5 font-mono text-xs"
                     >
                       <Terminal className="h-3 w-3" />
                       <span>{t("console.useQuery")}</span>

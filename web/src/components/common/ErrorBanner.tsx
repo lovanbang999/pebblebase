@@ -67,22 +67,22 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
   return (
     <div
       role="alert"
-      className="shrink-0 border-b border-rose-500/30 bg-rose-500/10 text-rose-900 shadow-xs dark:bg-rose-950/40 dark:text-rose-200"
+      className="border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/40 dark:text-destructive shrink-0 border-b shadow-xs"
     >
       {/* Primary Bar */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 text-xs">
         {/* Left: Diagnostic Summary */}
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {parsed?.isConnectionError ? (
-            <Unplug className="size-4 shrink-0 text-rose-500 dark:text-rose-400" />
+            <Unplug className="text-destructive dark:text-destructive size-4 shrink-0" />
           ) : (
-            <AlertCircle className="size-4 shrink-0 text-rose-500 dark:text-rose-400" />
+            <AlertCircle className="text-destructive dark:text-destructive size-4 shrink-0" />
           )}
 
           {/* Diagnostic Badge */}
           <Badge
             variant="outline"
-            className="h-4.5 shrink-0 border-rose-500/35 bg-rose-500/15 px-1.5 py-0 font-mono text-[10px] font-semibold text-rose-600 dark:text-rose-300"
+            className="border-destructive/35 bg-destructive/15 text-destructive dark:text-destructive h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
           >
             {categoryTitle}
           </Badge>
@@ -91,7 +91,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
           {parsed?.host && (
             <Badge
               variant="outline"
-              className="hidden h-4.5 shrink-0 items-center gap-1 border-rose-500/25 bg-rose-500/10 px-1.5 py-0 font-mono text-[10px] text-rose-700 sm:flex dark:text-rose-300"
+              className="border-destructive/25 bg-destructive/10 text-destructive dark:text-destructive hidden h-4.5 shrink-0 items-center gap-1 px-1.5 py-0 font-mono text-[10px] sm:flex"
             >
               <Server className="size-2.5" />
               <span>
@@ -102,7 +102,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
           )}
 
           {/* Context Name & Summary */}
-          <span className="min-w-0 text-sm break-words text-rose-800 dark:text-rose-200">
+          <span className="text-destructive dark:text-destructive min-w-0 text-sm break-words">
             {activeConnectionName && (
               <strong className="font-semibold">
                 {activeConnectionName}:{" "}
@@ -120,7 +120,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
             variant="ghost"
             size="xs"
             onClick={() => setIsExpanded((prev) => !prev)}
-            className="h-6 cursor-pointer gap-1 px-2 font-mono text-[11px] text-rose-700 hover:bg-rose-500/15 hover:text-rose-900 dark:text-rose-300 dark:hover:bg-rose-500/20 dark:hover:text-rose-100"
+            className="text-destructive hover:bg-destructive/15 hover:text-destructive dark:text-destructive dark:hover:bg-destructive/20 dark:hover:text-destructive h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
           >
             <span>
               {isExpanded
@@ -141,7 +141,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
               variant="outline"
               size="xs"
               onClick={onEditConnection}
-              className="h-6 cursor-pointer gap-1 border-rose-500/40 bg-white/60 px-2 font-mono text-[11px] text-rose-800 hover:bg-white dark:border-rose-500/40 dark:bg-zinc-900/60 dark:text-rose-200 dark:hover:bg-zinc-900"
+              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:border-destructive/40 dark:bg-card/60 dark:text-destructive dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
             >
               <SlidersHorizontal className="size-3" />
               <span>{t("diagnostics.editConnection", "Edit")}</span>
@@ -156,7 +156,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
               size="xs"
               onClick={onRetry}
               disabled={isRetrying}
-              className="h-6 cursor-pointer gap-1 border-rose-500/40 bg-white/60 px-2.5 font-mono text-[11px] font-semibold text-rose-800 transition-colors hover:bg-white disabled:opacity-50 dark:border-rose-500/40 dark:bg-zinc-900/60 dark:text-rose-200 dark:hover:bg-zinc-900"
+              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:border-destructive/40 dark:bg-card/60 dark:text-destructive dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2.5 font-mono text-[11px] font-semibold transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 className={cn("size-3", isRetrying && "animate-spin")}
@@ -172,7 +172,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
             size="xs"
             onClick={onDismiss}
             aria-label={t("app.dismiss", "Dismiss")}
-            className="size-6 cursor-pointer rounded-full p-0 text-rose-600 hover:bg-rose-500/20 hover:text-rose-900 dark:text-rose-400 dark:hover:text-rose-100"
+            className="text-destructive hover:bg-destructive/20 hover:text-destructive dark:text-destructive dark:hover:text-destructive size-6 cursor-pointer rounded-full p-0"
           >
             <X className="size-3.5" />
           </Button>
@@ -181,16 +181,16 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
 
       {/* Expanded Troubleshooting & Raw Log Drawer */}
       {isExpanded && (
-        <div className="animate-in slide-in-from-top-1 border-t border-rose-500/20 bg-rose-500/5 px-4 py-3 text-xs duration-150 dark:bg-rose-950/20">
+        <div className="animate-in slide-in-from-top-1 border-destructive/20 bg-destructive/5 dark:bg-destructive/20 border-t px-4 py-3 text-xs duration-150">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             {/* Suggested Solution */}
             {suggestionText && (
               <div className="flex-1 space-y-1">
-                <p className="font-mono text-[10px] font-semibold tracking-wider text-rose-700 uppercase dark:text-rose-300">
+                <p className="text-destructive dark:text-destructive font-mono text-[10px] font-semibold tracking-wider uppercase">
                   ⚡{" "}
                   {t("diagnostics.suggestedSolution", "Suggested Resolution")}
                 </p>
-                <p className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
+                <p className="text-foreground dark:text-muted-foreground text-xs leading-relaxed">
                   {suggestionText}
                 </p>
               </div>
@@ -203,12 +203,12 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
                 variant="outline"
                 size="xs"
                 onClick={handleCopyError}
-                className="h-6 cursor-pointer gap-1 border-zinc-300 bg-white px-2 font-mono text-[10px] text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2 font-mono text-[10px]"
               >
                 {isCopied ? (
                   <>
-                    <Check className="size-3 text-emerald-500" />
-                    <span className="text-emerald-600 dark:text-emerald-400">
+                    <Check className="text-success size-3" />
+                    <span className="text-success dark:text-success">
                       {t("common.copied", "Copied!")}
                     </span>
                   </>
@@ -225,7 +225,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
           </div>
 
           {/* Raw Error Codebox */}
-          <div className="mt-2.5 max-h-28 overflow-y-auto rounded-md border border-rose-500/20 bg-white/70 p-2.5 font-mono text-[11px] leading-relaxed text-rose-900 select-text dark:bg-zinc-950/60 dark:text-rose-300">
+          <div className="border-destructive/20 bg-background/70 text-destructive dark:bg-card/60 dark:text-destructive mt-2.5 max-h-28 overflow-y-auto rounded-md border p-2.5 font-mono text-[11px] leading-relaxed select-text">
             {message}
           </div>
         </div>

@@ -125,10 +125,10 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
   return (
     <div className="flex h-full flex-col space-y-3">
       {/* Header controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex flex-wrap items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
           <div className="relative w-56">
-            <Search className="absolute top-2 left-2.5 h-3.5 w-3.5 text-zinc-400" />
+            <Search className="text-muted-foreground absolute top-2 left-2.5 h-3.5 w-3.5" />
             <Input
               type="text"
               placeholder={t("redis.zsetEditor.searchPlaceholder")}
@@ -144,7 +144,7 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
             size="sm"
             variant="ghost"
             onClick={() => setSortDesc(!sortDesc)}
-            className="h-7 text-xs text-zinc-600 dark:text-zinc-400"
+            className="text-muted-foreground dark:text-muted-foreground h-7 text-xs"
           >
             <ArrowUpDown className="mr-1 h-3 w-3" />
             {sortDesc
@@ -157,7 +157,7 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
           <Button
             size="sm"
             onClick={() => setIsAdding(true)}
-            className="h-7 bg-rose-600 text-xs text-white hover:bg-rose-700"
+            className="bg-destructive hover:bg-destructive h-7 text-xs text-white"
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
             {t("redis.zsetEditor.addMember")}
@@ -166,14 +166,14 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
       </div>
 
       {error && (
-        <div className="rounded-md border border-rose-500/20 bg-rose-500/10 p-2 text-xs text-rose-600 dark:text-rose-400">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
           {error}
         </div>
       )}
 
       {/* Add member form */}
       {isAdding && (
-        <div className="flex items-center gap-2 rounded-md border border-rose-500/30 bg-rose-50/50 p-2.5 dark:bg-rose-950/20">
+        <div className="border-destructive/30 bg-destructive/50 dark:bg-destructive/20 flex items-center gap-2 rounded-md border p-2.5">
           <Input
             placeholder={t("redis.zsetEditor.memberNamePlaceholder")}
             value={newMember}
@@ -193,7 +193,7 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
             size="sm"
             onClick={handleAddMember}
             disabled={loading || !newMember.trim()}
-            className="h-7 bg-rose-600 text-xs text-white"
+            className="bg-destructive h-7 text-xs text-white"
           >
             {loading ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -213,9 +213,9 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
       )}
 
       {/* ZSet table */}
-      <div className="flex-1 overflow-auto rounded-md border border-zinc-200 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border">
         <table className="w-full text-left text-xs">
-          <thead className="sticky top-0 border-b border-zinc-200 bg-zinc-50 font-medium text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+          <thead className="border-border bg-card text-muted-foreground dark:border-border dark:bg-card sticky top-0 border-b font-medium">
             <tr>
               <th className="w-16 px-3 py-2 font-mono text-[11px]">
                 {t("redis.zsetEditor.thRank")}
@@ -233,12 +233,12 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-200 font-mono dark:divide-zinc-800">
+          <tbody className="divide-border dark:divide-border divide-y font-mono">
             {sortedList.length === 0 ? (
               <tr>
                 <td
                   colSpan={isReadOnly ? 3 : 4}
-                  className="p-6 text-center text-zinc-400"
+                  className="text-muted-foreground p-6 text-center"
                 >
                   {t("redis.zsetEditor.empty")}
                 </td>
@@ -247,9 +247,11 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
               sortedList.map((m, idx) => (
                 <tr
                   key={m.member}
-                  className="group hover:bg-zinc-50/60 dark:hover:bg-zinc-900/60"
+                  className="group hover:bg-card/60 dark:hover:bg-muted/60"
                 >
-                  <td className="px-3 py-2 text-zinc-400">#{idx + 1}</td>
+                  <td className="text-muted-foreground px-3 py-2">
+                    #{idx + 1}
+                  </td>
                   <td className="px-3 py-2">
                     {editingMember === m.member ? (
                       <div className="flex items-center gap-1">
@@ -269,7 +271,7 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => handleSaveScore(m.member)}
-                          className="h-6 px-1.5 text-emerald-600"
+                          className="text-success h-6 px-1.5"
                         >
                           <Check className="h-3 w-3" />
                         </Button>
@@ -277,14 +279,14 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
                     ) : (
                       <span
                         onDoubleClick={() => handleStartEdit(m)}
-                        className="rounded bg-rose-50 px-1.5 py-0.5 font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+                        className="bg-destructive/10 text-destructive dark:bg-destructive/40 dark:text-destructive rounded px-1.5 py-0.5 font-semibold"
                         title={t("redis.zsetEditor.doubleClickScoreTip")}
                       >
                         {m.score}
                       </span>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-zinc-800 dark:text-zinc-200">
+                  <td className="text-foreground dark:text-foreground px-3 py-2">
                     {m.member}
                   </td>
                   {!isReadOnly && (
@@ -293,7 +295,7 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
                         size="sm"
                         variant="ghost"
                         onClick={() => handleRemoveMember(m.member)}
-                        className="h-6 w-6 p-0 text-rose-500 opacity-0 group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/30 h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>

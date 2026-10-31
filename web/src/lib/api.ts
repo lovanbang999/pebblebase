@@ -85,6 +85,18 @@ export async function createConnection(
   return handleResponse<Connection>(res);
 }
 
+export async function updateConnection(
+  id: string,
+  input: ConnectionInput,
+): Promise<Connection> {
+  const res = await fetch(`${BASE_URL}/connections/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getAuthHeaders() },
+    body: JSON.stringify(input),
+  });
+  return handleResponse<Connection>(res);
+}
+
 export async function deleteConnection(id: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/connections/${encodeURIComponent(id)}`, {
     method: "DELETE",
@@ -326,6 +338,11 @@ export async function apiLogin(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
+  // Login is an anonymous request: a 401 means the supplied credentials were
+  // rejected, not that an existing authenticated session expired.
+  if (res.status === 401) {
+    throw new Error("AUTH_INVALID_CREDENTIALS");
+  }
   return handleResponse(res);
 }
 

@@ -63,8 +63,7 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     categoryKey: "sql",
     tag: "SQL",
     defaultPort: "5432",
-    badge:
-      "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
+    badge: "bg-muted text-muted-foreground border-border",
     accentColor: "#336791",
   },
   {
@@ -75,8 +74,7 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     categoryKey: "sql",
     tag: "SQL",
     defaultPort: "3306",
-    badge:
-      "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+    badge: "bg-muted text-muted-foreground border-border",
     accentColor: "#00758F",
   },
   {
@@ -87,8 +85,7 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     categoryKey: "nosql",
     tag: "NoSQL",
     defaultPort: "27017",
-    badge:
-      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+    badge: "bg-muted text-muted-foreground border-border",
     accentColor: "#13AA52",
   },
   {
@@ -99,7 +96,7 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     categoryKey: "embedded",
     tag: "Embedded",
     defaultPort: "local-file",
-    badge: "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20",
+    badge: "bg-muted text-muted-foreground border-border",
     accentColor: "#00A3E0",
   },
   {
@@ -110,7 +107,7 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     categoryKey: "inmemory",
     tag: "Key-Value",
     defaultPort: "6379",
-    badge: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
+    badge: "bg-muted text-muted-foreground border-border",
     accentColor: "#DC382D",
   },
   {
@@ -121,7 +118,7 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     categoryKey: "sql",
     tag: "MSSQL",
     defaultPort: "1433",
-    badge: "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20",
+    badge: "bg-muted text-muted-foreground border-border",
     accentColor: "#CC292B",
   },
   {
@@ -132,8 +129,7 @@ export const DATABASE_ENGINES: DatabaseEngineDefinition[] = [
     categoryKey: "olap",
     tag: "OLAP",
     defaultPort: "9000",
-    badge:
-      "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+    badge: "bg-muted text-muted-foreground border-border",
     accentColor: "#F59E0B",
   },
 ];
@@ -162,56 +158,56 @@ export const DATABASE_ENVIRONMENTS: EnvironmentDefinition[] = [
     key: "local",
     label: "Local",
     selectedClass:
-      "text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500/40 dark:border-emerald-500/40 ring-1 ring-emerald-500/30",
-    dotClass: "bg-emerald-500",
-    dotRingClass: "bg-emerald-500 ring-emerald-500/20",
+      "text-success bg-success/10 border-success/40 ring-1 ring-success/30",
+    dotClass: "bg-success",
+    dotRingClass: "bg-success ring-success/20",
     style: {
-      bg: "bg-emerald-500/10 dark:bg-emerald-500/15",
-      text: "text-emerald-700 dark:text-emerald-400",
-      dot: "bg-emerald-500",
-      border: "border-emerald-500/25",
+      bg: "bg-success/10",
+      text: "text-success",
+      dot: "bg-success",
+      border: "border-success/25",
     },
   },
   {
     key: "development",
     label: "Development",
     selectedClass:
-      "text-amber-700 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-500/15 border-amber-500/40 dark:border-amber-500/40 ring-1 ring-amber-500/30",
-    dotClass: "bg-amber-500",
-    dotRingClass: "bg-amber-500 ring-amber-500/20",
+      "text-warning bg-warning/10 border-warning/40 ring-1 ring-warning/30",
+    dotClass: "bg-warning",
+    dotRingClass: "bg-warning ring-warning/20",
     style: {
-      bg: "bg-amber-500/10 dark:bg-amber-500/15",
-      text: "text-amber-700 dark:text-amber-400",
-      dot: "bg-amber-500",
-      border: "border-amber-500/25",
+      bg: "bg-warning/10",
+      text: "text-warning",
+      dot: "bg-warning",
+      border: "border-warning/25",
     },
   },
   {
     key: "staging",
     label: "Staging",
     selectedClass:
-      "text-orange-700 dark:text-orange-300 bg-orange-500/10 dark:bg-orange-500/15 border-orange-500/40 dark:border-orange-500/40 ring-1 ring-orange-500/30",
-    dotClass: "bg-orange-500",
-    dotRingClass: "bg-orange-500 ring-orange-500/20",
+      "text-primary bg-primary/10 border-primary/40 ring-1 ring-primary/30",
+    dotClass: "bg-primary",
+    dotRingClass: "bg-primary ring-primary/20",
     style: {
-      bg: "bg-orange-500/10 dark:bg-orange-500/15",
-      text: "text-orange-700 dark:text-orange-400",
-      dot: "bg-orange-500",
-      border: "border-orange-500/25",
+      bg: "bg-primary/10",
+      text: "text-primary",
+      dot: "bg-primary",
+      border: "border-primary/25",
     },
   },
   {
     key: "production",
     label: "Production",
     selectedClass:
-      "text-rose-700 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/15 border-rose-500/40 dark:border-rose-500/40 ring-1 ring-rose-500/30",
-    dotClass: "bg-rose-500",
-    dotRingClass: "bg-rose-500 ring-rose-500/20",
+      "text-destructive bg-destructive/10 border-destructive/40 ring-1 ring-destructive/30",
+    dotClass: "bg-destructive",
+    dotRingClass: "bg-destructive ring-destructive/20",
     style: {
-      bg: "bg-rose-500/10 dark:bg-rose-500/15",
-      text: "text-rose-700 dark:text-rose-400",
-      dot: "bg-rose-500",
-      border: "border-rose-500/25",
+      bg: "bg-destructive/10",
+      text: "text-destructive",
+      dot: "bg-destructive",
+      border: "border-destructive/25",
     },
   },
 ];

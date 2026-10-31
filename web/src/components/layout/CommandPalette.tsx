@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, type FC } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
   Search,
@@ -20,13 +21,18 @@ import {
 import type { Connection, TableSchema, SavedQuery } from "@/lib/types";
 import type { RecentItem } from "@/lib/recentItems";
 import { SHORTCUTS } from "@/lib/platform";
+import {
+  PALETTE_COMMAND_IDS,
+  WORKSPACE_COMMANDS,
+  type WorkspaceCommandId,
+} from "./workspaceCommands";
 import { cn } from "cn";
 
-export type CommandActionId =
+export type CommandActionId = Extract<
+  WorkspaceCommandId,
   | "open_query_console"
   | "open_erd"
   | "open_diff"
-  | "open_migration"
   | "export_csv"
   | "export_json"
   | "toggle_theme"
@@ -34,7 +40,8 @@ export type CommandActionId =
   | "open_ai_settings"
   | "product_tour"
   | "check_updates"
-  | "sign_out";
+  | "sign_out"
+>;
 
 export interface CommandPaletteProps {
   isOpen: boolean;
@@ -78,119 +85,58 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   // Auto focus input when opened
   useEffect(() => {
-    if (isOpen) {
-      setSearch("");
-      setSelectedIndex(0);
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
-    }
+    if (!isOpen) return;
+    setSearch("");
+    setSelectedIndex(0);
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const shell = document.querySelector<HTMLElement>("[data-studio-shell]");
+    const wasInert = shell?.inert ?? false;
+    if (shell) shell.inert = true;
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => {
+      window.cancelAnimationFrame(frame);
+      if (shell) shell.inert = wasInert;
+      const previousFocus = restoreFocusRef.current;
+      restoreFocusRef.current = null;
+      window.requestAnimationFrame(() => {
+        if (previousFocus?.isConnected) previousFocus.focus();
+      });
+    };
   }, [isOpen]);
 
   // Actions list definition
   const actionItems: PaletteItem[] = useMemo(() => {
-    const isDark = theme === "dark";
-    return [
-      {
-        id: "action_open_query_console",
+    const icons: Record<CommandActionId, LucideIcon> = {
+      open_query_console: Terminal,
+      open_erd: Workflow,
+      open_diff: GitCompare,
+      export_csv: FileSpreadsheet,
+      export_json: FileCode,
+      toggle_theme: theme === "dark" ? Sun : Moon,
+      open_settings: Settings,
+      open_ai_settings: Sparkles,
+      product_tour: Sparkles,
+      check_updates: Sparkles,
+      sign_out: LogOut,
+    };
+    return PALETTE_COMMAND_IDS.map((id) => {
+      const definition = WORKSPACE_COMMANDS[id];
+      return {
+        id: `action_${id}`,
         type: "action",
-        title: t("palette.openQueryConsole", "Open Query Console"),
-        subtitle: "Alt+Q",
-        icon: Terminal,
-        action: () => onTriggerAction("open_query_console"),
-      },
-      {
-        id: "action_open_erd",
-        type: "action",
-        title: t("palette.openERD", "Open ERD Diagram"),
-        subtitle: "Alt+E",
-        icon: Workflow,
-        action: () => onTriggerAction("open_erd"),
-      },
-      {
-        id: "action_open_diff",
-        type: "action",
-        title: t("diff.title", "Schema Diff"),
-        subtitle: t("diff.subtitle", "Compare schemas between two databases"),
-        icon: GitCompare,
-        action: () => onTriggerAction("open_diff"),
-      },
-      {
-        id: "action_open_migration",
-        type: "action",
-        title: t("palette.openMigration", "Open Migration Runner"),
-        subtitle: "DDL & Schema Updates",
-        icon: Sparkles,
-        action: () => onTriggerAction("open_migration"),
-      },
-      {
-        id: "action_export_csv",
-        type: "action",
-        title: t("palette.exportTableCsv", "Export Current Table (CSV)"),
-        subtitle: "Data Grid",
-        icon: FileSpreadsheet,
-        action: () => onTriggerAction("export_csv"),
-      },
-      {
-        id: "action_export_json",
-        type: "action",
-        title: t("palette.exportTableJson", "Export Current Table (JSON)"),
-        subtitle: "Data Grid",
-        icon: FileCode,
-        action: () => onTriggerAction("export_json"),
-      },
-      {
-        id: "action_toggle_theme",
-        type: "action",
-        title: t("palette.toggleTheme", "Toggle Dark / Light Mode"),
-        subtitle: isDark ? "Current: Dark" : "Current: Light",
-        icon: isDark ? Sun : Moon,
-        action: () => onTriggerAction("toggle_theme"),
-      },
-      {
-        id: "action_open_settings",
-        type: "action",
-        title: t("palette.openSettings", "Open Admin & Settings"),
-        subtitle: "Users & Passwords",
-        icon: Settings,
-        action: () => onTriggerAction("open_settings"),
-      },
-      {
-        id: "action_open_ai_settings",
-        type: "action",
-        title: t("ai.settingsTitle", "AI Assistant Settings"),
-        subtitle: t("ai.byoKeyBadge", "BYO Key & Local Ollama"),
-        icon: Sparkles,
-        action: () => onTriggerAction("open_ai_settings"),
-      },
-      {
-        id: "action_product_tour",
-        type: "action",
-        title: t("palette.productTour", "Take Product Tour"),
-        subtitle: "Quickstart & Guide",
-        icon: Sparkles,
-        action: () => onTriggerAction("product_tour"),
-      },
-      {
-        id: "action_check_updates",
-        type: "action",
-        title: t("palette.checkUpdates", "Check for Software Updates"),
-        subtitle: "Version & Releases",
-        icon: Sparkles,
-        action: () => onTriggerAction("check_updates"),
-      },
-      {
-        id: "action_sign_out",
-        type: "action",
-        title: t("palette.signOut", "Sign Out"),
-        subtitle: "Authentication",
-        icon: LogOut,
-        action: () => onTriggerAction("sign_out"),
-      },
-    ];
+        title: t(definition.labelKey, definition.fallback),
+        subtitle: definition.shortcut,
+        icon: icons[id],
+        action: () => onTriggerAction(id),
+      };
+    });
   }, [t, theme, onTriggerAction]);
 
   // Build items grouped into categories
@@ -360,7 +306,10 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
 
   // Keyboard navigation handler
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "ArrowDown") {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      inputRef.current?.focus();
+    } else if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex((prev) => (prev + 1) % Math.max(1, flatItems.length));
     } else if (e.key === "ArrowUp") {
@@ -385,7 +334,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
 
   let flatCounter = 0;
 
-  return (
+  return createPortal(
     <div
       className="animate-in fade-in fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 pt-16 backdrop-blur-xs duration-150 sm:pt-24"
       onClick={onClose}
@@ -394,13 +343,13 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         role="dialog"
         aria-modal="true"
         aria-label={t("palette.title", "Command Palette")}
-        className="animate-in zoom-in-95 flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl duration-150 dark:border-zinc-800 dark:bg-zinc-900"
+        className="animate-in zoom-in-95 bg-popover text-popover-foreground border-border flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border shadow-xl duration-150"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
       >
         {/* Search Header Input */}
-        <div className="flex items-center gap-3 border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
-          <Search className="h-5 w-5 shrink-0 text-zinc-400" />
+        <div className="border-border dark:border-border flex items-center gap-3 border-b px-4 py-3">
+          <Search className="text-muted-foreground h-5 w-5 shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -414,9 +363,9 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
               "palette.placeholder",
               "Type a command or search...",
             )}
-            className="flex-1 bg-transparent font-sans text-base text-zinc-900 placeholder-zinc-400 focus:outline-none dark:text-zinc-100"
+            className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent font-sans text-base focus:outline-none"
           />
-          <span className="rounded border border-zinc-200 bg-zinc-100 px-2 py-0.5 font-mono text-[11px] font-medium text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800">
+          <span className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted rounded border px-2 py-0.5 font-mono text-[11px] font-medium">
             ESC
           </span>
         </div>
@@ -430,7 +379,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
           className="flex-1 space-y-4 overflow-y-auto p-2 font-sans"
         >
           {flatItems.length === 0 ? (
-            <div className="py-12 text-center text-sm text-zinc-400">
+            <div className="text-muted-foreground py-12 text-center text-sm">
               {t(
                 "palette.noResults",
                 "No matching commands or entities found.",
@@ -445,7 +394,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                   aria-label={group.groupLabel}
                   className="space-y-1"
                 >
-                  <div className="px-3 py-1 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
+                  <div className="text-muted-foreground px-3 py-1 text-[11px] font-semibold tracking-wider uppercase">
                     {group.groupLabel}
                   </div>
                   {group.items.map((item) => {
@@ -467,8 +416,8 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                         className={cn(
                           "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
                           isSelected
-                            ? "bg-indigo-600/10 font-medium text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400"
-                            : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800/60",
+                            ? "bg-primary/10 text-primary font-medium"
+                            : "text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted/60",
                         )}
                       >
                         <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -476,19 +425,19 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
                             className={cn(
                               "h-4 w-4 shrink-0",
                               isSelected
-                                ? "text-indigo-600 dark:text-indigo-400"
-                                : "text-zinc-400",
+                                ? "text-primary dark:text-primary"
+                                : "text-muted-foreground",
                             )}
                           />
                           <span className="truncate">{item.title}</span>
                           {item.subtitle && (
-                            <span className="max-w-50 truncate text-xs text-zinc-400">
+                            <span className="text-muted-foreground max-w-50 truncate text-xs">
                               {item.subtitle}
                             </span>
                           )}
                         </div>
                         {isSelected && (
-                          <span className="rounded bg-indigo-100 px-1.5 py-0.5 font-mono text-[10px] font-medium text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-300">
+                          <span className="bg-primary/10 text-primary dark:bg-primary/60 dark:text-primary rounded px-1.5 py-0.5 font-mono text-[10px] font-medium">
                             ↵ Enter
                           </span>
                         )}
@@ -502,14 +451,14 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
         </div>
 
         {/* Footer info bar */}
-        <div className="flex items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 py-2 text-xs text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950/80">
+        <div className="border-border bg-card text-muted-foreground dark:border-border dark:bg-background/80 flex items-center justify-between border-t px-4 py-2 text-xs">
           <div className="flex items-center gap-2">
             <span>{t("palette.navHint", "Navigation")}:</span>
-            <span className="rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            <span className="bg-muted text-muted-foreground dark:bg-muted dark:text-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
               ↑↓
             </span>
             <span>{t("palette.selectHint", "Select")}:</span>
-            <span className="rounded bg-zinc-200 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            <span className="bg-muted text-muted-foreground dark:bg-muted dark:text-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
               ↵
             </span>
           </div>
@@ -519,6 +468,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

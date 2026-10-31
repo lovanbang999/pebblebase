@@ -1,107 +1,77 @@
-import {
-  Database,
-  Terminal,
-  Workflow,
-  GitCompare,
-  Plus,
-  Search,
-  Sparkles,
-  Sun,
-  Moon,
-} from "lucide-react";
+import { Database, Folder, ListChecks } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { WORKSPACE_COMMANDS } from "./workspaceCommands";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSidebar } from "@/components/ui/sidebar";
-import type { DatabaseType } from "@/lib/types";
 
 interface ActivityRailProps {
-  theme: "light" | "dark";
-  databaseType?: DatabaseType;
-  activeView?: string;
-  onQuery: () => void;
-  onErd: () => void;
-  onDiff: () => void;
-  onNewConnection: () => void;
-  onSearch: () => void;
-  onAISettings: () => void;
-  onToggleTheme: () => void;
+  activeToolWindow: "database" | "scripts" | null;
+  outputOpen: boolean;
+  onToggleDatabase: () => void;
+  onToggleScripts: () => void;
+  onToggleOutput: () => void;
 }
 
-export function ActivityRail(props: ActivityRailProps) {
+export function ActivityRail({
+  activeToolWindow,
+  outputOpen,
+  onToggleDatabase,
+  onToggleScripts,
+  onToggleOutput,
+}: ActivityRailProps) {
   const { t } = useTranslation();
-  const { open, openMobile, isMobile, toggleSidebar } = useSidebar();
-  const databaseOpen = isMobile ? openMobile : open;
-  const canQuery = Boolean(
-    props.databaseType && props.databaseType !== "redis",
-  );
-  const actions = [
-    {
-      icon: Database,
-      label: t("studio.database"),
-      action: toggleSidebar,
-      pressed: databaseOpen,
-    },
-    {
-      icon: Search,
-      label: t("workspace.findAnything"),
-      action: props.onSearch,
-    },
-    {
-      icon: Terminal,
-      label: t("sidebar.queryConsole"),
-      action: props.onQuery,
-      disabled: !canQuery,
-      pressed: props.activeView === "console",
-    },
-    {
-      icon: Workflow,
-      label: t("erd.title"),
-      action: props.onErd,
-      disabled: !canQuery,
-      pressed: props.activeView === "erd",
-    },
-    {
-      icon: GitCompare,
-      label: t("diff.title"),
-      action: props.onDiff,
-      disabled: !canQuery || props.databaseType === "mongodb",
-      pressed: props.activeView === "diff",
-    },
-    {
-      icon: Plus,
-      label: t("studio.newConnection"),
-      action: props.onNewConnection,
-    },
-  ];
-  const renderAction = ({
-    icon: Icon,
-    label,
-    action,
-    disabled,
-    pressed,
-  }: (typeof actions)[number]) => (
-    <Tooltip key={label}>
+  const actions = (
+    [
+      {
+        id: "toggle_database",
+        icon: Database,
+        onClick: onToggleDatabase,
+        pressed: activeToolWindow === "database",
+      },
+      {
+        id: "toggle_scripts",
+        icon: Folder,
+        onClick: onToggleScripts,
+        pressed: activeToolWindow === "scripts",
+      },
+      {
+        id: "toggle_output",
+        icon: ListChecks,
+        onClick: onToggleOutput,
+        pressed: outputOpen,
+      },
+    ] as const
+  ).map((item) => ({
+    ...item,
+    label: t(
+      WORKSPACE_COMMANDS[item.id].labelKey,
+      WORKSPACE_COMMANDS[item.id].fallback,
+    ),
+  }));
+
+  const renderButton = (item: (typeof actions)[number]) => (
+    <Tooltip key={item.id}>
       <TooltipTrigger
         render={
           <Button
+            id={item.id === "toggle_output" ? "output-trigger" : undefined}
+            type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={label}
-            aria-pressed={pressed}
-            disabled={disabled}
-            onClick={action}
+            aria-label={item.label}
+            aria-pressed={item.pressed}
+            onClick={item.onClick}
             className="text-muted-foreground hover:bg-accent hover:text-foreground aria-pressed:bg-sidebar-accent aria-pressed:text-foreground"
-          />
+          >
+            <item.icon aria-hidden="true" className="size-4" />
+          </Button>
         }
-      >
-        <Icon aria-hidden="true" className="size-4" />
-      </TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
+      />
+      <TooltipContent side="right">{item.label}</TooltipContent>
     </Tooltip>
   );
 
@@ -110,18 +80,7 @@ export function ActivityRail(props: ActivityRailProps) {
       aria-label={t("studio.tools")}
       className="bg-card border-border z-20 flex w-[36px] shrink-0 flex-col items-center gap-1 border-r py-1.5"
     >
-      {actions.map(renderAction)}
-      <div className="flex-1" />
-      {renderAction({
-        icon: Sparkles,
-        label: t("studio.aiSettings"),
-        action: props.onAISettings,
-      })}
-      {renderAction({
-        icon: props.theme === "dark" ? Sun : Moon,
-        label: t("studio.toggleTheme"),
-        action: props.onToggleTheme,
-      })}
+      {actions.map(renderButton)}
     </nav>
   );
 }

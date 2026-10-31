@@ -672,11 +672,11 @@ function ERDCanvas({
 
   if (loading) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-zinc-50/50 text-zinc-500 dark:bg-zinc-950">
-        <div className="border-primary/20 dark:border-primary/25 flex size-12 items-center justify-center rounded-2xl border bg-emerald-500/10 shadow-2xs dark:bg-emerald-500/15">
-          <Loader2 className="size-6 animate-spin text-emerald-600 dark:text-emerald-400" />
+      <div className="bg-card/50 text-muted-foreground dark:bg-card flex flex-1 flex-col items-center justify-center gap-3">
+        <div className="border-primary/20 dark:border-primary/25 bg-success/10 dark:bg-success/15 flex size-12 items-center justify-center rounded-2xl border shadow-2xs">
+          <Loader2 className="text-success dark:text-success size-6 animate-spin" />
         </div>
-        <span className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
+        <span className="text-muted-foreground dark:text-muted-foreground font-mono text-xs">
           {t("erd.loading", "Loading ERD diagram...")}
         </span>
       </div>
@@ -685,25 +685,25 @@ function ERDCanvas({
 
   if (error) {
     return (
-      <div className="flex h-full flex-1 flex-col items-center justify-center bg-zinc-50/50 p-6 text-center select-none dark:bg-zinc-950">
-        <div className="w-full max-w-xl rounded-2xl border border-zinc-200/90 bg-white/95 p-6 shadow-xl backdrop-blur-md sm:p-8 dark:border-zinc-800/90 dark:bg-zinc-900/95">
+      <div className="bg-card/50 dark:bg-card flex h-full flex-1 flex-col items-center justify-center p-6 text-center select-none">
+        <div className="border-border/90 bg-background/95 dark:border-border/90 dark:bg-card/95 w-full max-w-xl rounded-2xl border p-6 shadow-xl backdrop-blur-md sm:p-8">
           {/* Unplug / Disconnected Icon Badge */}
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border border-rose-500/25 bg-rose-500/10 text-rose-600 shadow-sm dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-400">
+          <div className="border-destructive/25 bg-destructive/10 text-destructive dark:border-destructive/30 dark:bg-destructive/15 dark:text-destructive mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl border shadow-sm">
             <Unplug className="size-7" />
           </div>
 
-          <h2 className="text-base font-bold tracking-tight text-zinc-900 sm:text-lg dark:text-zinc-100">
+          <h2 className="text-foreground dark:text-foreground text-base font-bold tracking-tight sm:text-lg">
             {t("erd.loadError", "Failed to Load ERD Diagram")}
           </h2>
 
-          <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-muted-foreground dark:text-muted-foreground mt-1.5 text-xs">
             {connectionName ? (
               <span>
                 {t(
                   "erd.loadErrorDesc",
                   "Unable to introspect database schema and relationships on",
                 )}{" "}
-                <strong className="font-mono font-semibold text-zinc-800 dark:text-zinc-200">
+                <strong className="text-foreground dark:text-foreground font-mono font-semibold">
                   {connectionName}
                 </strong>
                 .
@@ -719,7 +719,7 @@ function ERDCanvas({
           {/* Formatted Error Details Box with Copy Action */}
           <div className="mt-5 text-left">
             <div className="mb-1.5 flex items-center justify-between px-0.5">
-              <span className="font-mono text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+              <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                 {t("erd.errorDetails", "Error Details")}
               </span>
               <Button
@@ -727,12 +727,12 @@ function ERDCanvas({
                 variant="ghost"
                 size="xs"
                 onClick={handleCopyError}
-                className="h-6 gap-1 px-2 font-mono text-[10px] text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground h-6 gap-1 px-2 font-mono text-[10px]"
               >
                 {isCopiedError ? (
                   <>
-                    <Check className="size-3 text-emerald-500" />
-                    <span className="text-emerald-600 dark:text-emerald-400">
+                    <Check className="text-success size-3" />
+                    <span className="text-success dark:text-success">
                       {t("common.copied", "Copied!")}
                     </span>
                   </>
@@ -744,7 +744,7 @@ function ERDCanvas({
                 )}
               </Button>
             </div>
-            <div className="max-h-32 overflow-y-auto rounded-lg border border-rose-200/80 bg-rose-50/60 p-3 font-mono text-[11px] leading-relaxed text-rose-700 select-text dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300">
+            <div className="border-destructive/80 bg-destructive/60 text-destructive dark:border-destructive/40 dark:bg-destructive/30 dark:text-destructive max-h-32 overflow-y-auto rounded-lg border p-3 font-mono text-[11px] leading-relaxed select-text">
               {error}
             </div>
           </div>
@@ -773,7 +773,7 @@ function ERDCanvas({
   return (
     <div
       ref={reactFlowWrapper}
-      className={`relative h-full w-full flex-1 overflow-hidden bg-[#fafafa] select-none dark:bg-zinc-950 ${isDraggingNode ? "is-dragging-node" : ""}`}
+      className={`dark:bg-card relative h-full w-full flex-1 overflow-hidden bg-[#fafafa] select-none ${isDraggingNode ? "is-dragging-node" : ""}`}
     >
       {/* Floating Toolbar */}
       <ERDToolbar
@@ -799,7 +799,7 @@ function ERDCanvas({
 
       {/* Notice Banner if No Relations Exist */}
       {hasNoRelations && (
-        <div className="absolute top-16 left-3 z-10 flex items-center gap-2 rounded-lg border border-amber-500/25 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-600 shadow-md dark:text-amber-400">
+        <div className="border-warning/25 bg-warning/10 text-warning dark:text-warning absolute top-16 left-3 z-10 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs shadow-md">
           <Info className="h-3.5 w-3.5 shrink-0" />
           <span>{t("erd.noRelations")}</span>
         </div>
@@ -852,7 +852,7 @@ function ERDCanvas({
             nodeColor={(node) => {
               return node.data?.isDimmed ? "#cbd5e1" : "#3b82f6";
             }}
-            className="right-4! bottom-4! overflow-hidden rounded-lg! border! border-zinc-200! bg-white/95! shadow-md! backdrop-blur-md! dark:border-zinc-800! dark:bg-zinc-900/95! [&_.react-flow\_\_minimap-mask]:fill-zinc-300/50! dark:[&_.react-flow\_\_minimap-mask]:fill-zinc-950/75!"
+            className="border-border! bg-background/95! dark:border-border! dark:bg-card/95! [&_.react-flow\_\_minimap-mask]:fill-foreground/50! dark:[&_.react-flow\_\_minimap-mask]:fill-background/75! right-4! bottom-4! overflow-hidden rounded-lg! border! shadow-md! backdrop-blur-md!"
             zoomable
             pannable
           />

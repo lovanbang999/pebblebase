@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type KeyboardEvent } from "react";
+import { useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { apiLogin } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
@@ -20,8 +20,9 @@ import {
 export function LoginScreen() {
   const { t } = useTranslation();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const passwordInput = useRef<HTMLInputElement>(null);
 
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [capsLockOn, setCapsLockOn] = useState(false);
@@ -30,9 +31,11 @@ export function LoginScreen() {
   const [filledFeedback, setFilledFeedback] = useState(false);
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.getModifierState) {
-      setCapsLockOn(e.getModifierState("CapsLock"));
-    }
+    setCapsLockOn(e.getModifierState("CapsLock"));
+  }
+
+  function clearError() {
+    if (error) setError("");
   }
 
   function handleQuickFill() {
@@ -40,66 +43,91 @@ export function LoginScreen() {
     setPassword("pebblebase");
     setError("");
     setFilledFeedback(true);
-    setTimeout(() => setFilledFeedback(false), 1500);
+    window.setTimeout(() => setFilledFeedback(false), 1500);
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (loading) return;
+    const normalizedUsername = username.trim();
+    if (!normalizedUsername || !password) return;
+    setUsername(normalizedUsername);
     setError("");
     setLoading(true);
     try {
-      const res = await apiLogin(username, password);
+      const res = await apiLogin(normalizedUsername, password);
+      setPassword("");
       setAuth(res.user, res.token, res.is_default_password);
     } catch (err) {
+      setPassword("");
       setError(
-        err instanceof Error ? err.message : t("auth.invalidCredentials"),
+        err instanceof Error && err.message !== "AUTH_INVALID_CREDENTIALS"
+          ? err.message
+          : t("auth.invalidCredentials"),
       );
+      window.requestAnimationFrame(() => passwordInput.current?.focus());
     } finally {
       setLoading(false);
     }
   }
 
+  function togglePasswordVisibility() {
+    const input = passwordInput.current;
+    const start = input?.selectionStart;
+    const end = input?.selectionEnd;
+    setShowPassword((current) => !current);
+    window.requestAnimationFrame(() => {
+      if (!input) return;
+      input.focus();
+      if (
+        start !== null &&
+        start !== undefined &&
+        end !== null &&
+        end !== undefined
+      ) {
+        input.setSelectionRange(start, end);
+      }
+    });
+  }
+
   return (
     <div className="bg-background text-foreground relative flex h-dvh w-full flex-col overflow-y-auto antialiased">
-      <DesktopTitleBar />
-      <div className="relative flex w-full flex-1 flex-col items-center justify-center-safe px-5 pt-20 pb-12">
-        {/* Top Right Header Actions (Language & Theme Controls) */}
+      <DesktopTitleBar nativeOnly />
+      <div className="relative flex w-full flex-1 flex-col items-center justify-center px-5 py-10">
         <div className="absolute top-4 right-4 z-10 flex items-center gap-1.5">
           <LanguageSwitcher />
           <ThemeToggle />
         </div>
 
-        {/* Main Login Card Container */}
-        <div className="relative w-full max-w-[340px]">
-          <div className="mb-5 flex flex-col items-center text-center">
-            <div className="border-border mb-5 flex h-14 w-14 items-center justify-center rounded-lg border bg-emerald-500/5 p-3 shadow-sm">
-              <img
-                src="/favicon.svg"
-                width={32}
-                height={32}
-                alt=""
-                className="h-full w-full object-contain"
-              />
-            </div>
-            <h1 className="text-foreground font-sans text-xl font-semibold tracking-tight">
-              Pebblebase Studio
-            </h1>
-            <p className="text-muted-foreground mt-2 text-sm">
-              {t("auth.studioSubtitle")}
-            </p>
-          </div>
-          <div className="bg-card text-card-foreground border-border rounded-lg border p-5 shadow-sm">
+        <main className="w-full max-w-[380px]">
+          <section className="bg-card text-card-foreground border-border rounded-xl border p-7 shadow-sm">
+            <header className="mb-6 flex flex-col items-center text-center">
+              <div className="border-border bg-primary/5 mb-4 flex h-11 w-11 items-center justify-center rounded-lg border p-2.5">
+                <img
+                  src="/favicon.svg"
+                  width={24}
+                  height={24}
+                  alt=""
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <h1 className="text-foreground font-sans text-xl font-semibold tracking-tight">
+                Pebblebase Studio
+              </h1>
+              <p className="text-muted-foreground mt-1.5 text-sm">
+                {t("auth.studioSubtitle")}
+              </p>
+            </header>
+
             <form
               onSubmit={handleSubmit}
               className="space-y-4"
               aria-busy={loading}
             >
-              {/* Username Field */}
               <div>
                 <label
                   htmlFor="login-username"
-                  className="text-foreground mb-2 block text-sm font-medium"
+                  className="text-foreground mb-1.5 block text-sm font-medium"
                 >
                   {t("auth.username")}
                 </label>
@@ -113,7 +141,10 @@ export function LoginScreen() {
                     spellCheck={false}
                     autoCapitalize="none"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      clearError();
+                    }}
                     className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 h-9 pl-11"
                     placeholder="admin"
                     aria-invalid={!!error}
@@ -123,9 +154,8 @@ export function LoginScreen() {
                 </div>
               </div>
 
-              {/* Password Field */}
               <div>
-                <div className="mb-2 flex items-center justify-between">
+                <div className="mb-1.5 flex items-center justify-between">
                   <label
                     htmlFor="login-password"
                     className="text-foreground block text-sm font-medium"
@@ -133,7 +163,7 @@ export function LoginScreen() {
                     {t("auth.password")}
                   </label>
                   {capsLockOn && (
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-amber-500 dark:text-amber-400">
+                    <span className="text-warning dark:text-warning flex items-center gap-1 text-[10px] font-medium">
                       <AlertCircle className="h-3 w-3" />
                       {t("auth.capsLockOn")}
                     </span>
@@ -142,12 +172,16 @@ export function LoginScreen() {
                 <div className="relative">
                   <Lock className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 z-10 h-4 w-4 -translate-y-1/2" />
                   <Input
+                    ref={passwordInput}
                     id="login-password"
                     type={showPassword ? "text" : "password"}
                     name="password"
                     autoComplete="current-password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      clearError();
+                    }}
                     onKeyDown={handleKeyDown}
                     onKeyUp={handleKeyDown}
                     className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 h-9 pr-12 pl-11"
@@ -158,7 +192,7 @@ export function LoginScreen() {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={togglePasswordVisibility}
                     className="text-muted-foreground hover:text-foreground focus-visible:ring-ring absolute top-1/2 right-0 z-10 flex h-9 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md transition-colors outline-none focus-visible:ring-2"
                     aria-pressed={showPassword}
                     aria-label={
@@ -181,7 +215,6 @@ export function LoginScreen() {
                 </div>
               </div>
 
-              {/* Error Banner */}
               {error && (
                 <div
                   id="login-error"
@@ -193,22 +226,22 @@ export function LoginScreen() {
                 </div>
               )}
 
-              {/* Primary Action Button */}
               <Button
                 type="submit"
-                disabled={loading}
-                className="bg-primary focus-visible:ring-primary/30 h-9 w-full cursor-pointer justify-center px-4 font-semibold text-white hover:bg-emerald-700 disabled:opacity-60 dark:bg-emerald-400 dark:text-emerald-950 dark:hover:bg-emerald-300"
+                disabled={loading || !username.trim() || !password}
+                className="bg-primary focus-visible:ring-primary/30 text-primary-foreground hover:bg-primary/90 h-[38px] w-full cursor-pointer justify-center px-4 font-semibold disabled:opacity-60"
               >
                 {loading ? t("auth.signingIn") : t("auth.signIn")}
               </Button>
-              <div className="border-border flex flex-col items-center gap-1 border-t pt-4">
+
+              <div className="border-border flex flex-col items-center gap-1 border-t pt-3">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   onClick={handleQuickFill}
                   disabled={loading}
-                  className="hover:bg-primary/10 focus-visible:ring-primary/30 h-9 max-w-full gap-2 rounded-lg px-3 text-xs font-medium text-emerald-700 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-300"
+                  className="hover:bg-primary/10 focus-visible:ring-primary/30 text-primary hover:text-primary h-9 max-w-full gap-2 rounded-lg px-3 text-xs font-medium"
                 >
                   {filledFeedback ? (
                     <Check aria-hidden="true" className="size-3.5" />
@@ -230,15 +263,16 @@ export function LoginScreen() {
                   <code className="font-mono">pebblebase</code>
                 </p>
               </div>
+              <p className="text-muted-foreground text-center text-xs">
+                {t("auth.loginRecoveryHint")}
+              </p>
             </form>
-          </div>
-
-          {/* System Footer Note */}
-          <p className="text-muted-foreground mt-6 text-center font-sans text-xs">
-            Pebblebase Studio · Engine Host v{packageJson.version}
-          </p>
-        </div>
+          </section>
+        </main>
       </div>
+      <footer className="text-muted-foreground flex h-9 w-full shrink-0 items-center justify-center px-4 font-sans text-xs">
+        Pebblebase Studio · v{packageJson.version}
+      </footer>
     </div>
   );
 }

@@ -7,7 +7,8 @@
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: "Inter", "Geist Variable", "Segoe UI", system-ui, sans-serif;
+  /* Geist is bundled; Inter and JetBrains Mono are not shipped by this app. */
+  --font-sans: "Geist Variable", "Segoe UI", system-ui, sans-serif;
   --font-mono:
     "JetBrains Mono", "Cascadia Mono", ui-monospace, "DejaVu Sans Mono",
     monospace;
@@ -27,6 +28,17 @@
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
+  --color-line: var(--border);
+  --color-panel-2: var(--panel-2);
+  --color-selection: var(--studio-selection);
+  --color-success: var(--studio-success);
+  --color-warning: var(--studio-warning);
+  --color-syntax-number: var(--studio-number);
+  --color-syntax-string: var(--studio-string);
+  --color-syntax-keyword: var(--studio-keyword);
+  --color-code: var(--code-background);
+  --color-code-foreground: var(--code-foreground);
+  --color-code-border: var(--code-border);
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
@@ -74,6 +86,10 @@ html[data-font-size="xl"] {
   --background: #ffffff;
   --foreground: #27282c;
   --card: #f7f8fa;
+  --panel-2: #f1f2f5;
+  --code-background: #27282c;
+  --code-foreground: #f1f2f5;
+  --code-border: #393b40;
   --card-foreground: #27282c;
   --popover: #f7f8fa;
   --popover-foreground: #27282c;
@@ -89,7 +105,7 @@ html[data-font-size="xl"] {
   --border: #ebecf0;
   --input: #c9ccd6;
   --ring: #3574f0;
-  --radius: 0.3125rem;
+  --radius: 0.25rem;
   --sidebar: #f7f8fa;
   --sidebar-foreground: #27282c;
   --sidebar-primary: #3574f0;
@@ -106,17 +122,6 @@ html[data-font-size="xl"] {
   --studio-number: #1750eb;
   --studio-string: #067d17;
   --studio-keyword: #0033b3;
-  --color-zinc-50: #f7f8fa;
-  --color-zinc-100: #f1f2f5;
-  --color-zinc-200: #ebecf0;
-  --color-zinc-300: #c9ccd6;
-  --color-zinc-400: #868a91;
-  --color-zinc-500: #6c707e;
-  --color-zinc-600: #555965;
-  --color-zinc-700: #41434b;
-  --color-zinc-800: #393b40;
-  --color-zinc-900: #27282c;
-  --color-zinc-950: #1e1f22;
 }
 
 .dark {
@@ -124,6 +129,10 @@ html[data-font-size="xl"] {
   --background: #1e1f22;
   --foreground: #dfe1e5;
   --card: #2b2d30;
+  --panel-2: #25262a;
+  --code-background: #1e1f22;
+  --code-foreground: #dfe1e5;
+  --code-border: #393b40;
   --card-foreground: #dfe1e5;
   --popover: #2b2d30;
   --popover-foreground: #dfe1e5;
@@ -139,7 +148,7 @@ html[data-font-size="xl"] {
   --border: #393b40;
   --input: #4e5157;
   --ring: #548af7;
-  --radius: 0.3125rem;
+  --radius: 0.25rem;
   --sidebar: #2b2d30;
   --sidebar-foreground: #dfe1e5;
   --sidebar-primary: #548af7;
@@ -156,18 +165,6 @@ html[data-font-size="xl"] {
   --studio-number: #2aacb8;
   --studio-string: #6aab73;
   --studio-keyword: #cf8e6d;
-  --color-zinc-50: #f1f2f5;
-  --color-zinc-100: #dfe1e5;
-  --color-zinc-200: #d0d3da;
-  --color-zinc-300: #b8bcc4;
-  --color-zinc-400: #a0a4ab;
-  --color-zinc-500: #868a91;
-  --color-zinc-600: #686c73;
-  --color-zinc-700: #4e5157;
-  --color-zinc-800: #393b40;
-  --color-zinc-900: #2b2d30;
-  --color-zinc-950: #1e1f22;
-  --color-zinc-850: #25262a;
 }
 
 @layer base {
@@ -260,22 +257,21 @@ html[data-font-size="xl"] {
 
 /* CodeMirror Autocomplete Popup Styling */
 .cm-tooltip.cm-tooltip-autocomplete {
-  background: #ffffff !important;
-  border: 1px solid oklch(0.922 0 0) !important;
-  border-radius: 8px !important;
+  background: var(--popover) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-md) !important;
   box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+  font-family: var(--font-mono) !important;
   font-size: 11px !important;
   padding: 4px !important;
   z-index: 9999 !important;
 }
 
 .dark .cm-tooltip.cm-tooltip-autocomplete {
-  background: #181a22 !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: var(--popover) !important;
+  border: 1px solid var(--border) !important;
   box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.5),
     0 8px 10px -6px rgba(0, 0, 0, 0.4) !important;
@@ -294,22 +290,18 @@ html[data-font-size="xl"] {
   display: flex !important;
   align-items: center !important;
   gap: 6px !important;
-  color: #27272a !important;
-}
-
-.dark .cm-tooltip.cm-tooltip-autocomplete > ul > li {
-  color: #e4e4e7 !important;
+  color: var(--popover-foreground) !important;
 }
 
 .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
-  background: #10b981 !important;
-  color: #ffffff !important;
+  background: var(--accent) !important;
+  color: var(--accent-foreground) !important;
 }
 
 .dark .cm-tooltip.cm-tooltip-autocomplete > ul > li[aria-selected] {
-  background: rgba(16, 185, 129, 0.22) !important;
-  color: #34d399 !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  background: var(--accent) !important;
+  color: var(--accent-foreground) !important;
+  border: 1px solid var(--border) !important;
 }
 
 .cm-completionDetail {
@@ -365,9 +357,9 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px oklch(1 0 0) inset !important;
-  -webkit-text-fill-color: oklch(0.145 0 0) !important;
-  caret-color: oklch(0.145 0 0) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
+  -webkit-text-fill-color: var(--foreground) !important;
+  caret-color: var(--foreground) !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -375,20 +367,15 @@ input:-webkit-autofill:active {
 .dark input:-webkit-autofill:hover,
 .dark input:-webkit-autofill:focus,
 .dark input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #181a22 inset !important;
-  -webkit-text-fill-color: #f4f6f8 !important;
-  caret-color: #f4f6f8 !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--background) inset !important;
+  -webkit-text-fill-color: var(--foreground) !important;
+  caret-color: var(--foreground) !important;
   transition: background-color 5000s ease-in-out 0s;
 }
 
 input:autofill {
-  background-color: oklch(1 0 0) !important;
-  color: oklch(0.145 0 0) !important;
-}
-
-.dark input:autofill {
-  background-color: #181a22 !important;
-  color: #f4f6f8 !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
 }
 
 /* Shared workspace interaction states. Grid row metrics stay in constants/grid.ts. */
@@ -403,6 +390,9 @@ input:autofill {
   }
   input[type="checkbox"] {
     accent-color: var(--primary);
+  }
+  svg.lucide {
+    stroke-width: 1.75;
   }
 }
 .studio-data-table {
@@ -440,7 +430,11 @@ input:autofill {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  html:focus-within {
+    scroll-behavior: auto !important;
   }
 }
 
@@ -455,4 +449,22 @@ button,
 .studio-data-table td:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: -2px;
+}
+
+@media (max-width: 639px) {
+  .studio-value-editor {
+    position: absolute;
+    z-index: 30;
+    inset-inline: 0;
+    bottom: 0;
+    width: 100% !important;
+    max-width: 100%;
+    height: min(55dvh, 30rem);
+    border-top: 1px solid var(--border);
+    border-left: 0;
+    box-shadow: 0 -8px 24px rgb(0 0 0 / 0.14);
+  }
+  .studio-value-editor [role="separator"] {
+    display: none;
+  }
 }

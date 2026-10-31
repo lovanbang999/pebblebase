@@ -83,6 +83,7 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	// Connection management
 	mux.Handle("POST /api/connections/test", protect(http.HandlerFunc(s.testConnection)))
 	mux.Handle("POST /api/connections", protect(http.HandlerFunc(s.createConnection)))
+	mux.Handle("PUT /api/connections/{id}", protect(http.HandlerFunc(s.updateConnection)))
 	mux.Handle("GET /api/connections", protect(http.HandlerFunc(s.listConnections)))
 	mux.Handle("DELETE /api/connections/{id}", protect(http.HandlerFunc(s.deleteConnection)))
 	mux.Handle("POST /api/connections/{id}/ping", protect(http.HandlerFunc(s.pingConnection)))

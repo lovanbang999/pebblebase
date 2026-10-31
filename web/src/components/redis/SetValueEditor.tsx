@@ -75,10 +75,10 @@ export const SetValueEditor: FC<SetValueEditorProps> = ({
   return (
     <div className="flex h-full flex-col space-y-3">
       {/* Search and Add Header */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex flex-wrap items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
           <div className="relative w-56">
-            <Search className="absolute top-2 left-2.5 h-3.5 w-3.5 text-zinc-400" />
+            <Search className="text-muted-foreground absolute top-2 left-2.5 h-3.5 w-3.5" />
             <Input
               type="text"
               placeholder={t("redis.setEditor.searchPlaceholder")}
@@ -107,7 +107,7 @@ export const SetValueEditor: FC<SetValueEditorProps> = ({
               size="sm"
               onClick={handleAddMember}
               disabled={loading || !newMember.trim()}
-              className="h-7 bg-amber-600 text-xs text-white hover:bg-amber-700"
+              className="bg-warning hover:bg-warning h-7 text-xs text-white"
             >
               {loading ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -121,26 +121,26 @@ export const SetValueEditor: FC<SetValueEditorProps> = ({
       </div>
 
       {error && (
-        <div className="rounded-md border border-rose-500/20 bg-rose-500/10 p-2 text-xs text-rose-600 dark:text-rose-400">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
           {error}
         </div>
       )}
 
       {/* Members list */}
-      <div className="flex-1 overflow-auto rounded-md border border-zinc-200 font-mono text-xs dark:border-zinc-800">
-        <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border font-mono text-xs">
+        <div className="divide-border dark:divide-border divide-y">
           {filteredMembers.length === 0 ? (
-            <div className="p-6 text-center text-zinc-400">
+            <div className="text-muted-foreground p-6 text-center">
               {t("redis.setEditor.empty")}
             </div>
           ) : (
             filteredMembers.map((m) => (
               <div
                 key={m}
-                className="group flex items-center justify-between px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                className="group hover:bg-card dark:hover:bg-muted flex items-center justify-between px-3 py-2"
               >
                 <span
-                  className="truncate text-zinc-700 dark:text-zinc-200"
+                  className="text-foreground dark:text-foreground truncate"
                   title={m}
                 >
                   {m}
@@ -151,7 +151,7 @@ export const SetValueEditor: FC<SetValueEditorProps> = ({
                     size="sm"
                     variant="ghost"
                     onClick={() => handleRemoveMember(m)}
-                    className="h-6 w-6 p-0 text-rose-500 opacity-0 group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/30 h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

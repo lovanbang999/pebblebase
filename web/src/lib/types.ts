@@ -48,6 +48,7 @@ export interface Connection {
   id: string;
   name: string;
   type: DatabaseType;
+  mode?: "form" | "url";
   host: string;
   port: string;
   user: string;
@@ -75,6 +76,8 @@ export interface ConnectionInput {
   save_password: boolean;
   ssl_mode?: string;
   windows_auth?: boolean;
+  preserve_existing_dsn?: boolean;
+  connection_id?: string;
 }
 
 export interface ColumnSchema {
@@ -120,6 +123,7 @@ export interface RowQueryParams {
 export interface QueryResult {
   rows: Record<string, any>[];
   total_count: number;
+  query_time_ms?: number;
 }
 
 export interface RawQueryResult {
@@ -187,6 +191,7 @@ export interface StudioTab {
   objectId?: string;
   connectionId: string;
   state?: StudioTabState;
+  isDirty?: boolean;
 }
 
 export type ExplorerSelection =
@@ -213,6 +218,7 @@ export interface PersistedWorkspace {
   selectedExplorerNode: ExplorerSelection;
   expandedNodeIds: string[];
   toolWindows: WorkspaceToolWindows;
+  sidebarWidth: number;
   initialized: boolean;
 }
 

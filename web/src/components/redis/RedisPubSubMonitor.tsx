@@ -271,18 +271,18 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
                 variant="outline"
                 className={
                   isConnected
-                    ? "border-primary/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    ? "border-primary/30 bg-success/10 text-success dark:text-success"
                     : isConnecting
-                      ? "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                      ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
                       : "border-muted-foreground/30 bg-muted/40 text-muted-foreground"
                 }
               >
                 <span
                   className={`mr-1.5 inline-block h-2 w-2 rounded-full ${
                     isConnected
-                      ? "animate-ping bg-emerald-500"
+                      ? "bg-success animate-ping"
                       : isConnecting
-                        ? "bg-amber-500"
+                        ? "bg-warning"
                         : "bg-muted-foreground"
                   }`}
                 />
@@ -400,7 +400,7 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
             <Badge
               key={`pat-${pat}`}
               variant="secondary"
-              className="flex items-center gap-1.5 border border-purple-500/20 bg-purple-500/10 px-2 py-0.5 font-mono text-xs text-purple-700 dark:text-purple-300"
+              className="border-primary/20 bg-primary/10 text-primary dark:text-primary flex items-center gap-1.5 border px-2 py-0.5 font-mono text-xs"
             >
               <span>pattern:{pat}</span>
               <button
@@ -514,7 +514,7 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
                         {msg.pattern && (
                           <Badge
                             variant="outline"
-                            className="border-purple-500/30 bg-purple-500/10 font-mono text-[10px] text-purple-700 dark:text-purple-300"
+                            className="border-primary/30 bg-primary/10 text-primary dark:text-primary font-mono text-[10px]"
                           >
                             pat:{msg.pattern}
                           </Badge>
@@ -536,7 +536,7 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
                           title={t("redis.pubsub.copyPayload")}
                         >
                           {copiedId === msg.id ? (
-                            <Check className="h-3.5 w-3.5 text-emerald-500" />
+                            <Check className="text-success h-3.5 w-3.5" />
                           ) : (
                             <Copy className="text-muted-foreground h-3.5 w-3.5" />
                           )}
@@ -547,7 +547,7 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
                     {/* Payload content */}
                     <div className="bg-muted/40 text-foreground overflow-x-auto rounded p-2.5 text-xs leading-relaxed break-all whitespace-pre-wrap">
                       {isJson ? (
-                        <pre className="font-mono text-xs text-emerald-600 dark:text-emerald-400">
+                        <pre className="text-success dark:text-success font-mono text-xs">
                           {formatJsonString(msg.payload)}
                         </pre>
                       ) : (
@@ -616,7 +616,7 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
               <div
                 className={`flex items-start gap-2 rounded-md border p-2.5 text-xs ${
                   publishFeedback.type === "success"
-                    ? "border-primary/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                    ? "border-primary/20 bg-success/10 text-success dark:text-success"
                     : "bg-destructive/10 text-destructive border-destructive/20"
                 }`}
               >

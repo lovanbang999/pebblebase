@@ -60,14 +60,14 @@ export function ThemeToggle({
             variant="ghost"
             size="icon-xs"
             onClick={handleToggle}
-            className={`size-6 cursor-pointer rounded text-zinc-500 transition-colors hover:bg-zinc-200/60 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 ${
+            className={`text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground size-6 cursor-pointer rounded transition-colors ${
               className ?? ""
             }`}
           >
             {currentTheme === "dark" ? (
-              <Sun className="size-3.5 text-amber-400" />
+              <Sun className="text-warning size-3.5" />
             ) : (
-              <Moon className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+              <Moon className="text-primary dark:text-primary size-3.5" />
             )}
           </Button>
         }

@@ -26,10 +26,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { PanelLeftIcon } from "lucide-react";
+import {
+  SIDEBAR_DEFAULT_WIDTH,
+  SIDEBAR_MAX_WIDTH,
+  SIDEBAR_MIN_WIDTH,
+  SIDEBAR_RESET_WIDTH,
+  SIDEBAR_MOBILE_WIDTH,
+} from "@/constants/workspaceLayout";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "36px";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 
@@ -60,6 +66,8 @@ function SidebarProvider({
   defaultOpen = true,
   open: openProp,
   onOpenChange: setOpenProp,
+  sidebarWidth: sidebarWidthProp,
+  onSidebarWidthChange,
   className,
   style,
   children,
@@ -68,9 +76,23 @@ function SidebarProvider({
   defaultOpen?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  sidebarWidth?: number;
+  onSidebarWidthChange?: (width: number) => void;
 }) {
   const isMobile = useIsMobile();
-  const [width, setWidth] = React.useState(280);
+  const [localWidth, setLocalWidth] = React.useState(SIDEBAR_DEFAULT_WIDTH);
+  const width = sidebarWidthProp ?? localWidth;
+  const setWidth = React.useCallback(
+    (nextWidth: number) => {
+      const boundedWidth = Math.min(
+        SIDEBAR_MAX_WIDTH,
+        Math.max(SIDEBAR_MIN_WIDTH, nextWidth),
+      );
+      setLocalWidth(boundedWidth);
+      onSidebarWidthChange?.(boundedWidth);
+    },
+    [onSidebarWidthChange],
+  );
   const [openMobile, setOpenMobile] = React.useState(false);
 
   // This is the internal state of the sidebar.
@@ -128,6 +150,8 @@ function SidebarProvider({
       openMobile,
       setOpenMobile,
       toggleSidebar,
+      sidebarWidthProp,
+      onSidebarWidthChange,
     }),
     [
       state,
@@ -138,6 +162,8 @@ function SidebarProvider({
       openMobile,
       setOpenMobile,
       toggleSidebar,
+      sidebarWidthProp,
+      onSidebarWidthChange,
     ],
   );
 
@@ -205,7 +231,7 @@ function Sidebar({
           className="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
           style={
             {
-              "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+              "--sidebar-width": SIDEBAR_MOBILE_WIDTH,
             } as React.CSSProperties
           }
           side={side}
@@ -296,10 +322,37 @@ function SidebarTrigger({
 function SidebarRail({ className, ...props }: React.ComponentProps<"div">) {
   const { width, setWidth, state } = useSidebar();
   const { t } = useTranslation();
-  const drag = React.useRef<{ x: number; width: number } | null>(null);
+  const drag = React.useRef<{
+    x: number;
+    startWidth: number;
+    width: number;
+    frameId: number | null;
+    wrapper: HTMLElement | null;
+    separator: HTMLDivElement;
+  } | null>(null);
   if (state === "collapsed") return null;
   const resize = (value: number) =>
-    setWidth(Math.min(520, Math.max(200, value)));
+    setWidth(Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, value)));
+  const finishResize = () => {
+    const currentDrag = drag.current;
+    if (!currentDrag) return;
+    if (currentDrag.frameId !== null)
+      window.cancelAnimationFrame(currentDrag.frameId);
+    currentDrag.wrapper?.style.setProperty(
+      "--sidebar-width",
+      `${currentDrag.width}px`,
+    );
+    currentDrag.separator.setAttribute(
+      "aria-valuenow",
+      String(currentDrag.width),
+    );
+    currentDrag.separator.setAttribute(
+      "aria-valuetext",
+      `${currentDrag.width}px`,
+    );
+    drag.current = null;
+    resize(currentDrag.width);
+  };
   return (
     <div
       {...props}
@@ -308,43 +361,67 @@ function SidebarRail({ className, ...props }: React.ComponentProps<"div">) {
       role="separator"
       aria-label={t("studio.resizeSidebar")}
       aria-orientation="vertical"
-      aria-valuemin={200}
-      aria-valuemax={520}
+      aria-valuemin={SIDEBAR_MIN_WIDTH}
+      aria-valuemax={SIDEBAR_MAX_WIDTH}
       aria-valuenow={width}
+      aria-valuetext={`${width}px`}
       tabIndex={0}
-      onDoubleClick={() => setWidth(280)}
+      onDoubleClick={() => setWidth(SIDEBAR_RESET_WIDTH)}
       onKeyDown={(event) => {
         if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key))
           return;
         event.preventDefault();
         resize(
           event.key === "Home"
-            ? 200
+            ? SIDEBAR_MIN_WIDTH
             : event.key === "End"
-              ? 520
+              ? SIDEBAR_MAX_WIDTH
               : width + (event.key === "ArrowLeft" ? -16 : 16),
         );
       }}
       onPointerDown={(event) => {
         if (event.button !== 0) return;
-        drag.current = { x: event.clientX, width };
+        drag.current = {
+          x: event.clientX,
+          startWidth: width,
+          width,
+          frameId: null,
+          wrapper: event.currentTarget.closest<HTMLElement>(
+            '[data-slot="sidebar-wrapper"]',
+          ),
+          separator: event.currentTarget,
+        };
         event.currentTarget.setPointerCapture(event.pointerId);
       }}
       onPointerMove={(event) => {
-        if (drag.current)
-          resize(drag.current.width + event.clientX - drag.current.x);
+        const currentDrag = drag.current;
+        if (!currentDrag) return;
+        const nextWidth = Math.min(
+          SIDEBAR_MAX_WIDTH,
+          Math.max(
+            SIDEBAR_MIN_WIDTH,
+            currentDrag.startWidth + event.clientX - currentDrag.x,
+          ),
+        );
+        currentDrag.width = nextWidth;
+        currentDrag.separator.setAttribute("aria-valuenow", String(nextWidth));
+        currentDrag.separator.setAttribute("aria-valuetext", `${nextWidth}px`);
+        if (currentDrag.frameId === null) {
+          currentDrag.frameId = window.requestAnimationFrame(() => {
+            currentDrag.frameId = null;
+            if (drag.current !== currentDrag) return;
+            currentDrag.wrapper?.style.setProperty(
+              "--sidebar-width",
+              `${currentDrag.width}px`,
+            );
+          });
+        }
       }}
-      onPointerUp={() => {
-        drag.current = null;
-      }}
-      onPointerCancel={() => {
-        drag.current = null;
-      }}
-      onLostPointerCapture={() => {
-        drag.current = null;
-      }}
+      onPointerUp={finishResize}
+      onPointerCancel={finishResize}
+      onLostPointerCapture={finishResize}
       className={cn(
-        "hover:bg-primary focus-visible:bg-primary absolute inset-y-0 -right-0.5 z-30 hidden w-1 cursor-col-resize touch-none select-none md:block",
+        "hover:border-primary hover:bg-primary/10 focus-visible:border-primary focus-visible:bg-primary/10 absolute inset-y-0 -right-1 z-30 hidden w-2 cursor-col-resize touch-none border-r-2 border-transparent select-none md:block",
         className,
       )}
     />

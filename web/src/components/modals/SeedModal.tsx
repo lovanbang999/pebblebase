@@ -106,25 +106,25 @@ export const SeedModal: FC<SeedModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[90vh] w-[92vw] max-w-3xl flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
+      <DialogContent className="border-border bg-background dark:border-border dark:bg-card flex max-h-[90vh] w-[92vw] max-w-3xl flex-col overflow-hidden rounded-xl border p-0 shadow-2xl">
         {/* Header */}
-        <DialogHeader className="border-b border-zinc-200 bg-zinc-50/50 p-4 md:p-5 dark:border-zinc-800 dark:bg-zinc-900/30">
+        <DialogHeader className="border-border bg-card/50 dark:border-border dark:bg-card/30 border-b p-4 md:p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="border-primary/20 rounded-lg border bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+              <div className="border-primary/20 bg-success/10 text-success dark:text-success rounded-lg border p-2">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="flex items-center gap-2 font-mono text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
+                <DialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 font-mono text-base font-bold tracking-tight">
                   <span>{t("seed.title")}</span>
                   <Badge
                     variant="outline"
-                    className="border-primary/20 bg-emerald-500/10 font-mono text-[11px] text-emerald-700 dark:text-emerald-400"
+                    className="border-primary/20 bg-success/10 text-success dark:text-success font-mono text-[11px]"
                   >
                     {tableName}
                   </Badge>
                 </DialogTitle>
-                <DialogDescription className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                <DialogDescription className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-xs">
                   {t("seed.description")}
                 </DialogDescription>
               </div>
@@ -135,11 +135,11 @@ export const SeedModal: FC<SeedModalProps> = ({
         {/* Content Body */}
         <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
           {/* Controls bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div className="border-border bg-card/60 dark:border-border dark:bg-card/40 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
             <div className="flex items-center gap-2">
               <label
                 htmlFor="seed-count"
-                className="font-mono text-xs font-medium whitespace-nowrap text-zinc-700 dark:text-zinc-300"
+                className="text-foreground dark:text-muted-foreground font-mono text-xs font-medium whitespace-nowrap"
               >
                 {t("seed.count")}
               </label>
@@ -162,7 +162,7 @@ export const SeedModal: FC<SeedModalProps> = ({
                 }}
                 className="h-8 w-24 font-mono text-xs"
               />
-              <span className="font-mono text-[11px] text-zinc-400 dark:text-zinc-500">
+              <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[11px]">
                 {t("seed.countHelp")}
               </span>
             </div>
@@ -185,8 +185,8 @@ export const SeedModal: FC<SeedModalProps> = ({
 
           {/* Error notice */}
           {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 font-mono text-xs text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
-              <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" />
+            <div className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 dark:text-destructive flex items-center gap-2 rounded-lg border p-3 font-mono text-xs">
+              <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
           )}
@@ -195,9 +195,9 @@ export const SeedModal: FC<SeedModalProps> = ({
           {seedResult && (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                  <Layers className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                  <span className="font-semibold text-zinc-900 dark:text-zinc-200">
+                <div className="text-muted-foreground dark:text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
+                  <Layers className="text-success h-3.5 w-3.5 shrink-0" />
+                  <span className="text-foreground dark:text-foreground font-semibold">
                     {t("seed.tablesIncluded")}
                   </span>
                   <div className="flex flex-wrap items-center gap-1">
@@ -211,27 +211,29 @@ export const SeedModal: FC<SeedModalProps> = ({
                           className={cn(
                             "h-4 px-1.5 py-0 font-mono text-[10px]",
                             tbl === tableName
-                              ? "border-primary/30 bg-emerald-500/15 font-bold text-emerald-700 dark:text-emerald-300"
-                              : "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
+                              ? "border-primary/30 bg-success/15 text-success dark:text-success font-bold"
+                              : "border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground",
                           )}
                         >
                           {tbl}
                         </Badge>
                         {i < seedResult.tables_seeded.length - 1 && (
-                          <span className="text-xs text-zinc-400">→</span>
+                          <span className="text-muted-foreground text-xs">
+                            →
+                          </span>
                         )}
                       </span>
                     ))}
                   </div>
                 </div>
 
-                <span className="font-mono text-[11px] text-zinc-400">
+                <span className="text-muted-foreground font-mono text-[11px]">
                   {t("seed.preview")}
                 </span>
               </div>
 
               {/* CodeMirror preview */}
-              <div className="overflow-hidden rounded-lg border border-zinc-200 text-xs shadow-inner dark:border-zinc-800">
+              <div className="border-border dark:border-border overflow-hidden rounded-lg border text-xs shadow-inner">
                 <CodeMirror
                   value={seedResult.sql}
                   height="340px"
@@ -252,7 +254,7 @@ export const SeedModal: FC<SeedModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between gap-2 border-t border-zinc-200 bg-zinc-50/50 p-3 md:p-4 dark:border-zinc-800 dark:bg-zinc-900/30">
+        <div className="border-border bg-card/50 dark:border-border dark:bg-card/30 flex items-center justify-between gap-2 border-t p-3 md:p-4">
           <Button
             type="button"
             variant="outline"
@@ -272,18 +274,17 @@ export const SeedModal: FC<SeedModalProps> = ({
               disabled={!seedResult?.sql}
               className={cn(
                 "h-8 cursor-pointer gap-1.5 px-3 font-mono text-xs transition-colors",
-                copied &&
-                  "border-primary text-emerald-600 dark:text-emerald-400",
+                copied && "border-primary text-success dark:text-success",
               )}
             >
               {copied ? (
                 <>
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <Check className="text-success h-3.5 w-3.5" />
                   <span>{t("seed.copied")}</span>
                 </>
               ) : (
                 <>
-                  <Copy className="h-3.5 w-3.5 text-zinc-500" />
+                  <Copy className="text-muted-foreground h-3.5 w-3.5" />
                   <span>{t("seed.copy")}</span>
                 </>
               )}

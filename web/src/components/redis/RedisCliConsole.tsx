@@ -343,15 +343,15 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
   };
 
   return (
-    <div className="flex h-full flex-col bg-zinc-950 font-mono text-zinc-100">
+    <div className="bg-code text-code-foreground flex h-full flex-col font-mono">
       {/* CLI Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/60 px-4 py-2.5">
+      <div className="border-border bg-code/60 flex items-center justify-between border-b px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <Terminal className="h-4 w-4 text-emerald-400" />
-          <h2 className="text-xs font-semibold tracking-wider text-zinc-300 uppercase">
+          <Terminal className="text-success h-4 w-4" />
+          <h2 className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
             {t("redis.cli.title")}
           </h2>
-          <span className="text-[11px] text-zinc-500">
+          <span className="text-muted-foreground text-[11px]">
             {t("redis.cli.historyTip")}
           </span>
         </div>
@@ -359,7 +359,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
         <Button
           size="sm"
           variant="ghost"
-          className="h-7 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground h-7 text-xs"
           onClick={() => setHistory([])}
           disabled={history.length === 0}
         >
@@ -371,8 +371,8 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
       {/* Terminal Output Area */}
       <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs">
         {history.length === 0 && !isRunning && (
-          <div className="flex flex-col items-center justify-center py-12 text-center text-zinc-500">
-            <Terminal className="mb-2 h-8 w-8 text-zinc-600" />
+          <div className="text-muted-foreground flex flex-col items-center justify-center py-12 text-center">
+            <Terminal className="text-muted-foreground mb-2 h-8 w-8" />
             <p>{t("redis.cli.emptyOutput")}</p>
             <div className="mt-4 flex max-w-lg flex-wrap justify-center gap-1.5">
               {["INFO", "DBSIZE", "KEYS *", "SLOWLOG GET 10", "PING"].map(
@@ -384,7 +384,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
                       setInputCommand(sample);
                       inputRef.current?.focus();
                     }}
-                    className="hover:border-primary/50 rounded border border-zinc-800 bg-zinc-900 px-2 py-0.5 text-[11px] text-zinc-400 transition-colors hover:text-emerald-400"
+                    className="hover:border-primary/50 border-border bg-code text-muted-foreground hover:text-success rounded border px-2 py-0.5 text-[11px] transition-colors"
                   >
                     {sample}
                   </button>
@@ -397,14 +397,14 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
         {history.map((item) => (
           <div key={item.id} className="space-y-1.5">
             {/* Command Header line */}
-            <div className="flex items-center justify-between text-zinc-400">
+            <div className="text-muted-foreground flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-emerald-400">redis&gt;</span>
-                <span className="font-semibold text-zinc-100">
+                <span className="text-success font-bold">redis&gt;</span>
+                <span className="text-code-foreground font-semibold">
                   {item.command}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+              <div className="text-muted-foreground flex items-center gap-3 text-[11px]">
                 {item.result && (
                   <>
                     <span className="flex items-center gap-1">
@@ -416,7 +416,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
                     {item.result.is_mutation && (
                       <Badge
                         variant="outline"
-                        className="border-amber-500/30 bg-amber-500/10 px-1 py-0 text-[10px] text-amber-400"
+                        className="border-warning/30 bg-warning/10 text-warning px-1 py-0 text-[10px]"
                       >
                         {t("redis.cli.rowsAffected", {
                           count: item.result.rows_affected,
@@ -441,11 +441,11 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
                 (error) {item.error}
               </div>
             ) : item.result ? (
-              <div className="group relative rounded border border-zinc-800 bg-zinc-900/40 p-2.5">
+              <div className="group border-border bg-code/40 relative rounded border p-2.5">
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="absolute top-2 right-2 h-6 w-6 bg-zinc-800 text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-zinc-100"
+                  className="bg-muted text-muted-foreground hover:text-foreground absolute top-2 right-2 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
                   onClick={() =>
                     handleCopyResult(
                       item.id,
@@ -455,7 +455,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
                   title={t("redis.cli.copyOutput")}
                 >
                   {copiedId === item.id ? (
-                    <Check className="h-3 w-3 text-emerald-400" />
+                    <Check className="text-success h-3 w-3" />
                   ) : (
                     <Copy className="h-3 w-3" />
                   )}
@@ -467,10 +467,10 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
         ))}
 
         {isRunning && (
-          <div className="flex items-center gap-2 text-zinc-400">
-            <span className="font-bold text-emerald-400">redis&gt;</span>
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-emerald-400" />
-            <span className="text-zinc-500 italic">
+          <div className="text-muted-foreground flex items-center gap-2">
+            <span className="text-success font-bold">redis&gt;</span>
+            <Loader2 className="text-success h-3.5 w-3.5 animate-spin" />
+            <span className="text-muted-foreground italic">
               {t("redis.cli.running")}
             </span>
           </div>
@@ -480,13 +480,13 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
       </div>
 
       {/* Input Prompt & Autocomplete Floating Box */}
-      <div className="relative border-t border-zinc-800 bg-zinc-900 p-3">
+      <div className="border-border bg-code relative border-t p-3">
         {/* Suggestions dropdown */}
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute right-3 bottom-full left-3 mb-2 max-h-56 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/95 shadow-xl backdrop-blur-md">
-            <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-1.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase">
+          <div className="border-border bg-code/95 absolute right-3 bottom-full left-3 mb-2 max-h-56 overflow-y-auto rounded-lg border shadow-xl backdrop-blur-md">
+            <div className="border-border text-muted-foreground flex items-center justify-between border-b px-3 py-1.5 text-[10px] font-semibold tracking-wider uppercase">
               <span className="flex items-center gap-1">
-                <Sparkles className="h-3 w-3 text-emerald-400" />{" "}
+                <Sparkles className="text-success h-3 w-3" />{" "}
                 {t("redis.cli.autocompleteSuggestions")}
               </span>
               <span>{t("redis.cli.pressTabToApply")}</span>
@@ -498,13 +498,13 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
                 onClick={() => handleApplySuggestion(cmd)}
                 className={`flex w-full items-center justify-between px-3 py-1.5 text-left text-xs transition-colors ${
                   idx === selectedSuggestIndex
-                    ? "bg-emerald-500/20 font-bold text-emerald-300"
-                    : "text-zinc-300 hover:bg-zinc-800/80"
+                    ? "bg-success/20 text-success font-bold"
+                    : "text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span className="font-mono">{cmd.name}</span>
-                  <span className="font-mono text-[11px] text-zinc-500">
+                  <span className="text-muted-foreground font-mono text-[11px]">
                     {cmd.syntax}
                   </span>
                 </div>
@@ -513,7 +513,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
                   className={`px-1 py-0 text-[9px] ${
                     cmd.destructive
                       ? "border-red-500/30 bg-red-500/10 text-red-400"
-                      : "border-zinc-700 text-zinc-400"
+                      : "border-border text-muted-foreground"
                   }`}
                 >
                   {cmd.category}
@@ -525,7 +525,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
 
         {/* Command Line Input */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-emerald-400 select-none">
+          <span className="text-success text-xs font-bold select-none">
             redis&gt;
           </span>
           <Input
@@ -542,13 +542,13 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
             }}
             onKeyDown={handleKeyDown}
             placeholder={t("redis.cli.inputPlaceholder")}
-            className="focus-visible:ring-primary/50 flex-1 border-zinc-800 bg-zinc-950 font-mono text-xs text-zinc-100 placeholder:text-zinc-600"
+            className="focus-visible:ring-primary/50 border-border bg-code text-code-foreground placeholder:text-muted-foreground flex-1 font-mono text-xs"
             disabled={isRunning}
             autoFocus
           />
           <Button
             size="sm"
-            className="bg-primary px-3 font-mono text-xs text-white hover:bg-emerald-700"
+            className="bg-primary hover:bg-success px-3 font-mono text-xs text-white"
             onClick={() => executeCommand(inputCommand)}
             disabled={isRunning || !inputCommand.trim()}
           >
@@ -565,7 +565,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
           if (!open) setPendingDestructiveCmd(null);
         }}
       >
-        <AlertDialogContent className="border-zinc-800 bg-zinc-900 text-zinc-100">
+        <AlertDialogContent className="border-border bg-code text-code-foreground">
           <AlertDialogHeader>
             <div className="flex items-center gap-2 text-red-400">
               <AlertTriangle className="h-5 w-5" />
@@ -573,14 +573,14 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
                 {t("redis.cli.flushdbWarningTitle")}
               </AlertDialogTitle>
             </div>
-            <AlertDialogDescription className="mt-2 text-xs text-zinc-400">
+            <AlertDialogDescription className="text-muted-foreground mt-2 text-xs">
               {t("redis.cli.flushdbWarningDesc", {
                 command: pendingDestructiveCmd,
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="mt-4">
-            <AlertDialogCancel className="border-zinc-700 bg-zinc-800 text-zinc-300 hover:bg-zinc-700">
+            <AlertDialogCancel className="border-border bg-muted text-muted-foreground hover:bg-muted">
               {t("redis.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
@@ -608,7 +608,7 @@ const RenderCliResult: FC<{ result: RawQueryResult }> = ({ result }) => {
 
   if (rows.length === 0) {
     return (
-      <span className="text-zinc-500 italic">
+      <span className="text-muted-foreground italic">
         {t("redis.cli.emptyListOrSet")}
       </span>
     );
@@ -623,8 +623,10 @@ const RenderCliResult: FC<{ result: RawQueryResult }> = ({ result }) => {
           const val = row[colName];
           return (
             <div key={idx} className="flex items-start gap-2">
-              <span className="text-zinc-500 select-none">{idx + 1})</span>
-              <span className="break-all whitespace-pre-wrap text-emerald-400">
+              <span className="text-muted-foreground select-none">
+                {idx + 1})
+              </span>
+              <span className="text-success break-all whitespace-pre-wrap">
                 {typeof val === "object" ? JSON.stringify(val) : String(val)}
               </span>
             </div>
@@ -647,12 +649,12 @@ const RenderCliResult: FC<{ result: RawQueryResult }> = ({ result }) => {
         {rows.map((row, idx) => (
           <div
             key={idx}
-            className="flex items-center justify-between gap-2 border-b border-zinc-800/60 pb-1 text-[11px]"
+            className="border-border/60 flex items-center justify-between gap-2 border-b pb-1 text-[11px]"
           >
-            <span className="truncate font-semibold text-zinc-400">
+            <span className="text-muted-foreground truncate font-semibold">
               {String(row[keyCol])}:
             </span>
-            <span className="truncate font-mono text-emerald-400">
+            <span className="text-success truncate font-mono">
               {String(row[valCol])}
             </span>
           </div>
@@ -666,7 +668,7 @@ const RenderCliResult: FC<{ result: RawQueryResult }> = ({ result }) => {
     <div className="max-h-80 overflow-x-auto">
       <table className="w-full border-collapse text-left text-[11px]">
         <thead>
-          <tr className="border-b border-zinc-800 text-zinc-400">
+          <tr className="border-border text-muted-foreground border-b">
             {columns.map((col) => (
               <th key={col} className="p-1 font-semibold">
                 {col}
@@ -674,11 +676,11 @@ const RenderCliResult: FC<{ result: RawQueryResult }> = ({ result }) => {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-zinc-800/40">
+        <tbody className="divide-border/40 divide-y">
           {rows.map((row, rIdx) => (
-            <tr key={rIdx} className="hover:bg-zinc-800/30">
+            <tr key={rIdx} className="hover:bg-muted/30">
               {columns.map((col) => (
-                <td key={col} className="p-1 break-all text-zinc-300">
+                <td key={col} className="text-muted-foreground p-1 break-all">
                   {typeof row[col] === "object"
                     ? JSON.stringify(row[col])
                     : String(row[col] ?? "")}
