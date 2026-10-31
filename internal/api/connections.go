@@ -53,6 +53,7 @@ func toConnectionResponse(r storage.Record) connectionResponse {
 
 // createConnectionRequest is the JSON body for POST /api/connections.
 type createConnectionRequest struct {
+	WorkspaceID         string `json:"workspace_id,omitempty"`
 	Name                string `json:"name"`
 	Type                string `json:"type"` // postgres | mysql | mongodb | sqlite
 	Mode                string `json:"mode"` // form | url
@@ -127,6 +128,23 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.WorkspaceID != "" && req.WorkspaceID != "all" {
+		document, err := s.store.Workspaces()
+		if err != nil {
+			writeError(w, 500, "workspace config unavailable")
+			return
+		}
+		valid := false
+		for _, workspace := range document.Workspaces {
+			if workspace.ID == req.WorkspaceID {
+				valid = true
+			}
+		}
+		if !valid {
+			writeError(w, 400, "workspace no longer exists")
+			return
+		}
+	}
 	// Verify the connection is actually reachable before saving.
 	a, err := openAdapter(r.Context(), req.Type, dsn)
 	if err != nil {
@@ -149,6 +167,12 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := s.store.AddConnectionToWorkspace(rec.ID, req.WorkspaceID); err != nil {
+		_ = s.store.Delete(rec.ID)
+		_ = a.Close()
+		writeError(w, 400, "could not assign connection to workspace")
+		return
+	}
 	// Cache the open adapter so subsequent requests reuse the live connection.
 	s.cache.set(rec.ID, a)
 

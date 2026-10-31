@@ -6,11 +6,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"pebblebase/internal/adapter"
 )
 
-func executeRaw(ctx context.Context, pool *pgxpool.Pool, query string) (adapter.RawQueryResult, error) {
+type rawExecutor interface {
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+}
+
+func executeRaw(ctx context.Context, pool rawExecutor, query string) (adapter.RawQueryResult, error) {
 	start := time.Now()
 	cleanQuery := strings.TrimSpace(query)
 	if cleanQuery == "" {
@@ -63,7 +69,13 @@ func executeRaw(ctx context.Context, pool *pgxpool.Pool, query string) (adapter.
 					IsMutation:      isMutation,
 				}, nil
 			}
-		} else if !isMutation {
+			for rows.Next() {
+			}
+			if err := rows.Err(); err != nil {
+				return adapter.RawQueryResult{}, err
+			}
+			return adapter.RawQueryResult{Columns: []string{}, Rows: []map[string]any{}, RowsAffected: rows.CommandTag().RowsAffected(), IsMutation: isMutation, ExecutionTimeMs: adapter.ElapsedMs(start)}, nil
+		} else {
 			return adapter.RawQueryResult{}, fmt.Errorf("postgres: query error: %w", err)
 		}
 	}

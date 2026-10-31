@@ -10,7 +10,12 @@ import (
 	"pebblebase/internal/adapter"
 )
 
-func executeRaw(ctx context.Context, db *sql.DB, query string) (adapter.RawQueryResult, error) {
+type rawExecutor interface {
+	QueryContext(context.Context, string, ...any) (*sql.Rows, error)
+	ExecContext(context.Context, string, ...any) (sql.Result, error)
+}
+
+func executeRaw(ctx context.Context, db rawExecutor, query string) (adapter.RawQueryResult, error) {
 	start := time.Now()
 	cleanQuery := strings.TrimSpace(query)
 	if cleanQuery == "" {
@@ -70,7 +75,16 @@ func executeRaw(ctx context.Context, db *sql.DB, query string) (adapter.RawQuery
 					IsMutation:      isMutation,
 				}, nil
 			}
-		} else if !isMutation {
+			if err != nil {
+				return adapter.RawQueryResult{}, err
+			}
+			for rows.Next() {
+			}
+			if err := rows.Err(); err != nil {
+				return adapter.RawQueryResult{}, err
+			}
+			return adapter.RawQueryResult{Columns: []string{}, Rows: []map[string]any{}, IsMutation: isMutation, ExecutionTimeMs: adapter.ElapsedMs(start)}, nil
+		} else {
 			return adapter.RawQueryResult{}, fmt.Errorf("mysql: query error: %w", err)
 		}
 	}

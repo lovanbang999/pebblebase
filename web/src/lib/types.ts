@@ -61,6 +61,7 @@ export interface Connection {
 }
 
 export interface ConnectionInput {
+  workspace_id?: string;
   name: string;
   type: DatabaseType;
   mode: "form" | "url";
@@ -82,6 +83,7 @@ export interface ConnectionInput {
 
 export interface ColumnSchema {
   name: string;
+  native_type?: string;
   type: string; // 'string' | 'int' | 'float' | 'bool' | 'datetime' | 'json' | 'binary' | 'uuid' | 'unknown'
   nullable: boolean;
   is_primary_key: boolean;
@@ -118,6 +120,7 @@ export interface RowQueryParams {
   sort_by?: string;
   sort_desc?: boolean;
   filters?: FilterOption[];
+  include_header?: boolean;
 }
 
 export interface QueryResult {
@@ -179,6 +182,8 @@ export interface StudioTabState {
   diffTargetConnectionId?: string;
   scrollLeft?: number;
   scrollTop?: number;
+  redisSearchKey?: string;
+  selectedCell?: { column: string; rowIdentity?: string };
 }
 
 export interface StudioTab {
@@ -223,6 +228,7 @@ export interface PersistedWorkspace {
 }
 
 export interface TableIndexInfo {
+  definition?: string;
   name: string;
   columns: string[];
   unique: boolean;
@@ -241,7 +247,10 @@ export type AuditAction =
   | "query_execute"
   | "row_mutate"
   | "schema_change"
-  | "connection_create";
+  | "connection_create"
+  | "user_role_change"
+  | "user_deactivate"
+  | "password_reset";
 
 export interface AuditEntry {
   id: string;

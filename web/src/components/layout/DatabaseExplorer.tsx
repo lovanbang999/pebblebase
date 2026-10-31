@@ -26,7 +26,7 @@ import {
 import type { Connection, DatabaseType, TableSchema } from "@/lib/types";
 import { DATABASE_ENGINES, ENV_STYLES } from "@/constants";
 import { TableDangerModal } from "@/components/modals";
-import { exportTableData } from "@/lib/api";
+import { exportTableData, fetchTableDDL } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -53,6 +53,7 @@ export interface ExplorerConnectionStatus {
 
 interface DatabaseExplorerProps {
   connections: Connection[];
+  canManageConnections: boolean;
   selectedConnectionId: string | null;
   selectedTable: {
     connectionId: string;
@@ -74,6 +75,8 @@ interface DatabaseExplorerProps {
   ) => void;
   onOpenQuery: (connectionId: string, query?: string, title?: string) => void;
   onOpenERD: (connectionId: string) => void;
+  onOpenDiff: (connectionId: string) => void;
+  onImportTable: (connectionId: string, table: TableSchema) => void;
   onOpenNewConnection: () => void;
   onHideToolWindow: () => void;
   onRefreshConnection: (connectionId: string) => void | Promise<void>;
@@ -160,6 +163,7 @@ function pinnedTablesKey(connectionId: string) {
 
 export function DatabaseExplorer({
   connections,
+  canManageConnections,
   selectedConnectionId,
   selectedTable,
   activeConnectionId,
@@ -173,6 +177,8 @@ export function DatabaseExplorer({
   onSelectTable,
   onOpenQuery,
   onOpenERD,
+  onOpenDiff,
+  onImportTable,
   onOpenNewConnection,
   onRefreshConnection,
   onDuplicateConnection,
@@ -431,9 +437,9 @@ export function DatabaseExplorer({
             ? t("explorer.collections", "Collections")
             : t(
                 connection.type === "redis"
-                  ? "explorer.keys"
+                  ? "explorer.keyspace"
                   : "explorer.tables",
-                connection.type === "redis" ? "Keys" : "Tables",
+                connection.type === "redis" ? "Keyspace" : "Tables",
               ),
           depth: tableDepth,
           icon: Folder,
@@ -624,15 +630,17 @@ export function DatabaseExplorer({
             className="h-7 pl-7 text-xs"
           />
         </div>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          aria-label={t("sidebar.newConnection", "New connection")}
-          title={t("sidebar.newConnection", "New connection")}
-          onClick={onOpenNewConnection}
-        >
-          <Plus className="size-3.5" />
-        </Button>
+        {canManageConnections && (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={t("sidebar.newConnection", "New connection")}
+            title={t("sidebar.newConnection", "New connection")}
+            onClick={onOpenNewConnection}
+          >
+            <Plus className="size-3.5" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon-xs"
@@ -833,6 +841,19 @@ export function DatabaseExplorer({
                           envStyle.dot,
                         )}
                       />
+                      {(environment === "production" ||
+                        environment === "staging") && (
+                        <span
+                          title={`${environment} environment`}
+                          className={cn(
+                            "shrink-0 rounded px-1 text-[8px] leading-3 font-bold uppercase",
+                            envStyle.bg,
+                            envStyle.text,
+                          )}
+                        >
+                          {environment === "production" ? "prod" : "stg"}
+                        </span>
+                      )}
                       {connection.read_only && (
                         <span
                           title={t(
@@ -874,48 +895,55 @@ export function DatabaseExplorer({
                 </button>
                 {node.kind === "connection" && connection && (
                   <div className="hidden shrink-0 items-center gap-0.5 group-focus-within:flex group-hover:flex">
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={t("connection.editTitle", "Edit connection")}
-                      title={t("connection.editTitle", "Edit connection")}
-                      onClick={() => onEditConnection(connection)}
-                    >
-                      <Pencil className="size-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={t(
-                        "sidebar.duplicateTooltip",
-                        "Duplicate connection",
-                      )}
-                      title={t(
-                        "sidebar.duplicateTooltip",
-                        "Duplicate connection",
-                      )}
-                      onClick={() => onDuplicateConnection(connection)}
-                    >
-                      <Copy className="size-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={t(
-                        "sidebar.deleteConnTooltip",
-                        "Delete connection",
-                      )}
-                      title={t(
-                        "sidebar.deleteConnTooltip",
-                        "Delete connection",
-                      )}
-                      onClick={() => {
-                        setDeleteConfirmationInput("");
-                        setDeletingConnection(connection);
-                      }}
-                    >
-                      <Trash2 className="text-destructive size-3" />
-                    </Button>
+                    {canManageConnections && (
+                      <>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={t(
+                            "connection.editTitle",
+                            "Edit connection",
+                          )}
+                          title={t("connection.editTitle", "Edit connection")}
+                          onClick={() => onEditConnection(connection)}
+                        >
+                          <Pencil className="size-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={t(
+                            "sidebar.duplicateTooltip",
+                            "Duplicate connection",
+                          )}
+                          title={t(
+                            "sidebar.duplicateTooltip",
+                            "Duplicate connection",
+                          )}
+                          onClick={() => onDuplicateConnection(connection)}
+                        >
+                          <Copy className="size-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          aria-label={t(
+                            "sidebar.deleteConnTooltip",
+                            "Delete connection",
+                          )}
+                          title={t(
+                            "sidebar.deleteConnTooltip",
+                            "Delete connection",
+                          )}
+                          onClick={() => {
+                            setDeleteConfirmationInput("");
+                            setDeletingConnection(connection);
+                          }}
+                        >
+                          <Trash2 className="text-destructive size-3" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -937,18 +965,20 @@ export function DatabaseExplorer({
                       <pre className="bg-background/70 mt-1 max-h-28 overflow-auto rounded p-1.5 font-mono text-[10px] break-words whitespace-pre-wrap">
                         {errorMessage(status.error)}
                       </pre>
-                      <button
-                        type="button"
-                        className="text-primary mt-1 inline-flex items-center gap-1 hover:underline"
-                        onClick={() =>
-                          void navigator.clipboard
-                            ?.writeText(errorMessage(status.error))
-                            .catch(() => undefined)
-                        }
-                      >
-                        <Copy className="size-3" />
-                        {t("explorer.copyDiagnostic", "Copy diagnostic")}
-                      </button>
+                      {canManageConnections && (
+                        <button
+                          type="button"
+                          className="text-primary mt-1 inline-flex items-center gap-1 hover:underline"
+                          onClick={() =>
+                            void navigator.clipboard
+                              ?.writeText(errorMessage(status.error))
+                              .catch(() => undefined)
+                          }
+                        >
+                          <Copy className="size-3" />
+                          {t("explorer.copyDiagnostic", "Copy diagnostic")}
+                        </button>
+                      )}
                     </details>
                     <div className="mt-1.5 flex gap-2">
                       <button
@@ -986,6 +1016,9 @@ export function DatabaseExplorer({
       {menu && (
         <TableContextMenu
           tableName={menu.table.name}
+          engine={menu.connection.type}
+          canImport={menu.connection.type !== "redis"}
+          canCopyDDL={menu.connection.type !== "redis"}
           x={menu.x}
           y={menu.y}
           isPinned={(pinnedByConnection[menu.connection.id] || []).includes(
@@ -1025,6 +1058,18 @@ export function DatabaseExplorer({
           onCopyTableName={() =>
             void navigator.clipboard.writeText(menu.table.name)
           }
+          onCopyDDL={async () => {
+            try {
+              const response = await fetchTableDDL(
+                menu.connection.id,
+                menu.table.name,
+              );
+              await navigator.clipboard.writeText(response.ddl);
+              setActionMessage(t("explorer.ddlCopied", "DDL copied"));
+            } catch (error) {
+              setActionMessage(errorMessage(error));
+            }
+          }}
           onCopySelectQuery={() =>
             void navigator.clipboard.writeText(
               queryForTable(menu.connection, menu.table, "rows"),
@@ -1055,6 +1100,8 @@ export function DatabaseExplorer({
               setActionMessage(errorMessage(error));
             }
           }}
+          onImport={() => onImportTable(menu.connection.id, menu.table)}
+          isReadOnly={Boolean(menu.connection.read_only)}
           onTogglePin={() => togglePin(menu.connection.id, menu.table.name)}
           onDangerAction={(action) =>
             setDangerModal({
@@ -1078,7 +1125,7 @@ export function DatabaseExplorer({
           onKeyDown={(event) => {
             const items = [
               ...(nodeMenuRef.current?.querySelectorAll<HTMLButtonElement>(
-                '[role="menuitem"]',
+                '[role="menuitem"]:not(:disabled)',
               ) || []),
             ];
             const current = items.indexOf(
@@ -1119,6 +1166,48 @@ export function DatabaseExplorer({
               <button
                 type="button"
                 role="menuitem"
+                disabled={nodeMenu.node.connection.type === "redis"}
+                title={
+                  nodeMenu.node.connection.type === "redis"
+                    ? t(
+                        "erd.unsupportedRedis",
+                        "ER diagrams are unavailable for Redis",
+                      )
+                    : undefined
+                }
+                className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs disabled:cursor-not-allowed disabled:opacity-45"
+                onClick={() => {
+                  onOpenERD(nodeMenu.node.connection!.id);
+                  setNodeMenu(null);
+                }}
+              >
+                <Workflow className="size-3.5" />
+                {t("erd.title", "ER Diagram")}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={
+                  !nodeMenu.node.status?.isSuccess ||
+                  !connections.some(
+                    (candidate) =>
+                      candidate.id !== nodeMenu.node.connection!.id &&
+                      !["mongodb", "redis"].includes(candidate.type),
+                  ) ||
+                  ["mongodb", "redis"].includes(nodeMenu.node.connection.type)
+                }
+                className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs disabled:cursor-not-allowed disabled:opacity-45"
+                onClick={() => {
+                  onOpenDiff(nodeMenu.node.connection!.id);
+                  setNodeMenu(null);
+                }}
+              >
+                <TableIcon className="size-3.5" />
+                {t("diff.title", "Compare Schema…")}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
                 className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
                 onClick={() => {
                   void onRefreshConnection(nodeMenu.node.connection!.id);
@@ -1126,45 +1215,65 @@ export function DatabaseExplorer({
                 }}
               >
                 <RefreshCw className="size-3.5" />
-                {t("sidebar.refreshTablesTooltip", "Refresh")}
+                {nodeMenu.node.status?.isError
+                  ? t("sidebar.connect", "Connect")
+                  : t("explorer.reconnect", "Reconnect")}
               </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
-                onClick={() => {
-                  onEditConnection(nodeMenu.node.connection!);
-                  setNodeMenu(null);
-                }}
-              >
-                <Pencil className="size-3.5" />
-                {t("connection.editTitle", "Edit connection")}
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
-                onClick={() => {
-                  onDuplicateConnection(nodeMenu.node.connection!);
-                  setNodeMenu(null);
-                }}
-              >
-                <Copy className="size-3.5" />
-                {t("explorer.duplicateSettings", "Duplicate settings")}
-              </button>
-              <button
-                type="button"
-                role="menuitem"
-                className="text-destructive hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
-                onClick={() => {
-                  setDeleteConfirmationInput("");
-                  setDeletingConnection(nodeMenu.node.connection!);
-                  setNodeMenu(null);
-                }}
-              >
-                <Trash2 className="size-3.5" />
-                {t("sidebar.deleteConnTooltip", "Remove connection")}
-              </button>
+              {canManageConnections && (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
+                    onClick={() => {
+                      onEditConnection(nodeMenu.node.connection!);
+                      setNodeMenu(null);
+                    }}
+                  >
+                    <Pencil className="size-3.5" />
+                    {t("connection.editTitle", "Edit connection")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
+                    onClick={() => {
+                      onDuplicateConnection(nodeMenu.node.connection!);
+                      setNodeMenu(null);
+                    }}
+                  >
+                    <Copy className="size-3.5" />
+                    {t("explorer.duplicateSettings", "Duplicate settings")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
+                    onClick={() => {
+                      void navigator.clipboard
+                        ?.writeText(nodeMenu.node.connection!.name)
+                        .catch(() => undefined);
+                      setNodeMenu(null);
+                    }}
+                  >
+                    <Copy className="size-3.5" />
+                    {t("explorer.copyConnectionName", "Copy Name")}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="text-destructive hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
+                    onClick={() => {
+                      setDeleteConfirmationInput("");
+                      setDeletingConnection(nodeMenu.node.connection!);
+                      setNodeMenu(null);
+                    }}
+                  >
+                    <Trash2 className="size-3.5" />
+                    {t("sidebar.deleteConnTooltip", "Remove connection")}
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <>

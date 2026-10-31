@@ -70,72 +70,16 @@ func (a *PostgresAdapter) GetTableDDL(ctx context.Context, table string) (string
 		return "", fmt.Errorf("postgres: table %q not found or has no columns", table)
 	}
 
-	// 2. Fetch Primary Key
-	const pkQuery = `
-		SELECT
-			tc.constraint_name,
-			kcu.column_name
-		FROM information_schema.table_constraints tc
-		JOIN information_schema.key_column_usage kcu
-		  ON tc.constraint_name = kcu.constraint_name
-		 AND tc.table_schema    = kcu.table_schema
-		WHERE tc.constraint_type = 'PRIMARY KEY'
-		  AND tc.table_schema    = 'public'
-		  AND tc.table_name      = $1
-		ORDER BY kcu.ordinal_position`
-
-	pkRows, err := a.pool.Query(ctx, pkQuery, table)
+	constraints, err := a.GetSchemaConstraints(ctx)
 	if err != nil {
-		return "", fmt.Errorf("postgres: get pk for %q: %w", table, err)
+		return "", err
 	}
-	defer pkRows.Close()
-
 	var pkName string
 	var pkCols []string
-	for pkRows.Next() {
-		var cName, colName string
-		if err := pkRows.Scan(&cName, &colName); err == nil {
-			pkName = cName
-			pkCols = append(pkCols, colName)
-		}
-	}
-
-	// 3. Fetch Foreign Keys
-	const fkQuery = `
-		SELECT
-			tc.constraint_name,
-			kcu.column_name,
-			ccu.table_name AS foreign_table_name,
-			ccu.column_name AS foreign_column_name
-		FROM information_schema.table_constraints tc
-		JOIN information_schema.key_column_usage kcu
-		  ON tc.constraint_name = kcu.constraint_name
-		 AND tc.table_schema    = kcu.table_schema
-		JOIN information_schema.constraint_column_usage ccu
-		  ON ccu.constraint_name = tc.constraint_name
-		 AND ccu.table_schema    = tc.table_schema
-		WHERE tc.constraint_type = 'FOREIGN KEY'
-		  AND tc.table_schema    = 'public'
-		  AND tc.table_name      = $1
-		ORDER BY tc.constraint_name, kcu.ordinal_position`
-
-	fkRows, err := a.pool.Query(ctx, fkQuery, table)
-	if err != nil {
-		return "", fmt.Errorf("postgres: get fk for %q: %w", table, err)
-	}
-	defer fkRows.Close()
-
-	type fkConstraint struct {
-		name       string
-		fromCol    string
-		toTable    string
-		toCol      string
-	}
-	var fks []fkConstraint
-	for fkRows.Next() {
-		var fk fkConstraint
-		if err := fkRows.Scan(&fk.name, &fk.fromCol, &fk.toTable, &fk.toCol); err == nil {
-			fks = append(fks, fk)
+	for _, constraint := range constraints[table] {
+		if constraint.Kind == "primary_key" {
+			pkName = constraint.Name
+			pkCols = constraint.Columns
 		}
 	}
 
@@ -160,7 +104,7 @@ func (a *PostgresAdapter) GetTableDDL(ctx context.Context, table string) (string
 			typeStr = c.udtName
 		}
 
-		line := fmt.Sprintf("    \"%s\" %s", c.name, typeStr)
+		line := fmt.Sprintf("    %s %s", quoteDDLIdentifier(c.name), typeStr)
 		if c.colDefVal != nil && *c.colDefVal != "" {
 			line += fmt.Sprintf(" DEFAULT %s", *c.colDefVal)
 		}
@@ -173,21 +117,33 @@ func (a *PostgresAdapter) GetTableDDL(ctx context.Context, table string) (string
 	if len(pkCols) > 0 {
 		quotedCols := make([]string, len(pkCols))
 		for i, col := range pkCols {
-			quotedCols[i] = fmt.Sprintf("\"%s\"", col)
+			quotedCols[i] = quoteDDLIdentifier(col)
 		}
 		if pkName != "" {
-			lines = append(lines, fmt.Sprintf("    CONSTRAINT \"%s\" PRIMARY KEY (%s)", pkName, strings.Join(quotedCols, ", ")))
+			lines = append(lines, fmt.Sprintf("    CONSTRAINT %s PRIMARY KEY (%s)", quoteDDLIdentifier(pkName), strings.Join(quotedCols, ", ")))
 		} else {
 			lines = append(lines, fmt.Sprintf("    PRIMARY KEY (%s)", strings.Join(quotedCols, ", ")))
 		}
 	}
 
-	for _, fk := range fks {
-		lines = append(lines, fmt.Sprintf("    CONSTRAINT \"%s\" FOREIGN KEY (\"%s\") REFERENCES \"%s\" (\"%s\")",
-			fk.name, fk.fromCol, fk.toTable, fk.toCol))
+	quote := func(value string) string { return `"` + strings.ReplaceAll(value, `"`, `""`) + `"` }
+	quotedColumns := func(columns []string) string {
+		result := make([]string, len(columns))
+		for i, column := range columns {
+			result[i] = quote(column)
+		}
+		return strings.Join(result, ", ")
+	}
+	for _, constraint := range constraints[table] {
+		switch constraint.Kind {
+		case "unique":
+			lines = append(lines, fmt.Sprintf("    CONSTRAINT %s UNIQUE (%s)", quote(constraint.Name), quotedColumns(constraint.Columns)))
+		case "foreign_key":
+			lines = append(lines, fmt.Sprintf("    CONSTRAINT %s FOREIGN KEY (%s) REFERENCES %s.%s (%s)", quote(constraint.Name), quotedColumns(constraint.Columns), quote(constraint.ReferenceSchema), quote(constraint.ReferenceTable), quotedColumns(constraint.ReferenceColumns)))
+		}
 	}
 
-	ddl := fmt.Sprintf("CREATE TABLE \"%s\" (\n%s\n);", table, strings.Join(lines, ",\n"))
+	ddl := fmt.Sprintf("CREATE TABLE %s (\n%s\n);", quoteDDLIdentifier(table), strings.Join(lines, ",\n"))
 
 	// 5. Fetch Secondary Indexes
 	const idxQuery = `
@@ -205,7 +161,13 @@ func (a *PostgresAdapter) GetTableDDL(ctx context.Context, table string) (string
 			var iName, def string
 			if err := idxRows.Scan(&iName, &def); err == nil {
 				// Don't duplicate the primary key index since it's declared in the table body
-				if iName == pkName || strings.HasSuffix(iName, "_pkey") {
+				constraintBacked := false
+				for _, constraint := range constraints[table] {
+					if constraint.Name == iName && (constraint.Kind == "unique" || constraint.Kind == "primary_key") {
+						constraintBacked = true
+					}
+				}
+				if constraintBacked || iName == pkName || strings.HasSuffix(iName, "_pkey") {
 					continue
 				}
 				stmt := strings.TrimSpace(def)
@@ -225,23 +187,26 @@ func (a *PostgresAdapter) GetTableDDL(ctx context.Context, table string) (string
 
 // GetTableIndexes retrieves index names, columns, and uniqueness for the table.
 func (a *PostgresAdapter) GetTableIndexes(ctx context.Context, table string) ([]adapter.IndexInfo, error) {
+	return readTableIndexes(ctx, a.pool, table)
+}
+func readTableIndexes(ctx context.Context, pool constraintQuerier, table string) ([]adapter.IndexInfo, error) {
 	const q = `
 		SELECT
 			i.relname AS index_name,
 			ix.indisunique AS is_unique,
 			ix.indisprimary AS is_primary,
-			ARRAY_AGG(a.attname ORDER BY array_position(ix.indkey, a.attnum)) AS column_names
+			ARRAY_AGG(pg_get_indexdef(ix.indexrelid,k.ord::int,true) ORDER BY k.ord) AS column_names, pg_get_indexdef(ix.indexrelid) AS definition
 		FROM pg_index ix
 		JOIN pg_class t ON t.oid = ix.indrelid
 		JOIN pg_class i ON i.oid = ix.indexrelid
 		JOIN pg_namespace n ON n.oid = t.relnamespace
-		JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+		JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY k(attnum,ord) ON true
 		WHERE n.nspname = 'public'
 		  AND t.relname = $1
-		GROUP BY i.relname, ix.indisunique, ix.indisprimary
+		GROUP BY i.relname, ix.indisunique, ix.indisprimary, ix.indexrelid
 		ORDER BY ix.indisprimary DESC, i.relname`
 
-	rows, err := a.pool.Query(ctx, q, table)
+	rows, err := pool.Query(ctx, q, table)
 	if err != nil {
 		return nil, fmt.Errorf("postgres: query indexes for %q: %w", table, err)
 	}
@@ -250,20 +215,24 @@ func (a *PostgresAdapter) GetTableIndexes(ctx context.Context, table string) ([]
 	var indexes []adapter.IndexInfo
 	for rows.Next() {
 		var (
-			name      string
-			isUnique  bool
-			isPrimary bool
-			cols      []string
+			name       string
+			isUnique   bool
+			isPrimary  bool
+			cols       []string
+			definition string
 		)
-		if err := rows.Scan(&name, &isUnique, &isPrimary, &cols); err != nil {
+		if err := rows.Scan(&name, &isUnique, &isPrimary, &cols, &definition); err != nil {
 			return nil, fmt.Errorf("postgres: scan index for %q: %w", table, err)
 		}
 		indexes = append(indexes, adapter.IndexInfo{
-			Name:    name,
-			Columns: cols,
-			Unique:  isUnique,
-			Primary: isPrimary,
+			Name:       name,
+			Columns:    cols,
+			Unique:     isUnique,
+			Primary:    isPrimary,
+			Definition: definition,
 		})
 	}
 	return indexes, rows.Err()
 }
+
+func quoteDDLIdentifier(value string) string { return `"` + strings.ReplaceAll(value, `"`, `""`) + `"` }

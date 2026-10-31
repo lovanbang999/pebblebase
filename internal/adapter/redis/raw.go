@@ -71,6 +71,7 @@ func (a *Adapter) ExecuteRaw(ctx context.Context, query string) (adapter.RawQuer
 func isMutationCommand(cmd string) bool {
 	switch cmd {
 	case "SET", "SETEX", "SETNX", "MSET", "MSETNX", "GETSET",
+		"INCR", "DECR", "INCRBY", "DECRBY", "INCRBYFLOAT", "APPEND",
 		"DEL", "UNLINK", "EXPIRE", "PEXPIRE", "EXPIREAT", "PERSIST",
 		"HSET", "HSETNX", "HDEL", "HINCRBY", "HINCRBYFLOAT",
 		"LPUSH", "LPUSHX", "RPUSH", "RPUSHX", "LPOP", "RPOP", "LSET", "LTRIM", "LREM",
@@ -91,6 +92,7 @@ func parseCommandArgs(command string) ([]string, error) {
 	inQuotes := false
 	quoteChar := byte(0)
 	escaped := false
+	started := false
 
 	for i := 0; i < len(command); i++ {
 		b := command[i]
@@ -102,6 +104,7 @@ func parseCommandArgs(command string) ([]string, error) {
 		}
 
 		if b == '\\' {
+			started = true
 			escaped = true
 			continue
 		}
@@ -118,14 +121,16 @@ func parseCommandArgs(command string) ([]string, error) {
 
 		if b == '"' || b == '\'' {
 			inQuotes = true
+			started = true
 			quoteChar = b
 			continue
 		}
 
 		if b == ' ' || b == '\t' || b == '\n' || b == '\r' {
-			if current.Len() > 0 {
+			if started || current.Len() > 0 {
 				args = append(args, current.String())
 				current.Reset()
+				started = false
 			}
 			continue
 		}
@@ -133,11 +138,14 @@ func parseCommandArgs(command string) ([]string, error) {
 		current.WriteByte(b)
 	}
 
+	if escaped {
+		return nil, fmt.Errorf("dangling escape in command")
+	}
 	if inQuotes {
 		return nil, fmt.Errorf("unclosed quote in command")
 	}
 
-	if current.Len() > 0 {
+	if started || current.Len() > 0 {
 		args = append(args, current.String())
 	}
 

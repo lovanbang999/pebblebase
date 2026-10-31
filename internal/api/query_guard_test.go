@@ -189,3 +189,30 @@ func TestIsMutatingQuery_MongoDB(t *testing.T) {
 		})
 	}
 }
+
+func TestIsMutatingQuery_RedisReadOnlyAllowlist(t *testing.T) {
+	tests := []struct {
+		name     string
+		query    string
+		mutating bool
+	}{
+		{name: "uppercase read command", query: "GET key"},
+		{name: "mixed case read command", query: "gEt key"},
+		{name: "compound read command", query: "slowlog get"},
+		{name: "write command", query: "SET key value", mutating: true},
+		{name: "case varied write command", query: "sEt key value", mutating: true},
+		{name: "pipelined commands", query: "GET key\nSET key value", mutating: true},
+		{name: "semicolon separated commands", query: "GET key;SET key value", mutating: true},
+		{name: "multi transaction", query: "MULTI", mutating: true},
+		{name: "exec transaction", query: "EXEC", mutating: true},
+		{name: "transaction containing write", query: "MULTI\nSET key value\nEXEC", mutating: true},
+		{name: "empty separators", query: "GET key\r\nPING", mutating: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isMutatingQuery("redis", tt.query); got != tt.mutating {
+				t.Errorf("isMutatingQuery(redis, %q) = %v, want %v", tt.query, got, tt.mutating)
+			}
+		})
+	}
+}

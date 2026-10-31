@@ -102,6 +102,9 @@ func (s *Server) handleRedisKeyUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := r.PathValue("id")
+	if s.checkReadOnly(w, id) {
+		return
+	}
 	adp, err := s.getRedisAdapter(r, id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -170,6 +173,9 @@ func (s *Server) handleRedisKeyItemMutate(w http.ResponseWriter, r *http.Request
 	}
 
 	id := r.PathValue("id")
+	if s.checkReadOnly(w, id) {
+		return
+	}
 	adp, err := s.getRedisAdapter(r, id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -287,6 +293,9 @@ func (s *Server) handleRedisKeyDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := r.PathValue("id")
+	if s.checkReadOnly(w, id) {
+		return
+	}
 	adp, err := s.getRedisAdapter(r, id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())

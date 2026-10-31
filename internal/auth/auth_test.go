@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"pebblebase/internal/auth"
 	_ "modernc.org/sqlite"
+	"pebblebase/internal/auth"
 )
 
 func setupTestDB(t *testing.T) *sql.DB {
@@ -157,6 +157,66 @@ func TestAuthStore(t *testing.T) {
 	}
 }
 
+func TestLegacyUserMigrationAndAdminSafety(t *testing.T) {
+	db := setupTestDB(t)
+	ctx := context.Background()
+	_, err := db.Exec(`CREATE TABLE users (id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'viewer', created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL)`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hash, err := auth.HashPassword("legacy-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.Exec(`INSERT INTO users (id, username, password_hash, role, created_at, updated_at) VALUES ('admin-id','old-admin',?,'admin',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),('viewer-id','old-viewer',?,'viewer',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`, hash, hash)
+	if err != nil {
+		t.Fatal(err)
+	}
+	store, err := auth.NewStore(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+	admin, err := store.GetByUsername(ctx, "old-admin")
+	if err != nil || admin.Role != auth.RoleAdmin || !admin.Active {
+		t.Fatalf("legacy admin migration failed: user=%+v err=%v", admin, err)
+	}
+	viewer, err := store.GetByUsername(ctx, "old-viewer")
+	if err != nil || viewer.Role != auth.RoleViewer || !viewer.Active {
+		t.Fatalf("legacy viewer migration failed: user=%+v err=%v", viewer, err)
+	}
+	if _, err := store.UpdateAccess(ctx, admin.ID, "owner", auth.RoleDeveloper, true); err == nil {
+		t.Fatal("demoted the last active admin")
+	}
+	if _, err := store.UpdateAccess(ctx, admin.ID, admin.ID, auth.RoleAdmin, false); err == nil {
+		t.Fatal("allowed admin to deactivate self")
+	}
+	if err := store.DeleteUser(ctx, admin.ID); err == nil {
+		t.Fatal("deleted the last active admin")
+	}
+	other, err := store.CreateUser(ctx, "second-admin", "second-password", auth.RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.UpdateAccess(ctx, admin.ID, other.ID, auth.RoleDeveloper, true); err != nil {
+		t.Fatalf("demotion with another active admin should work: %v", err)
+	}
+}
+
+func TestPermissionMatrix(t *testing.T) {
+	for _, tc := range []struct {
+		role                         auth.Role
+		read, write, users, settings bool
+	}{
+		{auth.RoleAdmin, true, true, true, true},
+		{auth.RoleDeveloper, true, true, false, false},
+		{auth.RoleViewer, true, false, false, false},
+	} {
+		if auth.CanReadData(tc.role) != tc.read || auth.CanWriteData(tc.role) != tc.write || auth.CanManageUsers(tc.role) != tc.users || auth.CanManageSettings(tc.role) != tc.settings {
+			t.Errorf("unexpected permissions for role %s", tc.role)
+		}
+	}
+}
+
 func TestAuthService(t *testing.T) {
 	db := setupTestDB(t)
 	ctx := context.Background()
@@ -280,11 +340,7 @@ func TestAuthMiddlewareAndGuards(t *testing.T) {
 	var capturedClaims *auth.Claims
 	inspectHandler := mw(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedClaims = auth.ClaimsFromContext(r.Context())
-		if auth.IsViewer(r) {
-			w.Header().Set("X-Role", "viewer")
-		} else {
-			w.Header().Set("X-Role", "admin")
-		}
+		w.Header().Set("X-Role", string(capturedClaims.Role))
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -312,5 +368,27 @@ func TestAuthMiddlewareAndGuards(t *testing.T) {
 	}
 	if rec.Header().Get("X-Role") != "viewer" {
 		t.Errorf("expected viewer role header")
+	}
+
+	// The same signed token immediately observes persisted role changes.
+	if _, err := store.UpdateAccess(ctx, viewer.ID, "admin", auth.RoleDeveloper, true); err != nil {
+		t.Fatal(err)
+	}
+	req = httptest.NewRequest(http.MethodGet, "/api/protected", nil)
+	req.Header.Set("Authorization", "Bearer "+viewerToken)
+	rec = httptest.NewRecorder()
+	inspectHandler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || rec.Header().Get("X-Role") != "developer" {
+		t.Fatalf("updated role not refreshed: status=%d role=%q", rec.Code, rec.Header().Get("X-Role"))
+	}
+	if _, err := store.UpdateAccess(ctx, viewer.ID, "admin", auth.RoleDeveloper, false); err != nil {
+		t.Fatal(err)
+	}
+	req = httptest.NewRequest(http.MethodGet, "/api/protected", nil)
+	req.Header.Set("Authorization", "Bearer "+viewerToken)
+	rec = httptest.NewRecorder()
+	protectedHandler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("inactive token should stop working immediately, got %d", rec.Code)
 	}
 }

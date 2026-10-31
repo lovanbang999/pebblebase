@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FC } from "react";
+import { useEffect, useRef, useState, type FC } from "react";
 import { Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -36,9 +36,14 @@ export const OutputPanel: FC<OutputPanelProps> = ({
 }) => {
   const { t } = useTranslation();
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const resizeStart = useRef<{ y: number; height: number } | null>(null);
+  const [height, setHeight] = useState(190);
   useEffect(() => {
     headingRef.current?.focus();
   }, []);
+
+  const resizeTo = (nextHeight: number) =>
+    setHeight(Math.max(128, Math.min(480, nextHeight)));
 
   return (
     <section
@@ -49,8 +54,50 @@ export const OutputPanel: FC<OutputPanelProps> = ({
           document.getElementById("output-trigger")?.focus();
         }
       }}
-      className="border-border bg-background flex h-52 max-h-[32dvh] min-h-32 shrink-0 flex-col border-t"
+      style={{ height: `min(${height}px, 32dvh)` }}
+      className="border-border bg-background relative flex max-h-[32dvh] min-h-32 shrink-0 flex-col border-t"
     >
+      <div
+        role="separator"
+        aria-label={t("operations.resizeOutput", "Resize Output panel")}
+        aria-orientation="horizontal"
+        aria-valuemin={128}
+        aria-valuemax={480}
+        aria-valuenow={height}
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+            event.preventDefault();
+            resizeTo(height + (event.key === "ArrowUp" ? 16 : -16));
+          } else if (event.key === "Home") {
+            event.preventDefault();
+            resizeTo(128);
+          } else if (event.key === "End") {
+            event.preventDefault();
+            resizeTo(480);
+          }
+        }}
+        onPointerDown={(event) => {
+          if (event.button !== 0) return;
+          resizeStart.current = { y: event.clientY, height };
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          if (resizeStart.current)
+            resizeTo(
+              resizeStart.current.height -
+                event.clientY +
+                resizeStart.current.y,
+            );
+        }}
+        onPointerUp={() => {
+          resizeStart.current = null;
+        }}
+        onPointerCancel={() => {
+          resizeStart.current = null;
+        }}
+        className="hover:bg-primary/40 focus-visible:bg-primary/60 absolute -top-1 z-10 h-2 w-full cursor-row-resize touch-none outline-none"
+      />
       <header className="border-border flex h-9 shrink-0 items-center gap-2 border-b px-3">
         <h2
           ref={headingRef}

@@ -1,3 +1,21 @@
+import { isWritingStatement } from "@/lib/querySafety";
+import CodeMirror from "@uiw/react-codemirror";
+import { StreamLanguage } from "@codemirror/language";
+import type { EditorView } from "@codemirror/view";
+import { studioEditorTheme } from "@/lib/editorTheme";
+import { parseRedisArguments, isRedisReadCommand } from "@/lib/redisCommand";
+import {
+  appendQueryHistory,
+  readQueryHistory,
+  containsCredentials,
+} from "@/lib/queryHistoryStore";
+import { STORAGE_KEYS } from "@/constants";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   useState,
   useRef,
@@ -37,6 +55,11 @@ import type { RawQueryResult } from "@/lib/types";
 interface RedisCliConsoleProps {
   connId: string;
   isReadOnly?: boolean;
+  connectionName?: string;
+  environment?: string;
+  initialCommand?: string;
+  workspaceTabId?: string;
+  onCommandChange?: (command: string) => void;
 }
 
 interface ConsoleHistoryItem {
@@ -163,13 +186,31 @@ const REDIS_COMMANDS: CommandDef[] = [
   },
 ];
 
+const isReadOnlyCommand = isRedisReadCommand;
+const redisLanguage = StreamLanguage.define({
+  token(stream) {
+    if (stream.sol()) {
+      stream.eatSpace();
+      if (stream.match(/[A-Za-z]+/)) return "keyword";
+    }
+    if (stream.match(/"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/)) return "string";
+    stream.next();
+    return null;
+  },
+});
+
 export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
   connId,
   isReadOnly = false,
+  connectionName,
+  environment,
+  initialCommand,
+  workspaceTabId,
+  onCommandChange,
 }) => {
   const { t } = useTranslation();
 
-  const [inputCommand, setInputCommand] = useState("");
+  const [inputCommand, setInputCommand] = useState(initialCommand ?? "");
   const [history, setHistory] = useState<ConsoleHistoryItem[]>([]);
   const [pastCommands, setPastCommands] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
@@ -183,9 +224,47 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
     string | null
   >(null);
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<EditorView | null>(null);
+  const runningRef = useRef(false);
+  const runInputRef = useRef<() => void>(() => {});
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historySearch, setHistorySearch] = useState("");
+  const historyKey = STORAGE_KEYS.queryHistory(connId);
+  const [savedHistory, setSavedHistory] = useState(() => {
+    try {
+      return readQueryHistory(localStorage.getItem(historyKey));
+    } catch {
+      return [];
+    }
+  });
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    const handleCommand = (event: Event) => {
+      const detail = (event as CustomEvent<{ tabId: string; command: string }>)
+        .detail;
+      if (!workspaceTabId || detail?.tabId !== workspaceTabId) return;
+      if (detail.command === "history") setHistoryOpen(true);
+      if (detail.command === "run") runInputRef.current();
+    };
+    window.addEventListener("pb:query-command", handleCommand);
+    return () => window.removeEventListener("pb:query-command", handleCommand);
+  }, [workspaceTabId]);
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        setSavedHistory(readQueryHistory(localStorage.getItem(historyKey)));
+      } catch {
+        /* storage unavailable */
+      }
+    };
+    window.addEventListener("pb:query-history-changed", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("pb:query-history-changed", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, [historyKey]);
   // Scroll to bottom when history grows
   useEffect(() => {
     terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -204,50 +283,90 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
   }, [inputCommand]);
 
   // Handle command execution
-  const executeCommand = async (cmd: string) => {
-    const trimmed = cmd.trim();
-    if (!trimmed) return;
-
-    // Check destructive command
-    const upper = trimmed.toUpperCase();
+  const executeCommand = async (cmd: string, destructiveConfirmed = false) => {
+    if (runningRef.current) return;
+    const lines = cmd
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    if (!lines.length) return;
+    try {
+      for (const line of lines) {
+        parseRedisArguments(line);
+        if (containsCredentials(line))
+          throw new Error(t("console.storageCredentialWarning"));
+        if (isReadOnly && !isReadOnlyCommand(line))
+          throw new Error(t("redis.cli.readOnlyError"));
+      }
+    } catch (error) {
+      setHistory((previous) =>
+        [
+          ...previous,
+          {
+            id: crypto.randomUUID(),
+            command: "(input rejected)",
+            timestamp: new Date().toISOString(),
+            error: error instanceof Error ? error.message : "Invalid command",
+          },
+        ].slice(-50),
+      );
+      return;
+    }
     if (
-      isReadOnly &&
-      (upper.startsWith("SET") ||
-        upper.startsWith("DEL") ||
-        upper.startsWith("FLUSHDB") ||
-        upper.startsWith("FLUSHALL"))
+      !destructiveConfirmed &&
+      lines.some((line) => /^FLUSH(?:DB|ALL)\b/i.test(line))
     ) {
+      setPendingDestructiveCmd(cmd);
+      return;
+    }
+    const writes = lines.filter((line) =>
+      isWritingStatement(line, "redis"),
+    ).length;
+    if (
+      environment === "production" &&
+      writes &&
+      !window.confirm(
+        t("redis.cli.productionConfirm", {
+          connection: connectionName ?? connId,
+          count: writes,
+        }),
+      )
+    )
+      return;
+    runningRef.current = true;
+    setIsRunning(true);
+    try {
+      for (const line of lines) {
+        if (!(await runCommandDirectly(line))) break;
+      }
+    } finally {
+      runningRef.current = false;
+      setIsRunning(false);
+    }
+  };
+
+  const runCommandDirectly = async (command: string) => {
+    if (isReadOnly && !isReadOnlyCommand(command)) {
       setHistory((prev) => [
         ...prev,
         {
           id: `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-          command: trimmed,
+          command,
           timestamp: new Date().toISOString(),
           error: t("redis.cli.readOnlyError"),
         },
       ]);
       setInputCommand("");
-      return;
+      return false;
     }
-    if (upper.startsWith("FLUSHDB") || upper.startsWith("FLUSHALL")) {
-      setPendingDestructiveCmd(trimmed);
-      return;
-    }
-
-    await runCommandDirectly(trimmed);
-  };
-
-  const runCommandDirectly = async (command: string) => {
     // Record in input history
     setPastCommands((prev) => {
       const filtered = prev.filter((c) => c !== command);
-      return [...filtered, command];
+      return [...filtered, command].slice(-50);
     });
     setHistoryIndex(-1);
     setInputCommand("");
     setShowSuggestions(false);
-    setIsRunning(true);
-
     const item: ConsoleHistoryItem = {
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
       command,
@@ -260,13 +379,52 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
     } catch (err: unknown) {
       item.error = err instanceof Error ? err.message : String(err);
     } finally {
-      setHistory((prev) => [...prev, item]);
-      setIsRunning(false);
+      setHistory((prev) => [...prev, item].slice(-50));
+      setSavedHistory((previous) => {
+        let existing = previous;
+        try {
+          existing = readQueryHistory(localStorage.getItem(historyKey));
+        } catch {
+          /* storage unavailable */
+        }
+        const next = appendQueryHistory(existing, {
+          id: item.id,
+          query: command,
+          timestamp: Date.parse(item.timestamp),
+          execution_time_ms: item.result?.execution_time_ms,
+          error: item.error,
+        });
+        try {
+          localStorage.setItem(historyKey, JSON.stringify(next));
+          queueMicrotask(() =>
+            window.dispatchEvent(new Event("pb:query-history-changed")),
+          );
+        } catch {
+          /* Storage may be full. */
+        }
+        return next;
+      });
       setTimeout(() => inputRef.current?.focus(), 50);
     }
+    return !item.error;
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    runInputRef.current = () => {
+      void executeCommand(inputCommand);
+    };
+  });
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "e") {
+      e.preventDefault();
+      e.stopPropagation();
+      setHistoryOpen(true);
+      return;
+    }
+    if (e.key === "Enter" && e.shiftKey && !e.ctrlKey && !e.metaKey) return;
+    if (inputCommand.includes("\n") && ["ArrowUp", "ArrowDown"].includes(e.key))
+      return;
     // Navigate suggestions with Tab or Up/Down
     if (showSuggestions && suggestions.length > 0) {
       if (e.key === "Tab") {
@@ -290,8 +448,9 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
       }
     }
 
-    if (e.key === "Enter") {
+    if (e.key === "Enter" || e.key === "F5") {
       e.preventDefault();
+      e.stopPropagation();
       executeCommand(inputCommand);
       return;
     }
@@ -368,6 +527,64 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
         </Button>
       </div>
 
+      <Button variant="ghost" size="sm" onClick={() => setHistoryOpen(true)}>
+        {t("console.historyTitle")} (Ctrl/Cmd+E)
+      </Button>
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t("console.historyTitle")} — {connectionName ?? connId}
+            </DialogTitle>
+          </DialogHeader>
+          <Input
+            value={historySearch}
+            onChange={(event) => setHistorySearch(event.target.value)}
+            placeholder={t("console.historyTitle")}
+          />
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSavedHistory([]);
+              try {
+                localStorage.removeItem(historyKey);
+                window.dispatchEvent(new Event("pb:query-history-changed"));
+              } catch {
+                /* storage unavailable */
+              }
+            }}
+          >
+            {t("redis.cli.clearOutput")}
+          </Button>
+          <div className="max-h-96 space-y-2 overflow-auto">
+            {savedHistory
+              .filter((entry) =>
+                entry.query.toLowerCase().includes(historySearch.toLowerCase()),
+              )
+              .map((entry) => (
+                <button
+                  key={entry.id}
+                  className="border-border block w-full rounded border p-2 text-left text-xs"
+                  onClick={() => {
+                    setInputCommand(entry.query);
+                    setHistoryOpen(false);
+                    inputRef.current?.focus();
+                  }}
+                >
+                  <pre>{entry.query}</pre>
+                  <span>
+                    {connectionName ?? connId} ·{" "}
+                    {new Date(entry.timestamp).toLocaleString()} ·{" "}
+                    {entry.execution_time_ms ?? 0} ms ·{" "}
+                    {entry.error
+                      ? t("console.historyFailed")
+                      : t("console.historySuccess")}
+                  </span>
+                </button>
+              ))}
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Terminal Output Area */}
       <div className="flex-1 space-y-4 overflow-y-auto p-4 text-xs">
         {history.length === 0 && !isRunning && (
@@ -528,23 +745,34 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
           <span className="text-success text-xs font-bold select-none">
             redis&gt;
           </span>
-          <Input
-            ref={inputRef}
-            type="text"
+          <CodeMirror
             value={inputCommand}
-            onChange={(e) => {
-              setInputCommand(e.target.value);
-              setShowSuggestions(e.target.value.trim().length > 0);
+            onCreateEditor={(view) => {
+              inputRef.current = view;
+            }}
+            onChange={(value) => {
+              setInputCommand(value);
+              onCommandChange?.(value);
+              setShowSuggestions(
+                !value.includes("\n") && value.trim().length > 0,
+              );
               setSelectedSuggestIndex(0);
             }}
-            onFocus={() => {
-              if (inputCommand.trim().length > 0) setShowSuggestions(true);
-            }}
             onKeyDown={handleKeyDown}
-            placeholder={t("redis.cli.inputPlaceholder")}
-            className="focus-visible:ring-primary/50 border-border bg-code text-code-foreground placeholder:text-muted-foreground flex-1 font-mono text-xs"
-            disabled={isRunning}
-            autoFocus
+            extensions={[redisLanguage, studioEditorTheme]}
+            basicSetup={{
+              lineNumbers: true,
+              autocompletion: false,
+              foldGutter: false,
+            }}
+            theme={
+              document.documentElement.classList.contains("dark")
+                ? "dark"
+                : "light"
+            }
+            placeholder={t("redis.cli.multilinePlaceholder")}
+            className="min-w-0 flex-1 text-xs"
+            editable={!isRunning}
           />
           <Button
             size="sm"
@@ -587,7 +815,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
               className="bg-red-600 text-white hover:bg-red-700"
               onClick={() => {
                 if (pendingDestructiveCmd) {
-                  runCommandDirectly(pendingDestructiveCmd);
+                  executeCommand(pendingDestructiveCmd, true);
                   setPendingDestructiveCmd(null);
                 }
               }}
@@ -611,55 +839,6 @@ const RenderCliResult: FC<{ result: RawQueryResult }> = ({ result }) => {
       <span className="text-muted-foreground italic">
         {t("redis.cli.emptyListOrSet")}
       </span>
-    );
-  }
-
-  // Single column result (e.g. string result or simple array)
-  if (columns.length === 1) {
-    const colName = columns[0];
-    return (
-      <div className="space-y-1">
-        {rows.map((row, idx) => {
-          const val = row[colName];
-          return (
-            <div key={idx} className="flex items-start gap-2">
-              <span className="text-muted-foreground select-none">
-                {idx + 1})
-              </span>
-              <span className="text-success break-all whitespace-pre-wrap">
-                {typeof val === "object" ? JSON.stringify(val) : String(val)}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  // Key-value pairs (e.g. HGETALL or INFO table: field/value)
-  if (
-    columns.length === 2 &&
-    (columns.includes("field") || columns.includes("key")) &&
-    columns.includes("value")
-  ) {
-    const keyCol = columns[0] === "value" ? columns[1] : columns[0];
-    const valCol = "value";
-    return (
-      <div className="grid max-h-80 grid-cols-1 gap-1 overflow-y-auto md:grid-cols-2">
-        {rows.map((row, idx) => (
-          <div
-            key={idx}
-            className="border-border/60 flex items-center justify-between gap-2 border-b pb-1 text-[11px]"
-          >
-            <span className="text-muted-foreground truncate font-semibold">
-              {String(row[keyCol])}:
-            </span>
-            <span className="text-success truncate font-mono">
-              {String(row[valCol])}
-            </span>
-          </div>
-        ))}
-      </div>
     );
   }
 

@@ -112,6 +112,7 @@ func fetchColumns(ctx context.Context, db *sql.DB, table string, fkCols map[stri
 		_, isFk := fkCols[table+"."+name]
 		cols = append(cols, schema.Column{
 			Name:         name,
+			NativeType:   colType,
 			Type:         normalizeType(rawType, colType, name),
 			Nullable:     strings.EqualFold(isNullable, "YES"),
 			IsPrimaryKey: columnKey == "PRI",

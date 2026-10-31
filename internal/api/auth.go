@@ -29,6 +29,11 @@ type createUserRequest struct {
 	Role     auth.Role `json:"role"`
 }
 
+type updateUserAccessRequest struct {
+	Role   auth.Role `json:"role"`
+	Active bool      `json:"active"`
+}
+
 // changePasswordRequest is the body for PATCH /api/auth/users/:id/password.
 type changePasswordRequest struct {
 	OldPassword string `json:"old_password"`
@@ -81,7 +86,7 @@ func (s *Server) handleMe(w http.ResponseWriter, r *http.Request) {
 	}
 	isDefault := s.authSvc.IsDefaultPassword(r.Context(), user.ID)
 	writeJSON(w, http.StatusOK, map[string]any{
-		"user":               user,
+		"user":                user,
 		"is_default_password": isDefault,
 	})
 }
@@ -138,6 +143,42 @@ func (s *Server) handleDeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// PATCH /api/auth/users/{id} — Admin only; changes role and active status.
+func (s *Server) handleUpdateUserAccess(w http.ResponseWriter, r *http.Request) {
+	if !auth.RequireAdmin(w, r) {
+		return
+	}
+	var req updateUserAccessRequest
+	if err := decodeBody(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	claims := auth.ClaimsFromContext(r.Context())
+	actorID := ""
+	if claims != nil {
+		actorID = claims.UserID
+	}
+	before, err := s.authSvc.GetByID(r.Context(), r.PathValue("id"))
+	if err != nil {
+		writeError(w, http.StatusNotFound, "user not found")
+		return
+	}
+	updated, err := s.authSvc.UpdateAccess(r.Context(), before.ID, actorID, req.Role, req.Active)
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if s.auditLog != nil {
+		if before.Role != updated.Role {
+			s.auditLog.Log(r.Context(), actorID, claims.Username, audit.ActionUserRoleChange, updated.ID, string(before.Role)+" -> "+string(updated.Role), audit.IPFromRequest(r))
+		}
+		if before.Active && !updated.Active {
+			s.auditLog.Log(r.Context(), actorID, claims.Username, audit.ActionUserDeactivate, updated.ID, "account deactivated", audit.IPFromRequest(r))
+		}
+	}
+	writeJSON(w, http.StatusOK, updated)
+}
+
 // PATCH /api/auth/users/{id}/password — Admin or self
 func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	targetID := r.PathValue("id")
@@ -165,6 +206,12 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	if err := s.authSvc.ChangePassword(r.Context(), callerID, callerRole, targetID, req.OldPassword, req.NewPassword); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
 		return
+	}
+	if claims != nil && claims.UserID != targetID && s.auditLog != nil {
+		target, err := s.authSvc.GetByID(r.Context(), targetID)
+		if err == nil {
+			s.auditLog.Log(r.Context(), claims.UserID, claims.Username, audit.ActionPasswordReset, target.ID, "password reset", audit.IPFromRequest(r))
+		}
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "password changed"})
 }

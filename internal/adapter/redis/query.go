@@ -30,6 +30,8 @@ func (a *Adapter) Query(ctx context.Context, table string, opts adapter.QueryOpt
 	// Extract match pattern from filters
 	pattern := "*"
 	typeFilter := ""
+	valueFilter := ""
+	valueContains := false
 
 	for _, f := range opts.Filters {
 		col := strings.ToLower(strings.TrimSpace(f.Column))
@@ -50,6 +52,11 @@ func (a *Adapter) Query(ctx context.Context, table string, opts adapter.QueryOpt
 			}
 		case "type":
 			typeFilter = strings.ToLower(strings.TrimSpace(valStr))
+		case "value":
+			if f.Operator == "eq" || f.Operator == "contains" {
+				valueFilter = valStr
+				valueContains = f.Operator == "contains"
+			}
 		}
 	}
 
@@ -97,8 +104,45 @@ func (a *Adapter) Query(ctx context.Context, table string, opts adapter.QueryOpt
 		}
 		matchedKeys = filtered
 	}
+	if valueFilter != "" {
+		filtered := make([]string, 0, len(matchedKeys))
+		for start := 0; start < len(matchedKeys); start += 200 {
+			end := start + 200
+			if end > len(matchedKeys) {
+				end = len(matchedKeys)
+			}
+			pipe := a.client.Pipeline()
+			commands := make([]*redis.StringCmd, 0, end-start)
+			for _, key := range matchedKeys[start:end] {
+				if typ, err := a.client.Type(queryCtx, key).Result(); err == nil && typ == "string" {
+					if size, err := a.client.StrLen(queryCtx, key).Result(); err == nil && size <= 4096 {
+						commands = append(commands, pipe.Get(queryCtx, key))
+					} else {
+						commands = append(commands, nil)
+					}
+				} else {
+					commands = append(commands, nil)
+				}
+			}
+			_, _ = pipe.Exec(queryCtx)
+			for offset, command := range commands {
+				if command == nil {
+					continue
+				}
+				text, err := command.Result()
+				matched := strings.EqualFold(text, valueFilter)
+				if valueContains {
+					matched = strings.Contains(strings.ToLower(text), strings.ToLower(valueFilter))
+				}
+				if err == nil && matched {
+					filtered = append(filtered, matchedKeys[start+offset])
+				}
+			}
+		}
+		matchedKeys = filtered
+	}
 
-	if totalCount == 0 || pattern != "*" || typeFilter != "" {
+	if totalCount == 0 || pattern != "*" || typeFilter != "" || valueFilter != "" {
 		totalCount = len(matchedKeys)
 	}
 

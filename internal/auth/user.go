@@ -11,6 +11,8 @@ const (
 	RoleAdmin Role = "admin"
 	// RoleViewer grants read-only access; mutations are blocked at the API layer.
 	RoleViewer Role = "viewer"
+	// RoleDeveloper can read and write data but cannot manage users or settings.
+	RoleDeveloper Role = "developer"
 )
 
 // User is a Pebblebase studio user.
@@ -20,6 +22,14 @@ type User struct {
 	Username     string    `json:"username"`
 	PasswordHash string    `json:"-"`
 	Role         Role      `json:"role"`
+	Active       bool      `json:"active"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 }
+
+func CanReadData(role Role) bool {
+	return role == RoleAdmin || role == RoleDeveloper || role == RoleViewer
+}
+func CanWriteData(role Role) bool      { return role == RoleAdmin || role == RoleDeveloper }
+func CanManageUsers(role Role) bool    { return role == RoleAdmin }
+func CanManageSettings(role Role) bool { return role == RoleAdmin }

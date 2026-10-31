@@ -1,4 +1,9 @@
 import {
+  appendQueryHistory,
+  readQueryHistory,
+  containsCredentials,
+} from "@/lib/queryHistoryStore";
+import {
   useState,
   useEffect,
   useMemo,
@@ -9,7 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
 import { studioEditorTheme } from "@/lib/editorTheme";
-import { keymap } from "@codemirror/view";
+import { EditorView, keymap } from "@codemirror/view";
 import { sql, PostgreSQL, MySQL, SQLite } from "@codemirror/lang-sql";
 import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -57,12 +62,7 @@ import type {
   AIQueryAssistResponse,
   TableSchemaSummary,
 } from "@/lib/types";
-import {
-  executeRawQuery,
-  createSavedQuery,
-  explainQuery,
-  queryAssist,
-} from "@/lib/api";
+import { createSavedQuery, explainQuery, queryAssist } from "@/lib/api";
 import {
   STORAGE_KEYS,
   DEFAULT_QUERY_LIMIT,
@@ -74,6 +74,24 @@ import {
 import { PipelineBuilder } from "./PipelineBuilder";
 import { emitOperationEvent } from "@/lib/operationEvents";
 import { QUERY_EDITOR_MIN_HEIGHT } from "@/constants/workspaceLayout";
+import { splitQueryStatements } from "@/lib/queryStatements";
+import { useConsoleTransactions } from "@/hooks/useConsoleTransactions";
+import { getDefaultConsoleTransaction } from "@/lib/settingsPreferences";
+import { isWritingStatement } from "@/lib/querySafety";
+
+interface ConsoleStatementResult {
+  id: string;
+  statement: string;
+  result: RawQueryResult | null;
+  error?: string;
+}
+
+interface ConsoleOutputEntry {
+  id: string;
+  statement: string;
+  message: string;
+  status: "running" | "success" | "error";
+}
 
 export interface ConsoleTab {
   id: string;
@@ -83,6 +101,8 @@ export interface ConsoleTab {
   executionTime?: number;
   error?: string | null;
   explainResult?: ExplainResult | null;
+  statementResults?: ConsoleStatementResult[];
+  outputEntries?: ConsoleOutputEntry[];
 }
 import QueryLibraryPanel from "./QueryLibraryPanel";
 import { Button } from "@/components/ui/button";
@@ -648,14 +668,31 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     try {
       sessionStorage.setItem(
         tabsStorageKey,
-        JSON.stringify({ tabs, activeTabId }),
+        JSON.stringify({
+          tabs: tabs.map((tab) => ({
+            ...tab,
+            query: containsCredentials(tab.query) ? "" : tab.query,
+            results: null,
+            statementResults: undefined,
+            outputEntries: undefined,
+            explainResult: null,
+            error: null,
+            executionTime: undefined,
+          })),
+          activeTabId,
+        }),
       );
     } catch {
       // Handle quota exceeded (e.g., large query results)
       try {
         const lightweightTabs = tabs.map((t) => ({
           ...t,
+          query: containsCredentials(t.query) ? "" : t.query,
           results: null,
+          statementResults: undefined,
+          outputEntries: undefined,
+          explainResult: null,
+          error: null,
         }));
         sessionStorage.setItem(
           tabsStorageKey,
@@ -682,15 +719,35 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   }, [tabs, activeTabId]);
 
   const query = activeTab.query;
-  const result = activeTab.results;
-  const error = activeTab.error ?? null;
+  const [activeStatementResultId, setActiveStatementResultId] = useState<
+    string | null
+  >(null);
+  const selectedStatementResult =
+    activeTab.statementResults?.find(
+      (statement) => statement.id === activeStatementResultId,
+    ) ?? activeTab.statementResults?.at(-1);
+  const result = selectedStatementResult
+    ? selectedStatementResult.result
+    : activeTab.results;
+  const error = selectedStatementResult
+    ? (selectedStatementResult.error ?? null)
+    : (activeTab.error ?? null);
+  const editorViewRef = useRef<EditorView | null>(null);
+  const [hasEditorSelection, setHasEditorSelection] = useState(false);
+  const [sortState, setSortState] = useState<{
+    column: string;
+    descending: boolean;
+  } | null>(null);
   const [showLimitWarning, setShowLimitWarning] = useState(false);
+  const [pendingRunStatements, setPendingRunStatements] = useState<string[]>(
+    [],
+  );
 
   // Execution Plan states
   const [isExplaining, setIsExplaining] = useState(false);
-  const [activeResultsTab, setActiveResultsTab] = useState<"results" | "plan">(
-    "results",
-  );
+  const [activeResultsTab, setActiveResultsTab] = useState<
+    "results" | "plan" | "output"
+  >("results");
   const [planExpandAll, setPlanExpandAll] = useState<boolean | null>(null);
   const [copiedPlan, setCopiedPlan] = useState(false);
 
@@ -717,6 +774,59 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     setAiToast(msg);
     setTimeout(() => setAiToast(null), TOAST_DURATION_MS);
   }, []);
+
+  const [isRunning, setIsRunning] = useState(false);
+  const {
+    states: transactionStates,
+    transition: transactionTransition,
+    execute: executeTransaction,
+    finish: finishTransaction,
+  } = useConsoleTransactions(connection, workspaceTabId, showAiToast);
+  const transaction =
+    transactionStates[activeTab.id] ?? getDefaultConsoleTransaction(connection);
+  const manualUnavailable = connection.read_only
+    ? t("console.transaction.readOnly")
+    : !["postgres", "mysql"].includes(connection.type)
+      ? t("console.transaction.unsupported")
+      : null;
+  const [switchToAutoOpen, setSwitchToAutoOpen] = useState(false);
+  const [isFinishingTransaction, setIsFinishingTransaction] = useState(false);
+  const hasUncommittedWork =
+    Object.values(transactionStates).some((state) =>
+      Boolean(state.sessionId),
+    ) ||
+    (isRunning && transaction.mode === "manual");
+  useEffect(() => {
+    if (workspaceTabId)
+      window.dispatchEvent(
+        new CustomEvent("pb:console-transaction-dirty", {
+          detail: { tabId: workspaceTabId, isDirty: hasUncommittedWork },
+        }),
+      );
+  }, [workspaceTabId, hasUncommittedWork]);
+  const finishActiveTransaction = async (
+    action: "commit" | "rollback" | "close",
+    switchToAuto = false,
+  ) => {
+    setIsFinishingTransaction(true);
+    try {
+      const finished = await finishTransaction(activeTab.id, action);
+      if (action === "rollback" && finished)
+        showAiToast(t("console.transaction.rolledBack"));
+      if (switchToAuto) {
+        transactionTransition(activeTab.id, { type: "mode", mode: "auto" });
+        setSwitchToAutoOpen(false);
+      }
+    } catch (error) {
+      showAiToast(
+        error instanceof Error
+          ? error.message
+          : t("console.transaction.failed"),
+      );
+    } finally {
+      setIsFinishingTransaction(false);
+    }
+  };
 
   // Condensed schema context for prompt injection
   const condensedSchema = useMemo<TableSchemaSummary[]>(() => {
@@ -887,7 +997,20 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   }, [tabs, connection.type, tables, buildExampleQuery]);
 
   const handleConfirmCloseTab = useCallback(
-    (tabId: string) => {
+    async (tabId: string) => {
+      if (isRunning || isFinishingTransaction) return;
+      setIsFinishingTransaction(true);
+      try {
+        await finishTransaction(tabId, "close");
+      } catch (error) {
+        showAiToast(
+          error instanceof Error
+            ? error.message
+            : t("console.transaction.closeFailed"),
+        );
+        setIsFinishingTransaction(false);
+        return;
+      }
       setTabs((prev) => {
         const remaining = prev.filter((t) => t.id !== tabId);
         if (remaining.length === 0) {
@@ -913,26 +1036,44 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         }
         return remaining;
       });
+      setIsFinishingTransaction(false);
       setClosingTabId(null);
       setResultFilter("");
       setShowLimitWarning(false);
     },
-    [activeTabId],
+    [
+      activeTabId,
+      finishTransaction,
+      showAiToast,
+      t,
+      isRunning,
+      isFinishingTransaction,
+    ],
   );
 
   const handleRequestCloseTab = useCallback(
     (e: React.MouseEvent, tabId: string) => {
       e.stopPropagation();
+      if (isRunning || isFinishingTransaction) return;
       const tabToClose = tabs.find((t) => t.id === tabId);
       if (!tabToClose) return;
 
-      if (tabToClose.query.trim().length > 0) {
+      if (
+        transactionStates[tabId]?.sessionId ||
+        tabToClose.query.trim().length > 0
+      ) {
         setClosingTabId(tabId);
       } else {
         handleConfirmCloseTab(tabId);
       }
     },
-    [tabs, handleConfirmCloseTab],
+    [
+      tabs,
+      handleConfirmCloseTab,
+      transactionStates,
+      isRunning,
+      isFinishingTransaction,
+    ],
   );
 
   const handleStartRename = useCallback(
@@ -958,7 +1099,6 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     setEditingTabId(null);
   }, []);
 
-  const [isRunning, setIsRunning] = useState(false);
   const [copiedCell, setCopiedCell] = useState<string | null>(null);
   const [resultFilter, setResultFilter] = useState("");
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -1034,7 +1174,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   const [history, setHistory] = useState<QueryHistoryItem[]>(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      return saved ? JSON.parse(saved) : [];
+      return readQueryHistory(saved);
     } catch {
       return [];
     }
@@ -1044,10 +1184,26 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey);
-      setHistory(saved ? JSON.parse(saved) : []);
+      setHistory(readQueryHistory(saved));
     } catch {
       setHistory([]);
     }
+  }, [storageKey]);
+
+  useEffect(() => {
+    const refresh = () => {
+      try {
+        setHistory(readQueryHistory(localStorage.getItem(storageKey)));
+      } catch {
+        /* storage unavailable */
+      }
+    };
+    window.addEventListener("pb:query-history-changed", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("pb:query-history-changed", refresh);
+      window.removeEventListener("storage", refresh);
+    };
   }, [storageKey]);
 
   // When tables arrive, engine changes, or dialect mismatch is detected, update to engine example query
@@ -1087,12 +1243,18 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         ...item,
       };
       setHistory((prev) => {
-        const next = [
-          newItem,
-          ...prev.filter((p) => p.query !== item.query),
-        ].slice(0, 50);
+        let existing = prev;
+        try {
+          existing = readQueryHistory(localStorage.getItem(storageKey));
+        } catch {
+          /* storage unavailable */
+        }
+        const next = appendQueryHistory(existing, newItem);
         try {
           localStorage.setItem(storageKey, JSON.stringify(next));
+          queueMicrotask(() =>
+            window.dispatchEvent(new Event("pb:query-history-changed")),
+          );
         } catch {
           // ignore localStorage quota errors
         }
@@ -1106,6 +1268,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     setHistory([]);
     try {
       localStorage.removeItem(storageKey);
+      window.dispatchEvent(new Event("pb:query-history-changed"));
     } catch {
       // ignore
     }
@@ -1119,6 +1282,10 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
+    if (containsCredentials(trimmed)) {
+      showAiToast(t("console.storageCredentialWarning"));
+      return;
+    }
     try {
       await createSavedQuery(connection.id, {
         title: saveTitle.trim(),
@@ -1133,6 +1300,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       setSaveTags("");
       setSaveIsFavorite(false);
       setLibRefreshKey((k) => k + 1);
+      window.dispatchEvent(new Event("pb:saved-queries-changed"));
       // Show a brief toast
       setSaveToast(true);
       setTimeout(() => setSaveToast(false), TOAST_DURATION_MS);
@@ -1141,115 +1309,278 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     }
   };
 
-  // Core execute query logic
-  const executeQuery = useCallback(
-    async (queryToRun: string) => {
-      const trimmed = queryToRun.trim();
-      if (!trimmed || isRunning) return;
+  const confirmConsoleStatements = useCallback(
+    (statements: string[]) => {
+      const count = statements.filter((statement) =>
+        isWritingStatement(statement, connection.type),
+      ).length;
+      return (
+        connection.environment !== "production" ||
+        count === 0 ||
+        window.confirm(
+          `Run on production: ${connection.name}?\n${count} statement${count === 1 ? "" : "s"} may write data or change database state.`,
+        )
+      );
+    },
+    [connection.type, connection.environment, connection.name],
+  );
 
+  // All console execution passes through this function so confirmation and
+  // pinned-session behavior can be added at one boundary in Phase 4B.
+  const runStatements = useCallback(
+    async (statements: string[]) => {
+      const runnable = statements
+        .map((statement) => statement.trim())
+        .filter(Boolean);
+      if (!runnable.length || isRunning || isFinishingTransaction) return;
+      if (!confirmConsoleStatements(runnable)) return;
+
+      const targetTabId = activeTab.id;
+      const statementResults: ConsoleStatementResult[] = [];
+      const outputEntries: ConsoleOutputEntry[] = [];
       setIsRunning(true);
       setActiveResultsTab("results");
-      const targetTabId = activeTab.id;
-
+      setActiveStatementResultId(null);
       setTabs((prev) =>
-        prev.map((t) => (t.id === targetTabId ? { ...t, error: null } : t)),
+        prev.map((tab) =>
+          tab.id === targetTabId
+            ? {
+                ...tab,
+                results: null,
+                error: null,
+                statementResults: [],
+                outputEntries: [
+                  {
+                    id: `run-${Date.now()}`,
+                    statement: "",
+                    message: `Running ${runnable.length} statement${runnable.length === 1 ? "" : "s"}`,
+                    status: "running",
+                  },
+                ],
+              }
+            : tab,
+        ),
       );
-      const startClient = performance.now();
 
       try {
-        const res = await executeRawQuery(connection.id, trimmed);
-        const clientDuration = performance.now() - startClient;
-        // If backend returned a precise time > 0, use it.
-        // If backend returned 0 (e.g. before server restart), use client elapsed time.
-        const exactTime =
-          res.execution_time_ms > 0
-            ? res.execution_time_ms
-            : Math.max(0.01, Number(clientDuration.toFixed(2)));
-
-        const enrichedResult: RawQueryResult = {
-          ...res,
-          execution_time_ms: exactTime,
-          round_trip_ms: Number(clientDuration.toFixed(2)),
-        };
-
-        setTabs((prev) =>
-          prev.map((t) =>
-            t.id === targetTabId
-              ? {
-                  ...t,
-                  results: enrichedResult,
-                  executionTime: exactTime,
-                  error: null,
-                }
-              : t,
-          ),
-        );
-        saveHistory({
-          query: trimmed,
-          execution_time_ms: exactTime,
-          round_trip_ms: Number(clientDuration.toFixed(2)),
-          is_mutation: res.is_mutation,
-          row_count: res.rows.length,
-        });
-        emitOperationEvent({
-          kind: "query",
-          severity: "success",
-          title: t("operations.querySucceeded", "Query completed"),
-          message: t("operations.queryResultSummary", {
-            rows: res.rows.length,
-            time: exactTime,
-            defaultValue: "{{rows}} rows · {{time}} ms",
-          }),
-          connectionId: connection.id,
-          connectionName: connection.name,
-          tabId: targetTabId,
-        });
-      } catch (err: any) {
-        const msg = err.message || "Execution error";
-        setTabs((prev) =>
-          prev.map((t) => (t.id === targetTabId ? { ...t, error: msg } : t)),
-        );
-        saveHistory({
-          query: trimmed,
-          error: msg,
-        });
-        emitOperationEvent({
-          kind: "query",
-          severity: "error",
-          title: t("operations.queryFailed", "Query failed"),
-          message: t(
-            "operations.queryFailureSafe",
-            "The query could not be completed. See the query console for details.",
-          ),
-          connectionId: connection.id,
-          connectionName: connection.name,
-          tabId: targetTabId,
-        });
+        for (const statement of runnable) {
+          const statementId = `statement-${Date.now()}-${statementResults.length}`;
+          const started = performance.now();
+          try {
+            const response = await executeTransaction(
+              targetTabId,
+              statement,
+              isWritingStatement(statement, connection.type),
+            );
+            const roundTrip = Number((performance.now() - started).toFixed(2));
+            const executionTime =
+              response.execution_time_ms > 0
+                ? response.execution_time_ms
+                : Math.max(0.01, roundTrip);
+            const enriched: RawQueryResult = {
+              ...response,
+              execution_time_ms: executionTime,
+              round_trip_ms: roundTrip,
+            };
+            statementResults.push({
+              id: statementId,
+              statement,
+              result: enriched,
+            });
+            outputEntries.push({
+              id: statementId,
+              statement,
+              message: `${response.rows.length} row${response.rows.length === 1 ? "" : "s"} · ${executionTime} ms`,
+              status: "success",
+            });
+            setActiveStatementResultId(statementId);
+            setTabs((prev) =>
+              prev.map((tab) =>
+                tab.id === targetTabId
+                  ? {
+                      ...tab,
+                      results: enriched,
+                      executionTime,
+                      error: null,
+                      statementResults: [...statementResults],
+                      outputEntries: [...outputEntries],
+                    }
+                  : tab,
+              ),
+            );
+            saveHistory({
+              query: statement,
+              execution_time_ms: executionTime,
+              round_trip_ms: roundTrip,
+              is_mutation: response.is_mutation,
+              row_count: response.rows.length,
+            });
+            emitOperationEvent({
+              kind: "query",
+              severity: "success",
+              title: t("operations.querySucceeded", "Query completed"),
+              message: t("operations.queryResultSummary", {
+                rows: response.rows.length,
+                time: executionTime,
+                defaultValue: "{{rows}} rows · {{time}} ms",
+              }),
+              connectionId: connection.id,
+              connectionName: connection.name,
+              tabId: targetTabId,
+            });
+          } catch (err: unknown) {
+            const message =
+              err instanceof Error ? err.message : "Execution error";
+            statementResults.push({
+              id: statementId,
+              statement,
+              result: null,
+              error: message,
+            });
+            outputEntries.push({
+              id: statementId,
+              statement,
+              message,
+              status: "error",
+            });
+            setActiveStatementResultId(statementId);
+            setTabs((prev) =>
+              prev.map((tab) =>
+                tab.id === targetTabId
+                  ? {
+                      ...tab,
+                      error: message,
+                      statementResults: [...statementResults],
+                      outputEntries: [...outputEntries],
+                    }
+                  : tab,
+              ),
+            );
+            saveHistory({ query: statement, error: message });
+            emitOperationEvent({
+              kind: "query",
+              severity: "error",
+              title: t("operations.queryFailed", "Query failed"),
+              message: t(
+                "operations.queryFailureSafe",
+                "The query could not be completed. See the query console for details.",
+              ),
+              connectionId: connection.id,
+              connectionName: connection.name,
+              tabId: targetTabId,
+            });
+            break;
+          }
+        }
       } finally {
         setIsRunning(false);
       }
     },
-    [isRunning, activeTab.id, connection.id, connection.name, saveHistory, t],
+    [
+      isRunning,
+      isFinishingTransaction,
+      executeTransaction,
+      confirmConsoleStatements,
+      activeTab.id,
+      connection.id,
+      connection.name,
+      connection.type,
+      saveHistory,
+      t,
+    ],
+  );
+
+  const executeQuery = useCallback(
+    (queryToRun: string) =>
+      runStatements(
+        splitQueryStatements(queryToRun, isMongo ? "mongodb" : "sql").map(
+          (item) => item.statement,
+        ),
+      ),
+    [runStatements, isMongo],
   );
 
   // Run Query handler (validates LIMIT for SELECT queries)
   const handleRun = useCallback(async () => {
-    const trimmed = query.trim();
-    if (!trimmed || isRunning) return;
+    const statements = splitQueryStatements(
+      query,
+      isMongo ? "mongodb" : "sql",
+    ).map((item) => item.statement);
+    if (!statements.length || isRunning) return;
 
-    if (checkMissingLimit(trimmed)) {
+    if (!isMongo && statements.some(checkMissingLimit)) {
+      setPendingRunStatements(statements);
       setShowLimitWarning(true);
       return;
     }
 
     setShowLimitWarning(false);
-    await executeQuery(trimmed);
-  }, [query, isRunning, checkMissingLimit, executeQuery]);
+    setPendingRunStatements([]);
+    await runStatements(statements);
+  }, [query, isRunning, isMongo, checkMissingLimit, runStatements]);
+
+  const statementsAtEditorSelection = useCallback(
+    (selectionOnly: boolean) => {
+      const view = editorViewRef.current;
+      if (!view) return [];
+      const selection = view.state.selection.main;
+      const source = view.state.doc.toString();
+      if (selectionOnly) {
+        if (selection.empty) return [];
+        return splitQueryStatements(
+          view.state.sliceDoc(selection.from, selection.to),
+          isMongo ? "mongodb" : "sql",
+        ).map((item) => item.statement);
+      }
+      if (!selection.empty) {
+        return splitQueryStatements(
+          view.state.sliceDoc(selection.from, selection.to),
+          isMongo ? "mongodb" : "sql",
+        ).map((item) => item.statement);
+      }
+      const range = splitQueryStatements(
+        source,
+        isMongo ? "mongodb" : "sql",
+      ).find(
+        (item) => selection.head >= item.start && selection.head <= item.end,
+      );
+      return range ? [range.statement] : [];
+    },
+    [isMongo],
+  );
+
+  const runRequestedStatements = useCallback(
+    async (statements: string[]) => {
+      if (!statements.length || isRunning) return;
+      if (!isMongo && statements.some(checkMissingLimit)) {
+        setPendingRunStatements(statements);
+        setShowLimitWarning(true);
+        return;
+      }
+      setPendingRunStatements([]);
+      setShowLimitWarning(false);
+      await runStatements(statements);
+    },
+    [isMongo, isRunning, checkMissingLimit, runStatements],
+  );
+
+  const handleRunAtCaret = useCallback(
+    () => runRequestedStatements(statementsAtEditorSelection(false)),
+    [runRequestedStatements, statementsAtEditorSelection],
+  );
+  const handleRunSelection = useCallback(
+    () => runRequestedStatements(statementsAtEditorSelection(true)),
+    [runRequestedStatements, statementsAtEditorSelection],
+  );
 
   const handleRunAnyway = useCallback(async () => {
     setShowLimitWarning(false);
-    await executeQuery(query);
-  }, [query, executeQuery]);
+    const statements = pendingRunStatements.length
+      ? pendingRunStatements
+      : [query];
+    setPendingRunStatements([]);
+    await runStatements(statements);
+  }, [query, pendingRunStatements, runStatements]);
 
   const handleAddLimit = useCallback(async () => {
     let newQuery = query.trim();
@@ -1265,8 +1596,16 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
 
   // Explain Query handler
   const handleExplain = useCallback(async () => {
-    const trimmed = query.trim();
-    if (!trimmed || isExplaining || isRunning) return;
+    const trimmed = statementsAtEditorSelection(false)[0]?.trim() ?? "";
+    if (connection.type !== "postgres" || !trimmed || isExplaining || isRunning)
+      return;
+
+    if (transaction.aborted || isFinishingTransaction) return;
+    if (transaction.mode === "manual") {
+      await runStatements([`EXPLAIN ${trimmed.replace(/^explain\s+/i, "")}`]);
+      return;
+    }
+    if (!confirmConsoleStatements([trimmed])) return;
 
     setIsExplaining(true);
     const targetTabId = activeTab.id;
@@ -1301,7 +1640,19 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     } finally {
       setIsExplaining(false);
     }
-  }, [query, isExplaining, isRunning, activeTab.id, connection.id]);
+  }, [
+    statementsAtEditorSelection,
+    transaction.mode,
+    transaction.aborted,
+    isFinishingTransaction,
+    runStatements,
+    confirmConsoleStatements,
+    isExplaining,
+    isRunning,
+    activeTab.id,
+    connection.id,
+    connection.type,
+  ]);
 
   // Copy Plan JSON
   const handleCopyPlan = useCallback(() => {
@@ -1352,9 +1703,16 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   const extensions = useMemo(() => {
     const runKeymap = keymap.of([
       {
-        key: "Mod-Enter",
+        key: "Mod-Shift-Enter",
         run: () => {
           handleRun();
+          return true;
+        },
+      },
+      {
+        key: "Mod-Enter",
+        run: () => {
+          handleRunAtCaret();
           return true;
         },
       },
@@ -1417,7 +1775,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       }),
       runKeymap,
     ];
-  }, [isMongo, isMysql, isSqlite, tables, handleRun]);
+  }, [isMongo, isMysql, isSqlite, tables, handleRun, handleRunAtCaret]);
 
   // Theme detection
   const isDark =
@@ -1517,17 +1875,39 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   // Filtered Rows for Results Table
   const displayedRows = useMemo(() => {
     if (!result || !result.rows) return [];
-    if (!resultFilter.trim()) return result.rows;
     const term = resultFilter.toLowerCase();
-    return result.rows.filter((row) =>
-      Object.values(row).some(
-        (v) =>
-          v !== null &&
-          v !== undefined &&
-          String(v).toLowerCase().includes(term),
-      ),
-    );
-  }, [result, resultFilter]);
+    const rows = !term
+      ? [...result.rows]
+      : result.rows.filter((row) =>
+          Object.values(row).some(
+            (v) =>
+              v !== null &&
+              v !== undefined &&
+              String(v).toLowerCase().includes(term),
+          ),
+        );
+    if (sortState) {
+      rows.sort((left, right) => {
+        const a = left[sortState.column];
+        const b = right[sortState.column];
+        const comparison =
+          a == null && b == null
+            ? 0
+            : a == null
+              ? -1
+              : b == null
+                ? 1
+                : typeof a === "number" && typeof b === "number"
+                  ? a - b
+                  : String(a).localeCompare(String(b), undefined, {
+                      numeric: true,
+                      sensitivity: "base",
+                    });
+        return sortState.descending ? -comparison : comparison;
+      });
+    }
+    return rows;
+  }, [result, resultFilter, sortState]);
 
   const resultsContainerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
@@ -1543,6 +1923,26 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
     setCopiedCell(cellKey);
     setTimeout(() => setCopiedCell(null), COPY_FEEDBACK_MS);
   };
+
+  const handleCopyResults = useCallback(() => {
+    if (!result || !result.columns.length) return;
+    const lines = [
+      result.columns.join("\t"),
+      ...displayedRows.map((row) =>
+        result.columns
+          .map((column) => {
+            const value = row[column];
+            return value == null
+              ? ""
+              : typeof value === "object"
+                ? JSON.stringify(value)
+                : String(value);
+          })
+          .join("\t"),
+      ),
+    ];
+    void navigator.clipboard.writeText(lines.join("\n"));
+  }, [result, displayedRows]);
 
   const filteredHistory = useMemo(() => {
     if (!historySearch.trim()) return history;
@@ -1697,12 +2097,84 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             </span>
           </Button>
 
+          <div
+            className="flex items-center gap-1"
+            title={manualUnavailable ?? t("console.transaction.mode")}
+          >
+            <select
+              aria-label={t("console.transaction.mode")}
+              value={transaction.mode}
+              disabled={isRunning || isFinishingTransaction}
+              className="border-border bg-background h-7 rounded border px-2 text-xs"
+              onChange={(event) => {
+                if (event.target.value === "auto" && transaction.sessionId)
+                  setSwitchToAutoOpen(true);
+                else
+                  transactionTransition(activeTab.id, {
+                    type: "mode",
+                    mode: event.target.value as "auto" | "manual",
+                  });
+              }}
+            >
+              <option value="auto">{t("console.transaction.auto")}</option>
+              <option
+                value="manual"
+                disabled={Boolean(manualUnavailable)}
+                title={manualUnavailable ?? undefined}
+              >
+                {t("console.transaction.manual")}
+              </option>
+            </select>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              disabled={
+                !transaction.sessionId ||
+                transaction.aborted ||
+                isRunning ||
+                isFinishingTransaction
+              }
+              onClick={() => void finishActiveTransaction("commit")}
+            >
+              {t("console.transaction.commit")}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              disabled={
+                !transaction.sessionId || isRunning || isFinishingTransaction
+              }
+              onClick={() => void finishActiveTransaction("rollback")}
+            >
+              {t("console.transaction.rollback")}
+            </Button>
+            {transaction.pending > 0 && (
+              <Badge variant="outline">
+                {t("console.transaction.pending", {
+                  count: transaction.pending,
+                })}
+              </Badge>
+            )}
+            {transaction.aborted && (
+              <span role="alert" className="text-destructive text-xs">
+                {t("console.transaction.aborted")}
+              </span>
+            )}
+          </div>
+
           {/* Run Query CTA */}
           <Button
             type="button"
             size="sm"
-            onClick={handleRun}
-            disabled={isRunning || !query.trim()}
+            onClick={handleRunAtCaret}
+            disabled={
+              isRunning ||
+              isFinishingTransaction ||
+              transaction.aborted ||
+              !query.trim()
+            }
             title={getShortcutTooltip("runQuery")}
             aria-keyshortcuts={SHORTCUTS.runQueryFull}
             className="bg-primary hover:bg-primary/90 h-7 shrink-0 cursor-pointer gap-1.5 text-xs font-semibold text-white shadow-xs transition-all"
@@ -1717,14 +2189,58 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             ) : (
               <>
                 <Play className="h-3 w-3 shrink-0 fill-current" />
-                <span className="whitespace-nowrap">
-                  {t("console.runQuery")}
-                </span>
+                <span className="whitespace-nowrap">Run statement</span>
                 <kbd className="bg-success/80 text-success hidden items-center rounded px-1.5 py-0.5 font-mono text-[9px] leading-none font-medium tracking-tight sm:inline-flex">
                   {SHORTCUTS.runQuery}
                 </kbd>
               </>
             )}
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon-sm"
+                  disabled={
+                    isRunning ||
+                    isFinishingTransaction ||
+                    transaction.aborted ||
+                    !query.trim()
+                  }
+                  aria-label="More run options"
+                  title="Run all statements or the selected text"
+                  className="h-7 w-7"
+                >
+                  <ChevronDown className="size-3.5" />
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => void handleRun()}>
+                Run all statements <kbd className="ml-auto pl-4">F5</kbd>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!hasEditorSelection}
+                onClick={() => void handleRunSelection()}
+              >
+                Run selection
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled
+            title="SQL formatter dependency is not installed."
+            aria-label="Format query unavailable"
+            className="h-7 px-2 text-xs"
+          >
+            Format
           </Button>
 
           {/* Ask AI CTA (Prompt 3.2.1) */}
@@ -1749,8 +2265,18 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
             type="button"
             size="sm"
             onClick={handleExplain}
-            disabled={isExplaining || isRunning || !query.trim()}
-            title={t("console.explain.tooltip")}
+            disabled={
+              isMongo ||
+              connection.type !== "postgres" ||
+              isExplaining ||
+              isRunning ||
+              !query.trim()
+            }
+            title={
+              connection.type !== "postgres"
+                ? "Explain is available for PostgreSQL connections only."
+                : t("console.explain.tooltip")
+            }
             className="bg-warning hover:bg-warning h-7 shrink-0 cursor-pointer gap-1.5 text-xs font-semibold text-white shadow-xs transition-all"
           >
             {isExplaining ? (
@@ -2261,6 +2787,17 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   theme={isDark ? "dark" : "light"}
                   extensions={[...extensions, studioEditorTheme]}
                   onChange={(val) => handleQueryChange(val)}
+                  onCreateEditor={(view) => {
+                    editorViewRef.current = view;
+                    setHasEditorSelection(!view.state.selection.main.empty);
+                  }}
+                  onUpdate={(viewUpdate) => {
+                    if (viewUpdate.selectionSet) {
+                      setHasEditorSelection(
+                        !viewUpdate.state.selection.main.empty,
+                      );
+                    }
+                  }}
                   placeholder={
                     isMongo
                       ? 'db.collection.find({ "status": "active" }).limit(50)'
@@ -2372,7 +2909,48 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         <span className="bg-warning h-1.5 w-1.5 rounded-full" />
                       )}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveResultsTab("output")}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-0.5 font-sans text-[11px] font-medium transition-colors",
+                        activeResultsTab === "output"
+                          ? "bg-background text-foreground dark:bg-muted dark:text-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
+                      )}
+                    >
+                      <span>Output / Log</span>
+                      {activeTab.outputEntries?.some(
+                        (entry) => entry.status === "error",
+                      ) && <AlertCircle className="text-destructive h-3 w-3" />}
+                    </button>
                   </div>
+
+                  {activeTab.statementResults &&
+                    activeTab.statementResults.length > 0 && (
+                      <div className="flex min-w-0 items-center gap-1 overflow-x-auto">
+                        {activeTab.statementResults.map((statement, index) => (
+                          <button
+                            key={statement.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveStatementResultId(statement.id);
+                              setActiveResultsTab("results");
+                            }}
+                            title={statement.statement}
+                            className={cn(
+                              "max-w-40 truncate rounded px-1.5 py-0.5 font-sans text-[10px]",
+                              selectedStatementResult?.id === statement.id
+                                ? "bg-background text-foreground dark:bg-muted"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                          >
+                            {statement.error ? "!" : "#"}
+                            {index + 1} {statement.statement.slice(0, 20)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                   {activeResultsTab === "results" ? (
                     <>
@@ -2429,7 +3007,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         </span>
                       )}
                     </>
-                  ) : (
+                  ) : activeResultsTab === "plan" ? (
                     /* Plan tab header metrics */
                     <>
                       {activeTab.explainResult && (
@@ -2451,7 +3029,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         </>
                       )}
                     </>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -2472,6 +3050,16 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         </div>
 
                         {/* Export CSV */}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleCopyResults}
+                          className="border-border text-muted-foreground dark:border-border dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
+                        >
+                          <Copy className="h-3 w-3" />
+                          <span>Copy results</span>
+                        </Button>
                         <Button
                           type="button"
                           variant="outline"
@@ -2528,6 +3116,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         >
                           <AlertCircle className="h-4 w-4 shrink-0" />
                           <div className="flex-1 space-y-2">
+                            {selectedStatementResult?.error && (
+                              <pre className="border-destructive/20 bg-background/50 max-h-32 overflow-auto rounded border p-2 font-mono text-[11px] whitespace-pre-wrap">
+                                {selectedStatementResult.statement}
+                              </pre>
+                            )}
                             <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
                               {error}
                             </AlertDescription>
@@ -2637,9 +3230,27 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                                   {result.columns.map((col) => (
                                     <TableHead
                                       key={col}
-                                      className="border-border/50 text-foreground dark:border-border/50 dark:text-foreground border-r px-2.5 py-1 font-mono text-xs font-semibold last:border-r-0"
+                                      onClick={() =>
+                                        setSortState((current) =>
+                                          current?.column === col
+                                            ? {
+                                                column: col,
+                                                descending: !current.descending,
+                                              }
+                                            : {
+                                                column: col,
+                                                descending: false,
+                                              },
+                                        )
+                                      }
+                                      className="border-border/50 text-foreground dark:border-border/50 dark:text-foreground cursor-pointer border-r px-2.5 py-1 font-mono text-xs font-semibold last:border-r-0"
                                     >
                                       {col}
+                                      {sortState?.column === col
+                                        ? sortState.descending
+                                          ? " ↓"
+                                          : " ↑"
+                                        : ""}
                                     </TableHead>
                                   ))}
                                 </TableRow>
@@ -2784,7 +3395,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                           </div>
                         )}
                     </>
-                  ) : (
+                  ) : activeResultsTab === "plan" ? (
                     /* Execution Plan Tab */
                     <div className="space-y-3">
                       {/* Plan Error Alert */}
@@ -3039,7 +3650,15 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                             size="sm"
                             onClick={handleExplain}
                             disabled={
-                              isExplaining || isRunning || !query.trim()
+                              connection.type !== "postgres" ||
+                              isExplaining ||
+                              isRunning ||
+                              !query.trim()
+                            }
+                            title={
+                              connection.type !== "postgres"
+                                ? "Explain is available for PostgreSQL connections only."
+                                : t("console.explain.tooltip")
                             }
                             className="bg-warning hover:bg-warning mt-3.5 h-7 cursor-pointer gap-1.5 text-xs font-semibold text-white"
                           >
@@ -3058,6 +3677,41 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                         </div>
                       )}
                     </div>
+                  ) : (
+                    <div className="space-y-2 p-3">
+                      <h3 className="text-foreground text-xs font-semibold">
+                        Execution output
+                      </h3>
+                      {activeTab.outputEntries?.length ? (
+                        activeTab.outputEntries.map((entry) => (
+                          <div
+                            key={entry.id}
+                            className="border-border rounded border p-2 font-mono text-xs"
+                          >
+                            <div
+                              className={
+                                entry.status === "error"
+                                  ? "text-destructive"
+                                  : entry.status === "success"
+                                    ? "text-success"
+                                    : "text-muted-foreground"
+                              }
+                            >
+                              {entry.message}
+                            </div>
+                            {entry.statement && (
+                              <pre className="text-muted-foreground mt-1 overflow-x-auto whitespace-pre-wrap">
+                                {entry.statement}
+                              </pre>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-muted-foreground text-xs">
+                          No query output yet.
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -3066,6 +3720,39 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         </div>
       </div>
       {/* End: Editor + Results column + Library flex wrapper */}
+
+      <Dialog open={switchToAutoOpen} onOpenChange={setSwitchToAutoOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("console.transaction.switchTitle")}</DialogTitle>
+            <DialogDescription>
+              {t("console.transaction.switchDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              disabled={isFinishingTransaction}
+              onClick={() => setSwitchToAutoOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isFinishingTransaction}
+              onClick={() => void finishActiveTransaction("rollback", true)}
+            >
+              {t("console.transaction.switchAction")}
+            </Button>
+            <Button
+              disabled={isFinishingTransaction || transaction.aborted}
+              onClick={() => void finishActiveTransaction("commit", true)}
+            >
+              {t("console.transaction.commitSwitch")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Unsaved Changes Tab Close Confirmation Dialog */}
       <Dialog
@@ -3081,7 +3768,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
               </DialogTitle>
             </div>
             <DialogDescription className="text-muted-foreground dark:text-muted-foreground pt-2 text-xs">
-              {t("console.tab.unsaved_warning")}
+              {transactionStates[closingTabId ?? ""]?.sessionId
+                ? t("console.transaction.closeWarning")
+                : t("console.tab.unsaved_warning")}
             </DialogDescription>
           </DialogHeader>
           <div className="mt-4 flex justify-end gap-2">
@@ -3300,13 +3989,27 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                   className="group hover:border-primary/40 border-border bg-card/60 dark:border-border dark:bg-card/40 flex items-start justify-between gap-3 rounded-lg border p-3 shadow-xs transition-all"
                 >
                   <div className="min-w-0 flex-1">
-                    <pre className="border-border/60 bg-muted/70 text-foreground dark:border-border/60 dark:bg-background/60 dark:text-foreground line-clamp-3 rounded border p-2 font-mono text-xs break-all whitespace-pre-wrap">
+                    <pre
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        handleQueryChange(item.query);
+                        setIsHistoryOpen(false);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleQueryChange(item.query);
+                          setIsHistoryOpen(false);
+                        }
+                      }}
+                      className="border-border/60 bg-muted/70 text-foreground dark:border-border/60 dark:bg-background/60 dark:text-foreground line-clamp-3 cursor-pointer rounded border p-2 font-mono text-xs break-all whitespace-pre-wrap"
+                    >
                       {item.query}
                     </pre>
                     <div className="text-muted-foreground mt-2 flex items-center gap-2 font-mono text-[10px]">
-                      <span>
-                        {new Date(item.timestamp).toLocaleTimeString()}
-                      </span>
+                      <span>{connection.name}</span>
+                      <span>{new Date(item.timestamp).toLocaleString()}</span>
                       {item.execution_time_ms !== undefined && (
                         <Badge
                           variant="outline"
@@ -3327,6 +4030,11 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
                           className="border-border text-muted-foreground dark:border-border dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px]"
                         >
                           {item.row_count} rows
+                        </Badge>
+                      )}
+                      {!item.error && (
+                        <Badge variant="outline">
+                          {t("console.historySuccess")}
                         </Badge>
                       )}
                       {item.error && (

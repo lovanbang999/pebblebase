@@ -18,6 +18,15 @@ export interface ContextMenuState {
   row: Record<string, any>;
   colName: string;
   cellValue: any;
+  rowIndex?: number;
+}
+
+export interface ExtraGridContextMenuItem {
+  id: string;
+  label: string;
+  onSelect: () => void;
+  disabled?: boolean;
+  title?: string;
 }
 
 export interface GridContextMenuProps {
@@ -27,7 +36,15 @@ export interface GridContextMenuProps {
   filters: FilterOption[];
   onFiltersChange: (filters: FilterOption[]) => void;
   onEditRow: (row: Record<string, any>) => void;
+  onEditCell: (
+    row: Record<string, any>,
+    column: string,
+    rowIndex: number,
+  ) => void;
+  onSetNull: (row: Record<string, any>, column: string) => void;
+  onCloneRow: (row: Record<string, any>) => void;
   onDeleteRow: (row: Record<string, any>) => void;
+  onSortChange: (column: string, desc: boolean) => void;
   onNavigateRelation?: (
     targetTable: string,
     targetColumn: string,
@@ -41,6 +58,9 @@ export interface GridContextMenuProps {
   ) => void;
   onCopyNotify?: (msg: string) => void;
   isReadOnly?: boolean;
+  mutationBlockedReason?: string;
+  // Phase 6 extension point for FK peek and Find This Value Everywhere.
+  getExtraMenuItems?: (context: ContextMenuState) => ExtraGridContextMenuItem[];
   t: (key: string, opts?: any) => string;
 }
 
@@ -52,16 +72,56 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
     filters,
     onFiltersChange,
     onEditRow,
+    onEditCell,
+    onSetNull,
+    onCloneRow,
     onDeleteRow,
+    onSortChange,
     onNavigateRelation,
     onInspectCell,
     onCopyNotify,
     isReadOnly = false,
+    mutationBlockedReason,
+    getExtraMenuItems = () => [],
     t,
   }) => {
     if (!contextMenu) return null;
 
     const targetCol = table.columns.find((c) => c.name === contextMenu.colName);
+    const cellTarget = Boolean(
+      targetCol && contextMenu.colName !== "_row_index",
+    );
+    const writeBlocked =
+      isReadOnly || !table.columns.some((column) => column.is_primary_key);
+    const cellWriteBlocked =
+      writeBlocked || !cellTarget || Boolean(targetCol?.is_primary_key);
+    const rowIndex = contextMenu.rowIndex ?? 0;
+
+    const item = (
+      label: string,
+      onSelect: () => void,
+      disabled = false,
+      title?: string,
+      icon?: React.ReactNode,
+    ) => (
+      <button
+        key={label}
+        type="button"
+        disabled={disabled}
+        title={title}
+        onClick={() => {
+          onSelect();
+          onClose();
+        }}
+        className={cn(
+          "text-foreground hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors",
+          disabled && "cursor-not-allowed opacity-50 hover:bg-transparent",
+        )}
+      >
+        {icon}
+        <span>{label}</span>
+      </button>
+    );
 
     return (
       <div
@@ -93,10 +153,124 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
         </div>
 
         <div className="py-1">
+          {cellTarget &&
+            item(
+              "Edit Cell",
+              () => onEditCell(contextMenu.row, contextMenu.colName, rowIndex),
+              cellWriteBlocked,
+              mutationBlockedReason,
+              <Edit2 className="h-3.5 w-3.5" />,
+            )}
+          {cellTarget &&
+            item(
+              "Set NULL",
+              () => onSetNull(contextMenu.row, contextMenu.colName),
+              cellWriteBlocked,
+              mutationBlockedReason,
+            )}
+          {cellTarget &&
+            item(
+              "Copy",
+              () => {
+                void navigator.clipboard.writeText(
+                  contextMenu.cellValue === null
+                    ? "NULL"
+                    : String(contextMenu.cellValue ?? ""),
+                );
+                onCopyNotify?.(t("datagrid.contextMenu.copied"));
+              },
+              false,
+              undefined,
+              <Copy className="h-3.5 w-3.5" />,
+            )}
+          {cellTarget &&
+            item(
+              "Filter by This Value",
+              () =>
+                onFiltersChange([
+                  ...filters,
+                  {
+                    column: contextMenu.colName,
+                    operator: "eq",
+                    value:
+                      contextMenu.cellValue === null
+                        ? "null"
+                        : String(contextMenu.cellValue),
+                  },
+                ]),
+              contextMenu.cellValue === undefined ||
+                contextMenu.cellValue === null,
+            )}
+          {cellTarget &&
+            item("Sort Ascending", () =>
+              onSortChange(contextMenu.colName, false),
+            )}
+          {cellTarget &&
+            item("Sort Descending", () =>
+              onSortChange(contextMenu.colName, true),
+            )}
+          {item("Copy Row as JSON", () => {
+            const cleanRow = Object.fromEntries(
+              Object.entries(contextMenu.row).filter(
+                ([key]) => !key.startsWith("_pb_"),
+              ),
+            );
+            void navigator.clipboard.writeText(
+              JSON.stringify(cleanRow, null, 2),
+            );
+            onCopyNotify?.(t("datagrid.contextMenu.copied"));
+          })}
+          {item(
+            "Clone Row",
+            () => onCloneRow(contextMenu.row),
+            writeBlocked,
+            mutationBlockedReason,
+          )}
+          {item(
+            "Delete Row",
+            () => onDeleteRow(contextMenu.row),
+            writeBlocked,
+            mutationBlockedReason,
+            <Trash2 className="h-3.5 w-3.5" />,
+          )}
+          {cellTarget &&
+            item(
+              "Inspect Cell",
+              () =>
+                onInspectCell(
+                  contextMenu.colName,
+                  contextMenu.cellValue,
+                  contextMenu.row,
+                  targetCol?.type,
+                ),
+              false,
+              undefined,
+              <FileCode className="h-3.5 w-3.5" />,
+            )}
+          {(() => {
+            const relation = table.relations?.find(
+              (candidate) => candidate.from_column === contextMenu.colName,
+            );
+            if (!relation || !onNavigateRelation || !cellTarget) return null;
+            return item(`Navigate to ${relation.to_table}`, () =>
+              onNavigateRelation(
+                relation.to_table,
+                relation.to_column,
+                contextMenu.cellValue,
+              ),
+            );
+          })()}
+          {getExtraMenuItems(contextMenu).map((extra) =>
+            item(extra.label, extra.onSelect, extra.disabled, extra.title),
+          )}
+        </div>
+
+        <div className="hidden">
           {/* Edit Record */}
           <button
             type="button"
             disabled={isReadOnly}
+            title={isReadOnly ? mutationBlockedReason : undefined}
             onClick={() => {
               onEditRow(contextMenu.row);
               onClose();
@@ -115,6 +289,7 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
           <button
             type="button"
             disabled={isReadOnly}
+            title={isReadOnly ? mutationBlockedReason : undefined}
             onClick={() => {
               onDeleteRow(contextMenu.row);
               onClose();

@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"pebblebase"
 	"pebblebase/internal/app"
@@ -33,8 +38,18 @@ func main() {
 
 	addr := ":" + port
 	log.Printf("Pebblebase server starting on %s (data: %s, auth: %v)", addr, dataDir, authEnabled)
-	if err := http.ListenAndServe(addr, inst.Mux); err != nil {
-		log.Fatalf("server: %v", err)
+	server := &http.Server{Addr: addr, Handler: inst.Mux}
+	stop, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+	go func() {
+		<-stop.Done()
+		_ = inst.APIServer.Close()
+		ctx, done := context.WithTimeout(context.Background(), 10*time.Second)
+		defer done()
+		_ = server.Shutdown(ctx)
+	}()
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Printf("server stopped unexpectedly")
 	}
 }
 

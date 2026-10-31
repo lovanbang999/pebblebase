@@ -44,6 +44,7 @@ import { StreamValueViewer } from "./StreamValueViewer";
 interface RedisKeyBrowserProps {
   connId: string;
   isReadOnly?: boolean;
+  initialKeySearch?: string;
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -78,12 +79,14 @@ function formatTTL(
 export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
   connId,
   isReadOnly,
+  initialKeySearch,
 }) => {
   const { t } = useTranslation();
 
   // Query and Scan states
-  const [pattern, setPattern] = useState("*");
-  const [searchInput, setSearchInput] = useState("*");
+  const escapedInitialSearch = initialKeySearch?.replace(/[\\*?\[\]]/g, "\\$&");
+  const [pattern, setPattern] = useState(escapedInitialSearch || "*");
+  const [searchInput, setSearchInput] = useState(escapedInitialSearch || "*");
   const [typeFilter, setTypeFilter] = useState("all");
   const [scanCount, setScanCount] = useState(50);
   const [nextCursor, setNextCursor] = useState(0);

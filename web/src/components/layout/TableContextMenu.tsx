@@ -1,5 +1,6 @@
 import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { DatabaseType } from "@/lib/types";
 import {
   Table as TableIcon,
   ExternalLink,
@@ -17,6 +18,9 @@ import {
 
 export interface TableContextMenuProps {
   tableName: string;
+  engine: DatabaseType;
+  canImport: boolean;
+  canCopyDDL: boolean;
   x: number;
   y: number;
   isPinned: boolean;
@@ -27,7 +31,10 @@ export interface TableContextMenuProps {
   onQuerySelectCount: () => void;
   onQueryInsertTemplate: () => void;
   onCopyTableName: () => void;
+  onCopyDDL: () => void;
   onCopySelectQuery: () => void;
+  onImport: () => void;
+  isReadOnly: boolean;
   onExport: (format: "csv" | "json") => void;
   onTogglePin: () => void;
   onDangerAction: (type: "truncate" | "drop") => void;
@@ -35,6 +42,9 @@ export interface TableContextMenuProps {
 
 export const TableContextMenu: FC<TableContextMenuProps> = ({
   tableName,
+  engine,
+  canImport,
+  canCopyDDL,
   x,
   y,
   isPinned,
@@ -45,7 +55,10 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
   onQuerySelectCount,
   onQueryInsertTemplate,
   onCopyTableName,
+  onCopyDDL,
   onCopySelectQuery,
+  onImport,
+  isReadOnly,
   onExport,
   onTogglePin,
   onDangerAction,
@@ -119,7 +132,7 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
       onKeyDown={(event) => {
         const items = [
           ...(menuRef.current?.querySelectorAll<HTMLButtonElement>(
-            '[role="menuitem"]',
+            '[role="menuitem"]:not(:disabled)',
           ) || []),
         ];
         const current = items.indexOf(
@@ -199,55 +212,54 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
 
       <div className="bg-muted/80 dark:bg-muted/80 h-px" />
 
-      {/* Query Shortcuts */}
-      <div className="py-1">
-        <div className="text-muted-foreground dark:text-muted-foreground px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
-          {t("sidebar.tableMenu.queryMenu")}
-        </div>
+      {/* SQL and document query shortcuts are not applicable to Redis keys. */}
+      {engine !== "redis" && (
+        <>
+          <div className="py-1">
+            <div className="text-muted-foreground dark:text-muted-foreground px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+              {t("sidebar.tableMenu.queryMenu")}
+            </div>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                onQuerySelectTop100();
+                onClose();
+              }}
+              className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+            >
+              <Terminal className="text-success dark:text-success size-3.5" />
+              <span>{t("sidebar.tableMenu.selectTop100")}</span>
+            </button>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                onQuerySelectCount();
+                onClose();
+              }}
+              className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+            >
+              <Hash className="text-primary dark:text-primary size-3.5" />
+              <span>{t("sidebar.tableMenu.selectCount")}</span>
+            </button>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                onQueryInsertTemplate();
+                onClose();
+              }}
+              className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+            >
+              <PlusCircle className="size-3.5 text-cyan-500 dark:text-cyan-400" />
+              <span>{t("sidebar.tableMenu.insertTemplate")}</span>
+            </button>
+          </div>
+          <div className="bg-muted/80 dark:bg-muted/80 h-px" />
+        </>
+      )}
 
-        <button
-          role="menuitem"
-          type="button"
-          onClick={() => {
-            onQuerySelectTop100();
-            onClose();
-          }}
-          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
-        >
-          <Terminal className="text-success dark:text-success size-3.5" />
-          <span>{t("sidebar.tableMenu.selectTop100")}</span>
-        </button>
-
-        <button
-          role="menuitem"
-          type="button"
-          onClick={() => {
-            onQuerySelectCount();
-            onClose();
-          }}
-          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
-        >
-          <Hash className="text-primary dark:text-primary size-3.5" />
-          <span>{t("sidebar.tableMenu.selectCount")}</span>
-        </button>
-
-        <button
-          role="menuitem"
-          type="button"
-          onClick={() => {
-            onQueryInsertTemplate();
-            onClose();
-          }}
-          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
-        >
-          <PlusCircle className="size-3.5 text-cyan-500 dark:text-cyan-400" />
-          <span>{t("sidebar.tableMenu.insertTemplate")}</span>
-        </button>
-      </div>
-
-      <div className="bg-muted/80 dark:bg-muted/80 h-px" />
-
-      {/* Copy & Export */}
       <div className="py-1">
         <button
           role="menuitem"
@@ -261,46 +273,89 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
           <Copy className="text-muted-foreground size-3.5" />
           <span>{t("sidebar.tableMenu.copyTableName")}</span>
         </button>
-
-        <button
-          role="menuitem"
-          type="button"
-          onClick={() => {
-            onCopySelectQuery();
-            onClose();
-          }}
-          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
-        >
-          <Terminal className="text-muted-foreground size-3.5" />
-          <span>{t("sidebar.tableMenu.copySelectQuery")}</span>
-        </button>
-
-        <button
-          role="menuitem"
-          type="button"
-          onClick={() => {
-            onExport("csv");
-            onClose();
-          }}
-          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
-        >
-          <Download className="text-muted-foreground size-3.5" />
-          <span>{t("sidebar.tableMenu.exportCsv")}</span>
-        </button>
-
-        <button
-          role="menuitem"
-          type="button"
-          onClick={() => {
-            onExport("json");
-            onClose();
-          }}
-          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
-        >
-          <FileJson className="text-muted-foreground size-3.5" />
-          <span>{t("sidebar.tableMenu.exportJson")}</span>
-        </button>
+        {engine !== "redis" && (
+          <>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                onCopySelectQuery();
+                onClose();
+              }}
+              className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+            >
+              <Terminal className="text-muted-foreground size-3.5" />
+              <span>{t("sidebar.tableMenu.copySelectQuery")}</span>
+            </button>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                onExport("csv");
+                onClose();
+              }}
+              className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+            >
+              <Download className="text-muted-foreground size-3.5" />
+              <span>{t("sidebar.tableMenu.exportCsv")}</span>
+            </button>
+            <button
+              role="menuitem"
+              type="button"
+              onClick={() => {
+                onExport("json");
+                onClose();
+              }}
+              className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+            >
+              <FileJson className="text-muted-foreground size-3.5" />
+              <span>{t("sidebar.tableMenu.exportJson")}</span>
+            </button>
+          </>
+        )}
+        {canCopyDDL && (
+          <button
+            role="menuitem"
+            type="button"
+            onClick={() => {
+              onCopyDDL();
+              onClose();
+            }}
+            className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+          >
+            <FileCode className="text-muted-foreground size-3.5" />
+            <span>{t("sidebar.tableMenu.copyDDL", "Copy DDL")}</span>
+          </button>
+        )}
       </div>
+
+      {canImport && (
+        <>
+          <div className="bg-muted/80 dark:bg-muted/80 h-px" />
+          <div className="py-1">
+            <button
+              role="menuitem"
+              type="button"
+              disabled={isReadOnly}
+              title={
+                isReadOnly
+                  ? t("connection.readOnlyHelp", "Read-only connection")
+                  : undefined
+              }
+              onClick={() => {
+                onImport();
+                onClose();
+              }}
+              className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              <Download className="text-muted-foreground size-3.5" />
+              <span>
+                {t("sidebar.tableMenu.importCsv", "Import Data from CSV…")}
+              </span>
+            </button>
+          </div>
+        </>
+      )}
 
       <div className="bg-muted/80 dark:bg-muted/80 h-px" />
 
@@ -332,11 +387,22 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
         <button
           role="menuitem"
           type="button"
+          disabled={isReadOnly || engine === "redis"}
+          title={
+            engine === "redis"
+              ? t(
+                  "explorer.redisOperationUnavailable",
+                  "Unavailable for Redis keys",
+                )
+              : isReadOnly
+                ? t("connection.readOnlyHelp", "Read-only connection")
+                : undefined
+          }
           onClick={() => {
             onDangerAction("truncate");
             onClose();
           }}
-          className="text-warning hover:bg-warning/10 dark:text-warning dark:hover:bg-warning/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+          className="text-warning hover:bg-warning/10 dark:text-warning dark:hover:bg-warning/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45"
         >
           <AlertTriangle className="size-3.5" />
           <span>{t("sidebar.tableMenu.truncateTable")}</span>
@@ -345,11 +411,22 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
         <button
           role="menuitem"
           type="button"
+          disabled={isReadOnly || engine === "redis"}
+          title={
+            engine === "redis"
+              ? t(
+                  "explorer.redisOperationUnavailable",
+                  "Unavailable for Redis keys",
+                )
+              : isReadOnly
+                ? t("connection.readOnlyHelp", "Read-only connection")
+                : undefined
+          }
           onClick={() => {
             onDangerAction("drop");
             onClose();
           }}
-          className="text-destructive hover:bg-destructive/10 dark:text-destructive dark:hover:bg-destructive/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
+          className="text-destructive hover:bg-destructive/10 dark:text-destructive dark:hover:bg-destructive/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45"
         >
           <Trash2 className="size-3.5" />
           <span>{t("sidebar.tableMenu.dropTable")}</span>

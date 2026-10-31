@@ -25,11 +25,19 @@ func (s *Service) Login(ctx context.Context, username, password string) (token s
 	if err := CheckPassword(password, u.PasswordHash); err != nil {
 		return "", nil, fmt.Errorf("invalid credentials")
 	}
+	if !u.Active {
+		return "", nil, fmt.Errorf("invalid credentials")
+	}
 	t, err := s.jwt.GenerateToken(u)
 	if err != nil {
 		return "", nil, fmt.Errorf("generate token: %w", err)
 	}
 	return t, u, nil
+}
+
+// UpdateAccess changes a user's role and active flag under store invariants.
+func (s *Service) UpdateAccess(ctx context.Context, id, actorID string, role Role, active bool) (*User, error) {
+	return s.store.UpdateAccess(ctx, id, actorID, role, active)
 }
 
 // ValidateToken validates a JWT string and returns its claims.
@@ -78,6 +86,9 @@ func (s *Service) CreateUser(ctx context.Context, username, password string, rol
 	}
 	if len(password) < 6 {
 		return nil, fmt.Errorf("password must be at least 6 characters")
+	}
+	if role != RoleAdmin && role != RoleDeveloper && role != RoleViewer {
+		return nil, fmt.Errorf("invalid role")
 	}
 	return s.store.CreateUser(ctx, username, password, role)
 }

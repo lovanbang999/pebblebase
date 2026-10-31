@@ -21,10 +21,17 @@ import {
   Database,
   FileJson,
   FileCode2,
+  Copy,
 } from "lucide-react";
 import type { TableSchema, TableStats, FilterOption } from "@/lib/types";
 import { importTableCSV, exportTableData, type ExportFormat } from "@/lib/api";
+import {
+  cleanExportRow,
+  parseCSVPreview,
+  serializeExportRows,
+} from "@/lib/dataImportExport";
 import { emitOperationEvent } from "@/lib/operationEvents";
+import { invalidateReferenceCache } from "@/lib/referenceCache";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -60,6 +67,10 @@ interface ImportModalProps {
   filters?: FilterOption[];
   sortBy?: string;
   sortDesc?: boolean;
+  rows?: Record<string, unknown>[];
+  isReadOnly?: boolean;
+  page?: number;
+  pageSize?: number;
 }
 
 function getEstimatedSize(
@@ -90,6 +101,10 @@ export const ImportModal: FC<ImportModalProps> = ({
   filters,
   sortBy,
   sortDesc,
+  rows = [],
+  isReadOnly = false,
+  page = 0,
+  pageSize = 100,
 }) => {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,17 +113,29 @@ export const ImportModal: FC<ImportModalProps> = ({
   const [exportFormat, setExportFormat] = useState<ExportFormat>("csv");
   const [isExporting, setIsExporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
+  const [exportScope, setExportScope] = useState<"page" | "filtered">("page");
+  const [includeHeaders, setIncludeHeaders] = useState(true);
+  const [exportDestination, setExportDestination] = useState<"file" | "copy">(
+    "file",
+  );
 
   useEffect(() => {
     if (isOpen) {
       setActiveTab(initialMode);
       setExportSuccess(false);
+      setExportScope("page");
+      setIncludeHeaders(true);
+      setExportDestination("file");
     }
   }, [isOpen, initialMode]);
 
   const [file, setFile] = useState<File | null>(null);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
   const [previewRows, setPreviewRows] = useState<string[][]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [csvRowCount, setCsvRowCount] = useState(0);
+  const copySupported =
+    exportFormat === "csv" || exportFormat === "json" || exportFormat === "sql";
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>(
     {},
   );
@@ -124,6 +151,8 @@ export const ImportModal: FC<ImportModalProps> = ({
     setFile(null);
     setCsvHeaders([]);
     setPreviewRows([]);
+    setValidationErrors([]);
+    setCsvRowCount(0);
     setColumnMappings({});
     setIsDragOver(false);
     setIsSubmitting(false);
@@ -144,10 +173,25 @@ export const ImportModal: FC<ImportModalProps> = ({
     try {
       setIsExporting(true);
       setError(null);
+      if (exportDestination === "copy") {
+        await navigator.clipboard.writeText(
+          serializeExportRows(
+            table.name,
+            rows.map(cleanExportRow),
+            exportFormat,
+            includeHeaders,
+          ),
+        );
+        setExportSuccess(true);
+        return;
+      }
       const blob = await exportTableData(connId, table.name, exportFormat, {
+        limit: exportScope === "page" ? pageSize : undefined,
+        offset: exportScope === "page" ? page * pageSize : undefined,
         sort_by: sortBy,
         sort_desc: sortDesc,
         filters: filters,
+        include_header: includeHeaders,
       });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -169,8 +213,13 @@ export const ImportModal: FC<ImportModalProps> = ({
   };
 
   const handleFile = async (selectedFile: File) => {
+    if (isReadOnly) return;
     setError(null);
     setSuccessResult(null);
+    setValidationErrors([]);
+    setCsvHeaders([]);
+    setPreviewRows([]);
+    setColumnMappings({});
 
     if (!selectedFile.name.toLowerCase().endsWith(".csv")) {
       setError(t("datagrid.supportedFileFormat"));
@@ -180,10 +229,10 @@ export const ImportModal: FC<ImportModalProps> = ({
     setFile(selectedFile);
 
     try {
-      // Read first 64KB for fast preview and header detection
-      const slice = selectedFile.slice(0, 65536);
-      const text = await slice.text();
-      const { headers, rows } = parseCSVPreview(text, 5);
+      // Validate the entire bounded upload before allowing the direct backend
+      // import; only the first rows are retained for preview.
+      const text = await selectedFile.text();
+      const { headers, rows, errors, rowCount } = parseCSVPreview(text, 5);
 
       if (headers.length === 0) {
         setError(t("datagrid.noFileSelected"));
@@ -192,6 +241,8 @@ export const ImportModal: FC<ImportModalProps> = ({
 
       setCsvHeaders(headers);
       setPreviewRows(rows);
+      setValidationErrors(errors);
+      setCsvRowCount(rowCount);
 
       // Auto-match CSV headers to table columns
       const initialMappings: Record<string, string> = {};
@@ -243,6 +294,11 @@ export const ImportModal: FC<ImportModalProps> = ({
   };
 
   const handleImport = async () => {
+    if (isReadOnly) return;
+    if (validationErrors.length > 0) {
+      setError("Fix the CSV validation errors before importing.");
+      return;
+    }
     if (!file) {
       setError(t("datagrid.noFileSelected"));
       return;
@@ -262,6 +318,11 @@ export const ImportModal: FC<ImportModalProps> = ({
       setError(t("datagrid.noColumnsMapped"));
       return;
     }
+    const mappedTargets = Object.values(activeMappings);
+    if (new Set(mappedTargets).size !== mappedTargets.length) {
+      setError("Each database column can only be mapped from one CSV column.");
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -273,6 +334,7 @@ export const ImportModal: FC<ImportModalProps> = ({
         file,
         activeMappings,
       );
+      invalidateReferenceCache(connId);
       setSuccessResult(res);
       onSuccess?.(res);
     } catch (err: any) {
@@ -343,12 +405,16 @@ export const ImportModal: FC<ImportModalProps> = ({
             <div className="border-border bg-muted dark:border-border dark:bg-card flex shrink-0 items-center self-start rounded-lg border p-1 font-mono text-xs sm:self-center">
               <button
                 type="button"
+                disabled={isReadOnly}
+                title={
+                  isReadOnly ? "Read-only connections cannot import" : undefined
+                }
                 onClick={() => {
                   setActiveTab("import");
                   setError(null);
                 }}
                 className={cn(
-                  "rounded-md px-3 py-1 transition-colors",
+                  "rounded-md px-3 py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                   activeTab === "import"
                     ? "bg-background text-foreground dark:bg-muted font-medium shadow-xs dark:text-white"
                     : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
@@ -391,10 +457,12 @@ export const ImportModal: FC<ImportModalProps> = ({
                 <Alert className="border-primary/50 bg-success/50 text-success dark:bg-success/20 dark:text-success px-4 py-3">
                   <CheckCircle2 className="text-success dark:text-success h-4 w-4" />
                   <AlertDescription className="ml-2 font-mono text-xs">
-                    {t("export.success", {
-                      defaultValue:
-                        "Export completed successfully! File download started.",
-                    })}
+                    {exportDestination === "copy"
+                      ? "Export copied to clipboard."
+                      : t("export.success", {
+                          defaultValue:
+                            "Export completed successfully! File download started.",
+                        })}
                   </AlertDescription>
                 </Alert>
               )}
@@ -406,7 +474,16 @@ export const ImportModal: FC<ImportModalProps> = ({
                 </label>
                 <Select
                   value={exportFormat}
-                  onValueChange={(val) => setExportFormat(val as ExportFormat)}
+                  onValueChange={(val) => {
+                    const nextFormat = val as ExportFormat;
+                    setExportFormat(nextFormat);
+                    if (!(
+                      nextFormat === "csv" ||
+                      nextFormat === "json" ||
+                      nextFormat === "sql"
+                    ))
+                      setExportDestination("file");
+                  }}
                 >
                   <SelectTrigger className="border-border bg-card dark:border-border dark:bg-card/50 h-11 w-full font-mono text-xs">
                     <SelectValue
@@ -440,6 +517,12 @@ export const ImportModal: FC<ImportModalProps> = ({
                         <span className="text-muted-foreground ml-2 text-[10px] font-normal">
                           Full JSON array
                         </span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="sql">
+                      <div className="flex items-center gap-2">
+                        <FileCode2 className="text-primary h-4 w-4" />
+                        <span>SQL INSERT (.sql)</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="jsonl">
@@ -483,6 +566,68 @@ export const ImportModal: FC<ImportModalProps> = ({
                     </SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-muted-foreground mr-1">Rows:</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={exportScope === "page" ? "secondary" : "outline"}
+                  onClick={() => setExportScope("page")}
+                >
+                  Current page
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={exportScope === "filtered" ? "secondary" : "outline"}
+                  onClick={() => setExportScope("filtered")}
+                >
+                  All filtered
+                </Button>
+                <span className="text-muted-foreground mr-1 ml-3">Output:</span>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    exportDestination === "file" ? "secondary" : "outline"
+                  }
+                  onClick={() => setExportDestination("file")}
+                >
+                  File
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={
+                    exportDestination === "copy" ? "secondary" : "outline"
+                  }
+                  disabled={exportScope !== "page" || !copySupported}
+                  title={
+                    !copySupported
+                      ? "Copy supports CSV, JSON, and SQL"
+                      : exportScope !== "page"
+                        ? "Copy is limited to the current page"
+                        : undefined
+                  }
+                  onClick={() => setExportDestination("copy")}
+                >
+                  <Copy className="mr-1 h-3 w-3" />
+                  Copy
+                </Button>
+                {exportFormat === "csv" && (
+                  <label className="text-muted-foreground ml-3 inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={includeHeaders}
+                      onChange={(event) =>
+                        setIncludeHeaders(event.target.checked)
+                      }
+                    />
+                    Include header row
+                  </label>
+                )}
               </div>
 
               {/* Table Metrics & Estimated Size */}
@@ -546,7 +691,7 @@ export const ImportModal: FC<ImportModalProps> = ({
                   onDragOver={onDragOver}
                   onDragLeave={onDragLeave}
                   onDrop={onDrop}
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => !isReadOnly && fileInputRef.current?.click()}
                   className={cn(
                     "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 text-center transition-all duration-200",
                     isDragOver
@@ -558,6 +703,7 @@ export const ImportModal: FC<ImportModalProps> = ({
                     ref={fileInputRef}
                     type="file"
                     accept=".csv,text/csv"
+                    disabled={isReadOnly}
                     className="hidden"
                     onChange={onFileInputChange}
                   />
@@ -699,12 +845,39 @@ export const ImportModal: FC<ImportModalProps> = ({
                 </div>
               )}
 
+              {validationErrors.length > 0 && previewRows.length === 0 && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="ml-2 text-xs">
+                    CSV validation found {validationErrors.length} issue(s);
+                    import is blocked.
+                    {validationErrors.slice(0, 5).map((validationError) => (
+                      <div key={validationError}>{validationError}</div>
+                    ))}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* Data Preview Table */}
               {previewRows.length > 0 && (
                 <div className="space-y-2">
                   <h4 className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-semibold tracking-wider uppercase">
-                    {t("datagrid.previewData")}
+                    {t("datagrid.previewData")} · {csvRowCount} rows
                   </h4>
+                  {validationErrors.length > 0 && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="ml-2 text-xs">
+                        <div>
+                          CSV validation found {validationErrors.length}{" "}
+                          issue(s); import is blocked.
+                        </div>
+                        {validationErrors.slice(0, 5).map((validationError) => (
+                          <div key={validationError}>{validationError}</div>
+                        ))}
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   <div className="border-border bg-card/50 dark:border-border dark:bg-card/30 overflow-x-auto rounded-xl border">
                     <table className="w-full border-collapse text-left font-mono text-xs">
                       <thead>
@@ -744,6 +917,13 @@ export const ImportModal: FC<ImportModalProps> = ({
                   </div>
                 </div>
               )}
+              {isReadOnly && activeTab === "import" && (
+                <Alert>
+                  <AlertDescription>
+                    Imports are disabled for this read-only connection.
+                  </AlertDescription>
+                </Alert>
+              )}
             </>
           )}
         </div>
@@ -765,7 +945,11 @@ export const ImportModal: FC<ImportModalProps> = ({
                 type="button"
                 size="sm"
                 onClick={handleDoExport}
-                disabled={isExporting}
+                disabled={
+                  isExporting ||
+                  (exportDestination === "copy" &&
+                    (!copySupported || exportScope !== "page"))
+                }
                 className="bg-primary hover:bg-primary h-9 gap-1.5 px-5 text-xs font-semibold text-white shadow-xs"
               >
                 {isExporting ? (
@@ -777,11 +961,17 @@ export const ImportModal: FC<ImportModalProps> = ({
                   </>
                 ) : (
                   <>
-                    <Download className="h-3.5 w-3.5" />
+                    {exportDestination === "copy" ? (
+                      <Copy className="h-3.5 w-3.5" />
+                    ) : (
+                      <Download className="h-3.5 w-3.5" />
+                    )}
                     <span>
-                      {t("export.downloadButton", {
-                        defaultValue: "Download Export",
-                      })}
+                      {exportDestination === "copy"
+                        ? "Copy Export"
+                        : t("export.downloadButton", {
+                            defaultValue: "Download Export",
+                          })}
                     </span>
                   </>
                 )}
@@ -812,7 +1002,12 @@ export const ImportModal: FC<ImportModalProps> = ({
                 type="button"
                 size="sm"
                 onClick={handleImport}
-                disabled={!file || isSubmitting}
+                disabled={
+                  !file ||
+                  isSubmitting ||
+                  isReadOnly ||
+                  validationErrors.length > 0
+                }
                 className="bg-primary hover:bg-primary/90 h-9 gap-1.5 px-5 text-xs font-semibold text-white shadow-xs"
               >
                 {isSubmitting ? (
@@ -834,71 +1029,3 @@ export const ImportModal: FC<ImportModalProps> = ({
     </Dialog>
   );
 };
-
-// Simple RFC-compliant CSV preview parser for client-side instant preview
-function parseCSVPreview(
-  text: string,
-  maxRows = 5,
-): { headers: string[]; rows: string[][] } {
-  const lines: string[] = [];
-  let currentLine = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const nextChar = text[i + 1];
-
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        currentLine += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if ((char === "\r" || char === "\n") && !inQuotes) {
-      if (char === "\r" && nextChar === "\n") i++;
-      if (currentLine.trim()) {
-        lines.push(currentLine);
-        if (lines.length > maxRows + 1) break;
-      }
-      currentLine = "";
-    } else {
-      currentLine += char;
-    }
-  }
-
-  if (currentLine.trim() && lines.length <= maxRows + 1) {
-    lines.push(currentLine);
-  }
-
-  if (lines.length === 0) return { headers: [], rows: [] };
-
-  const parseLine = (line: string): string[] => {
-    const fields: string[] = [];
-    let field = "";
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      const nextChar = line[i + 1];
-      if (char === '"') {
-        if (inQuotes && nextChar === '"') {
-          field += '"';
-          i++;
-        } else {
-          inQuotes = !inQuotes;
-        }
-      } else if (char === "," && !inQuotes) {
-        fields.push(field.trim());
-        field = "";
-      } else {
-        field += char;
-      }
-    }
-    fields.push(field.trim());
-    return fields;
-  };
-
-  const headers = parseLine(lines[0]);
-  const rows = lines.slice(1, maxRows + 1).map(parseLine);
-  return { headers, rows };
-}

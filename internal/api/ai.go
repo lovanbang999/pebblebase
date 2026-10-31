@@ -23,6 +23,20 @@ func (s *Server) handleGetAIConfig(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, cfg)
 }
 
+// handleAIStatus exposes only whether generation can run; provider credentials remain admin-only.
+func (s *Server) handleAIStatus(w http.ResponseWriter, r *http.Request) {
+	if s.aiSvc == nil {
+		writeError(w, http.StatusServiceUnavailable, "AI service is not available")
+		return
+	}
+	cfg, err := s.aiSvc.GetConfig(r.Context())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "AI configuration status is unavailable")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]bool{"configured": cfg.HasKey || cfg.Provider == ai.ProviderOllama})
+}
+
 // handleSaveAIConfig handles POST /api/ai/config.
 func (s *Server) handleSaveAIConfig(w http.ResponseWriter, r *http.Request) {
 	if s.aiSvc == nil {
@@ -73,10 +87,15 @@ func (s *Server) handleTestAIConnection(w http.ResponseWriter, r *http.Request) 
 	}
 
 	res, err := s.aiSvc.TestConnection(r.Context(), &payload)
-	if err != nil {
+	if err != nil || res == nil || !res.OK {
+		latency := int64(0)
+		if res != nil {
+			latency = res.LatencyMs
+		}
 		writeJSON(w, http.StatusOK, ai.TestResult{
-			OK:      false,
-			Message: err.Error(),
+			OK:        false,
+			LatencyMs: latency,
+			Message:   "Connection test failed. Check the provider, endpoint, and API key settings.",
 		})
 		return
 	}

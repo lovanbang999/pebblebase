@@ -98,6 +98,9 @@ func (s *Server) handleRedisPubSubPublish(w http.ResponseWriter, r *http.Request
 	}
 
 	id := r.PathValue("id")
+	if s.checkReadOnly(w, id) {
+		return
+	}
 	adp, err := s.getRedisAdapter(r, id)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())

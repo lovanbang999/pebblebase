@@ -21,7 +21,8 @@ import { useTranslation } from "react-i18next";
 import { Loader2, Info, RefreshCw, Copy, Check, Unplug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "cn";
-import { fetchERD } from "@/lib/api";
+import { useSchemaMetadata } from "@/hooks/useSchemaMetadata";
+import { limitDiagram } from "@/lib/schemaMetadata";
 import type { ERDResponse, TableSchema } from "@/lib/types";
 import { generateJoinQuery, generateMermaidERD } from "@/lib/erdUtils";
 import {
@@ -83,12 +84,10 @@ function computeInitialLayout(
     dagreGraph.setNode(tbl.name, { width: ERD_NODE_WIDTH, height });
   });
 
+  const tableNames = new Set(tables.map((table) => table.name));
   // Add edges to Dagre
   relations.forEach((rel) => {
-    if (
-      tables.some((t) => t.name === rel.from_table) &&
-      tables.some((t) => t.name === rel.to_table)
-    ) {
+    if (tableNames.has(rel.from_table) && tableNames.has(rel.to_table)) {
       dagreGraph.setEdge(rel.from_table, rel.to_table);
     }
   });
@@ -135,9 +134,9 @@ function computeInitialLayout(
     target: rel.to_table,
     targetHandle: `${rel.to_column}-target`,
     type: "smoothstep",
-    animated: true,
+    animated: false,
     style: {
-      stroke: "#64748b",
+      stroke: "var(--muted-foreground)",
       strokeWidth: 1.8,
       opacity: 0.9,
     },
@@ -145,18 +144,18 @@ function computeInitialLayout(
       type: MarkerType.ArrowClosed,
       width: 14,
       height: 14,
-      color: "#64748b",
+      color: "var(--muted-foreground)",
     },
     label: `${rel.from_column} → ${rel.to_column}`,
     labelStyle: {
-      fill: "#334155",
+      fill: "var(--foreground)",
       fontSize: 11,
       fontFamily: "monospace",
       fontWeight: 600,
     },
     labelBgStyle: {
-      fill: "#ffffff",
-      stroke: "#cbd5e1",
+      fill: "var(--card)",
+      stroke: "var(--border)",
       strokeWidth: 1.5,
       fillOpacity: 0.95,
     },
@@ -174,12 +173,20 @@ function ERDCanvas({
   onGenerateJoinQuery,
 }: ERDViewProps) {
   const { t } = useTranslation();
-  const [data, setData] = useState<ERDResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const metadata = useSchemaMetadata(connectionId);
+  const loading = metadata.isLoading;
+  const error = metadata.error?.message ?? null;
+  const [renderLimit, setRenderLimit] = useState(40);
   const [direction, setDirection] = useState<"LR" | "TB">("LR");
   const [compactMode, setCompactMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const data = useMemo(
+    () =>
+      metadata.data
+        ? limitDiagram(metadata.data, renderLimit, searchQuery)
+        : null,
+    [metadata.data, renderLimit, searchQuery],
+  );
   const [showMinimap, setShowMinimap] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [isMermaidCopied, setIsMermaidCopied] = useState(false);
@@ -196,25 +203,7 @@ function ERDCanvas({
   const [nodes, setNodes, onNodesChange] = useNodesState<TableNodeType>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  // Load ERD data from backend
-  const loadData = useCallback(
-    async (signal?: AbortSignal) => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetchERD(connectionId, signal);
-        if (!signal?.aborted) setData(res);
-      } catch (err: unknown) {
-        if (!signal?.aborted)
-          setError(
-            err instanceof Error ? err.message : "Failed to load ERD data",
-          );
-      } finally {
-        if (!signal?.aborted) setLoading(false);
-      }
-    },
-    [connectionId],
-  );
+  const loadData = metadata.refresh;
 
   const [isCopiedError, setIsCopiedError] = useState(false);
 
@@ -224,12 +213,6 @@ function ERDCanvas({
     setIsCopiedError(true);
     setTimeout(() => setIsCopiedError(false), COPY_FEEDBACK_MS);
   }, [error]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void loadData(controller.signal);
-    return () => controller.abort();
-  }, [loadData]);
 
   const onOpenTableRef = useRef(onOpenTable);
   onOpenTableRef.current = onOpenTable;
@@ -506,8 +489,8 @@ function ERDCanvas({
         const strokeColor = isEdgeHighlighted
           ? "#4f46e5"
           : isEdgeDimmed
-            ? "#cbd5e1"
-            : "#64748b";
+            ? "var(--border)"
+            : "var(--muted-foreground)";
 
         const strokeWidth = isEdgeHighlighted ? 2.5 : isEdgeDimmed ? 1 : 1.8;
         const opacity = isEdgeHighlighted ? 1 : isEdgeDimmed ? 0.15 : 0.9;
@@ -533,14 +516,14 @@ function ERDCanvas({
               ? "#4338ca"
               : isEdgeDimmed
                 ? "#94a3b8"
-                : "#334155",
+                : "var(--foreground)",
             fontWeight: isEdgeHighlighted ? 700 : 600,
             fontSize: 11,
           },
           labelBgStyle: {
             ...edge.labelBgStyle,
-            fill: isEdgeHighlighted ? "#eef2ff" : "#ffffff",
-            stroke: isEdgeHighlighted ? "#818cf8" : "#cbd5e1",
+            fill: isEdgeHighlighted ? "var(--accent)" : "var(--card)",
+            stroke: isEdgeHighlighted ? "#818cf8" : "var(--border)",
             strokeWidth: 1.5,
             fillOpacity: isEdgeDimmed ? 0.3 : 0.95,
           },
@@ -773,8 +756,38 @@ function ERDCanvas({
   return (
     <div
       ref={reactFlowWrapper}
-      className={`dark:bg-card relative h-full w-full flex-1 overflow-hidden bg-[#fafafa] select-none ${isDraggingNode ? "is-dragging-node" : ""}`}
+      className={`dark:bg-card bg-background relative h-full w-full flex-1 overflow-hidden select-none ${isDraggingNode ? "is-dragging-node" : ""}`}
     >
+      {metadata.data && metadata.data.tables.length > renderLimit && (
+        <div className="bg-card border-border absolute right-3 bottom-3 z-20 rounded border p-2 text-xs">
+          <span>
+            {t("erd.renderLimit", {
+              shown: data?.tables.length ?? 0,
+              total: metadata.data.tables.length,
+            })}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRenderLimit((count) => count + 40)}
+          >
+            {t("erd.showMore")}
+          </Button>
+        </div>
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        className="absolute top-3 right-3 z-20"
+        disabled={metadata.isFetching}
+        onClick={() => void metadata.refresh()}
+        title={t("erd.refreshCatalog")}
+      >
+        <RefreshCw
+          className={cn("size-3.5", metadata.isFetching && "animate-spin")}
+        />
+        {t("erd.refreshCatalog")}
+      </Button>
       {/* Floating Toolbar */}
       <ERDToolbar
         searchQuery={searchQuery}
@@ -807,6 +820,7 @@ function ERDCanvas({
 
       {/* React Flow Canvas */}
       <ReactFlow
+        data-allow-zoom="true"
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
@@ -850,7 +864,7 @@ function ERDCanvas({
           <MiniMap
             nodeStrokeWidth={2}
             nodeColor={(node) => {
-              return node.data?.isDimmed ? "#cbd5e1" : "#3b82f6";
+              return node.data?.isDimmed ? "var(--border)" : "#3b82f6";
             }}
             className="border-border! bg-background/95! dark:border-border! dark:bg-card/95! [&_.react-flow\_\_minimap-mask]:fill-foreground/50! dark:[&_.react-flow\_\_minimap-mask]:fill-background/75! right-4! bottom-4! overflow-hidden rounded-lg! border! shadow-md! backdrop-blur-md!"
             zoomable

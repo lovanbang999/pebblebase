@@ -263,3 +263,176 @@ func TestUserManagementAndRBAC(t *testing.T) {
 		t.Fatalf("delete user failed: %d: %s", rec.Code, rec.Body.String())
 	}
 }
+
+func TestDeveloperPermissionsActiveRevocationAndLastAdmin(t *testing.T) {
+	env := setupAuthTestServer(t)
+	create := func(username, role string) (map[string]any, string) {
+		body, _ := json.Marshal(map[string]any{"username": username, "password": "developer-pass", "role": role})
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/users", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+env.adminToken)
+		rec := httptest.NewRecorder()
+		env.mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("create user: status=%d body=%s", rec.Code, rec.Body.String())
+		}
+		var user map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &user); err != nil {
+			t.Fatal(err)
+		}
+		return user, user["id"].(string)
+	}
+	developer, developerID := create("dev-user", "developer")
+	if developer["active"] != true {
+		t.Fatalf("new account should be active: %+v", developer)
+	}
+	devToken, _, err := env.authSvc.Login(context.Background(), "dev-user", "developer-pass")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Developer can read workspace data and reaches the data-write handler;
+	// management/settings categories are uniformly admin-only.
+	for _, tc := range []struct{ method, path, body string }{
+		{http.MethodGet, "/api/workspaces", ""},
+		{http.MethodGet, "/api/auth/users", ""},
+		{http.MethodPost, "/api/auth/users", `{"username":"blocked","password":"blocked-pass","role":"viewer"}`},
+		{http.MethodGet, "/api/audit/logs", ""},
+		{http.MethodGet, "/api/ai/config", ""},
+		{http.MethodPost, "/api/ai/config", `{}`},
+		{http.MethodPost, "/api/connections/test", `{}`},
+		{http.MethodPost, "/api/connections", `{"name":"no","type":"sqlite"}`},
+		{http.MethodPut, "/api/workspaces", `{}`},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, bytes.NewBufferString(tc.body))
+		req.Header.Set("Authorization", "Bearer "+devToken)
+		rec := httptest.NewRecorder()
+		env.mux.ServeHTTP(rec, req)
+		if tc.method == http.MethodGet && tc.path == "/api/workspaces" {
+			if rec.Code != http.StatusOK {
+				t.Errorf("developer read %s: got %d", tc.path, rec.Code)
+			}
+		} else if rec.Code != http.StatusForbidden {
+			t.Errorf("developer should be blocked from %s %s, got %d: %s", tc.method, tc.path, rec.Code, rec.Body.String())
+		}
+	}
+	writeReq := func(token string) int {
+		req := httptest.NewRequest(http.MethodPost, "/api/connections/unconfigured/tables/items/rows", bytes.NewBufferString(`{"values":{"name":"x"}}`))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		env.mux.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	if got := writeReq(devToken); got == http.StatusForbidden {
+		t.Fatal("Developer was blocked by the Viewer write guard")
+	}
+	viewer, _ := env.authSvc.CreateUser(context.Background(), "view-user", "viewer-pass", auth.RoleViewer)
+	viewerToken, _, _ := env.authSvc.Login(context.Background(), viewer.Username, "viewer-pass")
+	if got := writeReq(viewerToken); got != http.StatusForbidden {
+		t.Fatalf("Viewer write guard returned %d", got)
+	}
+
+	// An Admin cannot remove the last active Admin, through either role or status changes.
+	adminClaims, _ := env.authSvc.ValidateToken(env.adminToken)
+	for _, patch := range []map[string]any{{"role": "developer", "active": true}, {"role": "admin", "active": false}} {
+		body, _ := json.Marshal(patch)
+		req := httptest.NewRequest(http.MethodPatch, "/api/auth/users/"+adminClaims.UserID, bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+env.adminToken)
+		rec := httptest.NewRecorder()
+		env.mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("last Admin mutation should fail, got %d: %s", rec.Code, rec.Body.String())
+		}
+	}
+
+	// Role and deactivation audits contain identifiers/actions, never credentials.
+	body, _ := json.Marshal(map[string]any{"role": "viewer", "active": true})
+	req := httptest.NewRequest(http.MethodPatch, "/api/auth/users/"+developerID, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+env.adminToken)
+	rec := httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("change role: %d %s", rec.Code, rec.Body.String())
+	}
+	entries, _, err := env.auditLog.List(context.Background(), 50, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	roleAudit := false
+	for _, entry := range entries {
+		if entry.Action == audit.ActionUserRoleChange {
+			roleAudit = true
+		}
+	}
+	if !roleAudit {
+		t.Fatal("role change was not audited")
+	}
+
+	// Status changes revoke an already-issued JWT on its very next API call.
+	body, _ = json.Marshal(map[string]any{"role": "viewer", "active": false})
+	req = httptest.NewRequest(http.MethodPatch, "/api/auth/users/"+developerID, bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+env.adminToken)
+	rec = httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("deactivate developer: %d %s", rec.Code, rec.Body.String())
+	}
+	req = httptest.NewRequest(http.MethodGet, "/api/workspaces", nil)
+	req.Header.Set("Authorization", "Bearer "+devToken)
+	rec = httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("inactive token should be rejected, got %d", rec.Code)
+	}
+	if _, _, err := env.authSvc.Login(context.Background(), "dev-user", "developer-pass"); err == nil {
+		t.Fatal("inactive account logged in")
+	}
+}
+
+func TestAdminPasswordResetIsAuditedWithoutSecrets(t *testing.T) {
+	env := setupAuthTestServer(t)
+	body, _ := json.Marshal(map[string]any{"username": "reset-target", "password": "old-password", "role": "viewer"})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/users", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+env.adminToken)
+	rec := httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create reset target: %d %s", rec.Code, rec.Body.String())
+	}
+	var target map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &target)
+	newPassword := "new-secret-password"
+	resetBody, _ := json.Marshal(map[string]string{"new_password": newPassword})
+	req = httptest.NewRequest(http.MethodPatch, "/api/auth/users/"+target["id"].(string)+"/password", bytes.NewReader(resetBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+env.adminToken)
+	rec = httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("password reset: %d %s", rec.Code, rec.Body.String())
+	}
+	if _, _, err := env.authSvc.Login(context.Background(), "reset-target", newPassword); err != nil {
+		t.Fatalf("new password should work: %v", err)
+	}
+	entries, _, err := env.auditLog.List(context.Background(), 50, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, entry := range entries {
+		if entry.Action == audit.ActionPasswordReset {
+			found = true
+			if bytes.Contains([]byte(entry.Detail), []byte(newPassword)) {
+				t.Fatal("audit log contains a password")
+			}
+		}
+	}
+	if !found {
+		t.Fatal("password reset was not audited")
+	}
+}

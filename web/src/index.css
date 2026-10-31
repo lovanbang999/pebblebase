@@ -5,6 +5,18 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+html,
+body,
+#root {
+  touch-action: pan-x pan-y;
+  overscroll-behavior: none;
+}
+
+[data-allow-zoom],
+.react-flow {
+  touch-action: none;
+}
+
 @theme inline {
   --font-heading: var(--font-sans);
   /* Geist is bundled; Inter and JetBrains Mono are not shipped by this app. */
@@ -31,6 +43,9 @@
   --color-line: var(--border);
   --color-panel-2: var(--panel-2);
   --color-selection: var(--studio-selection);
+  --color-studio-hover: var(--studio-hover);
+  --color-studio-selection: var(--studio-selection);
+  --color-studio-row-alt: var(--studio-row-alt);
   --color-success: var(--studio-success);
   --color-warning: var(--studio-warning);
   --color-syntax-number: var(--studio-number);
