@@ -78,7 +78,7 @@ export const StringValueEditor: FC<StringValueEditorProps> = ({
 
   return (
     <div className="flex h-full flex-col space-y-3">
-      <div className="flex items-center justify-between border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
           <Button
             size="sm"
@@ -114,7 +114,7 @@ export const StringValueEditor: FC<StringValueEditorProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[11px] text-zinc-500">
+          <span className="text-muted-foreground font-mono text-[11px]">
             {t("redis.stringEditor.charsAndBytes", {
               chars: val.length,
               bytes: `${byteLength} B`,
@@ -126,7 +126,7 @@ export const StringValueEditor: FC<StringValueEditorProps> = ({
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="bg-primary dark:bg-primary h-7 text-xs text-white hover:bg-emerald-700 dark:hover:bg-emerald-700"
+              className="bg-primary dark:bg-primary hover:bg-success dark:hover:bg-success h-7 text-xs text-white"
             >
               {saving ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -144,7 +144,7 @@ export const StringValueEditor: FC<StringValueEditorProps> = ({
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-md border border-rose-500/20 bg-rose-500/10 p-2 text-xs text-rose-600 dark:text-rose-400">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive flex items-center gap-2 rounded-md border p-2 text-xs">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>

@@ -16,6 +16,7 @@ import type {
 import {
   fetchConnections,
   createConnection,
+  updateConnection,
   deleteConnection,
   fetchTables,
   fetchRows,
@@ -29,12 +30,14 @@ export interface UsePebblebaseStudioOptions {
   tabs: StudioTab[];
   activeTab: StudioTab | null;
   selectedExplorerNode: ExplorerSelection;
+  expandedNodeIds?: string[];
 }
 
 export function usePebblebaseStudio({
   tabs,
   activeTab,
   selectedExplorerNode,
+  expandedNodeIds = [],
 }: UsePebblebaseStudioOptions) {
   const qc = useQueryClient();
   const { t } = useTranslation();
@@ -53,6 +56,9 @@ export function usePebblebaseStudio({
 
   const [isConnModalOpen, setIsConnModalOpen] = useState(false);
   const [cloningConnection, setCloningConnection] = useState<Connection | null>(
+    null,
+  );
+  const [editingConnection, setEditingConnection] = useState<Connection | null>(
     null,
   );
   const [isRowModalOpen, setIsRowModalOpen] = useState(false);
@@ -87,6 +93,15 @@ export function usePebblebaseStudio({
     () => [
       ...new Set([
         ...(selectedConnectionId ? [selectedConnectionId] : []),
+        ...expandedNodeIds.flatMap((nodeId) => {
+          const match = nodeId.match(/^connection:([^:]+)/);
+          if (!match) return [];
+          try {
+            return [decodeURIComponent(match[1])];
+          } catch {
+            return [];
+          }
+        }),
         ...tabs.map((tab) => tab.connectionId),
         ...tabs.flatMap((tab) =>
           [
@@ -96,7 +111,7 @@ export function usePebblebaseStudio({
         ),
       ]),
     ],
-    [selectedConnectionId, tabs],
+    [selectedConnectionId, tabs, expandedNodeIds],
   );
   const relevantConnections = connections.filter((item) =>
     relevantConnectionIds.includes(item.id),
@@ -224,6 +239,18 @@ export function usePebblebaseStudio({
     mutationFn: createConnection,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["connections"] }),
   });
+  const updateConnMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: ConnectionInput }) =>
+      updateConnection(id, input),
+    onSuccess: async (_connection, { id }) => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["connections"] }),
+        qc.invalidateQueries({ queryKey: ["tables", id] }),
+        qc.invalidateQueries({ queryKey: ["rows", id] }),
+        qc.invalidateQueries({ queryKey: ["erd", id] }),
+      ]);
+    },
+  });
   const deleteConnMutation = useMutation({
     mutationFn: deleteConnection,
     onSuccess: (_data, connectionId) => {
@@ -232,6 +259,12 @@ export function usePebblebaseStudio({
       qc.invalidateQueries({ queryKey: ["connections"] });
     },
   });
+
+  const handleUpdateConnection = useCallback(
+    async (id: string, input: ConnectionInput) =>
+      updateConnMutation.mutateAsync({ id, input }),
+    [updateConnMutation],
+  );
 
   const errorKey = (connectionId: string, tableName: string) =>
     `${connectionId}:${tableName}:write`;
@@ -434,9 +467,7 @@ export function usePebblebaseStudio({
     (activeTab?.type === "table"
       ? activeRowsQuery?.error instanceof Error
         ? activeRowsQuery.error.message
-        : activeTablesError instanceof Error
-          ? activeTablesError.message
-          : null
+        : null
       : null);
   const setTabError = useCallback((tabId: string, message: string | null) => {
     setOperationErrors((prev) => {
@@ -508,6 +539,8 @@ export function usePebblebaseStudio({
     setIsConnModalOpen,
     cloningConnection,
     setCloningConnection,
+    editingConnection,
+    setEditingConnection,
     isRowModalOpen,
     setIsRowModalOpen,
     editingRow,
@@ -515,6 +548,7 @@ export function usePebblebaseStudio({
     rowToDelete,
     setRowToDelete,
     handleCreateConnection,
+    handleUpdateConnection,
     handleDeleteConnection,
     handleSaveRow,
     handleSaveCell,

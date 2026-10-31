@@ -62,26 +62,26 @@ export const EditTTLModal: FC<EditTTLModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-sm border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <DialogContent className="border-border bg-background dark:border-border dark:bg-card max-w-sm">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-sm text-zinc-900 dark:text-zinc-100">
-            <Clock className="h-4 w-4 text-amber-500" />
+          <DialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 text-sm">
+            <Clock className="text-warning h-4 w-4" />
             {t("redis.editTtlModal.title")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           {error && (
-            <div className="rounded-md border border-rose-500/20 bg-rose-500/10 p-2 text-xs text-rose-600 dark:text-rose-400">
+            <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
               {error}
             </div>
           )}
 
-          <div className="rounded border border-zinc-200 bg-zinc-50 p-2.5 font-mono text-xs dark:border-zinc-800 dark:bg-zinc-900">
-            <div className="text-[10px] text-zinc-400">
+          <div className="border-border bg-card dark:border-border dark:bg-card rounded border p-2.5 font-mono text-xs">
+            <div className="text-muted-foreground text-[10px]">
               {t("redis.editTtlModal.targetKey")}
             </div>
-            <div className="truncate font-semibold text-zinc-800 dark:text-zinc-200">
+            <div className="text-foreground dark:text-foreground truncate font-semibold">
               {keyName}
             </div>
           </div>
@@ -94,11 +94,11 @@ export const EditTTLModal: FC<EditTTLModalProps> = ({
                 name="ttl-mode"
                 checked={!persist}
                 onChange={() => setPersist(false)}
-                className="text-rose-600"
+                className="text-destructive"
               />
               <label
                 htmlFor="ttl-seconds"
-                className="text-xs font-medium text-zinc-700 dark:text-zinc-300"
+                className="text-foreground dark:text-muted-foreground text-xs font-medium"
               >
                 {t("redis.editTtlModal.expireInSeconds")}
               </label>
@@ -122,14 +122,14 @@ export const EditTTLModal: FC<EditTTLModalProps> = ({
               name="ttl-mode"
               checked={persist}
               onChange={() => setPersist(true)}
-              className="text-rose-600"
+              className="text-destructive"
             />
             <label
               htmlFor="ttl-persist"
-              className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              className="text-foreground dark:text-muted-foreground flex items-center gap-1.5 text-xs font-medium"
             >
               <span>{t("redis.editTtlModal.persistPermanently")}</span>
-              <ShieldAlert className="h-3.5 w-3.5 text-zinc-400" />
+              <ShieldAlert className="text-muted-foreground h-3.5 w-3.5" />
             </label>
           </div>
 
@@ -147,7 +147,7 @@ export const EditTTLModal: FC<EditTTLModalProps> = ({
               type="submit"
               size="sm"
               disabled={loading}
-              className="bg-rose-600 text-white hover:bg-rose-700"
+              className="bg-destructive hover:bg-destructive text-white"
             >
               {loading ? (
                 <>

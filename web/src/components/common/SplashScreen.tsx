@@ -19,7 +19,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
     <div
       role="status"
       aria-live="polite"
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-zinc-950 text-zinc-100 select-none"
+      className="bg-code text-code-foreground fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden select-none"
     >
       {/* Subtle radial emerald background glow */}
       <div
@@ -32,7 +32,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
 
       <div className="animate-in fade-in relative z-10 flex flex-col items-center duration-300">
         {/* Brand Logo Card with gentle pulse/float */}
-        <div className="mb-5 box-border flex h-16 w-16 items-center justify-center rounded-[14px] border border-zinc-700/40 bg-zinc-900/70 p-2.5 shadow-2xl shadow-black/40 backdrop-blur-md transition-transform hover:scale-105">
+        <div className="border-border/40 bg-code/70 mb-5 box-border flex h-16 w-16 items-center justify-center rounded-[14px] border p-2.5 shadow-2xl shadow-black/40 backdrop-blur-md transition-transform hover:scale-105">
           <img
             src="/favicon.svg"
             alt="Pebblebase Logo"
@@ -41,22 +41,22 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
         </div>
 
         {/* Brand Title & Version Badge */}
-        <h1 className="mb-1.5 flex items-center gap-2 font-sans text-xl font-bold tracking-tight text-zinc-100">
+        <h1 className="text-code-foreground mb-1.5 flex items-center gap-2 font-sans text-xl font-bold tracking-tight">
           Pebblebase Studio
-          <span className="border-primary/25 rounded-full border bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-400 uppercase">
+          <span className="border-primary/25 bg-success/10 text-success rounded-full border px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
             {version}
           </span>
         </h1>
 
         {/* Subtitle / Status message */}
-        <p className="mb-6 text-xs tracking-tight text-zinc-400">
+        <p className="text-muted-foreground mb-6 text-xs tracking-tight">
           {displayMessage}
         </p>
 
         {/* Indeterminate Shimmer Progress Bar */}
-        <div className="relative h-0.75 w-45 overflow-hidden rounded-full bg-zinc-800/80">
+        <div className="bg-muted/80 relative h-0.75 w-45 overflow-hidden rounded-full">
           <div
-            className="absolute top-0 h-full w-[40%] rounded-full bg-linear-to-r from-transparent via-emerald-400 to-transparent"
+            className="via-primary/70 absolute top-0 h-full w-[40%] rounded-full bg-linear-to-r from-transparent to-transparent"
             style={{
               animation:
                 "pb-indeterminate 1.4s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite",

@@ -28,7 +28,6 @@ import {
   ArrowUpRight,
   Search,
   Inbox,
-  ShieldAlert,
   BarChart3,
   MoreVertical,
   Copy,
@@ -51,7 +50,6 @@ import {
   detectClickHouseComplexType,
 } from "./ClickHouseComplexCell";
 import {
-  PAGE_SIZE_OPTIONS,
   VIRTUALIZER_ROW_HEIGHT,
   VIRTUALIZER_OVERSCAN,
   COPY_FEEDBACK_MS,
@@ -70,11 +68,6 @@ const SchemaInspector = lazy(() =>
 const ColumnAnalyticsDrawer = lazy(() =>
   import("./ColumnAnalyticsDrawer").then((m) => ({
     default: m.ColumnAnalyticsDrawer,
-  })),
-);
-const CellDetailDrawer = lazy(() =>
-  import("./cell-inspector/CellDetailDrawer").then((m) => ({
-    default: m.CellDetailDrawer,
   })),
 );
 import {
@@ -121,13 +114,12 @@ interface DataGridProps {
   onRefresh: () => void | Promise<void>;
   onAddRow: () => void;
   onEditRow: (row: Record<string, any>) => void;
-  onDeleteRow: (row: Record<string, any>) => void;
   onDuplicateRow?: (row: Record<string, any>) => void;
-  onSaveCell?: (
-    row: Record<string, any>,
-    columnName: string,
-    newValue: any,
+  onCommitRow?: (
+    original: Record<string, any> | null,
+    values: Record<string, any>,
   ) => Promise<void>;
+  onCommitDeleteRow?: (row: Record<string, any>) => Promise<void>;
   onNavigateRelation?: (
     targetTable: string,
     targetColumn: string,
@@ -138,14 +130,21 @@ interface DataGridProps {
   onScrollPositionChange?: (left: number, top: number) => void;
   initialScrollPosition?: { left: number; top: number };
   connId?: string;
+  workspaceTabId?: string;
   dbType?: DatabaseType;
+  connectionName?: string;
+  queryTimeMs?: number;
 }
 
 import { DocumentView } from "./DocumentView";
 import { GridContextMenu, type ContextMenuState } from "./GridContextMenu";
-import { GridPaginationFooter } from "./GridPaginationFooter";
-import { GridHeaderToolbar } from "./GridHeaderToolbar";
 import { GridRowItem } from "./GridRowItem";
+import { TableActionToolbar } from "./TableActionToolbar";
+import { TableSubviewTabs, type TableSubview } from "./TableSubviewTabs";
+import { TableFilterBar } from "./TableFilterBar";
+import { TableExecutionFooter } from "./TableExecutionFooter";
+import { ValueEditorPanel } from "./ValueEditorPanel";
+import { emitOperationEvent } from "@/lib/operationEvents";
 
 export const DataGrid: FC<DataGridProps> = ({
   table,
@@ -164,19 +163,22 @@ export const DataGrid: FC<DataGridProps> = ({
   onRefresh,
   onAddRow,
   onEditRow,
-  onDeleteRow,
   onDuplicateRow,
-  onSaveCell,
+  onCommitRow,
+  onCommitDeleteRow,
   onNavigateRelation,
   isReadOnly = false,
   onOpenQueryConsole,
   onScrollPositionChange,
   initialScrollPosition,
   connId,
+  workspaceTabId,
   dbType,
+  connectionName,
+  queryTimeMs,
 }) => {
   const { t } = useTranslation();
-  const [activeSubView, setActiveSubView] = useState<"grid" | "schema">("grid");
+  const [activeSubView, setActiveSubView] = useState<TableSubview>("data");
   const [viewMode, setViewMode] = useState<"table" | "document">(
     dbType === "mongodb" ? "document" : "table",
   );
@@ -188,6 +190,8 @@ export const DataGrid: FC<DataGridProps> = ({
     null,
   );
   const [tableStats, setTableStats] = useState<TableStats | null>(null);
+  const [showStats, setShowStats] = useState(false);
+  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
   const [copiedCol, setCopiedCol] = useState<string | null>(null);
   const scrollPositionTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -211,10 +215,13 @@ export const DataGrid: FC<DataGridProps> = ({
   // Listen for external subview switch requests (e.g. from table context menu)
   useEffect(() => {
     const handleSwitchSubView = (e: Event) => {
-      const customEvent = e as CustomEvent<"grid" | "schema">;
-      if (customEvent.detail === "grid" || customEvent.detail === "schema") {
-        setActiveSubView(customEvent.detail);
-      }
+      const customEvent = e as CustomEvent<TableSubview | "grid" | "schema">;
+      if (customEvent.detail === "grid") setActiveSubView("data");
+      else if (customEvent.detail === "schema") setActiveSubView("columns");
+      else if (
+        ["data", "columns", "indexes", "ddl"].includes(customEvent.detail)
+      )
+        setActiveSubView(customEvent.detail as TableSubview);
     };
     window.addEventListener("pb:switch-subview", handleSwitchSubView);
     return () => {
@@ -235,16 +242,390 @@ export const DataGrid: FC<DataGridProps> = ({
     columnName: "",
     cellValue: null,
   });
+  type RowDraft = {
+    id: string;
+    original: Record<string, any> | null;
+    current: Record<string, any>;
+    deleted: boolean;
+    inserted: boolean;
+  };
+  const [rowDrafts, setRowDrafts] = useState<Record<string, RowDraft>>({});
+  const [isSubmittingDrafts, setIsSubmittingDrafts] = useState(false);
+  const [draftSubmitError, setDraftSubmitError] = useState<string | null>(null);
+  const [valueEditorOpen, setValueEditorOpen] = useState(false);
+  const [valueEditorWidth, setValueEditorWidth] = useState(360);
+  const draftIdForRow = useCallback(
+    (row: Record<string, any>, _index: number) => {
+      const primaryKeys = table.columns.filter(
+        (column) => column.is_primary_key,
+      );
+      const identity = primaryKeys.length
+        ? primaryKeys.map((column) => [column.name, row[column.name]])
+        : Object.entries(row)
+            .filter(([key]) => !key.startsWith("_pb_"))
+            .sort(([a], [b]) => a.localeCompare(b));
+      return `row:${JSON.stringify(identity)}:${primaryKeys.length ? "pk" : "value"}`;
+    },
+    [table.columns],
+  );
+  const stageCellValue = useCallback(
+    (row: Record<string, any>, columnName: string, value: unknown) => {
+      if (isReadOnly) return;
+      const id = row._pb_draft_id || draftIdForRow(row, 0);
+      const cleanRow = Object.fromEntries(
+        Object.entries(row).filter(([key]) => !key.startsWith("_pb_")),
+      );
+      setRowDrafts((current) => {
+        const existing = current[id];
+        const inserted = existing?.inserted ?? Boolean(row._pb_draft_inserted);
+        const original = inserted ? null : (existing?.original ?? cleanRow);
+        const next: Record<string, RowDraft> = {
+          ...current,
+          [id]: {
+            id,
+            original,
+            current: {
+              ...(existing?.current ?? cleanRow),
+              [columnName]: value,
+            },
+            deleted: false,
+            inserted,
+          },
+        };
+        if (
+          !inserted &&
+          JSON.stringify(next[id].original) === JSON.stringify(next[id].current)
+        )
+          delete next[id];
+        return next;
+      });
+    },
+    [draftIdForRow, isReadOnly],
+  );
+  const displayedBaseRows = useMemo<Record<string, any>[]>(
+    () =>
+      rows.map((row, index) => {
+        const id = draftIdForRow(row, index);
+        const draft = rowDrafts[id];
+        return {
+          ...(draft?.current ?? row),
+          _pb_draft_id: id,
+          _pb_draft_dirty: Boolean(draft),
+          _pb_draft_deleted: draft?.deleted ?? false,
+          _pb_draft_inserted: draft?.inserted ?? false,
+        };
+      }),
+    [rows, rowDrafts, draftIdForRow],
+  );
+  const insertedDraftRows = useMemo<Record<string, any>[]>(
+    () =>
+      Object.values(rowDrafts)
+        .filter((draft) => draft.inserted)
+        .map((draft) => ({
+          ...draft.current,
+          _pb_draft_id: draft.id,
+          _pb_draft_dirty: true,
+          _pb_draft_deleted: draft.deleted,
+          _pb_draft_inserted: true,
+        })),
+    [rowDrafts],
+  );
+  const workspaceRows = useMemo(
+    () => [...displayedBaseRows, ...insertedDraftRows],
+    [displayedBaseRows, insertedDraftRows],
+  );
+  const pendingDrafts = useMemo(() => Object.values(rowDrafts), [rowDrafts]);
+  const stageDeleteRow = useCallback(
+    (row: Record<string, any>) => {
+      if (isReadOnly) return;
+      const id = row._pb_draft_id || draftIdForRow(row, 0);
+      const cleanRow = Object.fromEntries(
+        Object.entries(row).filter(([key]) => !key.startsWith("_pb_")),
+      );
+      setRowDrafts((current) => {
+        const existing = current[id];
+        if (existing?.inserted) {
+          const next = { ...current };
+          delete next[id];
+          return next;
+        }
+        return {
+          ...current,
+          [id]: {
+            id,
+            original: existing?.original ?? cleanRow,
+            current: existing?.current ?? cleanRow,
+            deleted: true,
+            inserted: false,
+          },
+        };
+      });
+    },
+    [draftIdForRow, isReadOnly],
+  );
+  const stageWholeRow = useCallback(
+    (original: Record<string, any> | null, values: Record<string, any>) => {
+      if (isReadOnly) return;
+      const isInsert = !original || Boolean(original._isDuplicate);
+      const cleanOriginal = original
+        ? Object.fromEntries(
+            Object.entries(original).filter(
+              ([key]) => !key.startsWith("_pb_") && key !== "_isDuplicate",
+            ),
+          )
+        : null;
+      const id =
+        original?._pb_draft_id ||
+        (isInsert
+          ? `insert:${crypto.randomUUID()}`
+          : draftIdForRow(cleanOriginal!, 0));
+      setRowDrafts((current) => {
+        const previous = current[id];
+        return {
+          ...current,
+          [id]: {
+            id,
+            original: isInsert ? null : (previous?.original ?? cleanOriginal),
+            current: {
+              ...(previous?.current ?? cleanOriginal ?? {}),
+              ...values,
+            },
+            deleted: false,
+            inserted: isInsert || Boolean(previous?.inserted),
+          },
+        };
+      });
+    },
+    [draftIdForRow, isReadOnly],
+  );
+  useEffect(() => {
+    const onStageRow = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          tabId: string;
+          connectionId: string;
+          tableName: string;
+          original: Record<string, any> | null;
+          values: Record<string, any>;
+        }>
+      ).detail;
+      if (
+        detail?.tabId !== workspaceTabId ||
+        detail.connectionId !== connId ||
+        detail.tableName !== table.name
+      )
+        return;
+      stageWholeRow(detail.original, detail.values);
+    };
+    const onStageDelete = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          tabId: string;
+          connectionId: string;
+          tableName: string;
+          row: Record<string, any>;
+        }>
+      ).detail;
+      if (
+        detail?.tabId !== workspaceTabId ||
+        detail.connectionId !== connId ||
+        detail.tableName !== table.name
+      )
+        return;
+      stageDeleteRow(detail.row);
+    };
+    window.addEventListener("pb:stage-row-draft", onStageRow);
+    window.addEventListener("pb:stage-delete-draft", onStageDelete);
+    return () => {
+      window.removeEventListener("pb:stage-row-draft", onStageRow);
+      window.removeEventListener("pb:stage-delete-draft", onStageDelete);
+    };
+  }, [workspaceTabId, connId, table.name, stageWholeRow, stageDeleteRow]);
+  useEffect(() => {
+    if (workspaceTabId)
+      window.dispatchEvent(
+        new CustomEvent("pb:table-draft-dirty", {
+          detail: { tabId: workspaceTabId, isDirty: pendingDrafts.length > 0 },
+        }),
+      );
+  }, [workspaceTabId, pendingDrafts.length]);
+  useEffect(() => {
+    if (!pendingDrafts.length) return;
+    const beforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", beforeUnload);
+    return () => window.removeEventListener("beforeunload", beforeUnload);
+  }, [pendingDrafts.length]);
+  const submitDrafts = useCallback(async () => {
+    if (isReadOnly || isSubmittingDrafts) return;
+    if (!onCommitRow || !onCommitDeleteRow) {
+      setDraftSubmitError(
+        t(
+          "datagrid.submitUnavailable",
+          "Saving staged changes is unavailable.",
+        ),
+      );
+      return;
+    }
+    setIsSubmittingDrafts(true);
+    setDraftSubmitError(null);
+    const failures: string[] = [];
+    try {
+      for (const draft of pendingDrafts) {
+        try {
+          if (draft.deleted) {
+            await onCommitDeleteRow(draft.original ?? draft.current);
+          } else {
+            const values = draft.inserted
+              ? draft.current
+              : Object.fromEntries(
+                  Object.entries(draft.current).filter(
+                    ([key, value]) =>
+                      !key.startsWith("_pb_") &&
+                      JSON.stringify(value) !==
+                        JSON.stringify(draft.original?.[key]),
+                  ),
+                );
+            if (draft.inserted || Object.keys(values).length)
+              await onCommitRow(draft.original, values);
+          }
+          setRowDrafts((current) => {
+            const next = { ...current };
+            delete next[draft.id];
+            return next;
+          });
+        } catch (error) {
+          failures.push(error instanceof Error ? error.message : String(error));
+        }
+      }
+      if (failures.length)
+        setDraftSubmitError(
+          t("datagrid.partialSubmitError", {
+            count: failures.length,
+            error: failures[0],
+            defaultValue:
+              "{{count}} change(s) failed. Unresolved drafts remain. {{error}}",
+          }),
+        );
+    } finally {
+      setIsSubmittingDrafts(false);
+    }
+  }, [
+    isReadOnly,
+    isSubmittingDrafts,
+    onCommitRow,
+    onCommitDeleteRow,
+    pendingDrafts,
+    t,
+  ]);
+  useEffect(() => {
+    const handleSubmitShortcut = (event: KeyboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null;
+      const targetWorkspace = target?.closest("[data-table-workspace]");
+      if (
+        !(event.ctrlKey || event.metaKey) ||
+        event.key !== "Enter" ||
+        !target ||
+        targetWorkspace?.getAttribute("data-table-workspace") !==
+          workspaceTabId ||
+        target.closest("input, textarea, [contenteditable='true']") ||
+        !pendingDrafts.length
+      )
+        return;
+      event.preventDefault();
+      void submitDrafts();
+    };
+    window.addEventListener("keydown", handleSubmitShortcut);
+    return () => window.removeEventListener("keydown", handleSubmitShortcut);
+  }, [workspaceTabId, pendingDrafts.length, submitDrafts]);
+  const revertDrafts = useCallback(() => {
+    if (!pendingDrafts.length) return;
+    if (
+      window.confirm(
+        t(
+          "datagrid.confirmRevert",
+          "Discard all unsaved table changes? This does not roll back database changes.",
+        ),
+      )
+    ) {
+      setRowDrafts({});
+      setDraftSubmitError(null);
+    }
+  }, [pendingDrafts.length, t]);
   const [copiedNotification, setCopiedNotification] = useState<string | null>(
     null,
   );
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  useEffect(() => {
+    const handleImportCommand = (event: Event) => {
+      const command = event as CustomEvent<{ tabId: string }>;
+      if (command.detail?.tabId !== workspaceTabId) return;
+      if (
+        pendingDrafts.length &&
+        !window.confirm(
+          t(
+            "datagrid.confirmImportDrafts",
+            "Importing may conflict with staged changes. Discard the staged changes and continue?",
+          ),
+        )
+      )
+        return;
+      if (pendingDrafts.length) {
+        setRowDrafts({});
+        setDraftSubmitError(null);
+      }
+      setImportModalMode("import");
+      setIsImportModalOpen(true);
+    };
+    window.addEventListener("pb:import-table", handleImportCommand);
+    return () =>
+      window.removeEventListener("pb:import-table", handleImportCommand);
+  }, [workspaceTabId, pendingDrafts.length, t]);
+
   const handleRefresh = async () => {
     if (isRefreshing || isLoading) return;
+    if (
+      pendingDrafts.length &&
+      !window.confirm(
+        t(
+          "datagrid.confirmRefreshDrafts",
+          "Refreshing will discard staged changes for this table. Continue?",
+        ),
+      )
+    )
+      return;
+    if (pendingDrafts.length) {
+      setRowDrafts({});
+      setDraftSubmitError(null);
+    }
     setIsRefreshing(true);
     try {
       await onRefresh();
+      emitOperationEvent({
+        kind: "refresh",
+        severity: "success",
+        title: t("operations.refreshSucceeded", "Table refreshed"),
+        message: table.name,
+        connectionId: connId,
+        connectionName,
+        tabId: workspaceTabId,
+      });
+    } catch {
+      emitOperationEvent({
+        kind: "refresh",
+        severity: "error",
+        title: t("operations.refreshFailed", "Refresh failed"),
+        message: t(
+          "operations.genericFailure",
+          "The operation could not be completed.",
+        ),
+        connectionId: connId,
+        connectionName,
+        tabId: workspaceTabId,
+      });
     } finally {
       setTimeout(() => {
         setIsRefreshing(false);
@@ -364,8 +745,29 @@ export const DataGrid: FC<DataGridProps> = ({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
+      emitOperationEvent({
+        kind: "export",
+        severity: "success",
+        title: t("operations.exportSucceeded", "Export completed"),
+        message: `${table.name} · ${format.toUpperCase()}`,
+        connectionId: connId,
+        connectionName,
+        tabId: workspaceTabId,
+      });
     } catch (err: unknown) {
       console.error("Export failed:", err);
+      emitOperationEvent({
+        kind: "export",
+        severity: "error",
+        title: t("operations.exportFailed", "Export failed"),
+        message: t(
+          "operations.genericFailure",
+          "The operation could not be completed.",
+        ),
+        connectionId: connId,
+        connectionName,
+        tabId: workspaceTabId,
+      });
     } finally {
       setIsExporting(false);
     }
@@ -377,7 +779,6 @@ export const DataGrid: FC<DataGridProps> = ({
     "eq" | "neq" | "gt" | "lt" | "contains"
   >("eq");
   const [filterVal, setFilterVal] = useState("");
-  const [showFilterBuilder, setShowFilterBuilder] = useState(false);
 
   // Quick Search state with 300ms debounce
   const [quickSearch, setQuickSearch] = useState("");
@@ -465,6 +866,29 @@ export const DataGrid: FC<DataGridProps> = ({
     }, 40);
   }, []);
 
+  useEffect(() => {
+    const handleFocusSearchCommand = (event: Event) => {
+      const command = event as CustomEvent<{ tabId: string }>;
+      if (command.detail?.tabId !== workspaceTabId) return;
+      const columnName =
+        focusedCell?.colName && focusedCell.colName !== "_row_index"
+          ? focusedCell.colName
+          : table.columns[0]?.name;
+      if (columnName) handleOpenColumnSearch(columnName);
+    };
+    window.addEventListener("pb:focus-grid-search", handleFocusSearchCommand);
+    return () =>
+      window.removeEventListener(
+        "pb:focus-grid-search",
+        handleFocusSearchCommand,
+      );
+  }, [
+    workspaceTabId,
+    focusedCell?.colName,
+    table.columns,
+    handleOpenColumnSearch,
+  ]);
+
   const handleCloseColumnSearch = useCallback((colName: string) => {
     setOpenSearchCols((prev) => {
       const next = { ...prev };
@@ -534,7 +958,7 @@ export const DataGrid: FC<DataGridProps> = ({
   const extraColumns = useMemo(() => {
     const schemaColNames = new Set(table.columns.map((c) => c.name));
     const extras = new Set<string>();
-    rows.forEach((r) => {
+    workspaceRows.forEach((r) => {
       Object.keys(r).forEach((k) => {
         if (!schemaColNames.has(k) && !k.startsWith("_pb_")) {
           extras.add(k);
@@ -542,13 +966,13 @@ export const DataGrid: FC<DataGridProps> = ({
       });
     });
     return Array.from(extras).sort();
-  }, [table.columns, rows]);
+  }, [table.columns, workspaceRows]);
 
   // Client-side quick search filtering across all properties
   const displayedRows = useMemo(() => {
-    if (!debouncedSearch.trim()) return rows;
+    if (!debouncedSearch.trim()) return workspaceRows;
     const term = debouncedSearch.toLowerCase();
-    return rows.filter((r) =>
+    return workspaceRows.filter((r) =>
       Object.values(r).some(
         (v) =>
           v !== null &&
@@ -556,7 +980,7 @@ export const DataGrid: FC<DataGridProps> = ({
           String(v).toLowerCase().includes(term),
       ),
     );
-  }, [rows, debouncedSearch]);
+  }, [workspaceRows, debouncedSearch]);
 
   // TanStack Table columns
   const columns = useMemo<ColumnDef<Record<string, any>>[]>(() => {
@@ -566,7 +990,7 @@ export const DataGrid: FC<DataGridProps> = ({
         header: "#",
         size: 50,
         cell: (info) => (
-          <span className="font-mono text-[11px] text-zinc-500 select-none">
+          <span className="text-muted-foreground font-mono text-[11px] select-none">
             {page * pageSize + info.row.index + 1}
           </span>
         ),
@@ -593,7 +1017,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <div className="relative flex flex-1 items-center">
-                  <Search className="pointer-events-none absolute left-2 h-3 w-3 shrink-0 text-emerald-500" />
+                  <Search className="text-success pointer-events-none absolute left-2 h-3 w-3 shrink-0" />
                   <input
                     ref={(el) => {
                       searchInputRefs.current[col.name] = el;
@@ -609,7 +1033,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     placeholder={t("grid.column.search.placeholder", {
                       column: col.name,
                     })}
-                    className="border-primary/80 focus:ring-primary dark:border-primary/80 h-6 w-full rounded border bg-white py-0.5 pr-6 pl-7 font-mono text-xs text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:ring-1 focus:outline-none dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                    className="border-primary/80 focus:ring-primary dark:border-primary/80 bg-background text-foreground placeholder:text-muted-foreground dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground h-6 w-full rounded border py-0.5 pr-6 pl-7 font-mono text-xs shadow-sm focus:ring-1 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -618,7 +1042,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       e.stopPropagation();
                       handleClearColumnSearch(col.name);
                     }}
-                    className="absolute right-1 cursor-pointer rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-rose-500 dark:hover:bg-zinc-800 dark:hover:text-rose-400"
+                    className="text-muted-foreground hover:bg-muted hover:text-destructive dark:hover:bg-muted dark:hover:text-destructive absolute right-1 cursor-pointer rounded p-0.5 transition-colors"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -649,7 +1073,7 @@ export const DataGrid: FC<DataGridProps> = ({
               <div className="flex items-center gap-1.5 truncate">
                 {col.is_primary_key && (
                   <span title={t("datagrid.primaryKey")}>
-                    <Key className="h-3 w-3 shrink-0 text-amber-400" />
+                    <Key className="text-warning h-3 w-3 shrink-0" />
                   </span>
                 )}
                 {col.is_foreign_key && (
@@ -657,19 +1081,19 @@ export const DataGrid: FC<DataGridProps> = ({
                     <Layers className="h-3 w-3 shrink-0 text-sky-400" />
                   </span>
                 )}
-                <span className="truncate font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-200">
+                <span className="text-foreground dark:text-foreground truncate font-mono text-xs font-semibold">
                   {col.name}
                 </span>
                 <Badge
                   variant="outline"
-                  className="h-4 border-zinc-300/60 bg-zinc-200/60 px-1 py-0 font-mono text-[10px] font-normal text-zinc-600 dark:border-transparent dark:bg-zinc-800/80 dark:text-zinc-400"
+                  className="border-border/60 bg-muted/60 text-muted-foreground dark:bg-muted/80 dark:text-muted-foreground h-4 px-1 py-0 font-mono text-[10px] font-normal dark:border-transparent"
                 >
                   {col.type}
                 </Badge>
                 {hasActiveFilter && (
                   <Badge
                     variant="outline"
-                    className="border-primary/30 h-3.5 bg-emerald-500/10 px-1 py-0 font-mono text-[9px] font-medium text-emerald-600 dark:text-emerald-400"
+                    className="border-primary/30 bg-success/10 text-success dark:text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium"
                     title={`contains: ${activeSearchVal}`}
                   >
                     🔍
@@ -685,8 +1109,8 @@ export const DataGrid: FC<DataGridProps> = ({
                   className={cn(
                     "cursor-pointer rounded p-1 transition-all focus:outline-none",
                     hasActiveFilter
-                      ? "bg-emerald-500/10 text-emerald-500 opacity-100 dark:text-emerald-400"
-                      : "text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100",
+                      ? "bg-success/10 text-success dark:text-success opacity-100"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground opacity-0 group-hover:opacity-100",
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -698,12 +1122,12 @@ export const DataGrid: FC<DataGridProps> = ({
                 </button>
 
                 {/* Sort indicator */}
-                <div className="text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200">
+                <div className="text-muted-foreground group-hover:text-foreground dark:group-hover:text-foreground">
                   {isSorted ? (
                     sortDesc ? (
-                      <ArrowDown className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
+                      <ArrowDown className="text-success dark:text-success h-3 w-3" />
                     ) : (
-                      <ArrowUp className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
+                      <ArrowUp className="text-success dark:text-success h-3 w-3" />
                     )
                   ) : (
                     <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -717,7 +1141,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       <button
                         type="button"
                         title={t("analytics.columnMenu")}
-                        className="cursor-pointer rounded p-1 text-zinc-400 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-zinc-200 hover:text-zinc-900 focus:outline-none data-popup-open:opacity-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                        className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground cursor-pointer rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 focus:outline-none data-popup-open:opacity-100"
                         onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
                       >
@@ -727,22 +1151,22 @@ export const DataGrid: FC<DataGridProps> = ({
                   />
                   <DropdownMenuContent
                     align="end"
-                    className="z-50 w-48 border border-zinc-200 bg-white p-1 text-zinc-900 shadow-xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+                    className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground z-50 w-48 border p-1 shadow-xl"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenuItem
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-indigo-700 hover:bg-indigo-50 hover:text-indigo-900 dark:text-indigo-300 dark:hover:bg-indigo-500/15 dark:hover:text-indigo-200"
+                      className="text-primary hover:bg-primary/10 hover:text-primary dark:text-primary dark:hover:bg-primary/15 dark:hover:text-primary flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => setAnalyticsColumn(col)}
                     >
-                      <BarChart3 className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                      <BarChart3 className="text-primary dark:text-primary h-3.5 w-3.5 shrink-0" />
                       <span>{t("analytics.openAnalytics")}</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => handleOpenColumnSearch(col.name)}
                     >
-                      <Search className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                      <Search className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span>
                         {t("grid.column.search.placeholder", {
                           column: col.name,
@@ -750,49 +1174,48 @@ export const DataGrid: FC<DataGridProps> = ({
                       </span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuSeparator className="my-1 bg-zinc-200 dark:bg-zinc-800" />
+                    <DropdownMenuSeparator className="bg-muted dark:bg-muted my-1" />
 
                     <DropdownMenuItem
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => onSortChange(col.name, false)}
                     >
-                      <ArrowUp className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                      <ArrowUp className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span>{t("analytics.sortAsc")}</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => onSortChange(col.name, true)}
                     >
-                      <ArrowDown className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                      <ArrowDown className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span>{t("analytics.sortDesc")}</span>
                     </DropdownMenuItem>
 
                     {isSorted && (
                       <DropdownMenuItem
-                        className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-amber-700 hover:bg-amber-50 hover:text-amber-900 dark:text-amber-400/90 dark:hover:bg-amber-500/10 dark:hover:text-amber-300"
+                        className="text-warning hover:bg-warning/10 hover:text-warning dark:text-warning/90 dark:hover:bg-warning/10 dark:hover:text-warning flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                         onClick={() => onSortChange("", false)}
                       >
-                        <RotateCcw className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                        <RotateCcw className="text-warning dark:text-warning h-3.5 w-3.5 shrink-0" />
                         <span>{t("analytics.clearSort")}</span>
                       </DropdownMenuItem>
                     )}
 
-                    <DropdownMenuSeparator className="my-1 bg-zinc-200 dark:bg-zinc-800" />
+                    <DropdownMenuSeparator className="bg-muted dark:bg-muted my-1" />
 
                     <DropdownMenuItem
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => {
                         setFilterCol(col.name);
-                        setShowFilterBuilder(true);
                       }}
                     >
-                      <FilterIcon className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                      <FilterIcon className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       <span>{t("analytics.filterByColumn")}</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => {
                         navigator.clipboard.writeText(col.name);
                         setCopiedCol(col.name);
@@ -800,9 +1223,9 @@ export const DataGrid: FC<DataGridProps> = ({
                       }}
                     >
                       {copiedCol === col.name ? (
-                        <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                        <Check className="text-success h-3.5 w-3.5 shrink-0" />
                       ) : (
-                        <Copy className="h-3.5 w-3.5 shrink-0 text-zinc-400" />
+                        <Copy className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
                       )}
                       <span>
                         {copiedCol === col.name
@@ -858,9 +1281,8 @@ export const DataGrid: FC<DataGridProps> = ({
                     onValueChange={(v) => {
                       const parsed = v === "null" ? null : v === "true";
                       setEditingCell(null);
-                      if (onSaveCell && parsed !== row[col.name]) {
-                        onSaveCell(row, col.name, parsed);
-                      }
+                      if (parsed !== row[col.name])
+                        stageCellValue(row, col.name, parsed);
                     }}
                   >
                     <SelectTrigger className="h-7 w-full font-mono text-xs">
@@ -903,7 +1325,7 @@ export const DataGrid: FC<DataGridProps> = ({
             if (val === undefined) {
               return (
                 <span
-                  className="font-mono text-[11px] text-zinc-600 italic select-none"
+                  className="text-muted-foreground font-mono text-[11px] italic select-none"
                   title={t("datagrid.fieldNotSet")}
                 >
                   —
@@ -912,7 +1334,7 @@ export const DataGrid: FC<DataGridProps> = ({
             }
             if (val === null) {
               return (
-                <span className="font-mono text-[11px] text-zinc-500 italic">
+                <span className="text-muted-foreground font-mono text-[11px] italic">
                   NULL
                 </span>
               );
@@ -968,8 +1390,8 @@ export const DataGrid: FC<DataGridProps> = ({
                   variant={boolVal ? "default" : "secondary"}
                   className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
                     boolVal
-                      ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-400"
-                      : "border border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-transparent dark:bg-zinc-800 dark:text-zinc-400"
+                      ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 dark:text-success border"
+                      : "border-border bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground border dark:border-transparent"
                   }`}
                 >
                   {String(boolVal)}
@@ -979,8 +1401,8 @@ export const DataGrid: FC<DataGridProps> = ({
 
             if (col.type === "binary") {
               return (
-                <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-700 dark:text-zinc-300">
-                  <span className="inline-flex shrink-0 items-center rounded border border-zinc-200 bg-zinc-100 px-1 py-0 font-mono text-[9px] font-semibold text-zinc-500 uppercase select-none dark:border-zinc-800 dark:bg-zinc-800 dark:text-zinc-400">
+                <div className="text-foreground flex items-center gap-1.5 font-mono text-xs">
+                  <span className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground inline-flex shrink-0 items-center rounded border px-1 py-0 font-mono text-[9px] font-semibold uppercase select-none">
                     BIN
                   </span>
                   <span className="max-w-xs truncate">{String(val)}</span>
@@ -990,7 +1412,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
             if (col.type === "uuid") {
               return (
-                <span className="block truncate font-mono text-xs text-zinc-800 select-all dark:text-zinc-200">
+                <span className="text-foreground dark:text-foreground block truncate font-mono text-xs select-all">
                   {String(val)}
                 </span>
               );
@@ -1011,6 +1433,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       cellValue: val,
                       row,
                     });
+                    setValueEditorOpen(true);
                   }}
                 />
               );
@@ -1019,7 +1442,7 @@ export const DataGrid: FC<DataGridProps> = ({
             if (typeof val === "object") {
               return (
                 <span
-                  className="block max-w-xs cursor-help truncate font-mono text-xs text-amber-700 dark:text-amber-300/90"
+                  className="text-warning dark:text-warning/90 block max-w-xs cursor-help truncate font-mono text-xs"
                   title={JSON.stringify(val, null, 2)}
                 >
                   {JSON.stringify(val)}
@@ -1030,8 +1453,8 @@ export const DataGrid: FC<DataGridProps> = ({
             if (col.is_primary_key) {
               return (
                 <div className="flex items-center gap-1.5">
-                  <Key className="h-3 w-3 shrink-0 text-amber-500 dark:text-amber-400/80" />
-                  <span className="font-mono text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                  <Key className="text-warning dark:text-warning/80 h-3 w-3 shrink-0" />
+                  <span className="text-foreground font-mono text-xs font-semibold">
                     {String(val)}
                   </span>
                 </div>
@@ -1046,13 +1469,14 @@ export const DataGrid: FC<DataGridProps> = ({
               : strVal;
 
             return (
-              <span className="block truncate font-mono text-xs text-zinc-800 dark:text-zinc-300">
+              <span className="text-foreground dark:text-foreground block truncate font-mono text-xs">
                 {cleanStr}
               </span>
             );
           };
 
-          const isCellEditable = !isReadOnly && !col.is_primary_key;
+          const isCellEditable =
+            !isReadOnly && (!col.is_primary_key || row._pb_draft_inserted);
 
           if (!isCellEditable) {
             return renderContent();
@@ -1064,7 +1488,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 e.stopPropagation();
                 startEditingCell(row, col.name, rowIndex);
               }}
-              className="group/cell -mx-1.5 -my-1 flex h-full w-full cursor-pointer items-center justify-between rounded px-1.5 py-1 transition-colors hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50"
+              className="group/cell hover:bg-muted/80 dark:hover:bg-muted/50 -mx-1.5 -my-1 flex h-full w-full cursor-pointer items-center justify-between rounded px-1.5 py-1 transition-colors"
             >
               <div className="flex-1 truncate">{renderContent()}</div>
             </div>
@@ -1093,7 +1517,7 @@ export const DataGrid: FC<DataGridProps> = ({
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <div className="relative flex flex-1 items-center">
-                  <Search className="pointer-events-none absolute left-2 h-3 w-3 shrink-0 text-amber-400" />
+                  <Search className="text-warning pointer-events-none absolute left-2 h-3 w-3 shrink-0" />
                   <input
                     ref={(el) => {
                       searchInputRefs.current[extraColName] = el;
@@ -1111,7 +1535,7 @@ export const DataGrid: FC<DataGridProps> = ({
                     placeholder={t("grid.column.search.placeholder", {
                       column: extraColName,
                     })}
-                    className="h-6 w-full rounded border border-amber-500/80 bg-white py-0.5 pr-6 pl-7 font-mono text-xs text-zinc-900 shadow-sm placeholder:text-zinc-400 focus:ring-1 focus:ring-amber-500 focus:outline-none dark:border-amber-500/80 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500"
+                    className="border-warning/80 bg-background text-foreground placeholder:text-muted-foreground focus:ring-warning dark:border-warning/80 dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground h-6 w-full rounded border py-0.5 pr-6 pl-7 font-mono text-xs shadow-sm focus:ring-1 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -1120,7 +1544,7 @@ export const DataGrid: FC<DataGridProps> = ({
                       e.stopPropagation();
                       handleClearColumnSearch(extraColName);
                     }}
-                    className="absolute right-1 cursor-pointer rounded p-0.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-rose-500 dark:hover:bg-zinc-800 dark:hover:text-rose-400"
+                    className="text-muted-foreground hover:bg-muted hover:text-destructive dark:hover:bg-muted dark:hover:text-destructive absolute right-1 cursor-pointer rounded p-0.5 transition-colors"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -1149,19 +1573,19 @@ export const DataGrid: FC<DataGridProps> = ({
               }}
             >
               <div className="flex items-center gap-1.5 truncate">
-                <span className="truncate font-mono text-xs font-semibold text-amber-200/90">
+                <span className="text-warning/90 truncate font-mono text-xs font-semibold">
                   {extraColName}
                 </span>
                 <Badge
                   variant="outline"
-                  className="h-4 border-amber-800/40 bg-amber-950/50 px-1 py-0 font-mono text-[9px] font-normal text-amber-400/90"
+                  className="border-warning/40 bg-warning/50 text-warning/90 h-4 px-1 py-0 font-mono text-[9px] font-normal"
                 >
                   {t("datagrid.dynamicBadge")}
                 </Badge>
                 {hasActiveFilter && (
                   <Badge
                     variant="outline"
-                    className="h-3.5 border-amber-500/30 bg-amber-500/10 px-1 py-0 font-mono text-[9px] font-medium text-amber-400"
+                    className="border-warning/30 bg-warning/10 text-warning h-3.5 px-1 py-0 font-mono text-[9px] font-medium"
                     title={`contains: ${activeSearchVal}`}
                   >
                     🔍
@@ -1176,8 +1600,8 @@ export const DataGrid: FC<DataGridProps> = ({
                   className={cn(
                     "cursor-pointer rounded p-1 transition-all focus:outline-none",
                     hasActiveFilter
-                      ? "bg-amber-500/10 text-amber-400 opacity-100"
-                      : "text-zinc-400 opacity-0 group-hover:opacity-100 hover:bg-zinc-200 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100",
+                      ? "bg-warning/10 text-warning opacity-100"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground opacity-0 group-hover:opacity-100",
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1188,12 +1612,12 @@ export const DataGrid: FC<DataGridProps> = ({
                   <Search className="h-3 w-3" />
                 </button>
 
-                <div className="text-zinc-400 group-hover:text-zinc-200">
+                <div className="text-muted-foreground group-hover:text-foreground">
                   {isSorted ? (
                     sortDesc ? (
-                      <ArrowDown className="h-3 w-3 text-emerald-400" />
+                      <ArrowDown className="text-success h-3 w-3" />
                     ) : (
-                      <ArrowUp className="h-3 w-3 text-emerald-400" />
+                      <ArrowUp className="text-success h-3 w-3" />
                     )
                   ) : (
                     <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -1208,7 +1632,7 @@ export const DataGrid: FC<DataGridProps> = ({
           if (val === undefined) {
             return (
               <span
-                className="font-mono text-[11px] text-zinc-600 italic select-none"
+                className="text-muted-foreground font-mono text-[11px] italic select-none"
                 title={t("datagrid.fieldNotSet")}
               >
                 —
@@ -1217,7 +1641,7 @@ export const DataGrid: FC<DataGridProps> = ({
           }
           if (val === null) {
             return (
-              <span className="font-mono text-[11px] text-zinc-500 italic">
+              <span className="text-muted-foreground font-mono text-[11px] italic">
                 NULL
               </span>
             );
@@ -1228,8 +1652,8 @@ export const DataGrid: FC<DataGridProps> = ({
                 variant={val ? "default" : "secondary"}
                 className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
                   val
-                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800/60 dark:bg-emerald-950/60 dark:text-emerald-400"
-                    : "border border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-transparent dark:bg-zinc-800 dark:text-zinc-400"
+                    ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 dark:text-success border"
+                    : "border-border bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground border dark:border-transparent"
                 }`}
               >
                 {String(val)}
@@ -1239,7 +1663,7 @@ export const DataGrid: FC<DataGridProps> = ({
           if (typeof val === "object") {
             return (
               <span
-                className="block max-w-xs cursor-help truncate font-mono text-xs text-amber-700 dark:text-amber-300/90"
+                className="text-warning dark:text-warning/90 block max-w-xs cursor-help truncate font-mono text-xs"
                 title={JSON.stringify(val, null, 2)}
               >
                 {JSON.stringify(val)}
@@ -1247,7 +1671,7 @@ export const DataGrid: FC<DataGridProps> = ({
             );
           }
           return (
-            <span className="block truncate font-mono text-xs text-zinc-800 dark:text-zinc-300">
+            <span className="text-foreground dark:text-foreground block truncate font-mono text-xs">
               {String(val)}
             </span>
           );
@@ -1285,6 +1709,11 @@ export const DataGrid: FC<DataGridProps> = ({
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     manualSorting: true,
+    state: {
+      columnVisibility: Object.fromEntries(
+        hiddenColumns.map((name) => [name, false]),
+      ),
+    },
   });
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -1305,7 +1734,7 @@ export const DataGrid: FC<DataGridProps> = ({
       colName: string,
       moveFocusDown = false,
     ) => {
-      if (!editingCell || !onSaveCell) {
+      if (!editingCell) {
         setEditingCell(null);
         if (moveFocusDown && focusedCell) {
           const nextRowIndex = Math.min(
@@ -1342,11 +1771,7 @@ export const DataGrid: FC<DataGridProps> = ({
       }
 
       if (parsedVal !== row[colName]) {
-        try {
-          await onSaveCell(row, colName, parsedVal);
-        } catch (err) {
-          console.error("Failed to save inline cell edit:", err);
-        }
+        stageCellValue(row, colName, parsedVal);
       }
 
       setEditingCell(null);
@@ -1361,7 +1786,7 @@ export const DataGrid: FC<DataGridProps> = ({
     },
     [
       editingCell,
-      onSaveCell,
+      stageCellValue,
       focusedCell,
       displayedRows.length,
       rowVirtualizer,
@@ -1372,7 +1797,7 @@ export const DataGrid: FC<DataGridProps> = ({
 
   // Keyboard-First DataGrid Navigation Listener
   useEffect(() => {
-    if (activeSubView !== "grid" || viewMode !== "table") return;
+    if (activeSubView !== "data" || viewMode !== "table") return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -1448,7 +1873,7 @@ export const DataGrid: FC<DataGridProps> = ({
       if (!editingCell && (e.key === "Delete" || e.key === "Backspace")) {
         e.preventDefault();
         if (!isReadOnly) {
-          onDeleteRow(currentRow);
+          stageDeleteRow(currentRow);
         }
         return;
       }
@@ -1502,6 +1927,7 @@ export const DataGrid: FC<DataGridProps> = ({
             cellValue: currentRow[currentColName],
             row: currentRow,
           });
+          setValueEditorOpen(true);
           return;
         }
       }
@@ -1582,7 +2008,7 @@ export const DataGrid: FC<DataGridProps> = ({
     isReadOnly,
     onDuplicateRow,
     onAddRow,
-    onDeleteRow,
+    stageDeleteRow,
     saveCellEdit,
     startEditingCell,
     rowVirtualizer,
@@ -1611,81 +2037,152 @@ export const DataGrid: FC<DataGridProps> = ({
   };
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-white transition-colors dark:bg-zinc-950">
-      <GridHeaderToolbar
+    <div
+      data-table-workspace={workspaceTabId}
+      className="bg-background relative flex h-full min-w-0 flex-1 flex-col overflow-hidden transition-colors"
+    >
+      <TableActionToolbar
         table={table}
-        totalCount={totalCount}
-        displayedRowsCount={displayedRows.length}
-        rawRowsCount={rows.length}
-        activeSubView={activeSubView}
-        onSubViewChange={setActiveSubView}
+        dbType={dbType}
+        activeView={activeSubView}
         viewMode={viewMode}
         onViewModeChange={setViewMode}
-        dbType={dbType}
         isReadOnly={isReadOnly}
-        quickSearch={quickSearch}
-        onQuickSearchChange={setQuickSearch}
-        quickSearchInputRef={quickSearchInputRef}
-        filters={filters}
-        onFiltersChange={onFiltersChange}
-        showFilterBuilder={showFilterBuilder}
-        onToggleFilterBuilder={() => setShowFilterBuilder((prev) => !prev)}
-        filterCol={filterCol}
-        onFilterColChange={setFilterCol}
-        filterOp={filterOp}
-        onFilterOpChange={setFilterOp}
-        filterVal={filterVal}
-        onFilterValChange={setFilterVal}
-        onAddFilter={handleAddFilter}
-        onRemoveFilter={handleRemoveFilter}
-        extraColumns={extraColumns}
         isLoading={isLoading}
         isRefreshing={isRefreshing}
         onRefresh={handleRefresh}
-        onOpenQueryConsole={onOpenQueryConsole}
-        connId={connId}
         onExport={handleExport}
-        onOpenImportModal={(mode) => {
-          setImportModalMode(mode);
+        onOpenImport={() => {
+          if (
+            pendingDrafts.length &&
+            !window.confirm(
+              t(
+                "datagrid.confirmImportDrafts",
+                "Importing may conflict with staged changes. Discard the staged changes and continue?",
+              ),
+            )
+          )
+            return;
+          if (pendingDrafts.length) {
+            setRowDrafts({});
+            setDraftSubmitError(null);
+          }
+          setImportModalMode("import");
+          setIsImportModalOpen(true);
+        }}
+        onOpenExportOptions={() => {
+          setImportModalMode("export");
           setIsImportModalOpen(true);
         }}
         onAddRow={onAddRow}
-        t={t}
-      >
-        {/* Quick Stats Bar */}
-        <QuickStatsBar
-          table={table}
-          stats={tableStats}
-          totalFilteredRows={totalCount}
-          isFiltered={filters.length > 0}
-          onOpenAnalytics={(col) =>
-            setAnalyticsColumn(col || table.columns[0] || null)
+        onDeleteSelected={() => {
+          if (focusedCell) {
+            const row = displayedRows[focusedCell.rowIndex];
+            if (row) stageDeleteRow(row);
           }
-        />
-
-        {/* Read-Only Safety Banner */}
-        {isReadOnly && (
-          <div className="flex items-center justify-between border-b border-amber-500/30 bg-amber-500/10 px-3 py-1.5 font-mono text-xs text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
-            <div className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span className="font-medium">
-                {t("datagrid.readOnlyBanner")}
-              </span>
-            </div>
-            <Badge
-              variant="outline"
-              className="border-amber-500/40 bg-amber-500/20 text-[10px] font-bold text-amber-700 uppercase dark:text-amber-400"
-            >
-              {t("connection.readOnlyBadge")}
-            </Badge>
-          </div>
+        }}
+        hasSelectedRow={Boolean(
+          focusedCell && displayedRows[focusedCell.rowIndex],
         )}
-      </GridHeaderToolbar>
+        pendingCount={pendingDrafts.length}
+        isSubmittingDrafts={isSubmittingDrafts}
+        onSubmitDrafts={() => void submitDrafts()}
+        onRevertDrafts={revertDrafts}
+        onOpenQuery={
+          onOpenQueryConsole ? () => onOpenQueryConsole() : undefined
+        }
+        page={page}
+        pageSize={pageSize}
+        totalCount={totalCount}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+        hiddenColumns={hiddenColumns}
+        onToggleColumn={(column) =>
+          setHiddenColumns((current) =>
+            current.includes(column)
+              ? current.filter((name) => name !== column)
+              : [...current, column],
+          )
+        }
+        onShowAllColumns={() => setHiddenColumns([])}
+        isValueEditorOpen={valueEditorOpen}
+        canOpenValueEditor={Boolean(
+          focusedCell && displayedRows[focusedCell.rowIndex],
+        )}
+        onToggleValueEditor={() => {
+          if (valueEditorOpen) {
+            setValueEditorOpen(false);
+            return;
+          }
+          if (!focusedCell) return;
+          const row = displayedRows[focusedCell.rowIndex];
+          const column = table.columns.find(
+            (item) => item.name === focusedCell.colName,
+          );
+          if (row && column) {
+            setCellDrawerState({
+              isOpen: true,
+              columnName: column.name,
+              columnType: column.type,
+              cellValue: row[column.name],
+              row,
+            });
+            setValueEditorOpen(true);
+          }
+        }}
+        showStats={showStats}
+        onToggleStats={() => setShowStats((current) => !current)}
+        t={t}
+      />
+      <TableSubviewTabs
+        activeView={activeSubView}
+        onViewChange={setActiveSubView}
+        table={table}
+        connectionName={connectionName}
+        dbType={dbType}
+      />
+      {activeSubView === "data" && (
+        <TableFilterBar
+          table={table}
+          dbType={dbType}
+          quickSearch={quickSearch}
+          onQuickSearchChange={setQuickSearch}
+          quickSearchInputRef={quickSearchInputRef}
+          filters={filters}
+          onFiltersChange={onFiltersChange}
+          filterCol={filterCol}
+          onFilterColChange={setFilterCol}
+          filterOp={filterOp}
+          onFilterOpChange={setFilterOp}
+          filterVal={filterVal}
+          onFilterValChange={setFilterVal}
+          onAddFilter={handleAddFilter}
+          onRemoveFilter={handleRemoveFilter}
+          sortBy={sortBy}
+          sortDesc={sortDesc}
+          onSortChange={onSortChange}
+          t={t}
+        />
+      )}
+      {showStats && activeSubView === "data" && (
+        <div className="border-border bg-card/50 dark:border-border shrink-0 border-b">
+          <QuickStatsBar
+            table={table}
+            stats={tableStats}
+            totalFilteredRows={totalCount}
+            isFiltered={filters.length > 0}
+            onOpenAnalytics={(col) =>
+              setAnalyticsColumn(col || table.columns[0] || null)
+            }
+          />
+        </div>
+      )}
 
-      {activeSubView === "schema" ? (
+      {activeSubView !== "data" ? (
         <Suspense
           fallback={
-            <div className="p-8 text-center font-mono text-xs text-zinc-500">
+            <div className="text-muted-foreground p-8 text-center font-mono text-xs">
               Loading Schema...
             </div>
           }
@@ -1693,6 +2190,7 @@ export const DataGrid: FC<DataGridProps> = ({
           <SchemaInspector
             connId={connId}
             table={table}
+            view={activeSubView}
             isReadOnly={isReadOnly}
             onNavigateRelation={onNavigateRelation}
             onOpenQueryConsole={onOpenQueryConsole}
@@ -1700,266 +2198,307 @@ export const DataGrid: FC<DataGridProps> = ({
         </Suspense>
       ) : (
         <>
-          {/* Grid Container */}
-          <div
-            ref={tableContainerRef}
-            data-tour="datagrid-view"
-            className="relative flex flex-1 flex-col overflow-auto"
-            onScroll={(event) => {
-              if (!onScrollPositionChange) return;
-              const element = event.currentTarget;
-              if (scrollPositionTimer.current)
-                clearTimeout(scrollPositionTimer.current);
-              scrollPositionTimer.current = setTimeout(() => {
-                onScrollPositionChange(element.scrollLeft, element.scrollTop);
-              }, 120);
-            }}
-          >
-            {isLoading || isRefreshing ? (
-              /* High-fidelity shadcn UI Table Skeleton */
-              <table className="animate-in fade-in w-full caption-bottom border-collapse border-b border-zinc-200 text-left text-sm duration-150 dark:border-zinc-800">
-                <TableHeader className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
-                  <TableRow>
-                    <TableHead className="w-12 border-zinc-200 px-3 py-2 font-mono text-xs font-medium text-zinc-400 not-last:border-r dark:border-zinc-800/80">
-                      #
-                    </TableHead>
-                    {table?.columns?.map((c) => (
-                      <TableHead
-                        key={c.name}
-                        className="h-auto border-zinc-200 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-zinc-600 not-last:border-r dark:border-zinc-800/80 dark:text-zinc-400"
-                      >
-                        <div className="flex items-center gap-1.5 py-1">
-                          <Skeleton className="size-3.5 shrink-0 rounded bg-zinc-300/80 dark:bg-zinc-700/80" />
-                          <span className="font-mono text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                            {c.name}
-                          </span>
-                          <span className="font-mono text-[10px] font-normal text-zinc-400 dark:text-zinc-500">
-                            {c.type}
-                          </span>
-                        </div>
+          <div className="flex min-h-0 min-w-0 flex-1">
+            {/* Grid Container */}
+            <div
+              ref={tableContainerRef}
+              data-tour="datagrid-view"
+              className="relative flex min-w-0 flex-1 flex-col overflow-auto"
+              onScroll={(event) => {
+                if (!onScrollPositionChange) return;
+                const element = event.currentTarget;
+                if (scrollPositionTimer.current)
+                  clearTimeout(scrollPositionTimer.current);
+                scrollPositionTimer.current = setTimeout(() => {
+                  onScrollPositionChange(element.scrollLeft, element.scrollTop);
+                }, 120);
+              }}
+            >
+              {draftSubmitError && (
+                <div
+                  role="alert"
+                  className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/30 dark:text-destructive m-2 shrink-0 rounded border px-3 py-2 text-xs"
+                >
+                  {draftSubmitError}
+                </div>
+              )}
+              {isLoading || isRefreshing ? (
+                /* High-fidelity shadcn UI Table Skeleton */
+                <table className="animate-in fade-in border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm duration-150">
+                  <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
+                    <TableRow>
+                      <TableHead className="border-border text-muted-foreground dark:border-border/80 w-12 px-3 py-2 font-mono text-xs font-medium not-last:border-r">
+                        #
                       </TableHead>
-                    )) ??
-                      [1, 2, 3, 4, 5, 6].map((idx) => (
+                      {table?.columns?.map((c) => (
                         <TableHead
-                          key={idx}
-                          className="border-zinc-200 px-3 py-2 not-last:border-r dark:border-zinc-800/80"
+                          key={c.name}
+                          className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
                         >
-                          <Skeleton className="h-4 w-24 rounded" />
+                          <div className="flex items-center gap-1.5 py-1">
+                            <Skeleton className="bg-muted/80 dark:bg-muted/80 size-3.5 shrink-0 rounded" />
+                            <span className="text-foreground font-mono text-xs font-semibold">
+                              {c.name}
+                            </span>
+                            <span className="text-muted-foreground font-mono text-[10px] font-normal">
+                              {c.type}
+                            </span>
+                          </div>
                         </TableHead>
-                      ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-zinc-200 dark:divide-zinc-800/50">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((rowIdx) => (
-                    <TableRow
-                      key={rowIdx}
-                      className="h-9.25 hover:bg-transparent"
-                    >
-                      <TableCell className="w-12 border-zinc-200/80 px-3 py-2 font-mono text-xs text-zinc-400 not-last:border-r dark:border-zinc-800/40">
-                        <Skeleton className="h-3 w-4 rounded bg-zinc-200/70 dark:bg-zinc-800/70" />
-                      </TableCell>
-                      {table?.columns?.map((c, cIdx) => {
-                        const isNumeric =
-                          /int|float|num|dec|serial|money/i.test(c.type);
-                        const isBool = /bool/i.test(c.type);
-                        const isDate = /date|time/i.test(c.type);
-                        const isPk = c.is_primary_key;
-
-                        return (
-                          <TableCell
-                            key={c.name}
-                            className="border-zinc-200/80 px-3 py-2 whitespace-nowrap not-last:border-r dark:border-zinc-800/40"
+                      )) ??
+                        [1, 2, 3, 4, 5, 6].map((idx) => (
+                          <TableHead
+                            key={idx}
+                            className="border-border dark:border-border/80 px-3 py-2 not-last:border-r"
                           >
-                            {isPk ? (
-                              <div className="flex items-center gap-1.5">
-                                <Skeleton className="size-3 shrink-0 rounded-full bg-amber-400/40 dark:bg-amber-400/30" />
-                                <Skeleton className="h-3 w-8 rounded bg-zinc-200 dark:bg-zinc-800" />
-                              </div>
-                            ) : isBool ? (
-                              <Skeleton className="h-4 w-12 rounded-full bg-emerald-500/20 dark:bg-emerald-500/15" />
-                            ) : isDate ? (
-                              <Skeleton className="h-3 w-28 rounded bg-zinc-200/80 dark:bg-zinc-800/80" />
-                            ) : isNumeric ? (
-                              <Skeleton
-                                className="h-3 rounded bg-zinc-200/80 dark:bg-zinc-800/80"
-                                style={{
-                                  width: `${32 + ((rowIdx * 17 + cIdx * 13) % 40)}px`,
-                                }}
-                              />
-                            ) : (
-                              <Skeleton
-                                className="h-3 rounded bg-zinc-200/90 dark:bg-zinc-800/90"
-                                style={{
-                                  width: `${55 + ((rowIdx * 23 + cIdx * 31) % 110)}px`,
-                                  maxWidth: "85%",
-                                }}
-                              />
-                            )}
-                          </TableCell>
-                        );
-                      }) ??
-                        [1, 2, 3, 4, 5, 6].map((cIdx) => (
-                          <TableCell
-                            key={cIdx}
-                            className="border-zinc-200/80 px-3 py-2 not-last:border-r dark:border-zinc-800/40"
-                          >
-                            <Skeleton className="h-3.5 w-24 rounded" />
-                          </TableCell>
+                            <Skeleton className="h-4 w-24 rounded" />
+                          </TableHead>
                         ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </table>
-            ) : displayedRows.length === 0 ? (
-              /* Empty States */
-              <div className="flex flex-1 items-center justify-center p-8">
-                {quickSearch ? (
-                  <EmptyState
-                    icon={Search}
-                    title={t("datagrid.noSearchResultsTitle")}
-                    description={t("datagrid.noSearchResultsDesc", {
-                      term: quickSearch,
-                    })}
-                    action={{
-                      label: t("datagrid.clearSearch"),
-                      onClick: () => setQuickSearch(""),
-                    }}
-                  />
-                ) : filters.length > 0 ? (
-                  <EmptyState
-                    icon={FilterIcon}
-                    title={t("datagrid.noMatchingFiltersTitle")}
-                    description={t("datagrid.noMatchingFiltersDesc")}
-                    action={{
-                      label: t("datagrid.clearAllFilters"),
-                      onClick: () => onFiltersChange([]),
-                    }}
-                  />
-                ) : (
-                  <EmptyState
-                    icon={Inbox}
-                    title={t("datagrid.tableIsEmptyTitle")}
-                    description={t("datagrid.tableIsEmptyDesc", {
-                      table: table.name,
-                    })}
-                    action={
-                      isReadOnly
-                        ? undefined
-                        : {
-                            label: t("datagrid.insertFirstRecord"),
-                            onClick: onAddRow,
-                            icon: Plus,
-                          }
-                    }
-                  />
-                )}
-              </div>
-            ) : viewMode === "document" ? (
-              /* Document View - Compass-style expanded document cards */
-              <DocumentView
-                rows={displayedRows}
-                table={table}
-                extraColumns={extraColumns}
-                page={page}
-                pageSize={pageSize}
-                isReadOnly={isReadOnly}
-                onEditRow={onEditRow}
-                onDeleteRow={onDeleteRow}
-                onSaveCell={onSaveCell}
-                onNavigateRelation={onNavigateRelation}
-                t={t}
-              />
-            ) : (
-              /* Data Table */
-              <table className="studio-data-table w-full caption-bottom border-collapse border-b border-zinc-200 text-left text-sm dark:border-zinc-800">
-                <TableHeader className="sticky top-0 z-10 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
-                  {reactTable.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <TableHead
-                          key={header.id}
-                          style={{ width: header.getSize() }}
-                          className="h-auto border-zinc-200 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-zinc-600 not-last:border-r dark:border-zinc-800/80 dark:text-zinc-400"
-                        >
-                          {flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
+                  </TableHeader>
+                  <TableBody className="divide-border dark:divide-border/50 divide-y">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((rowIdx) => (
+                      <TableRow
+                        key={rowIdx}
+                        className="h-9.25 hover:bg-transparent"
+                      >
+                        <TableCell className="border-border/80 text-muted-foreground dark:border-border/40 w-12 px-3 py-2 font-mono text-xs not-last:border-r">
+                          <Skeleton className="bg-muted/70 dark:bg-muted/70 h-3 w-4 rounded" />
+                        </TableCell>
+                        {table?.columns?.map((c, cIdx) => {
+                          const isNumeric =
+                            /int|float|num|dec|serial|money/i.test(c.type);
+                          const isBool = /bool/i.test(c.type);
+                          const isDate = /date|time/i.test(c.type);
+                          const isPk = c.is_primary_key;
 
-                <TableBody className="divide-y divide-zinc-200 dark:divide-zinc-800/50">
-                  {rowVirtualizer.getVirtualItems().length > 0 && (
-                    <>
-                      {rowVirtualizer.getVirtualItems()[0].start > 0 && (
-                        <tr>
-                          <td
-                            colSpan={reactTable.getVisibleLeafColumns().length}
-                            style={{
-                              height: `${rowVirtualizer.getVirtualItems()[0].start}px`,
-                              padding: 0,
-                              border: 0,
-                            }}
-                          />
-                        </tr>
-                      )}
-                      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
-                        const row = tableRows[virtualRow.index];
-                        if (!row) return null;
-                        return (
-                          <GridRowItem
-                            key={row.id}
-                            row={row}
-                            virtualIndex={virtualRow.index}
-                            measureElement={rowVirtualizer.measureElement}
-                            focusedCell={focusedCell}
-                            editingCell={editingCell}
-                            onRowContextMenu={handleRowContextMenu}
-                            onCellClick={handleCellClick}
-                            onCellContextMenu={handleCellContextMenu}
-                          />
-                        );
+                          return (
+                            <TableCell
+                              key={c.name}
+                              className="border-border/80 dark:border-border/40 px-3 py-2 whitespace-nowrap not-last:border-r"
+                            >
+                              {isPk ? (
+                                <div className="flex items-center gap-1.5">
+                                  <Skeleton className="bg-warning/40 dark:bg-warning/30 size-3 shrink-0 rounded-full" />
+                                  <Skeleton className="bg-muted dark:bg-muted h-3 w-8 rounded" />
+                                </div>
+                              ) : isBool ? (
+                                <Skeleton className="bg-success/20 dark:bg-success/15 h-4 w-12 rounded-full" />
+                              ) : isDate ? (
+                                <Skeleton className="bg-muted/80 dark:bg-muted/80 h-3 w-28 rounded" />
+                              ) : isNumeric ? (
+                                <Skeleton
+                                  className="bg-muted/80 dark:bg-muted/80 h-3 rounded"
+                                  style={{
+                                    width: `${32 + ((rowIdx * 17 + cIdx * 13) % 40)}px`,
+                                  }}
+                                />
+                              ) : (
+                                <Skeleton
+                                  className="bg-muted/90 dark:bg-muted/90 h-3 rounded"
+                                  style={{
+                                    width: `${55 + ((rowIdx * 23 + cIdx * 31) % 110)}px`,
+                                    maxWidth: "85%",
+                                  }}
+                                />
+                              )}
+                            </TableCell>
+                          );
+                        }) ??
+                          [1, 2, 3, 4, 5, 6].map((cIdx) => (
+                            <TableCell
+                              key={cIdx}
+                              className="border-border/80 dark:border-border/40 px-3 py-2 not-last:border-r"
+                            >
+                              <Skeleton className="h-3.5 w-24 rounded" />
+                            </TableCell>
+                          ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </table>
+              ) : displayedRows.length === 0 ? (
+                /* Empty States */
+                <div className="flex flex-1 items-center justify-center p-8">
+                  {quickSearch ? (
+                    <EmptyState
+                      icon={Search}
+                      title={t("datagrid.noSearchResultsTitle")}
+                      description={t("datagrid.noSearchResultsDesc", {
+                        term: quickSearch,
                       })}
-                      {rowVirtualizer.getTotalSize() -
-                        (rowVirtualizer.getVirtualItems()[
-                          rowVirtualizer.getVirtualItems().length - 1
-                        ]?.end ?? 0) >
-                        0 && (
-                        <tr>
-                          <td
-                            colSpan={reactTable.getVisibleLeafColumns().length}
-                            style={{
-                              height: `${
-                                rowVirtualizer.getTotalSize() -
-                                (rowVirtualizer.getVirtualItems()[
-                                  rowVirtualizer.getVirtualItems().length - 1
-                                ]?.end ?? 0)
-                              }px`,
-                              padding: 0,
-                              border: 0,
-                            }}
-                          />
-                        </tr>
-                      )}
-                    </>
+                      action={{
+                        label: t("datagrid.clearSearch"),
+                        onClick: () => setQuickSearch(""),
+                      }}
+                    />
+                  ) : filters.length > 0 ? (
+                    <EmptyState
+                      icon={FilterIcon}
+                      title={t("datagrid.noMatchingFiltersTitle")}
+                      description={t("datagrid.noMatchingFiltersDesc")}
+                      action={{
+                        label: t("datagrid.clearAllFilters"),
+                        onClick: () => onFiltersChange([]),
+                      }}
+                    />
+                  ) : (
+                    <EmptyState
+                      icon={Inbox}
+                      title={t("datagrid.tableIsEmptyTitle")}
+                      description={t("datagrid.tableIsEmptyDesc", {
+                        table: table.name,
+                      })}
+                      action={
+                        isReadOnly
+                          ? undefined
+                          : {
+                              label: t("datagrid.insertFirstRecord"),
+                              onClick: onAddRow,
+                              icon: Plus,
+                            }
+                      }
+                    />
                   )}
-                </TableBody>
-              </table>
+                </div>
+              ) : viewMode === "document" ? (
+                /* Document View - Compass-style expanded document cards */
+                <DocumentView
+                  rows={displayedRows}
+                  table={table}
+                  extraColumns={extraColumns}
+                  page={page}
+                  pageSize={pageSize}
+                  isReadOnly={isReadOnly}
+                  onEditRow={onEditRow}
+                  onDeleteRow={stageDeleteRow}
+                  onSaveCell={async (row, columnName, value) =>
+                    stageCellValue(row, columnName, value)
+                  }
+                  onNavigateRelation={onNavigateRelation}
+                  t={t}
+                />
+              ) : (
+                /* Data Table */
+                <table className="studio-data-table border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm">
+                  <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
+                    {reactTable.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead
+                            key={header.id}
+                            style={{ width: header.getSize() }}
+                            className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableHeader>
+
+                  <TableBody className="divide-border dark:divide-border/50 divide-y">
+                    {rowVirtualizer.getVirtualItems().length > 0 && (
+                      <>
+                        {rowVirtualizer.getVirtualItems()[0].start > 0 && (
+                          <tr>
+                            <td
+                              colSpan={
+                                reactTable.getVisibleLeafColumns().length
+                              }
+                              style={{
+                                height: `${rowVirtualizer.getVirtualItems()[0].start}px`,
+                                padding: 0,
+                                border: 0,
+                              }}
+                            />
+                          </tr>
+                        )}
+                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                          const row = tableRows[virtualRow.index];
+                          if (!row) return null;
+                          return (
+                            <GridRowItem
+                              key={row.id}
+                              row={row}
+                              virtualIndex={virtualRow.index}
+                              measureElement={rowVirtualizer.measureElement}
+                              focusedCell={focusedCell}
+                              editingCell={editingCell}
+                              onRowContextMenu={handleRowContextMenu}
+                              onCellClick={handleCellClick}
+                              onCellContextMenu={handleCellContextMenu}
+                            />
+                          );
+                        })}
+                        {rowVirtualizer.getTotalSize() -
+                          (rowVirtualizer.getVirtualItems()[
+                            rowVirtualizer.getVirtualItems().length - 1
+                          ]?.end ?? 0) >
+                          0 && (
+                          <tr>
+                            <td
+                              colSpan={
+                                reactTable.getVisibleLeafColumns().length
+                              }
+                              style={{
+                                height: `${
+                                  rowVirtualizer.getTotalSize() -
+                                  (rowVirtualizer.getVirtualItems()[
+                                    rowVirtualizer.getVirtualItems().length - 1
+                                  ]?.end ?? 0)
+                                }px`,
+                                padding: 0,
+                                border: 0,
+                              }}
+                            />
+                          </tr>
+                        )}
+                      </>
+                    )}
+                  </TableBody>
+                </table>
+              )}
+            </div>
+            {valueEditorOpen && cellDrawerState.row && (
+              <ValueEditorPanel
+                columnName={cellDrawerState.columnName}
+                columnType={cellDrawerState.columnType}
+                value={
+                  rowDrafts[cellDrawerState.row._pb_draft_id] &&
+                  Object.prototype.hasOwnProperty.call(
+                    rowDrafts[cellDrawerState.row._pb_draft_id].current,
+                    cellDrawerState.columnName,
+                  )
+                    ? rowDrafts[cellDrawerState.row._pb_draft_id].current[
+                        cellDrawerState.columnName
+                      ]
+                    : cellDrawerState.cellValue
+                }
+                isReadOnly={isReadOnly}
+                width={valueEditorWidth}
+                onWidthChange={setValueEditorWidth}
+                onClose={() => setValueEditorOpen(false)}
+                onApply={(value) =>
+                  stageCellValue(
+                    cellDrawerState.row!,
+                    cellDrawerState.columnName,
+                    value,
+                  )
+                }
+              />
             )}
           </div>
 
-          {/* Pagination Footer */}
-          <GridPaginationFooter
-            page={page}
-            pageSize={pageSize}
-            totalCount={totalCount}
-            totalPages={totalPages}
-            onPageChange={onPageChange}
-            onPageSizeChange={onPageSizeChange}
-            pageSizeOptions={PAGE_SIZE_OPTIONS}
+          <TableExecutionFooter
+            from={rows.length ? page * pageSize + 1 : 0}
+            to={Math.min((page + 1) * pageSize, totalCount)}
+            total={totalCount}
+            queryTimeMs={queryTimeMs}
+            isLoading={isLoading}
             t={t}
           />
         </>
@@ -1977,7 +2516,19 @@ export const DataGrid: FC<DataGridProps> = ({
             filters={filters}
             sortBy={sortBy}
             sortDesc={sortDesc}
-            onSuccess={() => {
+            onSuccess={(result) => {
+              emitOperationEvent({
+                kind: "import",
+                severity: "success",
+                title: t("operations.importSucceeded", "Import completed"),
+                message: t("operations.importSummary", {
+                  count: result.inserted_count,
+                  defaultValue: "{{count}} rows inserted",
+                }),
+                connectionId: connId,
+                connectionName,
+                tabId: workspaceTabId,
+              });
               onRefresh();
             }}
           />
@@ -1999,24 +2550,6 @@ export const DataGrid: FC<DataGridProps> = ({
         </Suspense>
       )}
 
-      {cellDrawerState.isOpen && (
-        <Suspense fallback={null}>
-          <CellDetailDrawer
-            isOpen={cellDrawerState.isOpen}
-            onClose={() =>
-              setCellDrawerState((prev) => ({ ...prev, isOpen: false }))
-            }
-            tableName={table.name}
-            columnName={cellDrawerState.columnName}
-            columnType={cellDrawerState.columnType}
-            cellValue={cellDrawerState.cellValue}
-            row={cellDrawerState.row}
-            isReadOnly={isReadOnly}
-            onSaveCell={onSaveCell}
-          />
-        </Suspense>
-      )}
-
       {/* Custom Right-Click Context Menu */}
       <GridContextMenu
         contextMenu={contextMenu}
@@ -2025,7 +2558,7 @@ export const DataGrid: FC<DataGridProps> = ({
         filters={filters}
         onFiltersChange={onFiltersChange}
         onEditRow={onEditRow}
-        onDeleteRow={onDeleteRow}
+        onDeleteRow={stageDeleteRow}
         onNavigateRelation={onNavigateRelation}
         onInspectCell={(colName, cellValue, row, colType) => {
           setCellDrawerState({
@@ -2035,6 +2568,7 @@ export const DataGrid: FC<DataGridProps> = ({
             cellValue,
             row,
           });
+          setValueEditorOpen(true);
         }}
         onCopyNotify={(msg) => {
           setCopiedNotification(msg);

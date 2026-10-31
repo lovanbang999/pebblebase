@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"pebblebase/internal/adapter"
 	"pebblebase/internal/audit"
@@ -35,11 +36,13 @@ func (s *Server) queryRows(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	started := time.Now()
 	result, err := a.Query(r.Context(), table, opts)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "query: "+err.Error())
 		return
 	}
+	result.QueryTimeMs = adapter.ElapsedMs(started)
 
 	writeJSON(w, http.StatusOK, result)
 }

@@ -147,7 +147,7 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
       >
         <Badge
           variant="outline"
-          className="border-primary/30 dark:border-primary/30 h-4.5 shrink-0 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400"
+          className="border-primary/30 dark:border-primary/30 bg-success/10 text-success dark:bg-success/15 dark:text-success h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
         >
           <span className="font-bold tracking-tighter">[&thinsp;]</span>
           <span>{count}</span>
@@ -157,18 +157,18 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
           {previewItems.map((item, idx) => (
             <span
               key={idx}
-              className="inline-block max-w-25 truncate rounded bg-zinc-100 px-1 py-0.5 text-[11px] text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+              className="bg-muted text-foreground dark:bg-muted dark:text-foreground inline-block max-w-25 truncate rounded px-1 py-0.5 text-[11px]"
             >
               {typeof item === "object" ? JSON.stringify(item) : String(item)}
             </span>
           ))}
           {remaining > 0 && (
-            <span className="shrink-0 text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+            <span className="text-muted-foreground shrink-0 text-[10px] font-medium">
               +{remaining}
             </span>
           )}
           {count === 0 && (
-            <span className="text-[11px] text-zinc-400 italic dark:text-zinc-500">
+            <span className="text-muted-foreground dark:text-muted-foreground text-[11px] italic">
               {t("datagrid.complexTypes.empty")}
             </span>
           )}
@@ -182,7 +182,7 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
               onOpenDetail();
             }}
             className={cn(
-              "hover:bg-primary/20 shrink-0 rounded p-0.5 text-zinc-400 transition-opacity hover:text-emerald-600 dark:hover:text-emerald-400",
+              "hover:bg-primary/20 text-muted-foreground hover:text-success dark:hover:text-success shrink-0 rounded p-0.5 transition-opacity",
               isHovered ? "opacity-100" : "opacity-0",
             )}
             title={t("datagrid.complexTypes.inspectArray")}
@@ -216,7 +216,7 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
       >
         <Badge
           variant="outline"
-          className="h-4.5 shrink-0 border-indigo-500/30 bg-indigo-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-400"
+          className="border-primary/30 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/15 dark:text-primary h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
         >
           <span className="font-bold tracking-tighter">
             &#123;&thinsp;&#125;
@@ -228,9 +228,9 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
           {previewEntries.map(([k, v], idx) => (
             <span
               key={idx}
-              className="inline-flex max-w-30 items-center gap-0.5 truncate rounded bg-indigo-50 px-1 py-0.5 text-[11px] text-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-200"
+              className="bg-primary/10 text-primary dark:bg-primary/40 dark:text-primary inline-flex max-w-30 items-center gap-0.5 truncate rounded px-1 py-0.5 text-[11px]"
             >
-              <span className="font-medium text-indigo-600 dark:text-indigo-400">
+              <span className="text-primary dark:text-primary font-medium">
                 {k}:
               </span>
               <span className="truncate">
@@ -239,12 +239,12 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
             </span>
           ))}
           {remaining > 0 && (
-            <span className="shrink-0 text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+            <span className="text-muted-foreground shrink-0 text-[10px] font-medium">
               +{remaining}
             </span>
           )}
           {count === 0 && (
-            <span className="text-[11px] text-zinc-400 italic dark:text-zinc-500">
+            <span className="text-muted-foreground dark:text-muted-foreground text-[11px] italic">
               {t("datagrid.complexTypes.empty")}
             </span>
           )}
@@ -258,7 +258,7 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
               onOpenDetail();
             }}
             className={cn(
-              "shrink-0 rounded p-0.5 text-zinc-400 transition-opacity hover:bg-indigo-500/20 hover:text-indigo-600 dark:hover:text-indigo-400",
+              "text-muted-foreground hover:bg-primary/20 hover:text-primary dark:hover:text-primary shrink-0 rounded p-0.5 transition-opacity",
               isHovered ? "opacity-100" : "opacity-0",
             )}
             title={t("datagrid.complexTypes.inspectMap")}
@@ -292,7 +292,7 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
     >
       <Badge
         variant="outline"
-        className="h-4.5 shrink-0 border-amber-500/30 bg-amber-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-400"
+        className="border-warning/30 bg-warning/10 text-warning dark:border-warning/30 dark:bg-warning/15 dark:text-warning h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
       >
         <span className="font-bold tracking-tighter">(&thinsp;)</span>
         <span>{count}</span>
@@ -302,13 +302,13 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
         {previewItems.map((item, idx) => (
           <span
             key={idx}
-            className="inline-block max-w-22.5 truncate rounded bg-amber-50 px-1 py-0.5 text-[11px] text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+            className="bg-warning/10 text-warning dark:bg-warning/40 dark:text-warning inline-block max-w-22.5 truncate rounded px-1 py-0.5 text-[11px]"
           >
             {typeof item === "object" ? JSON.stringify(item) : String(item)}
           </span>
         ))}
         {remaining > 0 && (
-          <span className="shrink-0 text-[10px] font-medium text-zinc-400 dark:text-zinc-500">
+          <span className="text-muted-foreground shrink-0 text-[10px] font-medium">
             +{remaining}
           </span>
         )}
@@ -322,7 +322,7 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
             onOpenDetail();
           }}
           className={cn(
-            "shrink-0 rounded p-0.5 text-zinc-400 transition-opacity hover:bg-amber-500/20 hover:text-amber-600 dark:hover:text-amber-400",
+            "text-muted-foreground hover:bg-warning/20 hover:text-warning dark:hover:text-warning shrink-0 rounded p-0.5 transition-opacity",
             isHovered ? "opacity-100" : "opacity-0",
           )}
           title={t("datagrid.complexTypes.inspectTuple")}

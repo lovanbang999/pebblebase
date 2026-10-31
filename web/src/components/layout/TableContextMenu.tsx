@@ -75,6 +75,10 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
     setAdjustedPos({ x: newX, y: newY });
   }, [x, y]);
 
+  useEffect(() => {
+    menuRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, []);
+
   // Close on outside click or Escape
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -108,12 +112,45 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
           WebkitAppRegion: "no-drag",
         } as React.CSSProperties
       }
-      className="animate-in fade-in-50 zoom-in-95 wails-no-drag fixed z-50 min-w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white/95 p-1 font-mono text-xs text-zinc-700 shadow-2xl backdrop-blur-md duration-100 dark:border-zinc-800 dark:bg-zinc-950/95 dark:text-zinc-200"
+      role="menu"
+      aria-label={t("explorer.tableActions", "{{table}} actions", {
+        table: tableName,
+      })}
+      onKeyDown={(event) => {
+        const items = [
+          ...(menuRef.current?.querySelectorAll<HTMLButtonElement>(
+            '[role="menuitem"]',
+          ) || []),
+        ];
+        const current = items.indexOf(
+          document.activeElement as HTMLButtonElement,
+        );
+        if (
+          ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key) &&
+          items.length
+        ) {
+          event.preventDefault();
+          const next =
+            event.key === "Home"
+              ? 0
+              : event.key === "End"
+                ? items.length - 1
+                : (current +
+                    (event.key === "ArrowDown" ? 1 : -1) +
+                    items.length) %
+                  items.length;
+          items[next]?.focus();
+        } else if (event.key === "Escape") {
+          event.preventDefault();
+          onClose();
+        }
+      }}
+      className="animate-in fade-in-50 zoom-in-95 wails-no-drag bg-popover text-popover-foreground border-border fixed z-50 min-w-56 overflow-hidden rounded-md border p-1 font-mono text-xs shadow-lg duration-100"
     >
       {/* Table Name Header */}
-      <div className="flex items-center gap-2 border-b border-zinc-200/80 px-2.5 py-1.5 dark:border-zinc-800/80">
-        <TableIcon className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-        <span className="truncate font-semibold text-zinc-900 dark:text-zinc-100">
+      <div className="border-border/80 dark:border-border/80 flex items-center gap-2 border-b px-2.5 py-1.5">
+        <TableIcon className="text-success dark:text-success size-3.5 shrink-0" />
+        <span className="text-foreground truncate font-semibold">
           {tableName}
         </span>
       </div>
@@ -121,157 +158,168 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
       <div className="py-1">
         {/* Open Options */}
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onOpenTable(false);
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
-          <TableIcon className="size-3.5 text-zinc-500 dark:text-zinc-400" />
+          <TableIcon className="text-muted-foreground size-3.5" />
           <span>{t("sidebar.tableMenu.openDataGrid")}</span>
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onOpenTable(true);
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
-          <ExternalLink className="size-3.5 text-zinc-500 dark:text-zinc-400" />
+          <ExternalLink className="text-muted-foreground size-3.5" />
           <span>{t("sidebar.tableMenu.openInNewTab")}</span>
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onViewSchema();
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
           <FileCode className="size-3.5 text-sky-500 dark:text-sky-400" />
           <span>{t("sidebar.tableMenu.viewSchema")}</span>
         </button>
       </div>
 
-      <div className="h-px bg-zinc-200/80 dark:bg-zinc-800/80" />
+      <div className="bg-muted/80 dark:bg-muted/80 h-px" />
 
       {/* Query Shortcuts */}
       <div className="py-1">
-        <div className="px-2 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
+        <div className="text-muted-foreground dark:text-muted-foreground px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
           {t("sidebar.tableMenu.queryMenu")}
         </div>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onQuerySelectTop100();
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
-          <Terminal className="size-3.5 text-emerald-500 dark:text-emerald-400" />
+          <Terminal className="text-success dark:text-success size-3.5" />
           <span>{t("sidebar.tableMenu.selectTop100")}</span>
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onQuerySelectCount();
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
-          <Hash className="size-3.5 text-indigo-500 dark:text-indigo-400" />
+          <Hash className="text-primary dark:text-primary size-3.5" />
           <span>{t("sidebar.tableMenu.selectCount")}</span>
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onQueryInsertTemplate();
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
           <PlusCircle className="size-3.5 text-cyan-500 dark:text-cyan-400" />
           <span>{t("sidebar.tableMenu.insertTemplate")}</span>
         </button>
       </div>
 
-      <div className="h-px bg-zinc-200/80 dark:bg-zinc-800/80" />
+      <div className="bg-muted/80 dark:bg-muted/80 h-px" />
 
       {/* Copy & Export */}
       <div className="py-1">
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onCopyTableName();
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
-          <Copy className="size-3.5 text-zinc-500 dark:text-zinc-400" />
+          <Copy className="text-muted-foreground size-3.5" />
           <span>{t("sidebar.tableMenu.copyTableName")}</span>
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onCopySelectQuery();
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
-          <Terminal className="size-3.5 text-zinc-500 dark:text-zinc-400" />
+          <Terminal className="text-muted-foreground size-3.5" />
           <span>{t("sidebar.tableMenu.copySelectQuery")}</span>
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onExport("csv");
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
-          <Download className="size-3.5 text-zinc-500 dark:text-zinc-400" />
+          <Download className="text-muted-foreground size-3.5" />
           <span>{t("sidebar.tableMenu.exportCsv")}</span>
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onExport("json");
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
-          <FileJson className="size-3.5 text-zinc-500 dark:text-zinc-400" />
+          <FileJson className="text-muted-foreground size-3.5" />
           <span>{t("sidebar.tableMenu.exportJson")}</span>
         </button>
       </div>
 
-      <div className="h-px bg-zinc-200/80 dark:bg-zinc-800/80" />
+      <div className="bg-muted/80 dark:bg-muted/80 h-px" />
 
       {/* Pin & Danger Zone */}
       <div className="py-1">
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onTogglePin();
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+          className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
           <Pin
             className={`size-3.5 ${
               isPinned
-                ? "rotate-45 fill-current text-amber-500"
-                : "text-zinc-500 dark:text-zinc-400"
+                ? "text-warning rotate-45 fill-current"
+                : "text-muted-foreground"
             }`}
           />
           <span>
@@ -282,24 +330,26 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onDangerAction("truncate");
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-amber-600 transition-colors hover:bg-amber-500/10 dark:text-amber-400 dark:hover:bg-amber-500/10"
+          className="text-warning hover:bg-warning/10 dark:text-warning dark:hover:bg-warning/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
           <AlertTriangle className="size-3.5" />
           <span>{t("sidebar.tableMenu.truncateTable")}</span>
         </button>
 
         <button
+          role="menuitem"
           type="button"
           onClick={() => {
             onDangerAction("drop");
             onClose();
           }}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-rose-600 transition-colors hover:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/10"
+          className="text-destructive hover:bg-destructive/10 dark:text-destructive dark:hover:bg-destructive/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
         >
           <Trash2 className="size-3.5" />
           <span>{t("sidebar.tableMenu.dropTable")}</span>

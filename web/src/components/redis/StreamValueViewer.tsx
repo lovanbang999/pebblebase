@@ -17,10 +17,10 @@ export const StreamValueViewer: FC<StreamValueViewerProps> = ({
 
   return (
     <div className="flex h-full flex-col space-y-3 font-mono text-xs">
-      <div className="flex items-center justify-between border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-cyan-500" />
-          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+          <span className="text-foreground dark:text-foreground font-semibold">
             {t("redis.streamViewer.title", {
               count: entries.length,
               total: length ?? entries.length,
@@ -32,25 +32,25 @@ export const StreamValueViewer: FC<StreamValueViewerProps> = ({
         </Badge>
       </div>
 
-      <div className="flex-1 overflow-auto rounded-md border border-zinc-200 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border">
         {entries.length === 0 ? (
-          <div className="p-6 text-center text-zinc-400">
+          <div className="text-muted-foreground p-6 text-center">
             {t("redis.streamViewer.empty")}
           </div>
         ) : (
-          <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+          <div className="divide-border dark:divide-border divide-y">
             {entries.map((entry) => (
               <div
                 key={entry.id}
-                className="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                className="hover:bg-card dark:hover:bg-muted p-3"
               >
                 <div className="mb-1.5 flex items-center justify-between">
                   <Badge className="bg-cyan-500/10 font-mono text-[11px] text-cyan-700 dark:text-cyan-400">
                     ID: {entry.id}
                   </Badge>
                 </div>
-                <div className="rounded bg-zinc-100/60 p-2 text-[11px] dark:bg-zinc-900/60">
-                  <pre className="whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
+                <div className="bg-muted/60 dark:bg-card/60 rounded p-2 text-[11px]">
+                  <pre className="text-foreground dark:text-muted-foreground whitespace-pre-wrap">
                     {JSON.stringify(entry.values, null, 2)}
                   </pre>
                 </div>

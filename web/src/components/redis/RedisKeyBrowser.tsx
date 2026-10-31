@@ -47,14 +47,13 @@ interface RedisKeyBrowserProps {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  string:
-    "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-primary/20",
-  hash: "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20",
-  list: "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20",
-  set: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
-  zset: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20",
+  string: "bg-success/10 text-success dark:text-success border-primary/20",
+  hash: "bg-primary/10 text-primary dark:text-primary border-primary/20",
+  list: "bg-primary/10 text-primary dark:text-primary border-primary/20",
+  set: "bg-warning/10 text-warning dark:text-warning border-warning/20",
+  zset: "bg-destructive/10 text-destructive dark:text-destructive border-destructive/20",
   stream: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
-  none: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
+  none: "bg-muted/10 text-muted-foreground border-border/20",
 };
 
 function formatBytes(bytes: number): string {
@@ -239,13 +238,13 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
   const expStr = t("redis.expired");
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-zinc-950">
+    <div className="bg-background dark:bg-card flex h-full flex-col overflow-hidden">
       {/* Top Bar / Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-zinc-200 px-4 py-2.5 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
           {/* Pattern Search Form */}
           <form onSubmit={handleSearchSubmit} className="relative w-64">
-            <Search className="absolute top-2 left-2.5 h-3.5 w-3.5 text-zinc-400" />
+            <Search className="text-muted-foreground absolute top-2 left-2.5 h-3.5 w-3.5" />
             <Input
               type="text"
               placeholder={t("redis.scanPlaceholder")}
@@ -311,8 +310,8 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 font-mono text-xs text-zinc-500">
-            <Database className="h-3.5 w-3.5 text-rose-500" />
+          <div className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
+            <Database className="text-destructive h-3.5 w-3.5" />
             <span>
               {t("redis.dbSize", { count: totalKeysEstimate.toLocaleString() })}
             </span>
@@ -322,7 +321,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
             <Button
               size="sm"
               onClick={() => setIsAddKeyOpen(true)}
-              className="h-7 bg-rose-600 text-xs text-white hover:bg-rose-700 dark:bg-rose-600 dark:hover:bg-rose-700"
+              className="bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive h-7 text-xs text-white"
             >
               <Plus className="mr-1 h-3.5 w-3.5" />
               {t("redis.newKey")}
@@ -332,7 +331,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
       </div>
 
       {error && (
-        <div className="border-b border-rose-500/20 bg-rose-500/10 px-4 py-2 text-xs text-rose-600 dark:text-rose-400">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive border-b px-4 py-2 text-xs">
           {error}
         </div>
       )}
@@ -340,22 +339,22 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
       {/* Main Split View: Left Keys List + Right Value Editor */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Pane: Keys List */}
-        <div className="flex w-96 flex-col border-r border-zinc-200 dark:border-zinc-800">
-          <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/60 px-3 py-1.5 text-[11px] font-medium text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60">
+        <div className="border-border dark:border-border flex w-96 flex-col border-r">
+          <div className="border-border bg-card/60 text-muted-foreground dark:border-border dark:bg-card/60 flex items-center justify-between border-b px-3 py-1.5 text-[11px] font-medium">
             <span>
               {t("redis.loadedKeys", { count: keys.length })}{" "}
               {nextCursor !== 0 && t("redis.hasMore")}
             </span>
             {nextCursor !== 0 && (
-              <span className="font-mono text-[10px] text-zinc-400">
+              <span className="text-muted-foreground font-mono text-[10px]">
                 {t("redis.cursor", { cursor: nextCursor })}
               </span>
             )}
           </div>
 
-          <div className="flex-1 divide-y divide-zinc-200 overflow-y-auto dark:divide-zinc-800">
+          <div className="divide-border dark:divide-border flex-1 divide-y overflow-y-auto">
             {keys.length === 0 ? (
-              <div className="p-8 text-center text-xs text-zinc-400">
+              <div className="text-muted-foreground p-8 text-center text-xs">
                 {loadingKeys ? t("redis.scanning") : t("redis.noKeysMatched")}
               </div>
             ) : (
@@ -367,8 +366,8 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                     onClick={() => setSelectedKey(k.key)}
                     className={`group flex cursor-pointer items-center justify-between px-3 py-2.5 transition-colors ${
                       isSelected
-                        ? "bg-rose-50/70 dark:bg-rose-950/30"
-                        : "hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                        ? "bg-destructive/70 dark:bg-destructive/30"
+                        : "hover:bg-card dark:hover:bg-muted"
                     }`}
                   >
                     <div className="min-w-0 flex-1 pr-2">
@@ -384,8 +383,8 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                         <span
                           className={`truncate font-mono text-xs ${
                             isSelected
-                              ? "font-semibold text-rose-900 dark:text-rose-200"
-                              : "text-zinc-800 dark:text-zinc-200"
+                              ? "text-destructive dark:text-destructive font-semibold"
+                              : "text-foreground dark:text-foreground"
                           }`}
                           title={k.key}
                         >
@@ -393,7 +392,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                         </span>
                       </div>
 
-                      <div className="mt-1 flex items-center gap-2 font-mono text-[10px] text-zinc-400">
+                      <div className="text-muted-foreground mt-1 flex items-center gap-2 font-mono text-[10px]">
                         <span className="flex items-center gap-0.5">
                           <Clock className="h-2.5 w-2.5" />
                           {formatTTL(k.ttl, noExpStr, expStr)}
@@ -413,7 +412,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                               e.stopPropagation();
                               setTtlModalKey({ name: k.key, ttl: k.ttl });
                             }}
-                            className="h-6 w-6 p-0 text-zinc-400 hover:text-amber-600"
+                            className="text-muted-foreground hover:text-warning h-6 w-6 p-0"
                             title={t("redis.editTtl")}
                           >
                             <Clock className="h-3 w-3" />
@@ -425,7 +424,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                               e.stopPropagation();
                               handleDeleteKey(k.key);
                             }}
-                            className="h-6 w-6 p-0 text-zinc-400 hover:text-rose-600"
+                            className="text-muted-foreground hover:text-destructive h-6 w-6 p-0"
                             title={t("redis.deleteKey")}
                           >
                             <Trash2 className="h-3 w-3" />
@@ -434,7 +433,9 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                       )}
                       <ChevronRight
                         className={`h-3.5 w-3.5 ${
-                          isSelected ? "text-rose-500" : "text-zinc-400"
+                          isSelected
+                            ? "text-destructive"
+                            : "text-muted-foreground"
                         }`}
                       />
                     </div>
@@ -446,7 +447,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
 
           {/* Pagination controls for SCAN */}
           {nextCursor !== 0 && (
-            <div className="border-t border-zinc-200 p-2 dark:border-zinc-800">
+            <div className="border-border dark:border-border border-t p-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -468,25 +469,25 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
         {/* Right Pane: Key Detail and Value Editor */}
         <div className="flex flex-1 flex-col overflow-hidden p-4">
           {!selectedKey ? (
-            <div className="flex flex-1 flex-col items-center justify-center text-center text-zinc-400">
-              <KeyRound className="mb-2 h-8 w-8 text-zinc-300 dark:text-zinc-700" />
+            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center text-center">
+              <KeyRound className="text-muted-foreground dark:text-foreground mb-2 h-8 w-8" />
               <p className="text-sm font-medium">{t("redis.noKeySelected")}</p>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="text-muted-foreground mt-1 text-xs">
                 {t("redis.noKeySelectedDesc")}
               </p>
             </div>
           ) : loadingDetail ? (
             <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin text-rose-500" />
+              <Loader2 className="text-destructive h-6 w-6 animate-spin" />
             </div>
           ) : !keyDetail ? (
-            <div className="flex flex-1 items-center justify-center text-zinc-400">
+            <div className="text-muted-foreground flex flex-1 items-center justify-center">
               {t("redis.keyNotFoundOrExpired")}
             </div>
           ) : (
             <div className="flex h-full flex-col space-y-4 overflow-hidden">
               {/* Key Header Card */}
-              <div className="rounded-lg border border-zinc-200 bg-zinc-50/70 p-3 dark:border-zinc-800 dark:bg-zinc-900/60">
+              <div className="border-border bg-card/70 dark:border-border dark:bg-card/60 rounded-lg border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-1 items-center gap-2">
                     {isRenaming ? (
@@ -504,7 +505,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                         <Button
                           size="sm"
                           onClick={handleRenameKey}
-                          className="h-7 bg-rose-600 px-2 text-xs text-white"
+                          className="bg-destructive h-7 px-2 text-xs text-white"
                         >
                           {t("redis.save")}
                         </Button>
@@ -519,18 +520,18 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                       </div>
                     ) : (
                       <>
-                        <span className="font-mono text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                        <span className="text-foreground dark:text-foreground font-mono text-sm font-bold">
                           {keyDetail.key}
                         </span>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={handleCopyKey}
-                          className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-700"
+                          className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
                           title={t("redis.copyKeyName")}
                         >
                           {copiedKey ? (
-                            <Check className="h-3 w-3 text-emerald-600" />
+                            <Check className="text-success h-3 w-3" />
                           ) : (
                             <Copy className="h-3 w-3" />
                           )}
@@ -543,7 +544,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                               setRenameValue(keyDetail.key);
                               setIsRenaming(true);
                             }}
-                            className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-700"
+                            className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
                             title={t("redis.renameKey")}
                           >
                             <Edit3 className="h-3 w-3" />
@@ -574,7 +575,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                       className="h-6 gap-1 font-mono text-[11px]"
                       title={t("redis.editTtl")}
                     >
-                      <Clock className="h-3 w-3 text-amber-500" />
+                      <Clock className="text-warning h-3 w-3" />
                       {t("redis.ttlLabel", {
                         ttl: formatTTL(keyDetail.ttl, noExpStr, expStr),
                       })}
@@ -594,7 +595,7 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
                         size="sm"
                         variant="ghost"
                         onClick={() => handleDeleteKey(keyDetail.key)}
-                        className="h-6 px-2 text-xs text-rose-600 hover:bg-rose-50 hover:text-rose-700 dark:hover:bg-rose-950/30"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/30 h-6 px-2 text-xs"
                       >
                         <Trash2 className="mr-1 h-3 w-3" />
                         {t("redis.deleteKey")}

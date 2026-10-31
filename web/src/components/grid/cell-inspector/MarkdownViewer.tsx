@@ -79,17 +79,14 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         parts.push(
           <code
             key={keyIdx++}
-            className="rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[11px] text-pink-600 dark:bg-zinc-800 dark:text-pink-400"
+            className="bg-muted dark:bg-muted rounded px-1.5 py-0.5 font-mono text-[11px] text-pink-600 dark:text-pink-400"
           >
             {token.slice(1, -1)}
           </code>,
         );
       } else if (token.startsWith("**") && token.endsWith("**")) {
         parts.push(
-          <strong
-            key={keyIdx++}
-            className="font-semibold text-zinc-900 dark:text-zinc-100"
-          >
+          <strong key={keyIdx++} className="text-foreground font-semibold">
             {token.slice(2, -2)}
           </strong>,
         );
@@ -97,7 +94,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         parts.push(
           <em
             key={keyIdx++}
-            className="text-zinc-800 italic dark:text-zinc-200"
+            className="text-foreground dark:text-foreground italic"
           >
             {token.slice(1, -1)}
           </em>,
@@ -124,7 +121,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
             parts.push(
               <span
                 key={keyIdx++}
-                className="text-zinc-600 dark:text-zinc-400"
+                className="text-muted-foreground dark:text-muted-foreground"
                 title="Unsafe link disabled"
               >
                 {titleMatch[1]}
@@ -170,21 +167,21 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
           elements.push(
             <div
               key={blockIdx}
-              className="group my-3 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-900 font-mono text-xs dark:border-zinc-800"
+              className="group border-border bg-code dark:border-border my-3 overflow-hidden rounded-lg border font-mono text-xs"
             >
-              <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-3 py-1.5 text-zinc-400">
+              <div className="border-border bg-code/80 text-muted-foreground flex items-center justify-between border-b px-3 py-1.5">
                 <span className="text-[11px] tracking-wider uppercase">
                   {codeBlockLang || "text"}
                 </span>
                 <button
                   type="button"
                   onClick={() => handleCopyCode(fullCode, blockIdx)}
-                  className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                  className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px]"
                 >
                   {copiedCodeBlockIdx === blockIdx ? (
                     <>
-                      <Check className="h-3 w-3 text-emerald-400" />
-                      <span className="text-emerald-400">
+                      <Check className="text-success h-3 w-3" />
+                      <span className="text-success">
                         {t("cellInspector.copied")}
                       </span>
                     </>
@@ -196,7 +193,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                   )}
                 </button>
               </div>
-              <pre className="overflow-x-auto p-3 text-zinc-200">
+              <pre className="text-code-foreground overflow-x-auto p-3">
                 <code>{fullCode}</code>
               </pre>
             </div>,
@@ -228,32 +225,29 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         elements.push(
           <div
             key={keyIdx++}
-            className="my-3 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800"
+            className="border-border my-3 overflow-x-auto rounded-lg border"
           >
-            <table className="min-w-full divide-y divide-zinc-200 text-left text-xs dark:divide-zinc-800">
-              <thead className="bg-zinc-50 dark:bg-zinc-900">
+            <table className="divide-border dark:divide-border min-w-full divide-y text-left text-xs">
+              <thead className="bg-card">
                 <tr>
                   {headers.map((h, hIdx) => (
                     <th
                       key={hIdx}
-                      className="px-3 py-2 font-semibold text-zinc-900 dark:text-zinc-100"
+                      className="text-foreground px-3 py-2 font-semibold"
                     >
                       {renderInline(h)}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 bg-white dark:divide-zinc-800/60 dark:bg-zinc-950">
+              <tbody className="divide-border bg-background dark:divide-border/60 dark:bg-background divide-y">
                 {bodyRows.map((row, rIdx) => (
                   <tr
                     key={rIdx}
-                    className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/40"
+                    className="hover:bg-card/50 dark:hover:bg-muted/40"
                   >
                     {row.map((col, cIdx) => (
-                      <td
-                        key={cIdx}
-                        className="px-3 py-2 text-zinc-800 dark:text-zinc-200"
-                      >
+                      <td key={cIdx} className="text-foreground px-3 py-2">
                         {renderInline(col)}
                       </td>
                     ))}
@@ -271,7 +265,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         elements.push(
           <h1
             key={keyIdx++}
-            className="mt-4 mb-2 border-b border-zinc-200 pb-1 text-lg font-bold text-zinc-900 dark:border-zinc-800 dark:text-zinc-100"
+            className="border-border text-foreground dark:border-border dark:text-foreground mt-4 mb-2 border-b pb-1 text-lg font-bold"
           >
             {renderInline(line.slice(2))}
           </h1>,
@@ -282,7 +276,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         elements.push(
           <h2
             key={keyIdx++}
-            className="mt-3 mb-1.5 text-base font-semibold text-zinc-900 dark:text-zinc-100"
+            className="text-foreground mt-3 mb-1.5 text-base font-semibold"
           >
             {renderInline(line.slice(3))}
           </h2>,
@@ -293,7 +287,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         elements.push(
           <h3
             key={keyIdx++}
-            className="mt-2.5 mb-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+            className="text-foreground mt-2.5 mb-1 text-sm font-semibold"
           >
             {renderInline(line.slice(4))}
           </h3>,
@@ -306,7 +300,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         elements.push(
           <blockquote
             key={keyIdx++}
-            className="my-2 border-l-4 border-indigo-500 bg-indigo-50/50 py-1 pl-3 text-xs text-zinc-700 italic dark:bg-indigo-950/20 dark:text-zinc-300"
+            className="border-primary bg-primary/50 text-foreground dark:bg-primary/20 dark:text-foreground my-2 border-l-4 py-1 pl-3 text-xs italic"
           >
             {renderInline(line.slice(2))}
           </blockquote>,
@@ -324,13 +318,13 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
               type="checkbox"
               checked={isChecked}
               readOnly
-              className="rounded text-indigo-600"
+              className="text-primary rounded"
             />
             <span
               className={
                 isChecked
-                  ? "text-zinc-400 line-through"
-                  : "text-zinc-800 dark:text-zinc-200"
+                  ? "text-muted-foreground line-through"
+                  : "text-foreground"
               }
             >
               {renderInline(cleanText)}
@@ -346,7 +340,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         elements.push(
           <li
             key={keyIdx++}
-            className="my-0.5 ml-4 list-disc text-xs text-zinc-800 dark:text-zinc-200"
+            className="text-foreground my-0.5 ml-4 list-disc text-xs"
           >
             {renderInline(cleanText)}
           </li>,
@@ -361,7 +355,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         elements.push(
           <p
             key={keyIdx++}
-            className="my-1 text-xs leading-relaxed text-zinc-800 dark:text-zinc-200"
+            className="text-foreground my-1 text-xs leading-relaxed"
           >
             {renderInline(line)}
           </p>,
@@ -373,17 +367,17 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-zinc-950">
+    <div className="bg-background flex h-full flex-col overflow-hidden">
       {/* Sub-toolbar */}
-      <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/70 px-3 py-2 text-xs dark:border-zinc-800 dark:bg-zinc-900/50">
-        <div className="inline-flex rounded-md border border-zinc-200 bg-white p-0.5 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="border-border bg-card/70 dark:border-border dark:bg-card/50 flex items-center justify-between border-b px-3 py-2 text-xs">
+        <div className="border-border bg-background dark:border-border dark:bg-card inline-flex rounded-md border p-0.5 shadow-2xs">
           <button
             type="button"
             onClick={() => setViewMode("preview")}
             className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
               viewMode === "preview"
-                ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
+                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
             }`}
           >
             <Eye className="h-3.5 w-3.5" />
@@ -394,8 +388,8 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
             onClick={() => setViewMode("raw")}
             className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
               viewMode === "raw"
-                ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
+                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
             }`}
           >
             <Edit3 className="h-3.5 w-3.5" />
@@ -415,7 +409,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
             value={rawText}
             readOnly={isReadOnly}
             onChange={(e) => handleRawChange(e.target.value)}
-            className="h-full w-full resize-none rounded border border-zinc-200 bg-white p-3 font-mono text-xs leading-relaxed text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-700"
+            className="border-border bg-background text-foreground focus:border-border dark:border-border dark:bg-card dark:text-foreground dark:focus:border-border h-full w-full resize-none rounded border p-3 font-mono text-xs leading-relaxed outline-none"
             placeholder={t("cellInspector.markdownPlaceholder")}
           />
         )}

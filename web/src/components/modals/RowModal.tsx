@@ -60,12 +60,14 @@ function areValuesEqual(a: unknown, b: unknown): boolean {
 function formatDiffValue(val: unknown): React.ReactNode {
   if (val === null || val === undefined) {
     return (
-      <span className="text-zinc-400 italic dark:text-zinc-500">NULL</span>
+      <span className="text-muted-foreground dark:text-muted-foreground italic">
+        NULL
+      </span>
     );
   }
   if (val === "") {
     return (
-      <span className="text-zinc-400 italic dark:text-zinc-500">
+      <span className="text-muted-foreground dark:text-muted-foreground italic">
         &quot;&quot;
       </span>
     );
@@ -75,8 +77,8 @@ function formatDiffValue(val: unknown): React.ReactNode {
       <span
         className={
           val
-            ? "font-medium text-emerald-600 dark:text-emerald-400"
-            : "font-medium text-rose-600 dark:text-rose-400"
+            ? "text-success dark:text-success font-medium"
+            : "text-destructive dark:text-destructive font-medium"
         }
       >
         {String(val)}
@@ -319,19 +321,19 @@ export const RowModal: FC<RowModalProps> = ({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden p-0 sm:max-w-lg">
         {/* Header */}
-        <DialogHeader className="space-y-1 border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900/50">
-          <DialogTitle className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+        <DialogHeader className="border-border bg-card dark:border-border dark:bg-card/50 space-y-1 border-b px-5 py-4">
+          <DialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 text-sm font-semibold">
             <span>
               {isEditing ? t("rowModal.titleEdit") : t("rowModal.titleAdd")}
             </span>
             <Badge
               variant="secondary"
-              className="font-mono text-xs text-emerald-600 dark:text-emerald-400"
+              className="text-success dark:text-success font-mono text-xs"
             >
               {table.name}
             </Badge>
           </DialogTitle>
-          <DialogDescription className="font-mono text-xs text-zinc-500 dark:text-zinc-400">
+          <DialogDescription className="text-muted-foreground dark:text-muted-foreground font-mono text-xs">
             {isEditing ? t("rowModal.descEdit") : t("rowModal.descAdd")}
           </DialogDescription>
         </DialogHeader>
@@ -359,9 +361,9 @@ export const RowModal: FC<RowModalProps> = ({
             return (
               <div key={col.name} className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-1.5 font-mono text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                  <label className="text-foreground dark:text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-medium">
                     {isPk && (
-                      <Key className="h-3 w-3 text-amber-500 dark:text-amber-400" />
+                      <Key className="text-warning dark:text-warning h-3 w-3" />
                     )}
                     {col.name}
                   </label>
@@ -373,7 +375,7 @@ export const RowModal: FC<RowModalProps> = ({
                       {col.type}
                     </Badge>
                     {col.nullable && (
-                      <span className="text-zinc-400 italic dark:text-zinc-500">
+                      <span className="text-muted-foreground dark:text-muted-foreground italic">
                         {t("rowModal.nullable")}
                       </span>
                     )}
@@ -476,14 +478,14 @@ export const RowModal: FC<RowModalProps> = ({
 
           {/* Dynamic Document Fields */}
           {dynamicFieldKeys.length > 0 && (
-            <div className="space-y-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+            <div className="border-border dark:border-border space-y-3 border-t pt-3">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-semibold text-amber-600 dark:text-amber-300">
+                <span className="text-warning dark:text-warning font-mono text-xs font-semibold">
                   {t("rowModal.dynamicFieldsTitle", {
                     count: dynamicFieldKeys.length,
                   })}
                 </span>
-                <span className="font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
+                <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px]">
                   {t("rowModal.dynamicFieldsHelp")}
                 </span>
               </div>
@@ -492,11 +494,11 @@ export const RowModal: FC<RowModalProps> = ({
                 return (
                   <div key={key} className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <label className="flex items-center gap-1.5 font-mono text-xs font-medium text-amber-700 dark:text-amber-200/90">
+                      <label className="text-warning dark:text-warning/90 flex items-center gap-1.5 font-mono text-xs font-medium">
                         {key}
                         <Badge
                           variant="outline"
-                          className="h-4 px-1 py-0 font-mono text-[9px] font-normal text-amber-700 dark:text-amber-400"
+                          className="text-warning dark:text-warning h-4 px-1 py-0 font-mono text-[9px] font-normal"
                         >
                           {t("datagrid.dynamicBadge")}
                         </Badge>
@@ -506,7 +508,7 @@ export const RowModal: FC<RowModalProps> = ({
                         variant="ghost"
                         size="icon-xs"
                         onClick={() => handleRemoveDynamicField(key)}
-                        className="h-5 w-5 text-zinc-400 hover:text-rose-600 dark:hover:text-rose-400"
+                        className="text-muted-foreground hover:text-destructive dark:hover:text-destructive h-5 w-5"
                         title={t("rowModal.removeFieldTooltip")}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -534,11 +536,11 @@ export const RowModal: FC<RowModalProps> = ({
           )}
 
           {/* Add Dynamic Field inline */}
-          <div className="border-t border-zinc-200/80 pt-2 dark:border-zinc-800/60">
+          <div className="border-border/80 dark:border-border/60 border-t pt-2">
             {showAddField ? (
-              <div className="space-y-2 rounded border border-zinc-200 bg-zinc-50 p-3 font-mono text-xs dark:border-zinc-800 dark:bg-zinc-900/40">
+              <div className="border-border bg-card dark:border-border dark:bg-card/40 space-y-2 rounded border p-3 font-mono text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  <span className="text-foreground dark:text-foreground font-semibold">
                     {t("rowModal.addFieldTitle")}
                   </span>
                   <Button
@@ -546,7 +548,7 @@ export const RowModal: FC<RowModalProps> = ({
                     variant="ghost"
                     size="icon-xs"
                     onClick={() => setShowAddField(false)}
-                    className="h-5 w-5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
+                    className="text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground h-5 w-5"
                   >
                     <Plus className="h-3 w-3 rotate-45" />
                   </Button>
@@ -594,7 +596,7 @@ export const RowModal: FC<RowModalProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAddField(true)}
-                className="flex h-auto items-center gap-1.5 p-0 font-mono text-xs text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 dark:hover:text-emerald-300"
+                className="text-success hover:text-success dark:text-success dark:hover:text-success flex h-auto items-center gap-1.5 p-0 font-mono text-xs"
               >
                 <Plus className="h-3.5 w-3.5" />
                 {t("rowModal.addDynamicField")}
@@ -603,7 +605,7 @@ export const RowModal: FC<RowModalProps> = ({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-800">
+          <div className="border-border dark:border-border flex items-center justify-between border-t pt-4">
             {isEditing && onDelete ? (
               <Button
                 type="button"
@@ -660,37 +662,37 @@ export const RowModal: FC<RowModalProps> = ({
         open={isConfirmDeleteOpen}
         onOpenChange={setIsConfirmDeleteOpen}
       >
-        <AlertDialogContent className="rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
+        <AlertDialogContent className="border-border bg-background dark:border-border dark:bg-card rounded-xl border shadow-2xl">
           <AlertDialogHeader>
-            <AlertDialogMedia className="rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400">
+            <AlertDialogMedia className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-xl border">
               <Trash2 className="size-5" />
             </AlertDialogMedia>
-            <AlertDialogTitle className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+            <AlertDialogTitle className="text-foreground dark:text-foreground font-mono text-sm font-semibold">
               {t("app.deleteRecordTitle")}
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+            <AlertDialogDescription className="text-muted-foreground dark:text-muted-foreground text-xs leading-relaxed">
               {t("app.deleteRecordConfirm", { table: table.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
           {initialRow && (
-            <div className="my-2 max-h-48 overflow-y-auto rounded-lg border border-zinc-200 bg-zinc-50/70 p-2.5 dark:border-zinc-800 dark:bg-zinc-900/50">
-              <div className="mb-1.5 px-1 font-mono text-[10px] font-semibold tracking-wider text-zinc-400 uppercase dark:text-zinc-500">
+            <div className="border-border bg-card/70 dark:border-border dark:bg-card/50 my-2 max-h-48 overflow-y-auto rounded-lg border p-2.5">
+              <div className="text-muted-foreground dark:text-muted-foreground mb-1.5 px-1 font-mono text-[10px] font-semibold tracking-wider uppercase">
                 {t("row.diff.recordPreview")}
               </div>
               <table className="w-full border-collapse font-mono text-xs">
-                <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
+                <tbody className="divide-border/60 dark:divide-border/60 divide-y">
                   {Object.entries(initialRow)
                     .filter(([k]) => !k.startsWith("_pb_"))
                     .map(([col, val]) => (
                       <tr
                         key={col}
-                        className="transition-colors hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40"
+                        className="hover:bg-muted/60 dark:hover:bg-muted/40 transition-colors"
                       >
-                        <td className="w-1/3 truncate px-1 py-1.5 align-top font-semibold text-zinc-700 dark:text-zinc-300">
+                        <td className="text-foreground dark:text-muted-foreground w-1/3 truncate px-1 py-1.5 align-top font-semibold">
                           {col}
                         </td>
-                        <td className="px-1 py-1.5 align-top break-all text-zinc-600 dark:text-zinc-400">
+                        <td className="text-muted-foreground dark:text-muted-foreground px-1 py-1.5 align-top break-all">
                           {formatDiffValue(val)}
                         </td>
                       </tr>
@@ -700,16 +702,16 @@ export const RowModal: FC<RowModalProps> = ({
             </div>
           )}
 
-          <AlertDialogFooter className="-mx-4 -mb-4 flex items-center justify-end gap-2 border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 pt-3 dark:border-zinc-800/80 dark:bg-zinc-900/30">
+          <AlertDialogFooter className="border-border bg-card/50 dark:border-border/80 dark:bg-card/30 -mx-4 -mb-4 flex items-center justify-end gap-2 border-t px-4 py-3 pt-3">
             <AlertDialogCancel
               onClick={() => setIsConfirmDeleteOpen(false)}
-              className="cursor-pointer border-zinc-200 text-xs text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border text-foreground hover:bg-muted dark:border-border dark:text-muted-foreground dark:hover:bg-muted cursor-pointer text-xs"
             >
               {t("rowModal.cancel")}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
-              className="cursor-pointer bg-rose-600 text-xs font-semibold text-white shadow-xs hover:bg-rose-500 dark:bg-rose-600 dark:hover:bg-rose-500"
+              className="bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive cursor-pointer text-xs font-semibold text-white shadow-xs"
             >
               {t("app.deleteRecordTitle")}
             </AlertDialogAction>
@@ -719,14 +721,14 @@ export const RowModal: FC<RowModalProps> = ({
 
       {/* Before / After Diff Confirmation Modal */}
       <AlertDialog open={isDiffModalOpen} onOpenChange={setIsDiffModalOpen}>
-        <AlertDialogContent className="flex max-h-[85vh] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 shadow-2xl sm:max-w-xl dark:border-zinc-800 dark:bg-zinc-950">
-          <AlertDialogHeader className="border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+        <AlertDialogContent className="border-border bg-background dark:border-border dark:bg-card flex max-h-[85vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
+          <AlertDialogHeader className="border-border bg-card dark:border-border dark:bg-card/50 border-b px-5 py-4">
             <div className="flex items-center justify-between gap-2">
-              <AlertDialogTitle className="flex items-center gap-2 font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+              <AlertDialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 font-mono text-sm font-semibold">
                 <span>{t("row.diff.title")}</span>
                 <Badge
                   variant="outline"
-                  className="border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-mono text-[11px] font-normal text-amber-700 dark:text-amber-400"
+                  className="border-warning/30 bg-warning/10 text-warning dark:text-warning px-2 py-0.5 font-mono text-[11px] font-normal"
                 >
                   {t(
                     pendingDiffs.length === 1
@@ -738,12 +740,12 @@ export const RowModal: FC<RowModalProps> = ({
               </AlertDialogTitle>
               <Badge
                 variant="secondary"
-                className="shrink-0 font-mono text-xs text-emerald-600 dark:text-emerald-400"
+                className="text-success dark:text-success shrink-0 font-mono text-xs"
               >
                 {table.name}
               </Badge>
             </div>
-            <AlertDialogDescription className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <AlertDialogDescription className="text-muted-foreground dark:text-muted-foreground mt-1 text-xs">
               {t("rowModal.descEdit")}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -751,7 +753,7 @@ export const RowModal: FC<RowModalProps> = ({
           <div className="max-h-[50vh] flex-1 overflow-y-auto p-4">
             <table className="w-full border-collapse font-mono text-xs">
               <thead>
-                <tr className="border-b border-zinc-200 text-left text-[10px] tracking-wider text-zinc-400 uppercase dark:border-zinc-800 dark:text-zinc-500">
+                <tr className="border-border text-muted-foreground dark:border-border dark:text-muted-foreground border-b text-left text-[10px] tracking-wider uppercase">
                   <th className="w-1/4 px-2 pb-2 font-semibold">Column</th>
                   <th className="w-[37.5%] px-2 pb-2 font-semibold">
                     {t("row.diff.before")}
@@ -761,20 +763,20 @@ export const RowModal: FC<RowModalProps> = ({
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+              <tbody className="divide-border dark:divide-border/60 divide-y">
                 {pendingDiffs.map((diff) => (
                   <tr
                     key={diff.column}
-                    className="transition-colors hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30"
+                    className="hover:bg-card/50 dark:hover:bg-muted/30 transition-colors"
                   >
-                    <td className="px-2 py-2.5 align-top font-semibold break-all text-zinc-800 dark:text-zinc-200">
+                    <td className="text-foreground dark:text-foreground px-2 py-2.5 align-top font-semibold break-all">
                       {diff.column}
                     </td>
-                    <td className="px-2 py-2.5 align-top break-all text-zinc-500 line-through dark:text-zinc-400">
+                    <td className="text-muted-foreground dark:text-muted-foreground px-2 py-2.5 align-top break-all line-through">
                       {formatDiffValue(diff.before)}
                     </td>
                     <td className="px-2 py-2.5 align-top break-all">
-                      <span className="inline-block rounded border border-amber-500/30 bg-amber-500/15 px-1.5 py-0.5 font-medium text-amber-800 dark:text-amber-300">
+                      <span className="border-warning/30 bg-warning/15 text-warning dark:text-warning inline-block rounded border px-1.5 py-0.5 font-medium">
                         {formatDiffValue(diff.after)}
                       </span>
                     </td>
@@ -784,11 +786,11 @@ export const RowModal: FC<RowModalProps> = ({
             </table>
           </div>
 
-          <AlertDialogFooter className="-mx-4 -mb-4 flex items-center justify-end gap-2 border-t border-zinc-100 bg-zinc-50/50 px-4 py-3 pt-3 dark:border-zinc-800/80 dark:bg-zinc-900/30">
+          <AlertDialogFooter className="border-border bg-card/50 dark:border-border/80 dark:bg-card/30 -mx-4 -mb-4 flex items-center justify-end gap-2 border-t px-4 py-3 pt-3">
             <AlertDialogCancel
               onClick={() => setIsDiffModalOpen(false)}
               disabled={saving}
-              className="cursor-pointer border-zinc-200 text-xs text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border text-foreground hover:bg-muted dark:border-border dark:text-muted-foreground dark:hover:bg-muted cursor-pointer text-xs"
             >
               {t("rowModal.cancel")}
             </AlertDialogCancel>

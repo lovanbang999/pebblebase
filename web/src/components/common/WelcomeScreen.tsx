@@ -15,20 +15,20 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
   const { t } = useTranslation();
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-white dark:bg-zinc-950">
-      <div className="flex h-9 shrink-0 items-center gap-2.5 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/30">
-        <SidebarTrigger className="-ml-1 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
+    <div className="bg-background dark:bg-card flex h-full flex-1 flex-col overflow-hidden">
+      <div className="border-border bg-background dark:border-border dark:bg-card/30 flex h-9 shrink-0 items-center gap-2.5 border-b px-3">
+        <SidebarTrigger className="text-muted-foreground hover:text-foreground dark:hover:text-foreground -ml-1 cursor-pointer" />
         <Separator
           orientation="vertical"
-          className="h-4 self-center bg-zinc-200 dark:bg-zinc-800"
+          className="bg-muted dark:bg-muted h-4 self-center"
         />
-        <span className="font-mono text-xs font-medium text-zinc-500 dark:text-zinc-400">
+        <span className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-medium">
           {t("sidebar.pebblebaseStudio")}
         </span>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center overflow-auto p-5 text-center select-none">
-        <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 p-1.5 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="border-border bg-card dark:border-border dark:bg-card mb-4 flex h-10 w-10 items-center justify-center rounded-md border p-1.5">
           <img
             src="/favicon.svg"
             alt="Pebblebase Logo"
@@ -36,10 +36,10 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
           />
         </div>
 
-        <h1 className="mb-2 font-sans text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+        <h1 className="text-foreground dark:text-foreground mb-2 font-sans text-lg font-semibold tracking-tight">
           {t("app.welcomeTitle")}
         </h1>
-        <p className="mb-5 max-w-md text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+        <p className="text-muted-foreground dark:text-muted-foreground mb-5 max-w-md text-sm leading-relaxed">
           {t("app.welcomeSubtitle")}
         </p>
 
@@ -54,33 +54,33 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
         </Button>
 
         {/* Feature Badges */}
-        <div className="mt-8 grid max-w-xl grid-cols-1 gap-3 border-t border-zinc-200 pt-5 text-left sm:grid-cols-3 dark:border-zinc-900">
-          <div className="rounded border border-zinc-200/80 bg-zinc-50 p-3 dark:border-zinc-900 dark:bg-zinc-900/40">
-            <ShieldCheck className="mb-1.5 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">
+        <div className="border-border dark:border-border mt-8 grid max-w-xl grid-cols-1 gap-3 border-t pt-5 text-left sm:grid-cols-3">
+          <div className="border-border/80 bg-card dark:border-border dark:bg-card/40 rounded border p-3">
+            <ShieldCheck className="text-success dark:text-success mb-1.5 h-4 w-4" />
+            <h4 className="text-foreground dark:text-foreground text-xs font-semibold">
               {t("app.featureAesTitle")}
             </h4>
-            <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+            <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px]">
               {t("app.featureAesDesc")}
             </p>
           </div>
 
-          <div className="rounded border border-zinc-200/80 bg-zinc-50 p-3 dark:border-zinc-900 dark:bg-zinc-900/40">
+          <div className="border-border/80 bg-card dark:border-border dark:bg-card/40 rounded border p-3">
             <Terminal className="mb-1.5 h-4 w-4 text-sky-600 dark:text-sky-400" />
-            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">
+            <h4 className="text-foreground dark:text-foreground text-xs font-semibold">
               {t("app.featureDatagripTitle")}
             </h4>
-            <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+            <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px]">
               {t("app.featureDatagripDesc")}
             </p>
           </div>
 
-          <div className="rounded border border-zinc-200/80 bg-zinc-50 p-3 dark:border-zinc-900 dark:bg-zinc-900/40">
-            <Zap className="mb-1.5 h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <h4 className="text-xs font-semibold text-zinc-900 dark:text-zinc-200">
+          <div className="border-border/80 bg-card dark:border-border dark:bg-card/40 rounded border p-3">
+            <Zap className="text-warning dark:text-warning mb-1.5 h-4 w-4" />
+            <h4 className="text-foreground dark:text-foreground text-xs font-semibold">
               {t("app.featureVirtualTitle")}
             </h4>
-            <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+            <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px]">
               {t("app.featureVirtualDesc")}
             </p>
           </div>

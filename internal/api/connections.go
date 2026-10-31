@@ -17,6 +17,7 @@ type connectionResponse struct {
 	ID           string    `json:"id"`
 	Name         string    `json:"name"`
 	Type         string    `json:"type"`
+	Mode         string    `json:"mode"`
 	Host         string    `json:"host"`
 	Port         string    `json:"port"`
 	User         string    `json:"user"`
@@ -37,6 +38,7 @@ func toConnectionResponse(r storage.Record) connectionResponse {
 		ID:           r.ID,
 		Name:         r.Name,
 		Type:         r.Type,
+		Mode:         r.Mode,
 		Host:         r.Host,
 		Port:         r.Port,
 		User:         r.User,
@@ -51,21 +53,23 @@ func toConnectionResponse(r storage.Record) connectionResponse {
 
 // createConnectionRequest is the JSON body for POST /api/connections.
 type createConnectionRequest struct {
-	Name         string `json:"name"`
-	Type         string `json:"type"` // postgres | mysql | mongodb | sqlite
-	Mode         string `json:"mode"` // form | url
-	Host         string `json:"host"`
-	Port         string `json:"port"`
-	User         string `json:"user"`
-	Password     string `json:"password"`
-	DBName       string `json:"db_name"`
-	Filepath     string `json:"filepath,omitempty"`
-	ReadOnly     bool   `json:"read_only"`
-	Environment  string `json:"environment,omitempty"`
-	RawURL       string `json:"raw_url"`
-	SavePassword bool   `json:"save_password"`
-	SSLMode      string `json:"ssl_mode,omitempty"`
-	WindowsAuth  bool   `json:"windows_auth,omitempty"`
+	Name                string `json:"name"`
+	Type                string `json:"type"` // postgres | mysql | mongodb | sqlite
+	Mode                string `json:"mode"` // form | url
+	Host                string `json:"host"`
+	Port                string `json:"port"`
+	User                string `json:"user"`
+	Password            string `json:"password"`
+	DBName              string `json:"db_name"`
+	Filepath            string `json:"filepath,omitempty"`
+	ReadOnly            bool   `json:"read_only"`
+	Environment         string `json:"environment,omitempty"`
+	RawURL              string `json:"raw_url"`
+	SavePassword        bool   `json:"save_password"`
+	SSLMode             string `json:"ssl_mode,omitempty"`
+	WindowsAuth         bool   `json:"windows_auth,omitempty"`
+	ConnectionID        string `json:"connection_id,omitempty"`
+	PreserveExistingDSN bool   `json:"preserve_existing_dsn,omitempty"`
 }
 
 // createConnection handles POST /api/connections.
@@ -134,6 +138,7 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 		req.Name, req.Type, req.Host, req.Port, req.User, req.DBName, dsn, req.SavePassword,
 		storage.SaveParams{
 			Environment: req.Environment,
+			Mode:        req.Mode,
 			Filepath:    req.Filepath,
 			ReadOnly:    req.ReadOnly,
 		},
@@ -150,6 +155,112 @@ func (s *Server) createConnection(w http.ResponseWriter, r *http.Request) {
 	s.logAudit(r, audit.ActionConnectionCreate, rec.Name, rec.Type)
 
 	writeJSON(w, http.StatusCreated, toConnectionResponse(rec))
+}
+
+// updateConnection validates and replaces a profile without changing its ID.
+// A blank password preserves the encrypted credential when the profile had
+// SavePassword enabled. The new adapter is opened before the record is changed.
+func (s *Server) updateConnection(w http.ResponseWriter, r *http.Request) {
+	if s.viewerBlocked(w, r) {
+		return
+	}
+	id := r.PathValue("id")
+	previous, err := s.store.Get(id)
+	if err != nil {
+		writeError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	var req createConnectionRequest
+	if err := decodeBody(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	if req.Type != previous.Type {
+		writeError(w, http.StatusBadRequest, "database type cannot be changed for an existing connection")
+		return
+	}
+	if req.Type == "sqlite" {
+		fp := req.Filepath
+		if fp == "" {
+			fp = req.DBName
+		}
+		if req.Mode == "url" && req.RawURL != "" {
+			fp = req.RawURL
+		}
+		if err := validateSQLitePath(fp, s.store.DataDir()); err != nil {
+			writeError(w, http.StatusForbidden, err.Error())
+			return
+		}
+		req.SavePassword = true
+	}
+	if req.Password == "" && previous.SavePassword {
+		oldDSN, err := s.store.DSN(id)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "read saved connection credential: "+err.Error())
+			return
+		}
+		if req.Mode == "url" && strings.TrimSpace(req.RawURL) == "" && (req.PreserveExistingDSN || previous.Mode == "url") {
+			// URL-mode secrets and options cannot be reconstructed from the public profile.
+			if req.Type != previous.Type {
+				writeError(w, http.StatusBadRequest, "enter a replacement connection URL when changing the database type")
+				return
+			}
+			oldAdapter, openErr := openAdapter(r.Context(), previous.Type, oldDSN)
+			if openErr != nil {
+				writeError(w, http.StatusBadGateway, "cannot connect with the saved connection URL: "+openErr.Error())
+				return
+			}
+			updated, saveErr := s.store.Update(id, storage.Record{
+				Name: req.Name, Type: previous.Type, Mode: "url", Host: previous.Host, Port: previous.Port,
+				User: previous.User, DBName: previous.DBName, Filepath: previous.Filepath,
+				ReadOnly: req.ReadOnly, SavePassword: req.SavePassword, Environment: req.Environment,
+			}, oldDSN)
+			if saveErr != nil {
+				oldAdapter.Close()
+				writeError(w, http.StatusInternalServerError, "update connection: "+saveErr.Error())
+				return
+			}
+			s.cache.set(id, oldAdapter)
+			s.logAudit(r, audit.ActionConnectionUpdate, updated.Name, updated.Type)
+			writeJSON(w, http.StatusOK, toConnectionResponse(updated))
+			return
+		}
+		password, passErr := connection.PasswordFromDSN(previous.Type, oldDSN)
+		if passErr != nil {
+			writeError(w, http.StatusBadRequest, "cannot preserve the saved password for this connection type; enter it again")
+			return
+		}
+		req.Password = password
+	}
+	input := connection.ConnectionInput{
+		Type: req.Type, Mode: req.Mode, Host: req.Host, Port: req.Port,
+		User: req.User, Password: req.Password, DBName: req.DBName,
+		Filepath: req.Filepath, RawURL: req.RawURL, SavePassword: req.SavePassword,
+		ReadOnly: req.ReadOnly, SSLMode: req.SSLMode, WindowsAuth: req.WindowsAuth,
+	}
+	dsn, err := input.ToDSN()
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	a, err := openAdapter(r.Context(), req.Type, dsn)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, "cannot connect to database: "+err.Error())
+		return
+	}
+	updated, err := s.store.Update(id, storage.Record{
+		Name: req.Name, Type: req.Type, Mode: req.Mode, Host: req.Host, Port: req.Port, User: req.User,
+		DBName: req.DBName, Filepath: req.Filepath, ReadOnly: req.ReadOnly,
+		SavePassword: req.SavePassword, Environment: req.Environment,
+	}, dsn)
+	if err != nil {
+		a.Close()
+		writeError(w, http.StatusInternalServerError, "update connection: "+err.Error())
+		return
+	}
+	s.cache.set(id, a)
+	s.logAudit(r, audit.ActionConnectionUpdate, updated.Name, updated.Type)
+	writeJSON(w, http.StatusOK, toConnectionResponse(updated))
 }
 
 // listConnections handles GET /api/connections.
@@ -226,6 +337,31 @@ func (s *Server) testConnection(w http.ResponseWriter, r *http.Request) {
 		if err := validateSQLitePath(fp, dataDir); err != nil {
 			writeError(w, http.StatusForbidden, err.Error())
 			return
+		}
+	}
+	if req.ConnectionID != "" && req.Password == "" {
+		previous, getErr := s.store.Get(req.ConnectionID)
+		if getErr == nil && previous.SavePassword {
+			oldDSN, dsnErr := s.store.DSN(req.ConnectionID)
+			if dsnErr == nil && req.Mode == "url" && strings.TrimSpace(req.RawURL) == "" && (req.PreserveExistingDSN || previous.Mode == "url") {
+				a, openErr := openAdapter(r.Context(), previous.Type, oldDSN)
+				if openErr != nil {
+					writeError(w, http.StatusBadGateway, "cannot connect with the saved connection URL: "+openErr.Error())
+					return
+				}
+				defer a.Close()
+				if pingErr := a.Ping(r.Context()); pingErr != nil {
+					writeError(w, http.StatusBadGateway, "ping failed: "+pingErr.Error())
+					return
+				}
+				writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+				return
+			}
+			if dsnErr == nil && (req.Mode != "url" || strings.TrimSpace(req.RawURL) == "") {
+				if password, passErr := connection.PasswordFromDSN(previous.Type, oldDSN); passErr == nil {
+					req.Password = password
+				}
+			}
 		}
 	}
 

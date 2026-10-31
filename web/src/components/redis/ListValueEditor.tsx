@@ -99,7 +99,7 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
     <div className="flex h-full flex-col space-y-3">
       {/* Header push input */}
       {!isReadOnly && (
-        <div className="flex items-center gap-2 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+        <div className="border-border dark:border-border flex items-center gap-2 border-b pb-2">
           <Input
             placeholder={t("redis.listEditor.newElementPlaceholder")}
             value={pushValue}
@@ -110,7 +110,7 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
             size="sm"
             onClick={() => handlePush(true)}
             disabled={loading || !pushValue.trim()}
-            className="h-7 bg-purple-600 text-[11px] text-white hover:bg-purple-700"
+            className="bg-primary hover:bg-primary h-7 text-[11px] text-white"
             title={t("redis.listEditor.pushFrontTooltip")}
           >
             <ArrowLeftToLine className="mr-1 h-3 w-3" />
@@ -120,7 +120,7 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
             size="sm"
             onClick={() => handlePush(false)}
             disabled={loading || !pushValue.trim()}
-            className="h-7 bg-purple-600 text-[11px] text-white hover:bg-purple-700"
+            className="bg-primary hover:bg-primary h-7 text-[11px] text-white"
             title={t("redis.listEditor.pushBackTooltip")}
           >
             <ArrowRightToLine className="mr-1 h-3 w-3" />
@@ -130,12 +130,12 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
       )}
 
       {error && (
-        <div className="rounded-md border border-rose-500/20 bg-rose-500/10 p-2 text-xs text-rose-600 dark:text-rose-400">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
           {error}
         </div>
       )}
 
-      <div className="flex items-center justify-between text-xs text-zinc-500">
+      <div className="text-muted-foreground flex items-center justify-between text-xs">
         <span className="font-mono">
           {t("redis.listEditor.itemsCount", { count: items.length })}
         </span>
@@ -145,22 +145,22 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
       </div>
 
       {/* List items */}
-      <div className="flex-1 overflow-auto rounded-md border border-zinc-200 font-mono text-xs dark:border-zinc-800">
-        <div className="divide-y divide-zinc-200 dark:divide-zinc-800">
+      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border font-mono text-xs">
+        <div className="divide-border dark:divide-border divide-y">
           {items.length === 0 ? (
-            <div className="p-6 text-center text-zinc-400">
+            <div className="text-muted-foreground p-6 text-center">
               {t("redis.listEditor.empty")}
             </div>
           ) : (
             items.map((item, idx) => (
               <div
                 key={`${idx}-${item}`}
-                className="group flex items-center justify-between px-3 py-2 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                className="group hover:bg-card dark:hover:bg-muted flex items-center justify-between px-3 py-2"
               >
                 <div className="flex flex-1 items-center gap-2">
                   <Badge
                     variant="secondary"
-                    className="h-5 px-1.5 font-mono text-[10px] text-zinc-400"
+                    className="text-muted-foreground h-5 px-1.5 font-mono text-[10px]"
                   >
                     #{idx}
                   </Badge>
@@ -181,7 +181,7 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
                         size="sm"
                         variant="ghost"
                         onClick={() => handleSaveEdit(idx)}
-                        className="h-6 px-1.5 text-emerald-600"
+                        className="text-success h-6 px-1.5"
                       >
                         <Check className="h-3 w-3" />
                       </Button>
@@ -189,7 +189,7 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
                         size="sm"
                         variant="ghost"
                         onClick={() => setEditingIdx(null)}
-                        className="h-6 px-1.5 text-zinc-400"
+                        className="text-muted-foreground h-6 px-1.5"
                       >
                         <X className="h-3 w-3" />
                       </Button>
@@ -202,7 +202,7 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
                           setEditVal(item);
                         }
                       }}
-                      className="flex-1 truncate text-zinc-700 dark:text-zinc-200"
+                      className="text-foreground dark:text-foreground flex-1 truncate"
                       title={item}
                     >
                       {item}
@@ -219,7 +219,7 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
                         setEditingIdx(idx);
                         setEditVal(item);
                       }}
-                      className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                      className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-6 w-6 p-0"
                     >
                       <Edit2 className="h-3 w-3" />
                     </Button>
@@ -227,7 +227,7 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
                       size="sm"
                       variant="ghost"
                       onClick={() => handleDeleteItem(item)}
-                      className="h-6 w-6 p-0 text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/30 h-6 w-6 p-0"
                     >
                       <Trash2 className="h-3 w-3" />
                     </Button>

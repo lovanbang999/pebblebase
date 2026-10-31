@@ -9,6 +9,12 @@ import type {
   WorkspaceToolWindows,
 } from "../lib/types";
 import { STORAGE_KEYS, DEFAULT_PAGE_SIZE } from "@/constants";
+import {
+  SIDEBAR_DEFAULT_WIDTH,
+  SIDEBAR_MAX_WIDTH,
+  SIDEBAR_MIN_WIDTH,
+} from "@/constants/workspaceLayout";
+import { useTranslation } from "react-i18next";
 
 const DEFAULT_TOOL_WINDOWS: WorkspaceToolWindows = {
   database: true,
@@ -25,6 +31,7 @@ function emptyWorkspace(): PersistedWorkspace {
     selectedExplorerNode: null,
     expandedNodeIds: [],
     toolWindows: DEFAULT_TOOL_WINDOWS,
+    sidebarWidth: SIDEBAR_DEFAULT_WIDTH,
     initialized: false,
   };
 }
@@ -41,7 +48,9 @@ function readWorkspace(): { workspace: PersistedWorkspace; hydrated: boolean } {
     ) {
       return { workspace: emptyWorkspace(), hydrated: false };
     }
-    const tabs = parsed.tabs.filter(isStudioTab);
+    const tabs = parsed.tabs
+      .filter(isStudioTab)
+      .map((tab) => ({ ...tab, isDirty: false }));
     const activeTabId =
       typeof parsed.activeTabId === "string" &&
       tabs.some((tab) => tab.id === parsed.activeTabId)
@@ -62,6 +71,13 @@ function readWorkspace(): { workspace: PersistedWorkspace; hydrated: boolean } {
           ...DEFAULT_TOOL_WINDOWS,
           ...(parsed.toolWindows || {}),
         },
+        sidebarWidth:
+          typeof parsed.sidebarWidth === "number"
+            ? Math.min(
+                SIDEBAR_MAX_WIDTH,
+                Math.max(SIDEBAR_MIN_WIDTH, parsed.sidebarWidth),
+              )
+            : SIDEBAR_DEFAULT_WIDTH,
         initialized: Boolean(parsed.initialized),
       },
       hydrated: true,
@@ -320,6 +336,7 @@ function sameWorkspace(a: PersistedWorkspace, b: PersistedWorkspace): boolean {
 }
 
 export function useTabs() {
+  const { t } = useTranslation();
   const initialRef = useRef<ReturnType<typeof readWorkspace> | null>(null);
   if (!initialRef.current) initialRef.current = readWorkspace();
   const [workspace, setWorkspace] = useState(initialRef.current.workspace);
@@ -427,8 +444,13 @@ export function useTabs() {
           activeTabId,
           selectedExplorerNode,
           expandedNodeIds: current.expandedNodeIds.filter((key) => {
-            const match = key.match(/^connection:(.+)$/);
-            return !match || byId.has(decodeURIComponent(match[1]));
+            const match = key.match(/^connection:([^:]+)/);
+            if (!match) return true;
+            try {
+              return byId.has(decodeURIComponent(match[1]));
+            } catch {
+              return false;
+            }
           }),
         };
         return next;
@@ -671,6 +693,19 @@ export function useTabs() {
 
   const closeTab = useCallback(
     (tabId: string) => {
+      const closingTab = workspaceRef.current.tabs.find(
+        (tab) => tab.id === tabId,
+      );
+      if (
+        closingTab?.isDirty &&
+        !window.confirm(
+          t(
+            "tabs.confirmCloseDirty",
+            "This tab has unsaved staged changes. Close it and discard them?",
+          ),
+        )
+      )
+        return;
       commit((current) => {
         const index = current.tabs.findIndex((tab) => tab.id === tabId);
         if (index < 0) return current;
@@ -692,11 +727,53 @@ export function useTabs() {
         return { ...current, tabs, activeTabId };
       });
     },
-    [commit],
+    [commit, t],
   );
+
+  const closeAllTabs = useCallback(() => {
+    if (
+      workspaceRef.current.tabs.some((tab) => tab.isDirty) &&
+      !window.confirm(
+        t(
+          "tabs.confirmCloseAllDirty",
+          "Tabs have unsaved staged changes. Close all tabs and discard them?",
+        ),
+      )
+    )
+      return;
+    for (const tab of workspaceRef.current.tabs) {
+      if (tab.type === "query") {
+        try {
+          sessionStorage.removeItem(
+            STORAGE_KEYS.queryWorkspaceTabs(tab.connectionId, tab.id),
+          );
+        } catch {
+          /* Ignore unavailable session storage. */
+        }
+      }
+    }
+    commit((current) => ({
+      ...current,
+      tabs: [],
+      activeTabId: null,
+      initialized: true,
+    }));
+  }, [commit, t]);
 
   const closeOtherTabs = useCallback(
     (tabId: string) => {
+      if (
+        workspaceRef.current.tabs.some(
+          (tab) => tab.id !== tabId && tab.isDirty,
+        ) &&
+        !window.confirm(
+          t(
+            "tabs.confirmCloseOthersDirty",
+            "Other tabs have unsaved staged changes. Close them and discard those changes?",
+          ),
+        )
+      )
+        return;
       commit((current) => {
         const target = current.tabs.find((tab) => tab.id === tabId);
         if (!target) return current;
@@ -714,11 +791,26 @@ export function useTabs() {
         return { ...current, tabs: [target], activeTabId: tabId };
       });
     },
-    [commit],
+    [commit, t],
   );
 
   const closeTabsToRight = useCallback(
     (tabId: string) => {
+      const currentIndex = workspaceRef.current.tabs.findIndex(
+        (tab) => tab.id === tabId,
+      );
+      if (
+        workspaceRef.current.tabs
+          .slice(currentIndex + 1)
+          .some((tab) => tab.isDirty) &&
+        !window.confirm(
+          t(
+            "tabs.confirmCloseRightDirty",
+            "Tabs to the right have unsaved staged changes. Close them and discard those changes?",
+          ),
+        )
+      )
+        return;
       commit((current) => {
         const index = current.tabs.findIndex((tab) => tab.id === tabId);
         if (index < 0) return current;
@@ -743,7 +835,7 @@ export function useTabs() {
         };
       });
     },
-    [commit],
+    [commit, t],
   );
 
   const duplicateTab = useCallback(
@@ -755,6 +847,7 @@ export function useTabs() {
         const objectId = `${original.objectId || objectIdentity(original)}:copy:${randomObjectId()}`;
         const copy: StudioTab = {
           ...original,
+          isDirty: false,
           id: stableTabId(original.connectionId, original.type, objectId),
           objectId,
           title: `${original.title} (Copy)`,
@@ -784,6 +877,18 @@ export function useTabs() {
                 state: { ...defaultTableState(), ...tab.state, ...partial },
               }
             : tab,
+        ),
+      }));
+    },
+    [commit],
+  );
+
+  const setTabDirty = useCallback(
+    (tabId: string, isDirty: boolean) => {
+      commit((current) => ({
+        ...current,
+        tabs: current.tabs.map((tab) =>
+          tab.id === tabId ? { ...tab, isDirty } : tab,
         ),
       }));
     },
@@ -820,7 +925,7 @@ export function useTabs() {
   );
 
   const closeConnectionTabs = useCallback(
-    (connectionId: string) => {
+    (connectionId: string, skipDirtyPrompt = false) => {
       const current = workspaceRef.current;
       const removed = current.tabs.filter(
         (tab) =>
@@ -828,6 +933,17 @@ export function useTabs() {
           tab.state?.diffSourceConnectionId === connectionId ||
           tab.state?.diffTargetConnectionId === connectionId,
       );
+      if (
+        !skipDirtyPrompt &&
+        removed.some((tab) => tab.isDirty) &&
+        !window.confirm(
+          t(
+            "tabs.confirmCloseConnectionDirty",
+            "This connection has tabs with unsaved staged changes. Close them and discard those changes?",
+          ),
+        )
+      )
+        return 0;
       for (const tab of removed) {
         if (tab.type === "query") {
           try {
@@ -860,7 +976,7 @@ export function useTabs() {
       });
       return removed.length;
     },
-    [commit],
+    [commit, t],
   );
 
   const setExpandedNodeIds = useCallback(
@@ -883,6 +999,19 @@ export function useTabs() {
     [commit],
   );
 
+  const setSidebarWidth = useCallback(
+    (sidebarWidth: number) => {
+      commit((current) => ({
+        ...current,
+        sidebarWidth: Math.min(
+          SIDEBAR_MAX_WIDTH,
+          Math.max(SIDEBAR_MIN_WIDTH, sidebarWidth),
+        ),
+      }));
+    },
+    [commit],
+  );
+
   const activeTab = useMemo(
     () =>
       workspace.tabs.find((tab) => tab.id === workspace.activeTabId) || null,
@@ -896,6 +1025,7 @@ export function useTabs() {
     selectedExplorerNode: workspace.selectedExplorerNode,
     expandedNodeIds: workspace.expandedNodeIds,
     toolWindows: workspace.toolWindows,
+    sidebarWidth: workspace.sidebarWidth,
     setActiveTabId,
     selectExplorerConnection,
     selectExplorerTable,
@@ -906,14 +1036,17 @@ export function useTabs() {
     openDiffTab,
     initializeWorkspace,
     closeTab,
+    closeAllTabs,
     closeOtherTabs,
     closeTabsToRight,
     closeConnectionTabs,
     duplicateTab,
     reorderTabs,
     updateTabState,
+    setTabDirty,
     updateActiveTabState,
     setExpandedNodeIds,
     setToolWindows,
+    setSidebarWidth,
   };
 }

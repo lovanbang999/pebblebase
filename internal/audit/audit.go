@@ -16,11 +16,12 @@ import (
 type Action string
 
 const (
-	ActionLogin          Action = "login"
-	ActionQueryExecute   Action = "query_execute"
-	ActionRowMutate      Action = "row_mutate"
-	ActionSchemaChange   Action = "schema_change"
+	ActionLogin            Action = "login"
+	ActionQueryExecute     Action = "query_execute"
+	ActionRowMutate        Action = "row_mutate"
+	ActionSchemaChange     Action = "schema_change"
 	ActionConnectionCreate Action = "connection_create"
+	ActionConnectionUpdate Action = "connection_update"
 )
 
 // Entry is a single audit log record.

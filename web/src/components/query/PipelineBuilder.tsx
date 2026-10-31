@@ -691,32 +691,32 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
   const getStageBadgeStyle = (type: StageType) => {
     switch (type) {
       case "$match":
-        return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30";
+        return "bg-warning/10 text-warning dark:text-warning border-warning/30";
       case "$group":
-        return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-primary/30";
+        return "bg-success/10 text-success dark:text-success border-primary/30";
       case "$sort":
         return "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30";
       case "$limit":
-        return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30";
+        return "bg-primary/10 text-primary dark:text-primary border-primary/30";
       case "$project":
-        return "bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/30";
+        return "bg-primary/10 text-primary dark:text-primary border-primary/30";
       case "$lookup":
-        return "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30";
+        return "bg-destructive/10 text-destructive dark:text-destructive border-destructive/30";
       case "$unwind":
         return "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30";
     }
   };
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-zinc-50 font-sans dark:bg-zinc-950">
+    <div className="bg-card dark:bg-background flex h-full flex-1 flex-col overflow-hidden font-sans">
       {/* -------------------------------------------------------------------- */}
       {/* Top Action Bar */}
       {/* -------------------------------------------------------------------- */}
-      <div className="flex h-12 shrink-0 items-center justify-between gap-3 border-b border-zinc-200 bg-white px-4 dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="border-border bg-background dark:border-border dark:bg-card/50 flex h-12 shrink-0 items-center justify-between gap-3 border-b px-4">
         <div className="flex min-w-0 items-center gap-3">
           {/* Collection Selector */}
           <div className="flex items-center gap-1.5 font-mono text-xs">
-            <span className="font-medium text-zinc-500">
+            <span className="text-muted-foreground font-medium">
               {t("pipeline.collection")}:
             </span>
             <div className="relative">
@@ -725,7 +725,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                 value={collection}
                 onChange={(e) => setCollection(e.target.value)}
                 placeholder={t("pipeline.select_collection")}
-                className="focus:ring-primary h-7 w-44 rounded-md border border-zinc-200 bg-zinc-100 px-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                className="focus:ring-primary border-border bg-muted text-foreground dark:border-border dark:bg-muted dark:text-foreground h-7 w-44 rounded-md border px-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
               />
               <datalist id="mongo-collections-list">
                 {tables.map((tbl) => (
@@ -735,7 +735,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
             </div>
           </div>
 
-          <span className="text-zinc-300 dark:text-zinc-700">|</span>
+          <span className="text-muted-foreground dark:text-foreground">|</span>
 
           {/* Add Stage Dropdown */}
           <DropdownMenu>
@@ -745,7 +745,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="border-primary/40 hover:bg-primary/10 h-7 cursor-pointer gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400"
+                  className="border-primary/40 hover:bg-primary/10 text-success dark:text-success h-7 cursor-pointer gap-1.5 text-xs font-semibold"
                 >
                   <Plus className="size-3.5" />
                   <span>{t("pipeline.stage.add")}</span>
@@ -761,14 +761,14 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                 onClick={() => handleAddStage("$match")}
                 className="cursor-pointer gap-2"
               >
-                <Filter className="size-3.5 text-amber-500" />
+                <Filter className="text-warning size-3.5" />
                 <span>{t("pipeline.stage.match")}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => handleAddStage("$group")}
                 className="cursor-pointer gap-2"
               >
-                <Group className="size-3.5 text-emerald-500" />
+                <Group className="text-success size-3.5" />
                 <span>{t("pipeline.stage.group")}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -782,21 +782,21 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                 onClick={() => handleAddStage("$limit")}
                 className="cursor-pointer gap-2"
               >
-                <Hash className="size-3.5 text-purple-500" />
+                <Hash className="text-primary size-3.5" />
                 <span>{t("pipeline.stage.limit")}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => handleAddStage("$project")}
                 className="cursor-pointer gap-2"
               >
-                <EyeIcon className="size-3.5 text-indigo-500" />
+                <EyeIcon className="text-primary size-3.5" />
                 <span>{t("pipeline.stage.project")}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => handleAddStage("$lookup")}
                 className="cursor-pointer gap-2"
               >
-                <GitMerge className="size-3.5 text-rose-500" />
+                <GitMerge className="text-destructive size-3.5" />
                 <span>{t("pipeline.stage.lookup")}</span>
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -815,10 +815,10 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
             variant="ghost"
             size="sm"
             onClick={handleLoadCheckpointSample}
-            className="h-7 gap-1.5 font-mono text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-7 gap-1.5 font-mono text-xs"
             title={t("pipeline.load_sample")}
           >
-            <Sparkles className="size-3.5 text-amber-500" />
+            <Sparkles className="text-warning size-3.5" />
             <span className="hidden sm:inline">
               {t("pipeline.load_sample")}
             </span>
@@ -834,7 +834,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
               variant="ghost"
               size="sm"
               onClick={handleClearAll}
-              className="h-7 font-mono text-xs text-zinc-400 hover:text-rose-500"
+              className="text-muted-foreground hover:text-destructive h-7 font-mono text-xs"
             >
               <Trash2 className="mr-1 size-3" />
               <span>{t("pipeline.clear")}</span>
@@ -847,9 +847,9 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
             variant="outline"
             size="sm"
             onClick={() => setIsPreviewOpen(true)}
-            className="h-7 cursor-pointer gap-1.5 border-zinc-200 font-mono text-xs text-zinc-700 dark:border-zinc-800 dark:text-zinc-300"
+            className="border-border text-foreground dark:border-border dark:text-foreground h-7 cursor-pointer gap-1.5 font-mono text-xs"
           >
-            <Eye className="size-3.5 text-indigo-500" />
+            <Eye className="text-primary size-3.5" />
             <span>{t("pipeline.preview_json")}</span>
           </Button>
 
@@ -881,11 +881,11 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
       {/* -------------------------------------------------------------------- */}
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Left / Top: Stage Cards List */}
-        <div className="flex flex-1 flex-col space-y-3 overflow-y-auto border-r border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="border-border dark:border-border flex flex-1 flex-col space-y-3 overflow-y-auto border-r p-4">
           {stages.length === 0 ? (
-            <div className="flex flex-1 flex-col items-center justify-center p-8 text-center text-zinc-400">
-              <Layers className="mb-3 size-10 text-emerald-500 opacity-30" />
-              <p className="max-w-md text-sm font-medium text-zinc-600 dark:text-zinc-300">
+            <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center p-8 text-center">
+              <Layers className="text-success mb-3 size-10 opacity-30" />
+              <p className="text-muted-foreground dark:text-foreground max-w-md text-sm font-medium">
                 {t("pipeline.empty_stages")}
               </p>
               <Button
@@ -911,27 +911,27 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, index)}
                   className={cn(
-                    "group relative rounded-lg border bg-white shadow-2xs transition-all dark:bg-zinc-900",
+                    "group bg-background dark:bg-card relative rounded-lg border shadow-2xs transition-all",
                     stageItem.enabled
-                      ? "border-zinc-200 dark:border-zinc-800"
-                      : "border-zinc-200/50 bg-zinc-50 opacity-60 dark:border-zinc-800/50 dark:bg-zinc-900/40",
+                      ? "border-border"
+                      : "border-border/50 bg-card dark:border-border/50 dark:bg-card/40 opacity-60",
                     draggedIndex === index && "ring-primary opacity-40 ring-2",
                   )}
                 >
                   {/* Card Header */}
-                  <div className="flex items-center justify-between rounded-t-lg border-b border-zinc-100 bg-zinc-50/50 px-3 py-2 dark:border-zinc-800/80 dark:bg-zinc-900/50">
+                  <div className="border-border bg-card/50 dark:border-border/80 dark:bg-card/50 flex items-center justify-between rounded-t-lg border-b px-3 py-2">
                     <div className="flex items-center gap-2">
                       {/* Drag Handle */}
                       <button
                         type="button"
-                        className="cursor-grab rounded p-0.5 text-zinc-400 hover:text-zinc-700 active:cursor-grabbing dark:hover:text-zinc-200"
+                        className="text-muted-foreground hover:text-foreground dark:hover:text-foreground cursor-grab rounded p-0.5 active:cursor-grabbing"
                         title={t("pipeline.stage.drag_handle")}
                       >
                         <GripVertical className="size-4" />
                       </button>
 
                       {/* Stage Index & Badge */}
-                      <span className="font-mono text-[11px] font-semibold text-zinc-400">
+                      <span className="text-muted-foreground font-mono text-[11px] font-semibold">
                         #{index + 1}
                       </span>
                       <Badge
@@ -946,7 +946,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
 
                       {/* Active Status Badge */}
                       {!stageItem.enabled && (
-                        <span className="rounded bg-zinc-200/60 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400 dark:bg-zinc-800">
+                        <span className="bg-muted/60 text-muted-foreground dark:bg-muted rounded px-1.5 py-0.5 font-mono text-[10px]">
                           {t("pipeline.stage.disabled")}
                         </span>
                       )}
@@ -995,7 +995,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                               );
                             }
                           }}
-                          className="flex h-6 cursor-pointer items-center gap-1 rounded border border-zinc-200 px-1.5 font-mono text-[10px] text-zinc-500 hover:text-zinc-900 dark:border-zinc-800 dark:hover:text-zinc-100"
+                          className="border-border text-muted-foreground hover:text-foreground dark:border-border dark:hover:text-foreground flex h-6 cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[10px]"
                           title={
                             stageItem.stage.config.mode === "visual"
                               ? t("pipeline.raw_mode")
@@ -1018,8 +1018,8 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                         className={cn(
                           "cursor-pointer rounded p-1 transition-colors",
                           stageItem.enabled
-                            ? "text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30"
-                            : "text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200",
+                            ? "text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/30"
+                            : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
                         )}
                         title={t("pipeline.stage.toggle_enable")}
                       >
@@ -1031,7 +1031,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                         type="button"
                         disabled={isFirst}
                         onClick={() => handleMoveStage(index, "up")}
-                        className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-700 disabled:opacity-20 dark:hover:text-zinc-200"
+                        className="text-muted-foreground hover:text-foreground dark:hover:text-foreground cursor-pointer p-1 disabled:opacity-20"
                         title={t("pipeline.stage.move_up")}
                       >
                         <ArrowUp className="size-3.5" />
@@ -1042,7 +1042,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                         type="button"
                         disabled={isLast}
                         onClick={() => handleMoveStage(index, "down")}
-                        className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-700 disabled:opacity-20 dark:hover:text-zinc-200"
+                        className="text-muted-foreground hover:text-foreground dark:hover:text-foreground cursor-pointer p-1 disabled:opacity-20"
                         title={t("pipeline.stage.move_down")}
                       >
                         <ArrowDown className="size-3.5" />
@@ -1052,7 +1052,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                       <button
                         type="button"
                         onClick={() => handleDuplicateStage(index)}
-                        className="cursor-pointer p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                        className="text-muted-foreground hover:text-foreground dark:hover:text-foreground cursor-pointer p-1"
                         title={t("pipeline.stage.duplicate")}
                       >
                         <Copy className="size-3.5" />
@@ -1062,7 +1062,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                       <button
                         type="button"
                         onClick={() => handleDeleteStage(index)}
-                        className="cursor-pointer p-1 text-zinc-400 hover:text-rose-500"
+                        className="text-muted-foreground hover:text-destructive cursor-pointer p-1"
                         title={t("pipeline.stage.delete")}
                       >
                         <Trash2 className="size-3.5" />
@@ -1216,16 +1216,16 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
         </div>
 
         {/* Right / Bottom: Live Results Panel */}
-        <div className="flex w-full flex-col overflow-hidden border-t border-zinc-200 bg-white md:w-1/2 md:border-t-0 md:border-l dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="border-border bg-background dark:border-border dark:bg-background flex w-full flex-col overflow-hidden border-t md:w-1/2 md:border-t-0 md:border-l">
           {/* Results Header */}
-          <div className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-zinc-200 bg-zinc-50/70 px-3 dark:border-zinc-800 dark:bg-zinc-900/60">
+          <div className="border-border bg-card/70 dark:border-border dark:bg-card/60 flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+              <span className="text-foreground text-xs font-semibold">
                 {t("pipeline.results")}
               </span>
               {results && (
-                <div className="flex items-center gap-1.5 font-mono text-[11px] text-zinc-500">
-                  <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 font-semibold text-emerald-600 dark:text-emerald-400">
+                <div className="text-muted-foreground flex items-center gap-1.5 font-mono text-[11px]">
+                  <span className="bg-success/10 text-success dark:text-success rounded px-1.5 py-0.5 font-semibold">
                     {results.rows.length} docs
                   </span>
                   <span>•</span>
@@ -1242,17 +1242,17 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                     value={resultsFilter}
                     onChange={(e) => setResultsFilter(e.target.value)}
                     placeholder="Filter results..."
-                    className="h-6 w-28 rounded border border-zinc-200 bg-zinc-100 px-1.5 font-mono text-[11px] text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+                    className="border-border bg-muted text-foreground dark:border-border dark:bg-muted dark:text-foreground h-6 w-28 rounded border px-1.5 font-mono text-[11px]"
                   />
-                  <div className="flex items-center rounded border border-zinc-200 bg-zinc-100 p-0.5 dark:border-zinc-800 dark:bg-zinc-800">
+                  <div className="border-border bg-muted dark:border-border dark:bg-muted flex items-center rounded border p-0.5">
                     <button
                       type="button"
                       onClick={() => setActiveResultsView("table")}
                       className={cn(
                         "cursor-pointer rounded px-1.5 py-0.5 font-mono text-[10px]",
                         activeResultsView === "table"
-                          ? "bg-white font-medium text-zinc-900 shadow-2xs dark:bg-zinc-900 dark:text-zinc-100"
-                          : "text-zinc-500",
+                          ? "bg-background text-foreground dark:bg-card dark:text-foreground font-medium shadow-2xs"
+                          : "text-muted-foreground",
                       )}
                     >
                       Table
@@ -1263,8 +1263,8 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                       className={cn(
                         "cursor-pointer rounded px-1.5 py-0.5 font-mono text-[10px]",
                         activeResultsView === "json"
-                          ? "bg-white font-medium text-zinc-900 shadow-2xs dark:bg-zinc-900 dark:text-zinc-100"
-                          : "text-zinc-500",
+                          ? "bg-background text-foreground dark:bg-card dark:text-foreground font-medium shadow-2xs"
+                          : "text-muted-foreground",
                       )}
                     >
                       JSON
@@ -1275,7 +1275,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                     variant="ghost"
                     size="sm"
                     onClick={handleExportCSV}
-                    className="h-6 px-1.5 font-mono text-[11px] text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                    className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-6 px-1.5 font-mono text-[11px]"
                     title="Export to CSV"
                   >
                     <Download className="size-3" />
@@ -1297,25 +1297,25 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
             )}
 
             {isRunning ? (
-              <div className="flex h-full flex-col items-center justify-center space-y-2 text-zinc-400">
-                <Loader2 className="size-6 animate-spin text-emerald-500" />
+              <div className="text-muted-foreground flex h-full flex-col items-center justify-center space-y-2">
+                <Loader2 className="text-success size-6 animate-spin" />
                 <p className="font-mono text-xs">{t("pipeline.running")}</p>
               </div>
             ) : results ? (
               results.rows.length === 0 ? (
-                <div className="flex h-full items-center justify-center font-mono text-xs text-zinc-400">
+                <div className="text-muted-foreground flex h-full items-center justify-center font-mono text-xs">
                   No documents matched pipeline.
                 </div>
               ) : activeResultsView === "json" ? (
-                <pre className="overflow-x-auto rounded-md bg-zinc-900 p-3 font-mono text-xs leading-relaxed text-zinc-100 select-all">
+                <pre className="bg-code text-code-foreground overflow-x-auto rounded-md p-3 font-mono text-xs leading-relaxed select-all">
                   {JSON.stringify(displayedRows, null, 2)}
                 </pre>
               ) : (
-                <div className="overflow-x-auto rounded-md border border-zinc-200 dark:border-zinc-800">
+                <div className="border-border overflow-x-auto rounded-md border">
                   <table className="w-full text-left font-mono text-xs">
-                    <thead className="border-b border-zinc-200 bg-zinc-100 text-zinc-600 select-none dark:border-zinc-800 dark:bg-zinc-900/80 dark:text-zinc-400">
+                    <thead className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-card/80 dark:text-muted-foreground border-b select-none">
                       <tr>
-                        <th className="w-10 px-2.5 py-1.5 text-center text-[10px] text-zinc-400">
+                        <th className="text-muted-foreground w-10 px-2.5 py-1.5 text-center text-[10px]">
                           #
                         </th>
                         {results.columns.map((col) => (
@@ -1325,13 +1325,13 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/60">
+                    <tbody className="divide-border/60 divide-y">
                       {displayedRows.map((row, rIdx) => (
                         <tr
                           key={rIdx}
-                          className="transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900/40"
+                          className="hover:bg-card dark:hover:bg-muted/40 transition-colors"
                         >
-                          <td className="px-2.5 py-1.5 text-center text-[10px] text-zinc-400 tabular-nums">
+                          <td className="text-muted-foreground px-2.5 py-1.5 text-center text-[10px] tabular-nums">
                             {rIdx + 1}
                           </td>
                           {results.columns.map((col) => {
@@ -1343,14 +1343,14 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                             return (
                               <td
                                 key={col}
-                                className="px-2.5 py-1.5 whitespace-nowrap text-zinc-800 dark:text-zinc-200"
+                                className="text-foreground px-2.5 py-1.5 whitespace-nowrap"
                               >
                                 {val === null ? (
-                                  <span className="text-zinc-400 italic">
+                                  <span className="text-muted-foreground italic">
                                     null
                                   </span>
                                 ) : isObj ? (
-                                  <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                                  <span className="bg-muted text-muted-foreground dark:bg-muted dark:text-foreground rounded px-1.5 py-0.5 text-[11px]">
                                     {JSON.stringify(val)}
                                   </span>
                                 ) : (
@@ -1366,8 +1366,8 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                 </div>
               )
             ) : (
-              <div className="flex h-full flex-col items-center justify-center p-6 text-center text-zinc-400">
-                <FileCode className="mb-2 size-8 text-emerald-500 opacity-30" />
+              <div className="text-muted-foreground flex h-full flex-col items-center justify-center p-6 text-center">
+                <FileCode className="text-success mb-2 size-8 opacity-30" />
                 <p className="font-mono text-xs">{t("pipeline.no_results")}</p>
               </div>
             )}
@@ -1379,23 +1379,23 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
       {/* Preview JSON Dialog */}
       {/* -------------------------------------------------------------------- */}
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-        <DialogContent className="max-w-2xl border-zinc-200 bg-white font-mono dark:border-zinc-800 dark:bg-zinc-900">
+        <DialogContent className="border-border bg-background dark:border-border dark:bg-card max-w-2xl font-mono">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Eye className="size-4 text-emerald-500" />
+              <Eye className="text-success size-4" />
               <span>{t("pipeline.preview_title")}</span>
             </DialogTitle>
-            <DialogDescription className="text-xs text-zinc-500">
+            <DialogDescription className="text-muted-foreground text-xs">
               {t("pipeline.preview_desc")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3 pt-2">
             <div>
-              <span className="mb-1 block text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">
+              <span className="text-muted-foreground mb-1 block text-[11px] font-semibold tracking-wider uppercase">
                 Mongo Shell Command
               </span>
-              <pre className="max-h-72 overflow-x-auto rounded-md border border-zinc-800 bg-zinc-950 p-3 text-xs text-emerald-400 selection:bg-emerald-800">
+              <pre className="border-code-border bg-code text-syntax-string selection:bg-success/30 max-h-72 overflow-x-auto rounded-md border p-3 text-xs">
                 {generatedShellCommand}
               </pre>
             </div>
@@ -1411,7 +1411,7 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                 >
                   {copiedPreview ? (
                     <>
-                      <Check className="size-3.5 text-emerald-500" />
+                      <Check className="text-success size-3.5" />
                       <span>{t("pipeline.copied")}</span>
                     </>
                   ) : (
@@ -1431,9 +1431,9 @@ export const PipelineBuilder: FC<PipelineBuilderProps> = ({
                       onOpenInConsole(generatedShellCommand);
                       setIsPreviewOpen(false);
                     }}
-                    className="h-8 gap-1.5 font-mono text-xs text-zinc-600 dark:text-zinc-300"
+                    className="text-muted-foreground dark:text-foreground h-8 gap-1.5 font-mono text-xs"
                   >
-                    <Terminal className="size-3.5 text-emerald-500" />
+                    <Terminal className="text-success size-3.5" />
                     <span>{t("pipeline.open_in_console")}</span>
                   </Button>
                 )}
@@ -1472,7 +1472,7 @@ const MatchStageEditor: FC<{
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={4}
-        className="focus:ring-primary w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+        className="focus:ring-primary border-border bg-muted text-foreground dark:border-border dark:bg-background dark:text-foreground w-full rounded border p-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
         placeholder='{ "status": "active" }'
       />
     );
@@ -1531,7 +1531,7 @@ const MatchStageEditor: FC<{
                 operator: e.target.value as MatchFilterRule["operator"],
               })
             }
-            className="h-7 rounded border border-zinc-200 bg-white px-2 font-mono text-xs text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+            className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground h-7 rounded border px-2 font-mono text-xs"
           >
             <option value="$eq">$eq (=)</option>
             <option value="$ne">$ne (≠)</option>
@@ -1554,7 +1554,7 @@ const MatchStageEditor: FC<{
           <button
             type="button"
             onClick={() => handleDeleteRule(rule.id)}
-            className="cursor-pointer p-1 text-zinc-400 hover:text-rose-500"
+            className="text-muted-foreground hover:text-destructive cursor-pointer p-1"
           >
             <Trash2 className="size-3.5" />
           </button>
@@ -1565,7 +1565,7 @@ const MatchStageEditor: FC<{
         variant="ghost"
         size="sm"
         onClick={handleAddRule}
-        className="h-6 px-2 font-mono text-[11px] text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20"
+        className="text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
       >
         <Plus className="mr-1 size-3" />
         <span>{t("pipeline.add_rule")}</span>
@@ -1587,7 +1587,7 @@ const GroupStageEditor: FC<{
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={5}
-        className="focus:ring-primary w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+        className="focus:ring-primary border-border bg-muted text-foreground dark:border-border dark:bg-background dark:text-foreground w-full rounded border p-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
         placeholder='{ "_id": "$country", "count": { "$sum": 1 } }'
       />
     );
@@ -1631,7 +1631,7 @@ const GroupStageEditor: FC<{
     <div className="space-y-3">
       {/* Group By (_id) */}
       <div className="flex items-center gap-2">
-        <span className="w-28 shrink-0 font-mono text-xs text-zinc-500">
+        <span className="text-muted-foreground w-28 shrink-0 font-mono text-xs">
           {t("pipeline.group_by")}:
         </span>
         <Input
@@ -1645,8 +1645,8 @@ const GroupStageEditor: FC<{
       </div>
 
       {/* Accumulators */}
-      <div className="space-y-2 border-t border-zinc-100 pt-1 dark:border-zinc-800/80">
-        <span className="block font-mono text-[11px] text-zinc-400">
+      <div className="border-border dark:border-border/80 space-y-2 border-t pt-1">
+        <span className="text-muted-foreground block font-mono text-[11px]">
           {t("pipeline.accumulators")}
         </span>
         {config.accumulators.map((acc) => (
@@ -1666,7 +1666,7 @@ const GroupStageEditor: FC<{
                   operator: e.target.value as GroupAccumulator["operator"],
                 })
               }
-              className="h-7 rounded border border-zinc-200 bg-white px-2 font-mono text-xs text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+              className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground h-7 rounded border px-2 font-mono text-xs"
             >
               <option value="$sum">$sum</option>
               <option value="$avg">$avg</option>
@@ -1688,7 +1688,7 @@ const GroupStageEditor: FC<{
             <button
               type="button"
               onClick={() => handleDeleteAccumulator(acc.id)}
-              className="cursor-pointer p-1 text-zinc-400 hover:text-rose-500"
+              className="text-muted-foreground hover:text-destructive cursor-pointer p-1"
             >
               <Trash2 className="size-3.5" />
             </button>
@@ -1700,7 +1700,7 @@ const GroupStageEditor: FC<{
           variant="ghost"
           size="sm"
           onClick={handleAddAccumulator}
-          className="h-6 px-2 font-mono text-[11px] text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20"
+          className="text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
         >
           <Plus className="mr-1 size-3" />
           <span>{t("pipeline.add_accumulator")}</span>
@@ -1723,7 +1723,7 @@ const SortStageEditor: FC<{
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={3}
-        className="focus:ring-primary w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+        className="focus:ring-primary border-border bg-muted text-foreground dark:border-border dark:bg-background dark:text-foreground w-full rounded border p-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
         placeholder='{ "count": -1 }'
       />
     );
@@ -1781,7 +1781,7 @@ const SortStageEditor: FC<{
                 direction: Number(e.target.value) as 1 | -1,
               })
             }
-            className="h-7 rounded border border-zinc-200 bg-white px-2 font-mono text-xs text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+            className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground h-7 rounded border px-2 font-mono text-xs"
           >
             <option value={1}>{t("pipeline.sort_asc")}</option>
             <option value={-1}>{t("pipeline.sort_desc")}</option>
@@ -1789,7 +1789,7 @@ const SortStageEditor: FC<{
           <button
             type="button"
             onClick={() => handleDeleteField(rule.id)}
-            className="cursor-pointer p-1 text-zinc-400 hover:text-rose-500"
+            className="text-muted-foreground hover:text-destructive cursor-pointer p-1"
           >
             <Trash2 className="size-3.5" />
           </button>
@@ -1800,7 +1800,7 @@ const SortStageEditor: FC<{
         variant="ghost"
         size="sm"
         onClick={handleAddField}
-        className="h-6 px-2 font-mono text-[11px] text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20"
+        className="text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
       >
         <Plus className="mr-1 size-3" />
         <span>{t("pipeline.add_sort_field")}</span>
@@ -1818,7 +1818,7 @@ const LimitStageEditor: FC<{
 
   return (
     <div className="flex items-center gap-3">
-      <span className="font-mono text-xs text-zinc-500">
+      <span className="text-muted-foreground font-mono text-xs">
         {t("pipeline.limit_count")}:
       </span>
       <Input
@@ -1846,7 +1846,7 @@ const ProjectStageEditor: FC<{
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={4}
-        className="focus:ring-primary w-full rounded border border-zinc-200 bg-zinc-100 p-2 font-mono text-xs text-zinc-900 focus:ring-1 focus:outline-hidden dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-100"
+        className="focus:ring-primary border-border bg-muted text-foreground dark:border-border dark:bg-background dark:text-foreground w-full rounded border p-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
         placeholder='{ "_id": 0, "name": 1 }'
       />
     );
@@ -1904,7 +1904,7 @@ const ProjectStageEditor: FC<{
                 mode: e.target.value as ProjectFieldRule["mode"],
               })
             }
-            className="h-7 rounded border border-zinc-200 bg-white px-2 font-mono text-xs text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+            className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground h-7 rounded border px-2 font-mono text-xs"
           >
             <option value="include">{t("pipeline.mode_include")}</option>
             <option value="exclude">{t("pipeline.mode_exclude")}</option>
@@ -1923,7 +1923,7 @@ const ProjectStageEditor: FC<{
           <button
             type="button"
             onClick={() => handleDeleteField(rule.id)}
-            className="cursor-pointer p-1 text-zinc-400 hover:text-rose-500"
+            className="text-muted-foreground hover:text-destructive cursor-pointer p-1"
           >
             <Trash2 className="size-3.5" />
           </button>
@@ -1934,7 +1934,7 @@ const ProjectStageEditor: FC<{
         variant="ghost"
         size="sm"
         onClick={handleAddField}
-        className="h-6 px-2 font-mono text-[11px] text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/20"
+        className="text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
       >
         <Plus className="mr-1 size-3" />
         <span>{t("pipeline.add_project_field")}</span>
@@ -1954,7 +1954,7 @@ const LookupStageEditor: FC<{
   return (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
       <div>
-        <span className="mb-1 block font-mono text-[11px] text-zinc-400">
+        <span className="text-muted-foreground mb-1 block font-mono text-[11px]">
           {t("pipeline.lookup_from")}:
         </span>
         <input
@@ -1962,7 +1962,7 @@ const LookupStageEditor: FC<{
           value={config.from}
           onChange={(e) => onChange({ ...config, from: e.target.value })}
           placeholder="Foreign collection..."
-          className="h-7 w-full rounded border border-zinc-200 bg-zinc-100 px-2 font-mono text-xs text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
+          className="border-border bg-muted text-foreground dark:border-border dark:bg-muted dark:text-foreground h-7 w-full rounded border px-2 font-mono text-xs"
         />
         <datalist id="lookup-tables-list">
           {tables.map((t) => (
@@ -1972,7 +1972,7 @@ const LookupStageEditor: FC<{
       </div>
 
       <div>
-        <span className="mb-1 block font-mono text-[11px] text-zinc-400">
+        <span className="text-muted-foreground mb-1 block font-mono text-[11px]">
           {t("pipeline.lookup_local")}:
         </span>
         <Input
@@ -1984,7 +1984,7 @@ const LookupStageEditor: FC<{
       </div>
 
       <div>
-        <span className="mb-1 block font-mono text-[11px] text-zinc-400">
+        <span className="text-muted-foreground mb-1 block font-mono text-[11px]">
           {t("pipeline.lookup_foreign")}:
         </span>
         <Input
@@ -1998,7 +1998,7 @@ const LookupStageEditor: FC<{
       </div>
 
       <div>
-        <span className="mb-1 block font-mono text-[11px] text-zinc-400">
+        <span className="text-muted-foreground mb-1 block font-mono text-[11px]">
           {t("pipeline.lookup_as")}:
         </span>
         <Input
@@ -2022,7 +2022,7 @@ const UnwindStageEditor: FC<{
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <span className="w-32 shrink-0 font-mono text-xs text-zinc-500">
+        <span className="text-muted-foreground w-32 shrink-0 font-mono text-xs">
           {t("pipeline.unwind_path")}:
         </span>
         <Input
@@ -2033,7 +2033,7 @@ const UnwindStageEditor: FC<{
         />
       </div>
 
-      <label className="flex cursor-pointer items-center gap-2 font-mono text-xs text-zinc-600 select-none dark:text-zinc-400">
+      <label className="text-muted-foreground dark:text-muted-foreground flex cursor-pointer items-center gap-2 font-mono text-xs select-none">
         <input
           type="checkbox"
           checked={config.preserveNullAndEmptyArrays}
@@ -2043,7 +2043,7 @@ const UnwindStageEditor: FC<{
               preserveNullAndEmptyArrays: e.target.checked,
             })
           }
-          className="focus:ring-primary rounded border-zinc-300 text-emerald-600 dark:border-zinc-700"
+          className="focus:ring-primary border-border text-success dark:border-border rounded"
         />
         <span>{t("pipeline.unwind_preserve")}</span>
       </label>

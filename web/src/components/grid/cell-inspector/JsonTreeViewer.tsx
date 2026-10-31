@@ -36,14 +36,14 @@ interface TreeNodeProps {
 function renderValueBadge(val: unknown) {
   if (val === null) {
     return (
-      <span className="font-mono text-zinc-400 italic dark:text-zinc-500">
+      <span className="text-muted-foreground dark:text-muted-foreground font-mono italic">
         null
       </span>
     );
   }
   if (val === undefined) {
     return (
-      <span className="font-mono text-zinc-400 italic dark:text-zinc-500">
+      <span className="text-muted-foreground dark:text-muted-foreground font-mono italic">
         undefined
       </span>
     );
@@ -53,8 +53,8 @@ function renderValueBadge(val: unknown) {
       <span
         className={
           val
-            ? "font-mono font-medium text-emerald-600 dark:text-emerald-400"
-            : "font-mono font-medium text-rose-600 dark:text-rose-400"
+            ? "text-success dark:text-success font-mono font-medium"
+            : "text-destructive dark:text-destructive font-mono font-medium"
         }
       >
         {String(val)}
@@ -63,20 +63,20 @@ function renderValueBadge(val: unknown) {
   }
   if (typeof val === "number") {
     return (
-      <span className="font-mono font-medium text-amber-600 dark:text-amber-400">
+      <span className="text-warning dark:text-warning font-mono font-medium">
         {String(val)}
       </span>
     );
   }
   if (typeof val === "string") {
     return (
-      <span className="font-mono text-emerald-700 dark:text-emerald-300">
+      <span className="text-success dark:text-success font-mono">
         &quot;{val}&quot;
       </span>
     );
   }
   return (
-    <span className="font-mono text-zinc-600 dark:text-zinc-300">
+    <span className="text-muted-foreground dark:text-foreground font-mono">
       {String(val)}
     </span>
   );
@@ -116,7 +116,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   return (
     <div className="font-mono text-xs leading-relaxed">
       <div
-        className="group flex items-center gap-1.5 rounded px-1.5 py-0.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/60"
+        className="group hover:bg-muted dark:hover:bg-muted/60 flex items-center gap-1.5 rounded px-1.5 py-0.5"
         style={{ paddingLeft: `${depth * 16 + 4}px` }}
       >
         {isObject ? (
@@ -129,7 +129,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 : `Expand ${keyName || "root"}`
             }
             onClick={() => onToggleExpand(path)}
-            className="flex h-4 w-4 shrink-0 items-center justify-center rounded text-zinc-500 hover:text-zinc-900 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-zinc-400 dark:hover:text-zinc-100"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-primary dark:text-muted-foreground dark:hover:text-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded focus-visible:ring-2"
           >
             {isExpanded ? (
               <ChevronDown className="h-3.5 w-3.5" />
@@ -142,15 +142,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         )}
 
         {keyName !== undefined && (
-          <span className="font-semibold text-zinc-800 dark:text-zinc-200">
-            {keyName}:
-          </span>
+          <span className="text-foreground font-semibold">{keyName}:</span>
         )}
 
         {isObject ? (
           <span
             onClick={() => onToggleExpand(path)}
-            className="cursor-pointer text-zinc-500 hover:underline dark:text-zinc-400"
+            className="text-muted-foreground dark:text-muted-foreground cursor-pointer hover:underline"
           >
             {isArray ? `Array(${keys.length}) [` : `Object {${keys.length}}`}
             {!isExpanded && (isArray ? " ... ]" : " ... }")}
@@ -169,7 +167,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
               e.stopPropagation();
               onCopyPath(path);
             }}
-            className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 focus-visible:ring-2 focus-visible:ring-indigo-500 dark:hover:bg-zinc-700 dark:hover:text-zinc-200"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary dark:hover:bg-muted dark:hover:text-foreground rounded p-1 focus-visible:ring-2"
           >
             <Copy className="h-3 w-3" />
           </button>
@@ -201,7 +199,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             );
           })}
           <div
-            className="text-zinc-500 dark:text-zinc-400"
+            className="text-muted-foreground"
             style={{ paddingLeft: `${depth * 16 + 20}px` }}
           >
             {isArray ? "]" : "}"}
@@ -311,18 +309,18 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
   };
 
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-white dark:bg-zinc-950">
+    <div className="bg-background flex h-full flex-col overflow-hidden">
       {/* Sub-toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-zinc-50/70 px-3 py-2 text-xs dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="border-border bg-card/70 dark:border-border dark:bg-card/50 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 text-xs">
         <div className="flex items-center gap-1.5">
-          <div className="inline-flex rounded-md border border-zinc-200 bg-white p-0.5 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="border-border bg-background dark:border-border dark:bg-card inline-flex rounded-md border p-0.5 shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode("tree")}
               className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
                 viewMode === "tree"
-                  ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
+                  : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
               }`}
             >
               <ListTree className="h-3.5 w-3.5" />
@@ -333,8 +331,8 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
               onClick={() => setViewMode("code")}
               className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
                 viewMode === "code"
-                  ? "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                  : "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                  ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
+                  : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
               }`}
             >
               <Code2 className="h-3.5 w-3.5" />
@@ -348,7 +346,7 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
                 type="button"
                 onClick={handleExpandAll}
                 title={t("cellInspector.expandAll")}
-                className="rounded p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground rounded p-1"
               >
                 <Maximize2 className="h-3.5 w-3.5" />
               </button>
@@ -356,7 +354,7 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
                 type="button"
                 onClick={handleCollapseAll}
                 title={t("cellInspector.collapseAll")}
-                className="rounded p-1 text-zinc-500 hover:bg-zinc-200 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground rounded p-1"
               >
                 <Minimize2 className="h-3.5 w-3.5" />
               </button>
@@ -366,13 +364,13 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
 
         {viewMode === "tree" ? (
           <div className="relative flex items-center">
-            <Search className="absolute left-2.5 h-3.5 w-3.5 text-zinc-400" />
+            <Search className="text-muted-foreground absolute left-2.5 h-3.5 w-3.5" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("cellInspector.searchJsonPlaceholder")}
-              className="h-7 w-44 rounded-md border border-zinc-200 bg-white pr-2 pl-8 text-xs text-zinc-900 outline-none placeholder:text-zinc-400 focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-700"
+              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-border dark:border-border dark:bg-card dark:text-foreground dark:focus:border-border h-7 w-44 rounded-md border pr-2 pl-8 text-xs outline-none"
             />
           </div>
         ) : (
@@ -380,14 +378,14 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
             <button
               type="button"
               onClick={handleFormatCode}
-              className="rounded border border-zinc-200 bg-white px-2 py-1 font-mono text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted rounded border px-2 py-1 font-mono text-[11px] font-medium"
             >
               {t("cellInspector.formatJson")}
             </button>
             <button
               type="button"
               onClick={handleMinifyCode}
-              className="rounded border border-zinc-200 bg-white px-2 py-1 font-mono text-[11px] font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted rounded border px-2 py-1 font-mono text-[11px] font-medium"
             >
               {t("cellInspector.minify")}
             </button>
@@ -396,14 +394,14 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
       </div>
 
       {copiedPath && (
-        <div className="border-primary/20 flex items-center gap-1.5 border-b bg-emerald-500/10 px-3 py-1 font-mono text-[11px] text-emerald-700 dark:text-emerald-400">
+        <div className="border-primary/20 bg-success/10 text-success dark:text-success flex items-center gap-1.5 border-b px-3 py-1 font-mono text-[11px]">
           <Check className="h-3 w-3" />
           <span>{t("cellInspector.copiedPath", { path: copiedPath })}</span>
         </div>
       )}
 
       {syntaxError && viewMode === "code" && (
-        <div className="flex items-center gap-1.5 border-b border-amber-500/20 bg-amber-500/10 px-3 py-1 text-[11px] text-amber-700 dark:text-amber-400">
+        <div className="border-warning/20 bg-warning/10 text-warning dark:text-warning flex items-center gap-1.5 border-b px-3 py-1 text-[11px]">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{syntaxError}</span>
         </div>
@@ -423,12 +421,12 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
               onToggleExpand={handleToggleExpand}
             />
           ) : (
-            <div className="p-4 text-center text-xs text-zinc-500">
+            <div className="text-muted-foreground p-4 text-center text-xs">
               {t("cellInspector.invalidJsonTreeNotice")}
             </div>
           )
         ) : (
-          <div className="h-full rounded border border-zinc-200 dark:border-zinc-800">
+          <div className="border-border h-full rounded border">
             <CodeMirror
               value={codeValue}
               height="100%"

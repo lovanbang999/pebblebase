@@ -37,9 +37,9 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
                   type="button"
                   variant="ghost"
                   size={compact ? "icon-xs" : "xs"}
-                  className="flex h-6 items-center justify-center gap-1 px-1.5 font-mono text-[10px] font-semibold tracking-wider text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+                  className="text-muted-foreground hover:text-foreground dark:hover:text-foreground flex h-6 items-center justify-center gap-1 px-1.5 font-mono text-[10px] font-semibold tracking-wider"
                 >
-                  <Globe className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <Globe className="text-success dark:text-success size-3.5" />
                   {!compact && <span className="uppercase">{currentLang}</span>}
                 </Button>
               }
@@ -51,13 +51,13 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
       <DropdownMenuContent
         align="end"
         side="bottom"
-        className="bg-popover w-36 rounded-lg border border-zinc-200 p-1 shadow-xl dark:border-zinc-800"
+        className="bg-popover border-border dark:border-border w-36 rounded-lg border p-1 shadow-xl"
       >
         <DropdownMenuItem
           onClick={() => handleLanguageChange("vi")}
           className={`flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs ${
             currentLang === "vi"
-              ? "bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
+              ? "bg-success/10 text-success dark:text-success font-semibold"
               : ""
           }`}
         >
@@ -72,7 +72,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
           onClick={() => handleLanguageChange("en")}
           className={`flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs ${
             currentLang === "en"
-              ? "bg-emerald-500/10 font-semibold text-emerald-600 dark:text-emerald-400"
+              ? "bg-success/10 text-success dark:text-success font-semibold"
               : ""
           }`}
         >

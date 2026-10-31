@@ -110,13 +110,13 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
       open={isOpen}
       onOpenChange={(open) => !open && !isExecuting && onClose()}
     >
-      <AlertDialogContent className="max-w-md rounded-xl border border-zinc-200 bg-white p-5 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950">
+      <AlertDialogContent className="border-border bg-background dark:border-border dark:bg-card max-w-md rounded-xl border p-5 shadow-2xl">
         <AlertDialogHeader>
           <AlertDialogMedia
             className={
               isTruncate
-                ? "rounded-xl border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                : "rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400"
+                ? "border-warning/20 bg-warning/10 text-warning dark:text-warning rounded-xl border"
+                : "border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-xl border"
             }
           >
             {isTruncate ? (
@@ -126,13 +126,13 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
             )}
           </AlertDialogMedia>
 
-          <AlertDialogTitle className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+          <AlertDialogTitle className="text-foreground dark:text-foreground font-mono text-sm font-semibold">
             {isTruncate
               ? t("tableDanger.truncateTitle", { table: tableName })
               : t("tableDanger.dropTitle", { table: tableName })}
           </AlertDialogTitle>
 
-          <AlertDialogDescription className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+          <AlertDialogDescription className="text-muted-foreground dark:text-muted-foreground text-xs leading-relaxed">
             {isTruncate
               ? t("tableDanger.truncateDesc", { table: tableName })
               : t("tableDanger.dropDesc", { table: tableName })}
@@ -140,7 +140,7 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
         </AlertDialogHeader>
 
         <div className="my-3 space-y-2">
-          <label className="block font-mono text-[11px] text-zinc-600 dark:text-zinc-400">
+          <label className="text-muted-foreground dark:text-muted-foreground block font-mono text-[11px]">
             {isTruncate
               ? t("tableDanger.truncateConfirmHelp", { table: tableName })
               : t("tableDanger.dropConfirmHelp", { table: tableName })}
@@ -153,7 +153,7 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
             placeholder={t("tableDanger.typeToConfirmPlaceholder", {
               table: tableName,
             })}
-            className="h-8 font-mono text-xs focus-visible:ring-rose-500/30 dark:focus-visible:ring-rose-500/30"
+            className="focus-visible:ring-destructive/30 dark:focus-visible:ring-destructive/30 h-8 font-mono text-xs"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter" && isConfirmed && !isExecuting) {
@@ -164,7 +164,7 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
           />
 
           {errorMsg && (
-            <div className="rounded-md border border-rose-500/30 bg-rose-500/10 p-2 font-mono text-xs text-rose-600 dark:text-rose-400">
+            <div className="border-destructive/30 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 font-mono text-xs">
               {errorMsg}
             </div>
           )}
@@ -186,8 +186,8 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
             onClick={handleExecute}
             className={`h-8 cursor-pointer font-mono text-xs ${
               isTruncate
-                ? "bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-40 dark:bg-amber-600 dark:hover:bg-amber-700"
-                : "bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-40 dark:bg-rose-600 dark:hover:bg-rose-700"
+                ? "bg-warning hover:bg-warning dark:bg-warning dark:hover:bg-warning text-white disabled:opacity-40"
+                : "bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive text-white disabled:opacity-40"
             }`}
           >
             {isExecuting ? (

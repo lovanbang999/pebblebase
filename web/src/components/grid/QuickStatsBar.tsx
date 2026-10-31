@@ -40,31 +40,31 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
   return (
     <div
       data-testid="quick-stats-bar"
-      className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-100/90 px-3 py-1.5 font-mono text-xs transition-colors select-none dark:border-zinc-800/60 dark:bg-zinc-950/40"
+      className="border-border bg-muted/90 dark:border-border/60 dark:bg-background/40 flex flex-wrap items-center justify-between gap-3 border-b px-3 py-1.5 font-mono text-xs transition-colors select-none"
     >
       {/* Left items: Table metrics */}
-      <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
+      <div className="text-muted-foreground dark:text-muted-foreground flex items-center gap-3">
         {/* Total rows */}
         <div
           className="flex items-center gap-1.5"
           title={t("analytics.totalRows")}
         >
-          <Database className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
-          <span className="translate-y-0.5 font-medium text-zinc-900 dark:text-zinc-200">
+          <Database className="text-primary dark:text-primary h-3.5 w-3.5 shrink-0" />
+          <span className="text-foreground dark:text-foreground translate-y-0.5 font-medium">
             {formatNumber(totalRows)}
           </span>
-          <span className="translate-y-0.5 text-zinc-500 dark:text-zinc-500">
+          <span className="text-muted-foreground dark:text-muted-foreground translate-y-0.5">
             {t("analytics.quickStats.rows")}
           </span>
           {isEstimated && (
-            <span className="translate-y-0.5 rounded bg-zinc-200 px-1 py-0.5 text-[10px] text-zinc-600 dark:bg-zinc-800/80 dark:text-zinc-500">
+            <span className="bg-muted text-muted-foreground dark:bg-muted/80 dark:text-muted-foreground translate-y-0.5 rounded px-1 py-0.5 text-[10px]">
               {t("analytics.quickStats.estimated")}
             </span>
           )}
         </div>
 
         <span
-          className="h-3.5 w-px shrink-0 self-center bg-zinc-300 dark:bg-zinc-800"
+          className="bg-muted dark:bg-muted h-3.5 w-px shrink-0 self-center"
           aria-hidden="true"
         />
 
@@ -73,31 +73,31 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
           className="flex items-center gap-1.5"
           title={t("analytics.quickStats.size")}
         >
-          <HardDrive className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-          <span className="translate-y-0.5 text-zinc-500 dark:text-zinc-500">
+          <HardDrive className="text-success dark:text-success h-3.5 w-3.5 shrink-0" />
+          <span className="text-muted-foreground dark:text-muted-foreground translate-y-0.5">
             {t("analytics.quickStats.size")}:
           </span>
-          <span className="translate-y-0.5 font-medium text-zinc-900 dark:text-zinc-200">
+          <span className="text-foreground dark:text-foreground translate-y-0.5 font-medium">
             {formatBytes(sizeBytes)}
           </span>
         </div>
 
         <span
-          className="h-3.5 w-px shrink-0 self-center bg-zinc-300 dark:bg-zinc-800"
+          className="bg-muted dark:bg-muted h-3.5 w-px shrink-0 self-center"
           aria-hidden="true"
         />
 
         {/* Columns & PKs */}
         <div className="flex items-center gap-1.5">
           <Columns className="h-3.5 w-3.5 shrink-0 text-sky-600 dark:text-sky-400" />
-          <span className="translate-y-0.5 font-medium text-zinc-900 dark:text-zinc-200">
+          <span className="text-foreground dark:text-foreground translate-y-0.5 font-medium">
             {table.columns.length}
           </span>
-          <span className="translate-y-0.5 text-zinc-500 dark:text-zinc-500">
+          <span className="text-muted-foreground dark:text-muted-foreground translate-y-0.5">
             {t("analytics.quickStats.columns")}
           </span>
           {pkCount > 0 && (
-            <span className="inline-flex h-5 shrink-0 items-center justify-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 font-mono text-[10px] font-medium text-amber-700 dark:text-amber-400">
+            <span className="border-warning/40 bg-warning/10 text-warning dark:text-warning inline-flex h-5 shrink-0 items-center justify-center rounded-full border px-2 font-mono text-[10px] font-medium">
               <span className="translate-y-px">
                 {pkCount} {t("analytics.quickStats.pk")}
               </span>
@@ -108,9 +108,9 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
               type="button"
               onClick={() => onOpenAnalytics(table.columns[0])}
               title={t("analytics.openAnalytics")}
-              className="inline-flex h-5 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-2.5 font-mono text-[10px] font-medium text-indigo-700 transition-colors hover:border-indigo-500/50 hover:bg-indigo-500/20 dark:text-indigo-400/90"
+              className="border-primary/30 bg-primary/10 text-primary hover:border-primary/50 hover:bg-primary/20 dark:text-primary/90 inline-flex h-5 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-full border px-2.5 font-mono text-[10px] font-medium transition-colors"
             >
-              <BarChart3 className="h-3 w-3 shrink-0 text-indigo-600 dark:text-indigo-400" />
+              <BarChart3 className="text-primary dark:text-primary h-3 w-3 shrink-0" />
               <span className="translate-y-px">
                 {t("analytics.openAnalytics")}
               </span>
@@ -122,7 +122,7 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
       {/* Right items: Filter status */}
       <div className="flex items-center gap-2">
         {isFiltered ? (
-          <div className="flex items-center gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-700 dark:text-amber-400">
+          <div className="border-warning/30 bg-warning/10 text-warning dark:text-warning flex items-center gap-1.5 rounded border px-2 py-0.5 text-[11px]">
             <Filter className="h-3 w-3 shrink-0" />
             <span className="translate-y-[0.5px]">
               {t("analytics.quickStats.filtered")}:{" "}
@@ -130,8 +130,8 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
             </span>
           </div>
         ) : (
-          <div className="flex items-center gap-1 text-[11px] text-zinc-500">
-            <CheckCircle2 className="h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-500/80" />
+          <div className="text-muted-foreground flex items-center gap-1 text-[11px]">
+            <CheckCircle2 className="text-success dark:text-success/80 h-3 w-3 shrink-0" />
             <span className="translate-y-[0.5px]">
               {t("analytics.analyzingAll")}
             </span>

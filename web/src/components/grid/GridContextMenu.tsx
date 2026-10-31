@@ -70,11 +70,11 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
           left: `${Math.min(contextMenu.mouseX, window.innerWidth - 230)}px`,
           top: `${Math.min(contextMenu.mouseY, window.innerHeight - 280)}px`,
         }}
-        className="animate-in fade-in-50 zoom-in-95 z-50 w-56 rounded-lg border border-zinc-200 bg-white p-1 font-mono text-xs shadow-2xl duration-100 dark:border-zinc-800 dark:bg-zinc-900"
+        className="animate-in fade-in-50 zoom-in-95 border-border bg-background dark:border-border dark:bg-card z-50 w-56 rounded-lg border p-1 font-mono text-xs shadow-2xl duration-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-100 px-2.5 py-1.5 text-[11px] font-semibold text-zinc-500 dark:border-zinc-800/80 dark:text-zinc-400">
+        <div className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground flex items-center justify-between border-b px-2.5 py-1.5 text-[11px] font-semibold">
           <span className="truncate">
             {contextMenu.colName &&
             contextMenu.colName !== "_actions" &&
@@ -102,12 +102,12 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
               onClose();
             }}
             className={cn(
-              "flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
+              "text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors",
               isReadOnly &&
                 "cursor-not-allowed opacity-50 hover:bg-transparent",
             )}
           >
-            <Edit2 className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <Edit2 className="text-success dark:text-success h-3.5 w-3.5 shrink-0" />
             <span>{t("datagrid.contextMenu.editRecord")}</span>
           </button>
 
@@ -120,17 +120,17 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
               onClose();
             }}
             className={cn(
-              "flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40",
+              "text-destructive hover:bg-destructive/10 dark:text-destructive dark:hover:bg-destructive/40 flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors",
               isReadOnly &&
                 "cursor-not-allowed opacity-50 hover:bg-transparent",
             )}
           >
-            <Trash2 className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+            <Trash2 className="text-destructive h-3.5 w-3.5 shrink-0" />
             <span>{t("datagrid.contextMenu.deleteRecord")}</span>
           </button>
         </div>
 
-        <div className="my-1 border-t border-zinc-100 dark:border-zinc-800/80" />
+        <div className="border-border dark:border-border/80 my-1 border-t" />
 
         <div className="py-1">
           {/* Inspect Cell Detail */}
@@ -146,13 +146,13 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
                 );
                 onClose();
               }}
-              className="flex w-full cursor-pointer items-center justify-between rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              className="text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center justify-between rounded px-2.5 py-1.5 text-left transition-colors"
             >
               <div className="flex items-center gap-2">
-                <FileCode className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" />
+                <FileCode className="text-primary dark:text-primary h-3.5 w-3.5 shrink-0" />
                 <span>{t("datagrid.contextMenu.inspectCell")}</span>
               </div>
-              <kbd className="rounded bg-zinc-200/80 px-1.5 py-0.5 font-mono text-[10px] text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+              <kbd className="bg-muted/80 text-muted-foreground dark:bg-muted dark:text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
                 Space
               </kbd>
             </button>
@@ -168,7 +168,7 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
                   onCopyNotify?.(t("datagrid.contextMenu.copied"));
                   onClose();
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                className="text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors"
               >
                 <Copy className="h-3.5 w-3.5 shrink-0 text-blue-500" />
                 <span>{t("datagrid.contextMenu.copyCellValue")}</span>
@@ -192,9 +192,9 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
                   ]);
                   onClose();
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                className="text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors"
               >
-                <FilterIcon className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                <FilterIcon className="text-warning h-3.5 w-3.5 shrink-0" />
                 <span>{t("datagrid.contextMenu.filterByValue")}</span>
               </button>
             )}
@@ -209,9 +209,9 @@ export const GridContextMenu: React.FC<GridContextMenuProps> = React.memo(
               onCopyNotify?.(t("datagrid.contextMenu.copied"));
               onClose();
             }}
-            className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-zinc-800 transition-colors hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            className="text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors"
           >
-            <FileJson className="h-3.5 w-3.5 shrink-0 text-purple-500" />
+            <FileJson className="text-primary h-3.5 w-3.5 shrink-0" />
             <span>{t("datagrid.contextMenu.copyRowJson")}</span>
           </button>
 

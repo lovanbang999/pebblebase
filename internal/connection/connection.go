@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	mysqlDriver "github.com/go-sql-driver/mysql"
 )
 
 // ConnectionInput is the raw user input from the UI — either form fields or a raw URL.
@@ -19,6 +21,27 @@ type ConnectionInput struct {
 	ReadOnly                           bool   // "Read-only" connection flag
 	SSLMode                            string // optional SSL mode or encryption
 	WindowsAuth                        bool   // Windows Authentication / trusted_connection
+}
+
+// PasswordFromDSN extracts the saved password from supported DSN formats.
+// It is used only server-side when an edit leaves the password field blank.
+func PasswordFromDSN(dbType, dsn string) (string, error) {
+	if strings.EqualFold(dbType, "mysql") {
+		cfg, err := mysqlDriver.ParseDSN(dsn)
+		if err != nil {
+			return "", err
+		}
+		return cfg.Passwd, nil
+	}
+	u, err := url.Parse(dsn)
+	if err != nil {
+		return "", err
+	}
+	if u.User == nil {
+		return "", nil
+	}
+	password, _ := u.User.Password()
+	return password, nil
 }
 
 // ToDSN normalizes input into a single DSN string ready for the driver.

@@ -163,30 +163,28 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
           {t("cellInspector.title", "Cell Detail Inspector")}
         </SheetTitle>
         {/* Top Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/60">
+        <div className="border-border bg-card dark:border-border dark:bg-card/60 flex shrink-0 items-center justify-between border-b px-3 py-2">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <div className="border-primary/20 bg-primary/10 text-primary dark:text-primary flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border">
               <FileCode className="h-5 w-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="truncate font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                <span className="text-foreground truncate font-mono text-sm font-semibold">
                   {columnName}
                 </span>
                 {columnType && (
-                  <span className="rounded bg-zinc-200/80 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-400">
+                  <span className="bg-muted/80 text-muted-foreground dark:bg-muted dark:text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px] uppercase">
                     {columnType}
                   </span>
                 )}
-                <span className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[10px] font-medium text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300">
+                <span className="bg-primary/10 text-primary dark:bg-primary/40 dark:text-primary rounded px-1.5 py-0.5 font-mono text-[10px] font-medium">
                   {analysis.formattedSize}
                 </span>
               </div>
-              <div className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+              <div className="text-muted-foreground truncate text-xs">
                 {t("cellInspector.tableLabel")}{" "}
-                <span className="font-mono text-zinc-700 dark:text-zinc-300">
-                  {tableName}
-                </span>
+                <span className="text-foreground font-mono">{tableName}</span>
               </div>
             </div>
           </div>
@@ -202,7 +200,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                   isModified
                     ? "bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white shadow-sm"
-                    : "cursor-not-allowed bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500"
+                    : "bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground cursor-not-allowed"
                 }`}
               >
                 {isSaving ? (
@@ -224,12 +222,12 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
               type="button"
               onClick={handleCopy}
               title={t("cellInspector.copyTooltip")}
-              className="flex items-center gap-1 rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs"
             >
               {isCopied ? (
                 <>
-                  <Check className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-emerald-600 dark:text-emerald-400">
+                  <Check className="text-success h-3.5 w-3.5" />
+                  <span className="text-success dark:text-success">
                     {t("cellInspector.copied")}
                   </span>
                 </>
@@ -249,7 +247,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
                   ? t("cellInspector.collapseDrawer")
                   : t("cellInspector.expandDrawer")
               }
-              className="rounded-md border border-zinc-200 bg-white p-1.5 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border bg-background text-muted-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted rounded-md border p-1.5"
             >
               {isWide ? (
                 <Minimize2 className="h-3.5 w-3.5" />
@@ -264,7 +262,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
               onClick={onClose}
               aria-label={t("cellInspector.closeTooltip")}
               title={t("cellInspector.closeTooltip")}
-              className="rounded-md p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground rounded-md p-1.5"
             >
               <X className="h-4 w-4" />
             </button>
@@ -273,9 +271,9 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
 
         {/* Large Payload Warning Banner */}
         {analysis.isLargePayload && !isForceParsed && (
-          <div className="flex items-center justify-between border-b border-amber-500/20 bg-amber-500/10 px-4 py-2 text-xs text-amber-800 dark:text-amber-300">
+          <div className="border-warning/20 bg-warning/10 text-warning dark:text-warning flex items-center justify-between border-b px-4 py-2 text-xs">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <AlertTriangle className="text-warning dark:text-warning h-4 w-4 shrink-0" />
               <span>
                 {t("cellInspector.largePayloadWarning", {
                   size: analysis.formattedSize,
@@ -285,7 +283,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
             <button
               type="button"
               onClick={() => setIsForceParsed(true)}
-              className="rounded bg-amber-600 px-2 py-0.5 font-medium text-white hover:bg-amber-500"
+              className="bg-warning hover:bg-warning rounded px-2 py-0.5 font-medium text-white"
             >
               {t("cellInspector.formatAnyway")}
             </button>
@@ -293,27 +291,27 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
         )}
 
         {saveError && (
-          <div className="flex items-center gap-2 border-b border-rose-500/20 bg-rose-500/10 px-4 py-2 text-xs text-rose-700 dark:text-rose-400">
+          <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive flex items-center gap-2 border-b px-4 py-2 text-xs">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{saveError}</span>
           </div>
         )}
 
         {/* Tabs Bar */}
-        <div className="flex items-center gap-1 border-b border-zinc-200 bg-zinc-100/80 px-4 py-1.5 dark:border-zinc-800 dark:bg-zinc-900/40">
+        <div className="border-border bg-muted/80 dark:border-border dark:bg-card/40 flex items-center gap-1 border-b px-4 py-1.5">
           <button
             type="button"
             onClick={() => setActiveTab("json")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               activeTab === "json"
-                ? "bg-white text-indigo-600 shadow-2xs dark:bg-zinc-800 dark:text-indigo-400"
-                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                ? "bg-background text-primary dark:bg-muted dark:text-primary shadow-2xs"
+                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
             }`}
           >
             <Code className="h-3.5 w-3.5" />
             <span>{t("cellInspector.tabJson")}</span>
             {analysis.type === "json" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="bg-success h-1.5 w-1.5 rounded-full" />
             )}
           </button>
 
@@ -322,14 +320,14 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
             onClick={() => setActiveTab("markdown")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               activeTab === "markdown"
-                ? "bg-white text-indigo-600 shadow-2xs dark:bg-zinc-800 dark:text-indigo-400"
-                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                ? "bg-background text-primary dark:bg-muted dark:text-primary shadow-2xs"
+                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
             }`}
           >
             <FileText className="h-3.5 w-3.5" />
             <span>{t("cellInspector.tabMarkdown")}</span>
             {analysis.type === "markdown" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="bg-success h-1.5 w-1.5 rounded-full" />
             )}
           </button>
 
@@ -338,14 +336,14 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
             onClick={() => setActiveTab("html")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               activeTab === "html"
-                ? "bg-white text-indigo-600 shadow-2xs dark:bg-zinc-800 dark:text-indigo-400"
-                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                ? "bg-background text-primary dark:bg-muted dark:text-primary shadow-2xs"
+                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
             }`}
           >
             <Globe className="h-3.5 w-3.5" />
             <span>{t("cellInspector.tabHtml")}</span>
             {analysis.type === "html" && (
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="bg-success h-1.5 w-1.5 rounded-full" />
             )}
           </button>
 
@@ -354,8 +352,8 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
             onClick={() => setActiveTab("text")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               activeTab === "text"
-                ? "bg-white text-indigo-600 shadow-2xs dark:bg-zinc-800 dark:text-indigo-400"
-                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                ? "bg-background text-primary dark:bg-muted dark:text-primary shadow-2xs"
+                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
             }`}
           >
             <FileCode className="h-3.5 w-3.5" />
@@ -396,7 +394,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
                 value={editedValue}
                 readOnly={isReadOnly}
                 onChange={(e) => setEditedValue(e.target.value)}
-                className="h-full w-full resize-none rounded-lg border border-zinc-200 bg-white p-3 font-mono text-xs leading-relaxed text-zinc-900 outline-none focus:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-700"
+                className="border-border bg-background text-foreground focus:border-border dark:border-border dark:bg-card dark:text-foreground dark:focus:border-border h-full w-full resize-none rounded-lg border p-3 font-mono text-xs leading-relaxed outline-none"
                 placeholder={t("cellInspector.textPlaceholder")}
               />
             </div>
@@ -404,7 +402,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
         </div>
 
         {/* Footer info bar */}
-        <div className="flex h-7 shrink-0 items-center justify-between border-t border-zinc-200 bg-zinc-50 px-4 font-mono text-[11px] text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-400">
+        <div className="border-border bg-card text-muted-foreground dark:border-border dark:bg-card/60 dark:text-muted-foreground flex h-7 shrink-0 items-center justify-between border-t px-4 font-mono text-[11px]">
           <div className="flex items-center gap-3">
             <span>
               {t("cellInspector.charCount", {
@@ -414,7 +412,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
             <span>•</span>
             <span>{analysis.formattedSize}</span>
             {isModified && (
-              <span className="font-semibold text-amber-600 dark:text-amber-400">
+              <span className="text-warning dark:text-warning font-semibold">
                 • {t("cellInspector.unsavedChanges")}
               </span>
             )}

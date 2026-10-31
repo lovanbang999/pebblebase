@@ -281,29 +281,29 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 shadow-2xl sm:max-w-xl dark:border-zinc-800 dark:bg-zinc-950">
+      <DialogContent className="border-border bg-background dark:border-border dark:bg-card flex max-h-[90vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
         <form
           onSubmit={handleSubmit}
           className="flex max-h-[90vh] flex-col overflow-hidden"
         >
           {/* Header */}
-          <DialogHeader className="flex shrink-0 flex-row items-center gap-3 space-y-0 border-b border-zinc-200/80 bg-zinc-50/70 px-5 py-4 dark:border-zinc-800/80 dark:bg-zinc-900/50">
-            <div className="shrink-0 rounded-lg border border-purple-500/30 bg-purple-500/10 p-2 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400">
+          <DialogHeader className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/50 flex shrink-0 flex-row items-center gap-3 space-y-0 border-b px-5 py-4">
+            <div className="border-primary/30 bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary shrink-0 rounded-lg border p-2">
               <Sparkles className="size-4.5" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <DialogTitle className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                <DialogTitle className="text-foreground dark:text-foreground text-sm font-semibold">
                   {t("ai.settingsTitle")}
                 </DialogTitle>
                 <Badge
                   variant="outline"
-                  className="h-4 border-purple-500/40 bg-purple-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-purple-700 uppercase dark:text-purple-400"
+                  className="border-primary/40 bg-primary/10 text-primary dark:text-primary h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                 >
                   {t("ai.byoKeyBadge")}
                 </Badge>
               </div>
-              <DialogDescription className="text-xs text-zinc-500 dark:text-zinc-400">
+              <DialogDescription className="text-muted-foreground dark:text-muted-foreground text-xs">
                 {t("ai.settingsSubtitle")}
               </DialogDescription>
             </div>
@@ -313,17 +313,17 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
           <div className="custom-scrollbar flex-1 space-y-4 overflow-x-hidden overflow-y-auto p-5">
             {loading ? (
               <div className="flex h-48 items-center justify-center">
-                <Loader2 className="size-6 animate-spin text-zinc-400" />
+                <Loader2 className="text-muted-foreground size-6 animate-spin" />
               </div>
             ) : (
               <>
                 {/* Provider Selector Cards */}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <label className="text-xs font-semibold tracking-wider text-zinc-600 uppercase dark:text-zinc-300">
+                    <label className="text-muted-foreground dark:text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                       {t("ai.selectProvider")}
                     </label>
-                    <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
+                    <span className="text-muted-foreground dark:text-muted-foreground text-[11px]">
                       {t("ai.selectProviderHelp")}
                     </span>
                   </div>
@@ -338,31 +338,31 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                           onClick={() => handleProviderChange(p.id)}
                           className={`flex cursor-pointer flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
                             isSelected
-                              ? "border-purple-500/50 bg-purple-500/5 shadow-2xs ring-1 ring-purple-500/30 dark:bg-purple-500/10"
-                              : "border-zinc-200/90 bg-zinc-50/60 hover:border-zinc-300 hover:bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-900/60 dark:hover:border-zinc-700"
+                              ? "border-primary/50 bg-primary/5 ring-primary/30 dark:bg-primary/10 shadow-2xs ring-1"
+                              : "border-border/90 bg-card/60 hover:border-border hover:bg-muted/70 dark:border-border dark:bg-card/60 dark:hover:border-border"
                           }`}
                         >
                           <div className="flex w-full items-center justify-between">
-                            <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                            <span className="text-foreground dark:text-foreground text-xs font-semibold">
                               {p.name}
                             </span>
                             {p.id === "ollama" ? (
                               <Badge
                                 variant="outline"
-                                className="border-primary/40 h-3.5 bg-emerald-500/10 px-1 py-0 font-mono text-[9px] font-medium text-emerald-700 uppercase dark:text-emerald-400"
+                                className="border-primary/40 bg-success/10 text-success dark:text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
                               >
                                 {t("ai.offlineBadge")}
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="h-3.5 border-zinc-200 bg-zinc-100 px-1 py-0 font-mono text-[9px] font-medium text-zinc-600 uppercase dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+                                className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
                               >
                                 {t("ai.cloudBadge")}
                               </Badge>
                             )}
                           </div>
-                          <span className="mt-1 font-mono text-[10px] text-zinc-400 dark:text-zinc-500">
+                          <span className="text-muted-foreground dark:text-muted-foreground mt-1 font-mono text-[10px]">
                             {p.default_model}
                           </span>
                         </button>
@@ -374,13 +374,13 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                 {/* Model Selector & Custom Switcher */}
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    <label className="text-foreground dark:text-muted-foreground text-xs font-medium">
                       {t("ai.model")}
                     </label>
                     <button
                       type="button"
                       onClick={() => setIsCustomModel(!isCustomModel)}
-                      className="cursor-pointer font-mono text-[11px] text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+                      className="text-primary hover:text-primary dark:text-primary dark:hover:text-primary cursor-pointer font-mono text-[11px]"
                     >
                       {isCustomModel
                         ? t("ai.recommendedModels")
@@ -395,17 +395,17 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                       onChange={(e) => setModel(e.target.value)}
                       placeholder={t("ai.modelPlaceholder")}
                       required
-                      className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                      className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                     />
                   ) : (
                     <Select
                       value={model}
                       onValueChange={(val) => setModel(val ?? "")}
                     >
-                      <SelectTrigger className="h-9 w-full rounded-lg border border-zinc-200 bg-white px-3 font-mono text-xs text-zinc-900 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100">
+                      <SelectTrigger className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground h-9 w-full rounded-lg border px-3 font-mono text-xs shadow-2xs">
                         <SelectValue placeholder={t("ai.modelPlaceholder")} />
                       </SelectTrigger>
-                      <SelectContent className="z-50 rounded-lg border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+                      <SelectContent className="border-border bg-background dark:border-border dark:bg-card z-50 rounded-lg border p-1 shadow-lg">
                         {currentProviderInfo.models.map((m) => (
                           <SelectItem
                             key={m}
@@ -423,14 +423,14 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                 {/* Base URL / Endpoint */}
                 <div>
                   <div className="mb-1 flex items-center justify-between">
-                    <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                    <label className="text-foreground dark:text-muted-foreground text-xs font-medium">
                       {t("ai.endpointUrl")}
                     </label>
                     {baseURL !== currentProviderInfo.default_base_url && (
                       <button
                         type="button"
                         onClick={handleResetURL}
-                        className="flex cursor-pointer items-center gap-1 font-mono text-[10px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        className="text-muted-foreground hover:text-muted-foreground dark:hover:text-foreground flex cursor-pointer items-center gap-1 font-mono text-[10px]"
                       >
                         <RotateCcw className="size-3" />
                         {t("ai.resetDefaultUrl")}
@@ -443,10 +443,10 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                     onChange={(e) => setBaseURL(e.target.value)}
                     placeholder={t("ai.endpointUrlPlaceholder")}
                     required
-                    className="border-zinc-200 bg-white font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                    className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                   />
                   {provider === "ollama" && (
-                    <p className="mt-1 text-[11px] leading-normal text-zinc-400 dark:text-zinc-500">
+                    <p className="text-muted-foreground dark:text-muted-foreground mt-1 text-[11px] leading-normal">
                       {t("ai.ollamaNotice")}
                     </p>
                   )}
@@ -457,12 +457,12 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                   <div>
                     <div className="mb-1 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                        <label className="text-foreground dark:text-muted-foreground text-xs font-medium">
                           {t("ai.apiKey")}
                         </label>
                         <Badge
                           variant="outline"
-                          className="border-primary/40 h-4 bg-emerald-500/10 px-1.5 py-0 font-mono text-[10px] font-semibold text-emerald-700 uppercase dark:text-emerald-400"
+                          className="border-primary/40 bg-success/10 text-success dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                         >
                           {t("ai.keyEncryptedBadge")}
                         </Badge>
@@ -471,7 +471,7 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                         href={currentProviderInfo.doc_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1 text-[11px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        className="text-muted-foreground hover:text-muted-foreground dark:hover:text-foreground flex items-center gap-1 text-[11px]"
                       >
                         <span>{t("ai.getKey")}</span>
                         <ExternalLink className="size-3" />
@@ -488,12 +488,12 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                             ? t("ai.keySavedMasked", { mask: keyMask })
                             : t("ai.apiKeyPlaceholder")
                         }
-                        className="border-zinc-200 bg-white pr-9 font-mono text-xs text-zinc-900 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-100"
+                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground pr-9 font-mono text-xs"
                       />
                       <button
                         type="button"
                         onClick={() => setShowKey(!showKey)}
-                        className="absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                        className="text-muted-foreground hover:text-muted-foreground dark:hover:text-foreground absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer"
                       >
                         {showKey ? (
                           <EyeOff className="size-4" />
@@ -503,19 +503,19 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                       </button>
                     </div>
 
-                    <p className="mt-1 flex items-center gap-1 text-[11px] leading-normal text-zinc-400 dark:text-zinc-500">
-                      <ShieldCheck className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                    <p className="text-muted-foreground dark:text-muted-foreground mt-1 flex items-center gap-1 text-[11px] leading-normal">
+                      <ShieldCheck className="text-success dark:text-success size-3.5 shrink-0" />
                       <span>{t("ai.keyEncryptedHelp")}</span>
                     </p>
                   </div>
                 ) : (
-                  <div className="border-primary/30 dark:border-primary/25 flex items-start gap-2.5 rounded-xl border bg-emerald-500/5 p-3 dark:bg-emerald-500/10">
-                    <Server className="mt-0.5 size-4 text-emerald-600 dark:text-emerald-400" />
+                  <div className="border-primary/30 dark:border-primary/25 bg-success/5 dark:bg-success/10 flex items-start gap-2.5 rounded-xl border p-3">
+                    <Server className="text-success dark:text-success mt-0.5 size-4" />
                     <div>
-                      <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      <span className="text-foreground dark:text-foreground text-xs font-semibold">
                         {t("ai.keyNotRequired")}
                       </span>
-                      <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px]">
                         {t("ai.ollamaNotice")}
                       </p>
                     </div>
@@ -523,17 +523,17 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                 )}
 
                 {/* Temperature Settings */}
-                <div className="rounded-xl border border-zinc-200/90 bg-zinc-50/60 p-3 shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/40">
+                <div className="border-border/90 bg-card/60 dark:border-border dark:bg-card/40 rounded-xl border p-3 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
+                      <span className="text-foreground dark:text-foreground text-xs font-semibold">
                         {t("ai.temperature")}
                       </span>
-                      <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px]">
                         {t("ai.temperatureHelp")}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5 font-mono text-xs font-semibold text-purple-600 dark:text-purple-400">
+                    <div className="text-primary dark:text-primary flex items-center gap-1.5 font-mono text-xs font-semibold">
                       <span>{temperature.toFixed(1)}</span>
                     </div>
                   </div>
@@ -544,7 +544,7 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                     step="0.1"
                     value={temperature}
                     onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                    className="mt-2.5 h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-zinc-200 accent-purple-600 dark:bg-zinc-700 dark:accent-purple-500"
+                    className="bg-muted accent-primary dark:bg-muted dark:accent-primary mt-2.5 h-1.5 w-full cursor-pointer appearance-none rounded-lg"
                   />
                 </div>
 
@@ -553,15 +553,15 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                   <Alert
                     className={`text-xs ${
                       testResult.ok
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-300"
-                        : "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300"
+                        ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30 dark:text-success"
+                        : "border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive"
                     }`}
                     variant={testResult.ok ? "default" : "destructive"}
                   >
                     {testResult.ok ? (
-                      <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <CheckCircle2 className="text-success dark:text-success size-4 shrink-0" />
                     ) : (
-                      <AlertCircle className="size-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                      <AlertCircle className="text-destructive dark:text-destructive size-4 shrink-0" />
                     )}
                     <AlertDescription className="text-xs break-all">
                       {testResult.message}
@@ -572,9 +572,9 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                 {error && (
                   <Alert
                     variant="destructive"
-                    className="border-rose-200 bg-rose-50 text-xs text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-300"
+                    className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive text-xs"
                   >
-                    <AlertCircle className="size-4 shrink-0 text-rose-600 dark:text-rose-400" />
+                    <AlertCircle className="text-destructive dark:text-destructive size-4 shrink-0" />
                     <AlertDescription className="text-xs break-all">
                       {error}
                     </AlertDescription>
@@ -582,8 +582,8 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                 )}
 
                 {saveSuccess && (
-                  <Alert className="border-emerald-200 bg-emerald-50 text-xs text-emerald-800 dark:border-emerald-800/50 dark:bg-emerald-950/30 dark:text-emerald-300">
-                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                  <Alert className="border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30 dark:text-success text-xs">
+                    <CheckCircle2 className="text-success dark:text-success size-4 shrink-0" />
                     <AlertDescription className="text-xs">
                       {t("ai.saveSuccess")}
                     </AlertDescription>
@@ -594,14 +594,14 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
           </div>
 
           {/* Actions Footer */}
-          <DialogFooter className="m-0 flex shrink-0 items-center justify-between rounded-none border-t border-zinc-200/80 bg-zinc-50/70 px-5 py-3 sm:flex-row sm:justify-between dark:border-zinc-800/80 dark:bg-zinc-900/50">
+          <DialogFooter className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/50 m-0 flex shrink-0 items-center justify-between rounded-none border-t px-5 py-3 sm:flex-row sm:justify-between">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleTest}
               disabled={testing || saving || loading}
-              className="gap-1.5 border-zinc-200 bg-white text-xs font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card/60 dark:text-muted-foreground dark:hover:bg-muted gap-1.5 text-xs font-medium"
             >
               {testing ? (
                 <>
@@ -610,7 +610,7 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                 </>
               ) : (
                 <>
-                  <Radio className="size-3.5 text-zinc-500 dark:text-zinc-400" />
+                  <Radio className="text-muted-foreground dark:text-muted-foreground size-3.5" />
                   {t("ai.testConnection")}
                 </>
               )}
@@ -623,7 +623,7 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                 size="sm"
                 onClick={onClose}
                 disabled={saving}
-                className="text-xs text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground text-xs"
               >
                 {t("rowModal.cancel")}
               </Button>
@@ -631,7 +631,7 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
                 type="submit"
                 size="sm"
                 disabled={saving || testing || loading}
-                className="gap-1.5 bg-purple-600 text-xs font-medium text-white hover:bg-purple-500 dark:bg-purple-600 dark:hover:bg-purple-500"
+                className="bg-primary hover:bg-primary dark:bg-primary dark:hover:bg-primary gap-1.5 text-xs font-medium text-white"
               >
                 {saving ? (
                   <>

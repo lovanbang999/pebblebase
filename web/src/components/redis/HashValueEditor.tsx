@@ -113,10 +113,10 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
   return (
     <div className="flex h-full flex-col space-y-3">
       {/* Header controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 pb-2 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex flex-wrap items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
           <div className="relative w-56">
-            <Search className="absolute top-2 left-2.5 h-3.5 w-3.5 text-zinc-400" />
+            <Search className="text-muted-foreground absolute top-2 left-2.5 h-3.5 w-3.5" />
             <Input
               type="text"
               placeholder={t("redis.hashEditor.searchPlaceholder")}
@@ -136,7 +136,7 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
           <Button
             size="sm"
             onClick={() => setIsAdding(true)}
-            className="h-7 bg-indigo-600 text-xs text-white hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700"
+            className="bg-primary hover:bg-primary dark:bg-primary dark:hover:bg-primary h-7 text-xs text-white"
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
             {t("redis.hashEditor.addField")}
@@ -145,14 +145,14 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
       </div>
 
       {error && (
-        <div className="rounded-md border border-rose-500/20 bg-rose-500/10 p-2 text-xs text-rose-600 dark:text-rose-400">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
           {error}
         </div>
       )}
 
       {/* Add field inline form */}
       {isAdding && (
-        <div className="flex items-center gap-2 rounded-md border border-indigo-500/30 bg-indigo-50/50 p-2.5 dark:bg-indigo-950/20">
+        <div className="border-primary/30 bg-primary/50 dark:bg-primary/20 flex items-center gap-2 rounded-md border p-2.5">
           <Input
             placeholder={t("redis.hashEditor.fieldNamePlaceholder")}
             value={newField}
@@ -170,7 +170,7 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
             size="sm"
             onClick={handleAddField}
             disabled={loading || !newField.trim()}
-            className="h-7 bg-indigo-600 text-xs text-white"
+            className="bg-primary h-7 text-xs text-white"
           >
             {loading ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -190,9 +190,9 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
       )}
 
       {/* Field table */}
-      <div className="flex-1 overflow-auto rounded-md border border-zinc-200 dark:border-zinc-800">
+      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border">
         <table className="w-full text-left text-xs">
-          <thead className="sticky top-0 border-b border-zinc-200 bg-zinc-50 font-medium text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900">
+          <thead className="border-border bg-card text-muted-foreground dark:border-border dark:bg-card sticky top-0 border-b font-medium">
             <tr>
               <th className="w-1/3 px-3 py-2">
                 {t("redis.hashEditor.thField")}
@@ -205,12 +205,12 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-zinc-200 font-mono dark:divide-zinc-800">
+          <tbody className="divide-border dark:divide-border divide-y font-mono">
             {fieldList.length === 0 ? (
               <tr>
                 <td
                   colSpan={isReadOnly ? 2 : 3}
-                  className="p-6 text-center text-zinc-400"
+                  className="text-muted-foreground p-6 text-center"
                 >
                   {t("redis.hashEditor.noFields")}
                 </td>
@@ -219,9 +219,9 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
               fieldList.map(([f, v]) => (
                 <tr
                   key={f}
-                  className="group hover:bg-zinc-50/60 dark:hover:bg-zinc-900/60"
+                  className="group hover:bg-card/60 dark:hover:bg-muted/60"
                 >
-                  <td className="px-3 py-2 font-semibold text-zinc-800 dark:text-zinc-200">
+                  <td className="text-foreground dark:text-foreground px-3 py-2 font-semibold">
                     {f}
                   </td>
                   <td className="px-3 py-2">
@@ -241,7 +241,7 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => handleSaveEdit(f)}
-                          className="h-6 px-1.5 text-emerald-600 hover:text-emerald-700"
+                          className="text-success hover:text-success h-6 px-1.5"
                         >
                           <Check className="h-3 w-3" />
                         </Button>
@@ -249,7 +249,7 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => setEditingField(null)}
-                          className="h-6 px-1.5 text-zinc-400"
+                          className="text-muted-foreground h-6 px-1.5"
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -257,7 +257,7 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
                     ) : (
                       <div
                         onDoubleClick={() => handleStartEdit(f, v)}
-                        className="truncate text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+                        className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground truncate"
                         title={v}
                       >
                         {v}
@@ -271,7 +271,7 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => handleStartEdit(f, v)}
-                          className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                          className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-6 w-6 p-0"
                         >
                           <Edit2 className="h-3 w-3" />
                         </Button>
@@ -279,7 +279,7 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => handleDeleteField(f)}
-                          className="h-6 w-6 p-0 text-rose-500 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/30"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/30 h-6 w-6 p-0"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>

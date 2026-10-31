@@ -25,16 +25,16 @@ export const EmptyState: FC<EmptyStateProps> = ({
 }) => {
   return (
     <div className="animate-in fade-in mx-auto my-auto flex max-w-sm flex-col items-center justify-center p-8 text-center duration-200">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-100 shadow-xs dark:border-zinc-800/80 dark:bg-zinc-900/80 dark:shadow-inner dark:shadow-black/40">
-        <Icon className="h-6 w-6 text-zinc-500 dark:text-zinc-400" />
+      <div className="border-border bg-muted dark:border-border/80 dark:bg-card/80 mb-3 flex h-12 w-12 items-center justify-center rounded-xl border shadow-xs dark:shadow-inner dark:shadow-black/40">
+        <Icon className="text-muted-foreground dark:text-muted-foreground h-6 w-6" />
       </div>
 
-      <h3 className="font-mono text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+      <h3 className="text-foreground dark:text-foreground font-mono text-sm font-semibold tracking-tight">
         {title}
       </h3>
 
       {description && (
-        <p className="mt-1 font-mono text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+        <p className="text-muted-foreground dark:text-muted-foreground mt-1 font-mono text-xs leading-relaxed">
           {description}
         </p>
       )}

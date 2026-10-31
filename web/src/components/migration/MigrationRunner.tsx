@@ -52,6 +52,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "cn";
+import { emitOperationEvent } from "@/lib/operationEvents";
 
 interface MigrationRunnerProps {
   connId?: string;
@@ -110,6 +111,16 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
     },
     onSuccess: (result) => {
       setLastResult(result);
+      emitOperationEvent({
+        kind: "migration-dry-run",
+        severity: result.success ? "info" : "error",
+        title: t("operations.migrationDryRun", "Migration preview completed"),
+        message: t("operations.migrationSummary", {
+          count: result.statements_run,
+          defaultValue: "{{count}} statements",
+        }),
+        connectionId: connId,
+      });
     },
     onError: (err: Error) => {
       setLastResult({
@@ -120,6 +131,16 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
         error: err.message,
         execution_time_ms: 0,
         plan: [],
+      });
+      emitOperationEvent({
+        kind: "migration-dry-run",
+        severity: "error",
+        title: t("operations.migrationFailed", "Migration failed"),
+        message: t(
+          "operations.genericFailure",
+          "The operation could not be completed.",
+        ),
+        connectionId: connId,
       });
     },
   });
@@ -132,6 +153,18 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
     },
     onSuccess: (result) => {
       setLastResult(result);
+      emitOperationEvent({
+        kind: "migration",
+        severity: result.success ? "success" : "error",
+        title: result.success
+          ? t("operations.migrationSucceeded", "Migration completed")
+          : t("operations.migrationFailed", "Migration failed"),
+        message: t("operations.migrationSummary", {
+          count: result.statements_run,
+          defaultValue: "{{count}} statements",
+        }),
+        connectionId: connId,
+      });
       setConfirmRunOpen(false);
       // Invalidate relevant schema & table queries
       queryClient.invalidateQueries({
@@ -152,6 +185,16 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
         execution_time_ms: 0,
         plan: [],
       });
+      emitOperationEvent({
+        kind: "migration",
+        severity: "error",
+        title: t("operations.migrationFailed", "Migration failed"),
+        message: t(
+          "operations.genericFailure",
+          "The operation could not be completed.",
+        ),
+        connectionId: connId,
+      });
       setConfirmRunOpen(false);
     },
   });
@@ -165,6 +208,19 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
     onSuccess: (result) => {
       setConfirmRollbackRecord(null);
       setLastResult(result);
+      emitOperationEvent({
+        kind: "migration-rollback",
+        severity: result.success ? "success" : "error",
+        title: t(
+          "operations.migrationRollback",
+          "Migration rollback completed",
+        ),
+        message: t("operations.migrationSummary", {
+          count: result.statements_run,
+          defaultValue: "{{count}} statements",
+        }),
+        connectionId: connId,
+      });
       queryClient.invalidateQueries({
         queryKey: ["migration-history", connId],
       });
@@ -183,6 +239,16 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
         error: err.message,
         execution_time_ms: 0,
         plan: [],
+      });
+      emitOperationEvent({
+        kind: "migration-rollback",
+        severity: "error",
+        title: t("operations.migrationFailed", "Migration failed"),
+        message: t(
+          "operations.genericFailure",
+          "The operation could not be completed.",
+        ),
+        connectionId: connId,
       });
     },
   });
@@ -261,11 +327,11 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
     dryRunMutation.isPending || runMutation.isPending || rollbackMut.isPending;
 
   return (
-    <div className="space-y-6 font-sans text-zinc-900 dark:text-zinc-100">
+    <div className="text-foreground dark:text-foreground space-y-6 font-sans">
       {/* Read-Only Banner */}
       {isReadOnly && (
-        <div className="flex items-center gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3.5 font-mono text-xs text-amber-800 dark:text-amber-300">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <div className="border-warning/30 bg-warning/10 text-warning dark:text-warning flex items-center gap-2.5 rounded-lg border p-3.5 font-mono text-xs">
+          <AlertTriangle className="text-warning dark:text-warning h-4 w-4 shrink-0" />
           <span>{t("migration.readOnlyNotice")}</span>
         </div>
       )}
@@ -279,9 +345,9 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
       )}
 
       {/* Editor Container */}
-      <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xs dark:border-zinc-800 dark:bg-zinc-900/50">
+      <div className="border-border bg-background dark:border-border dark:bg-card/50 overflow-hidden rounded-lg border shadow-2xs">
         {/* Editor Toolbar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-200 bg-zinc-50/80 px-4 py-2.5 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="border-border bg-card/80 dark:border-border dark:bg-card flex flex-wrap items-center justify-between gap-2 border-b px-4 py-2.5">
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -290,11 +356,11 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 border-zinc-300 bg-white font-mono text-xs dark:border-zinc-700 dark:bg-zinc-800"
+                    className="border-border bg-background dark:border-border dark:bg-muted h-8 gap-1.5 font-mono text-xs"
                   >
-                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    <Sparkles className="text-warning h-3.5 w-3.5" />
                     <span>{t("migration.templates")}</span>
-                    <ChevronDown className="h-3 w-3 text-zinc-400" />
+                    <ChevronDown className="text-muted-foreground h-3 w-3" />
                   </Button>
                 }
               />
@@ -321,7 +387,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                 size="sm"
                 onClick={() => setDdl("")}
                 disabled={isExecuting}
-                className="h-8 gap-1 font-mono text-xs text-zinc-500 hover:text-rose-600"
+                className="text-muted-foreground hover:text-destructive h-8 gap-1 font-mono text-xs"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>{t("migration.clear")}</span>
@@ -337,7 +403,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
               size="sm"
               onClick={() => dryRunMutation.mutate(ddl)}
               disabled={!ddl.trim() || isExecuting}
-              className="h-8 gap-1.5 border-zinc-300 bg-white px-3 font-mono text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-muted dark:text-foreground dark:hover:bg-muted h-8 gap-1.5 px-3 font-mono text-xs font-semibold"
             >
               <ShieldCheck
                 className={cn(
@@ -402,19 +468,19 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
           className={cn(
             "space-y-4 overflow-hidden rounded-lg border p-4 shadow-2xs transition-all",
             lastResult.success
-              ? "border-emerald-200 bg-emerald-50/40 dark:border-emerald-800/60 dark:bg-emerald-950/20"
-              : "border-rose-200 bg-rose-50/40 dark:border-rose-800/60 dark:bg-rose-950/20",
+              ? "border-success/30 bg-success/40 dark:border-success/60 dark:bg-success/20"
+              : "border-destructive/30 bg-destructive/40 dark:border-destructive/60 dark:bg-destructive/20",
           )}
         >
           {/* Header Badge & Summary */}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {lastResult.success ? (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                <div className="bg-success/20 text-success dark:text-success flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
               ) : (
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-500/20 text-rose-600 dark:text-rose-400">
+                <div className="bg-destructive/20 text-destructive dark:text-destructive flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                   <XCircle className="h-4 w-4" />
                 </div>
               )}
@@ -432,7 +498,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                         })
                       : t("migration.migrationFailed")}
                 </h4>
-                <p className="font-mono text-[11px] text-zinc-500 dark:text-zinc-400">
+                <p className="text-muted-foreground dark:text-muted-foreground font-mono text-[11px]">
                   {t("migration.statementsExecuted", {
                     count: lastResult.statements_run,
                     total: lastResult.total_statements,
@@ -450,8 +516,8 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                 lastResult.dry_run
                   ? "border-sky-400/40 bg-sky-500/10 text-sky-700 dark:text-sky-300"
                   : lastResult.success
-                    ? "border-primary/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                    : "border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+                    ? "border-primary/40 bg-success/10 text-success dark:text-success"
+                    : "border-destructive/40 bg-destructive/10 text-destructive dark:text-destructive",
               )}
             >
               {lastResult.dry_run
@@ -464,10 +530,10 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
 
           {/* Error Message if any */}
           {lastResult.error && (
-            <div className="space-y-1 rounded-md border border-rose-300 bg-rose-100/70 p-3 font-mono text-xs text-rose-900 dark:border-rose-800 dark:bg-rose-950/60 dark:text-rose-200">
+            <div className="border-destructive/30 bg-destructive/70 text-destructive dark:border-destructive dark:bg-destructive/60 dark:text-destructive space-y-1 rounded-md border p-3 font-mono text-xs">
               <div className="font-semibold">{lastResult.error}</div>
               {lastResult.error_statement && (
-                <div className="rounded bg-rose-200/50 p-1.5 text-[11px] break-all opacity-80 dark:bg-rose-900/40">
+                <div className="bg-destructive/50 dark:bg-destructive/40 rounded p-1.5 text-[11px] break-all opacity-80">
                   <code>{lastResult.error_statement}</code>
                 </div>
               )}
@@ -476,9 +542,9 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
 
           {/* Planned Operations Checklist */}
           {lastResult.plan && lastResult.plan.length > 0 && (
-            <div className="space-y-2 border-t border-zinc-200/60 pt-2 dark:border-zinc-800/60">
-              <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-zinc-700 dark:text-zinc-300">
-                <Layers className="h-3.5 w-3.5 text-indigo-500" />
+            <div className="border-border/60 dark:border-border/60 space-y-2 border-t pt-2">
+              <div className="text-foreground dark:text-muted-foreground flex items-center gap-1.5 font-mono text-xs font-bold">
+                <Layers className="text-primary h-3.5 w-3.5" />
                 <span>
                   {t("migration.operationsPlanned", {
                     count: lastResult.plan.length,
@@ -489,23 +555,23 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                 {lastResult.plan.map((op, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between gap-2 rounded border border-zinc-200 bg-white/70 p-2 font-mono text-xs dark:border-zinc-800 dark:bg-zinc-900/70"
+                    className="border-border bg-background/70 dark:border-border dark:bg-card/70 flex items-center justify-between gap-2 rounded border p-2 font-mono text-xs"
                   >
                     <div className="flex items-center gap-2 overflow-hidden">
                       <Badge
                         variant="secondary"
-                        className="shrink-0 bg-zinc-100 text-[10px] font-bold uppercase dark:bg-zinc-800"
+                        className="bg-muted dark:bg-muted shrink-0 text-[10px] font-bold uppercase"
                       >
                         {op.action}
                       </Badge>
-                      <span className="shrink-0 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      <span className="text-muted-foreground dark:text-muted-foreground shrink-0 text-[11px]">
                         {op.target_type}:
                       </span>
-                      <span className="truncate font-semibold text-zinc-800 dark:text-zinc-200">
+                      <span className="text-foreground dark:text-foreground truncate font-semibold">
                         {op.target_name}
                       </span>
                     </div>
-                    <code className="hidden max-w-xs truncate text-[10px] text-zinc-500 md:inline dark:text-zinc-400">
+                    <code className="text-muted-foreground dark:text-muted-foreground hidden max-w-xs truncate text-[10px] md:inline">
                       {op.sql}
                     </code>
                   </div>
@@ -516,9 +582,9 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
 
           {/* Rollback SQL Preview */}
           {lastResult.rollback_sql && (
-            <div className="space-y-2 border-t border-zinc-200/60 pt-2 dark:border-zinc-800/60">
+            <div className="border-border/60 dark:border-border/60 space-y-2 border-t pt-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-amber-700 dark:text-amber-400">
+                <div className="text-warning dark:text-warning flex items-center gap-1.5 font-mono text-xs font-bold">
                   <RotateCcw className="h-3.5 w-3.5" />
                   <span>{t("migration.rollbackNotice")}</span>
                 </div>
@@ -527,12 +593,12 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyRollback}
-                  className="h-7 gap-1 px-2 font-mono text-[11px] text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
+                  className="text-muted-foreground hover:text-foreground dark:text-muted-foreground h-7 gap-1 px-2 font-mono text-[11px] dark:hover:text-white"
                 >
                   {copiedRollback ? (
                     <>
-                      <Check className="h-3 w-3 text-emerald-500" />
-                      <span className="text-emerald-600 dark:text-emerald-400">
+                      <Check className="text-success h-3 w-3" />
+                      <span className="text-success dark:text-success">
                         {t("schema.copied")}
                       </span>
                     </>
@@ -544,7 +610,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                   )}
                 </Button>
               </div>
-              <div className="overflow-x-auto rounded border border-zinc-800 bg-zinc-900 p-2.5 font-mono text-xs text-zinc-100">
+              <div className="border-border bg-code text-code-foreground overflow-x-auto rounded border p-2.5 font-mono text-xs">
                 <pre>{lastResult.rollback_sql}</pre>
               </div>
             </div>
@@ -556,8 +622,8 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
       <div className="space-y-3 pt-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            <h3 className="font-mono text-xs font-semibold tracking-wider text-zinc-700 uppercase dark:text-zinc-300">
+            <History className="text-success dark:text-success h-4 w-4" />
+            <h3 className="text-foreground dark:text-muted-foreground font-mono text-xs font-semibold tracking-wider uppercase">
               {t("migration.historyTitle")}
             </h3>
             {historyData && (
@@ -573,7 +639,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
             size="sm"
             onClick={() => refetchHistory()}
             disabled={isHistoryLoading || isHistoryRefetching}
-            className="h-7 gap-1 px-2 font-mono text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-7 gap-1 px-2 font-mono text-xs"
           >
             <RefreshCw
               className={cn(
@@ -587,11 +653,11 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
 
         {/* History Items List */}
         {isHistoryLoading ? (
-          <div className="p-6 text-center font-mono text-xs text-zinc-500">
+          <div className="text-muted-foreground p-6 text-center font-mono text-xs">
             {t("common.loading")}
           </div>
         ) : !historyData || historyData.items.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-zinc-300 bg-white/40 p-8 text-center font-mono text-xs text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900/30">
+          <div className="border-border bg-background/40 text-muted-foreground dark:border-border dark:bg-card/30 rounded-lg border border-dashed p-8 text-center font-mono text-xs">
             {t("migration.historyEmpty")}
           </div>
         ) : (
@@ -601,7 +667,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
               return (
                 <div
                   key={record.id}
-                  className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-2xs transition-all dark:border-zinc-800 dark:bg-zinc-900/60"
+                  className="border-border bg-background dark:border-border dark:bg-card/60 overflow-hidden rounded-lg border shadow-2xs transition-all"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 p-3">
                     <div className="flex items-center gap-2.5">
@@ -611,8 +677,8 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                         className={cn(
                           "font-mono text-[10px] font-bold uppercase",
                           record.success
-                            ? "border-primary/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-                            : "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400",
+                            ? "border-primary/30 bg-success/10 text-success dark:text-success"
+                            : "border-destructive/30 bg-destructive/10 text-destructive dark:text-destructive",
                         )}
                       >
                         {record.success
@@ -622,7 +688,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
 
                       {/* Info */}
                       <div className="font-mono text-xs">
-                        <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                        <span className="text-foreground dark:text-foreground font-semibold">
                           {record.ddl
                             .trim()
                             .split(";")
@@ -633,7 +699,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                     </div>
 
                     <div className="flex items-center gap-1.5">
-                      <span className="mr-1 flex items-center gap-1 font-mono text-[11px] text-zinc-400">
+                      <span className="text-muted-foreground mr-1 flex items-center gap-1 font-mono text-[11px]">
                         <Clock className="h-3 w-3" />
                         {new Date(record.executed_at).toLocaleString()}
                       </span>
@@ -646,7 +712,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                           size="sm"
                           onClick={() => setConfirmRollbackRecord(record)}
                           disabled={isReadOnly || isExecuting}
-                          className="h-7 gap-1 border-amber-500/30 bg-amber-500/5 px-2 font-mono text-[11px] text-amber-700 hover:bg-amber-500/15 dark:text-amber-400"
+                          className="border-warning/30 bg-warning/5 text-warning hover:bg-warning/15 dark:text-warning h-7 gap-1 px-2 font-mono text-[11px]"
                         >
                           <RotateCcw className="h-3 w-3" />
                           <span>{t("migration.applyRollback")}</span>
@@ -661,7 +727,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                         onClick={() =>
                           setExpandedHistoryId(isExpanded ? null : record.id)
                         }
-                        className="h-7 px-2 font-mono text-[11px] text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                        className="text-muted-foreground hover:text-foreground h-7 px-2 font-mono text-[11px] dark:hover:text-white"
                       >
                         {isExpanded ? (
                           <>
@@ -680,9 +746,9 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
 
                   {/* Expanded DDL View */}
                   {isExpanded && (
-                    <div className="space-y-2 border-t border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950/80">
+                    <div className="border-border bg-card dark:border-border dark:bg-card/80 space-y-2 border-t p-3">
                       <div className="flex items-center justify-between">
-                        <span className="font-mono text-[10px] font-semibold text-zinc-500 uppercase">
+                        <span className="text-muted-foreground font-mono text-[10px] font-semibold uppercase">
                           DDL Script
                         </span>
                         <Button
@@ -696,8 +762,8 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                         >
                           {copiedHistoryDdl === record.id ? (
                             <>
-                              <Check className="h-3 w-3 text-emerald-500" />
-                              <span className="text-emerald-500">
+                              <Check className="text-success h-3 w-3" />
+                              <span className="text-success">
                                 {t("schema.copied")}
                               </span>
                             </>
@@ -709,23 +775,23 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                           )}
                         </Button>
                       </div>
-                      <div className="overflow-x-auto rounded border border-zinc-800 bg-zinc-900 p-2 font-mono text-xs text-zinc-100">
+                      <div className="border-border bg-code text-code-foreground overflow-x-auto rounded border p-2 font-mono text-xs">
                         <pre>{record.ddl}</pre>
                       </div>
 
                       {isExpanded && record.rollback_sql && (
                         <div className="space-y-1.5">
-                          <p className="font-mono text-[11px] font-semibold tracking-wider text-amber-700 uppercase dark:text-amber-400">
+                          <p className="text-warning dark:text-warning font-mono text-[11px] font-semibold tracking-wider uppercase">
                             {t("migration.rollbackDdlLabel")}
                           </p>
-                          <div className="overflow-x-auto rounded border border-amber-800/30 bg-amber-950/20 p-2.5 font-mono text-xs text-amber-200">
+                          <div className="border-warning/30 bg-warning/20 text-warning overflow-x-auto rounded border p-2.5 font-mono text-xs">
                             <pre>{record.rollback_sql}</pre>
                           </div>
                         </div>
                       )}
 
                       {record.error && (
-                        <div className="rounded border border-rose-200 bg-rose-50 p-2 font-mono text-xs text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+                        <div className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 dark:text-destructive rounded border p-2 font-mono text-xs">
                           <strong>Error:</strong> {record.error}
                         </div>
                       )}
@@ -743,17 +809,17 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
         <AlertDialogContent className="max-w-md font-sans">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 font-mono text-base font-bold">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500" />
+              <AlertTriangle className="text-warning h-4 w-4 shrink-0" />
               {t("migration.confirmRunTitle")}
             </AlertDialogTitle>
-            <AlertDialogDescription className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
+            <AlertDialogDescription className="text-muted-foreground dark:text-muted-foreground font-mono text-xs">
               {t("migration.confirmRunDesc", {
                 count: ddl.split(";").filter((s) => s.trim()).length || 1,
               })}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <div className="max-h-48 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-900 p-3 font-mono text-xs text-zinc-100">
+          <div className="border-border bg-code text-code-foreground max-h-48 overflow-y-auto rounded-md border p-3 font-mono text-xs">
             <pre className="break-all whitespace-pre-wrap">{ddl}</pre>
           </div>
 
@@ -792,11 +858,11 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
       >
         <AlertDialogContent className="max-w-md font-sans">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 font-mono text-base font-bold text-amber-600 dark:text-amber-400">
+            <AlertDialogTitle className="text-warning dark:text-warning flex items-center gap-2 font-mono text-base font-bold">
               <RotateCcw className="h-4 w-4 shrink-0" />
               {t("migration.confirmRollbackTitle")}
             </AlertDialogTitle>
-            <AlertDialogDescription className="font-mono text-xs text-zinc-600 dark:text-zinc-400">
+            <AlertDialogDescription className="text-muted-foreground dark:text-muted-foreground font-mono text-xs">
               {t("migration.confirmRollbackDesc", {
                 id: confirmRollbackRecord?.id.slice(0, 8),
               })}
@@ -804,7 +870,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
           </AlertDialogHeader>
 
           {confirmRollbackRecord?.rollback_sql && (
-            <div className="max-h-48 overflow-y-auto rounded-md border border-zinc-800 bg-zinc-900 p-3 font-mono text-xs text-zinc-100">
+            <div className="border-border bg-code text-code-foreground max-h-48 overflow-y-auto rounded-md border p-3 font-mono text-xs">
               <pre className="break-all whitespace-pre-wrap">
                 {confirmRollbackRecord.rollback_sql}
               </pre>
@@ -825,7 +891,7 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
                 }
               }}
               disabled={rollbackMut.isPending}
-              className="gap-1.5 bg-amber-600 font-mono text-xs font-semibold text-white hover:bg-amber-500"
+              className="bg-warning hover:bg-warning gap-1.5 font-mono text-xs font-semibold text-white"
             >
               {rollbackMut.isPending ? (
                 <>

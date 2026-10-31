@@ -19,24 +19,24 @@ export const EmptyTableScreen: FC<EmptyTableScreenProps> = ({
   const { t } = useTranslation();
 
   return (
-    <div className="flex h-full flex-1 flex-col overflow-hidden bg-zinc-50/50 dark:bg-zinc-950">
-      <div className="flex h-11 items-center gap-2.5 border-b border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-900/30">
-        <SidebarTrigger className="-ml-1 cursor-pointer text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100" />
+    <div className="bg-card/50 dark:bg-background flex h-full flex-1 flex-col overflow-hidden">
+      <div className="border-border bg-background dark:border-border dark:bg-card/30 flex h-11 items-center gap-2.5 border-b px-3">
+        <SidebarTrigger className="text-muted-foreground hover:text-foreground dark:hover:text-foreground -ml-1 cursor-pointer" />
         <Separator
           orientation="vertical"
-          className="h-4 self-center bg-zinc-200 dark:bg-zinc-800"
+          className="bg-muted dark:bg-muted h-4 self-center"
         />
-        <span className="font-mono text-xs font-medium text-zinc-500 dark:text-zinc-400">
+        <span className="text-muted-foreground font-mono text-xs font-medium">
           {connectionName}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-        <Layers className="mb-4 h-12 w-12 text-zinc-300 dark:text-zinc-800" />
-        <h3 className="mb-1 font-mono text-base font-semibold text-zinc-800 dark:text-zinc-200">
+        <Layers className="text-muted-foreground dark:text-foreground mb-4 h-12 w-12" />
+        <h3 className="text-foreground mb-1 font-mono text-base font-semibold">
           {connectionName}
         </h3>
-        <p className="mb-4 font-mono text-xs text-zinc-500 dark:text-zinc-400">
+        <p className="text-muted-foreground mb-4 font-mono text-xs">
           {hasTables ? t("app.selectTablePrompt") : t("app.noTablesFound")}
         </p>
         {!hasTables && (
