@@ -9,8 +9,53 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no"
     />
+    <script>
+      (function () {
+        function shouldAllow(target) {
+          return Boolean(target && target.closest && target.closest('[data-allow-zoom], .react-flow'));
+        }
+        function onWheel(e) {
+          if (shouldAllow(e.target)) return;
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+          }
+        }
+        function onTouch(e) {
+          if (shouldAllow(e.target)) return;
+          if (e.touches && e.touches.length > 1) {
+            e.preventDefault();
+          }
+        }
+        function onGesture(e) {
+          if (shouldAllow(e.target)) return;
+          e.preventDefault();
+        }
+        function onKeyDown(e) {
+          if (!e.ctrlKey && !e.metaKey) return;
+          var k = e.key;
+          if (k === '+' || k === '-' || k === '=' || k === '0' || k === 'NumpadAdd' || k === 'NumpadSubtract') {
+            e.preventDefault();
+          }
+        }
+        var opts = { passive: false, capture: true };
+        window.addEventListener('wheel', onWheel, opts);
+        document.addEventListener('wheel', onWheel, opts);
+        window.addEventListener('touchstart', onTouch, opts);
+        document.addEventListener('touchstart', onTouch, opts);
+        window.addEventListener('touchmove', onTouch, opts);
+        document.addEventListener('touchmove', onTouch, opts);
+        window.addEventListener('gesturestart', onGesture, opts);
+        document.addEventListener('gesturestart', onGesture, opts);
+        window.addEventListener('gesturechange', onGesture, opts);
+        document.addEventListener('gesturechange', onGesture, opts);
+        window.addEventListener('gestureend', onGesture, opts);
+        document.addEventListener('gestureend', onGesture, opts);
+        window.addEventListener('keydown', onKeyDown, opts);
+        document.addEventListener('keydown', onKeyDown, opts);
+      })();
+    </script>
     <title>Pebblebase Studio</title>
     <style>
       *,

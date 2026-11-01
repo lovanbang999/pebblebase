@@ -245,12 +245,6 @@ function PebblebaseStudio() {
   const currentUser = useAuthStore((s) => s.user);
 
   useEffect(() => {
-    if (!isDefaultPassword) return;
-    setAdminPanelDefaultTab("password");
-    setIsAdminPanelOpen(true);
-  }, [isDefaultPassword]);
-
-  useEffect(() => {
     const handleOperationEvent = (event: Event) => {
       const input = (event as CustomEvent<OperationEventInput>).detail;
       if (
@@ -2482,11 +2476,8 @@ function PebblebaseStudio() {
           <Suspense fallback={null}>
             <AdminPanel
               isOpen={isAdminPanelOpen}
-              onClose={() => {
-                if (!isDefaultPassword) setIsAdminPanelOpen(false);
-              }}
+              onClose={() => setIsAdminPanelOpen(false)}
               defaultTab={adminPanelDefaultTab}
-              forcePasswordChange={isDefaultPassword}
             />
           </Suspense>
         )}
