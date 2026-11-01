@@ -63,20 +63,36 @@ describe("page zoom gesture guard", () => {
     documentHost.registrations = [];
   });
 
-  it("registers capture, non-passive wheel listeners on window and document", () => {
+  it("registers capture, non-passive wheel, gesture, touch, and keydown listeners on window and document", () => {
     cleanup = installPageZoomGuards(windowHost, documentHost);
     for (const host of [windowHost, documentHost]) {
       const wheel = host.registrations.find((entry) => entry.type === "wheel");
       expect(wheel?.options).toEqual({ passive: false, capture: true });
+
+      const touchStart = host.registrations.find(
+        (entry) => entry.type === "touchstart",
+      );
+      expect(touchStart?.options).toEqual({ passive: false, capture: true });
+
+      const touchMove = host.registrations.find(
+        (entry) => entry.type === "touchmove",
+      );
+      expect(touchMove?.options).toEqual({ passive: false, capture: true });
+
+      const keydown = host.registrations.find(
+        (entry) => entry.type === "keydown",
+      );
+      expect(keydown?.options).toEqual({ passive: false, capture: true });
     }
     for (const type of ["gesturestart", "gesturechange", "gestureend"]) {
-      const gesture = documentHost.registrations.find(
+      const docGesture = documentHost.registrations.find(
         (entry) => entry.type === type,
       );
-      expect(gesture?.options).toEqual({ passive: false, capture: true });
-      expect(
-        windowHost.registrations.some((entry) => entry.type === type),
-      ).toBe(false);
+      expect(docGesture?.options).toEqual({ passive: false, capture: true });
+      const winGesture = windowHost.registrations.find(
+        (entry) => entry.type === type,
+      );
+      expect(winGesture?.options).toEqual({ passive: false, capture: true });
     }
   });
 
@@ -84,11 +100,26 @@ describe("page zoom gesture guard", () => {
     cleanup = installPageZoomGuards(windowHost, documentHost);
     const secondCleanup = installPageZoomGuards(windowHost, documentHost);
     expect(secondCleanup).toBe(cleanup);
-    expect(windowHost.registrations).toHaveLength(1);
-    expect(documentHost.registrations).toHaveLength(4);
+    expect(windowHost.registrations).toHaveLength(7);
+    expect(documentHost.registrations).toHaveLength(7);
     cleanup();
     expect(windowHost.registrations).toHaveLength(0);
     expect(documentHost.registrations).toHaveLength(0);
+  });
+
+  it("prevents multi-touch pinch zoom and zoom shortcut keys", () => {
+    cleanup = installPageZoomGuards(windowHost, documentHost);
+    const multiTouch = makeEvent("touchmove", null, { touches: [{}, {}] });
+    windowHost.dispatch(multiTouch);
+    expect(multiTouch.preventDefault).toHaveBeenCalledOnce();
+
+    const singleTouch = makeEvent("touchmove", null, { touches: [{}] });
+    windowHost.dispatch(singleTouch);
+    expect(singleTouch.preventDefault).not.toHaveBeenCalled();
+
+    const zoomInKey = makeEvent("keydown", null, { ctrlKey: true, key: "+" });
+    windowHost.dispatch(zoomInKey);
+    expect(zoomInKey.preventDefault).toHaveBeenCalledOnce();
   });
 
   it("prevents ctrl/meta wheel and Safari gestures with preventDefault", () => {
