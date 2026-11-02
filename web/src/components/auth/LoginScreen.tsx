@@ -86,7 +86,7 @@ export function LoginScreen() {
           <ThemeToggle />
         </div>
 
-        <main className="w-full max-w-[380px]">
+        <main className="w-full max-w-95">
           <section className="bg-card text-card-foreground border-border rounded-xl border p-7 shadow-sm">
             <header className="mb-6 flex flex-col items-center text-center">
               <div className="border-border bg-primary/5 mb-4 flex h-11 w-11 items-center justify-center rounded-lg border p-2.5">
@@ -132,7 +132,7 @@ export function LoginScreen() {
                       setUsername(e.target.value);
                       clearError();
                     }}
-                    className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 h-9 pl-11"
+                    className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 h-9 py-2 pl-11"
                     placeholder="admin"
                     aria-invalid={!!error}
                     aria-describedby={error ? "login-error" : undefined}
@@ -171,7 +171,7 @@ export function LoginScreen() {
                     }}
                     onKeyDown={handleKeyDown}
                     onKeyUp={handleKeyDown}
-                    className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 h-9 pr-12 pl-11"
+                    className="bg-background text-foreground border-input placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 h-9 py-2 pr-12 pl-11"
                     placeholder="••••••••"
                     aria-invalid={!!error}
                     aria-describedby={error ? "login-error" : undefined}
@@ -224,7 +224,7 @@ export function LoginScreen() {
               <Button
                 type="submit"
                 disabled={loading || !username.trim() || !password}
-                className="bg-primary focus-visible:ring-primary/30 text-primary-foreground hover:bg-primary/90 h-[38px] w-full cursor-pointer justify-center px-4 font-semibold disabled:opacity-60"
+                className="bg-primary focus-visible:ring-primary/30 text-primary-foreground hover:bg-primary/90 h-9.5 w-full cursor-pointer justify-center px-4 font-semibold disabled:opacity-60"
               >
                 {loading ? t("auth.signingIn") : t("auth.signIn")}
               </Button>

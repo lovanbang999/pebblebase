@@ -413,7 +413,7 @@ export const TabBar: FC<TabBarProps> = ({
 
   return (
     <div
-      className="wails-drag border-border bg-muted/80 dark:border-border dark:bg-card/70 relative z-20 flex h-[34px] shrink-0 items-center overflow-hidden border-b px-2 select-none"
+      className="wails-drag border-border bg-muted/80 dark:border-border dark:bg-card/70 relative z-20 flex h-8.5 shrink-0 items-center overflow-hidden border-b px-2 select-none"
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       {/* Left Scroll Button when overflowing */}
@@ -477,7 +477,7 @@ export const TabBar: FC<TabBarProps> = ({
                 onContextMenu={(e) => handleContextMenu(e, tab.id)}
                 onMouseDown={(e) => handleMouseDown(e, tab.id)}
                 className={cn(
-                  "group wails-no-drag relative flex h-full max-w-50 shrink-0 cursor-pointer items-center gap-2 rounded-none border-t-0 border-b-2 px-3 font-sans text-xs transition-colors duration-150 select-none",
+                  "group wails-no-drag relative flex h-full max-w-50 shrink-0 cursor-pointer items-center gap-2 rounded-t-md border-t-0 border-b-2 px-3 font-sans text-xs transition-colors duration-150 select-none",
                   isActive
                     ? "border-b-primary border-border bg-background text-foreground dark:border-border dark:bg-background dark:text-foreground border-x font-medium"
                     : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/40 dark:hover:text-foreground border-x border-transparent border-b-transparent",

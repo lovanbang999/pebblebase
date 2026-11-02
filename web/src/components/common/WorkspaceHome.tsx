@@ -100,15 +100,15 @@ export function WorkspaceHome({
                 variant="outline"
                 disabled={!enabled}
                 onClick={action}
-                className="h-auto min-h-16 justify-start gap-3 px-4 py-3 text-left"
+                className="h-auto min-h-16 justify-start gap-3 rounded-lg px-4 py-3 text-left transition-colors"
               >
                 <Icon
                   aria-hidden="true"
                   className="text-primary size-4 shrink-0"
                 />
-                <span className="flex-1 text-sm">{label}</span>
+                <span className="flex-1 text-sm font-medium">{label}</span>
                 {shortcut && (
-                  <kbd className="text-muted-foreground text-[11px]">
+                  <kbd className="text-muted-foreground bg-muted/60 rounded px-1.5 py-0.5 font-mono text-[11px]">
                     {shortcut}
                   </kbd>
                 )}
