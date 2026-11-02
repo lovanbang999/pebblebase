@@ -156,7 +156,7 @@ export function OutputPanel({ events, onClear, onClose }: OutputPanelProps) {
                 <span className="text-muted-foreground text-right text-[10px]">
                   {event.connectionName || event.connectionId || ""}
                 </span>
-                <span className="text-muted-foreground col-start-2 col-end-4 text-[11px] break-words">
+                <span className="text-muted-foreground col-start-2 col-end-4 text-[11px] wrap-break-word">
                   {event.message}
                 </span>
               </li>

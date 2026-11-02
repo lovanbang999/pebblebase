@@ -34,13 +34,19 @@ import {
   Check,
 } from "lucide-react";
 import type {
+  Connection,
   TableSchema,
   FilterOption,
   ColumnSchema,
   TableStats,
   DatabaseType,
 } from "@/lib/types";
-import { exportTableData, fetchTableStats, type ExportFormat } from "@/lib/api";
+import {
+  exportTableData,
+  fetchTableStats,
+  resolveReferences,
+  type ExportFormat,
+} from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/common";
 import { QuickStatsBar } from "./QuickStatsBar";
@@ -95,6 +101,11 @@ import {
 import { cn } from "cn";
 import { ReferenceCell } from "./ReferenceCell";
 import { invalidateReferenceCache } from "@/lib/referenceCache";
+import { ReferencedByMenu } from "./ReferencedByMenu";
+import { chooseNavigationCandidate } from "@/lib/referenceNavigation";
+import { filtersForForwardReference } from "@/lib/referenceNavigation";
+import { useSchemaMetadata } from "@/hooks/useSchemaMetadata";
+import type { ReferenceMatch } from "@/lib/referenceCache";
 
 interface DataGridProps {
   table: TableSchema;
@@ -125,12 +136,15 @@ interface DataGridProps {
     value: any,
   ) => void;
   workspaceId?: string;
+  workspaceConnections?: Connection[];
+  isTabActive?: boolean;
   onNavigateReference?: (
     connectionId: string,
     table: string,
     column: string,
     value: unknown,
     rowIdentity?: string,
+    filters?: FilterOption[],
   ) => void;
   isReadOnly?: boolean;
   onOpenQueryConsole?: (query?: string, title?: string) => void;
@@ -212,6 +226,8 @@ export function DataGrid({
   onCommitDeleteRow,
   onNavigateRelation,
   workspaceId,
+  workspaceConnections = [],
+  isTabActive = true,
   onNavigateReference,
   isReadOnly = false,
   onOpenQueryConsole,
@@ -228,6 +244,15 @@ export function DataGrid({
   queryTimeMs,
 }: DataGridProps) {
   const { t } = useTranslation();
+  const schemaMetadata = useSchemaMetadata(
+    connId ?? "",
+    table.name,
+    isTabActive,
+  );
+  const metadataTable = schemaMetadata.data?.tables.find(
+    (candidate) => candidate.name === table.name,
+  );
+  const referenceTable = metadataTable ?? table;
   const [activeSubView, setActiveSubView] = useState<TableSubview>("data");
   const [viewMode, setViewMode] = useState<"table" | "document">(
     dbType === "mongodb" ? "document" : "table",
@@ -282,6 +307,19 @@ export function DataGrid({
 
   // Right-click Context Menu State
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
+  const [referenceChooser, setReferenceChooser] = useState<{
+    matches: ReferenceMatch[];
+    value: unknown;
+    sourceColumn?: string;
+    sourceRow?: Record<string, unknown>;
+  } | null>(null);
+  const [referencedByRequest, setReferencedByRequest] = useState<{
+    column: string;
+    value: unknown;
+    row: Record<string, unknown>;
+  } | null>(null);
+  const [referenceNotice, setReferenceNotice] = useState("");
+  const referenceLookupAbort = useRef<AbortController | null>(null);
   const [cellDrawerState, setCellDrawerState] = useState<{
     isOpen: boolean;
     columnName: string;
@@ -1092,6 +1130,135 @@ export function DataGrid({
     return () => window.removeEventListener("pb:restore-cell", restore);
   }, [displayedRows, table.columns, workspaceTabId]);
 
+  const openReferencedBy = useCallback(
+    (column: string, value: unknown, row: Record<string, unknown>) => {
+      const rowIndex = displayedRows.indexOf(row as Record<string, any>);
+      if (rowIndex >= 0) setFocusedCell({ rowIndex, colName: column });
+      setReferenceChooser(null);
+      setReferencedByRequest({ column, value, row });
+    },
+    [displayedRows],
+  );
+  useEffect(() => {
+    referenceLookupAbort.current?.abort();
+  }, [focusedCell]);
+
+  useEffect(() => {
+    if (!isTabActive) {
+      setReferencedByRequest(null);
+      return;
+    }
+    if (!referencedByRequest || !focusedCell) return;
+    const focusedRow = displayedRows[focusedCell.rowIndex];
+    if (
+      focusedCell.colName !== referencedByRequest.column ||
+      (focusedRow && focusedRow !== referencedByRequest.row)
+    )
+      setReferencedByRequest(null);
+  }, [referencedByRequest, focusedCell, displayedRows, isTabActive]);
+  useEffect(() => {
+    if (!isTabActive) {
+      referenceLookupAbort.current?.abort();
+      return;
+    }
+    const handleReferenceCommand = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ tabId: string; action: "forward" | "reverse" }>
+      ).detail;
+      if (
+        detail?.tabId !== workspaceTabId ||
+        !focusedCell ||
+        !connId ||
+        !workspaceId
+      )
+        return;
+      const row = displayedRows[focusedCell.rowIndex];
+      if (!row) return;
+      const value = row[focusedCell.colName];
+      if (detail.action === "reverse") {
+        if (value == null || String(value) === "") return;
+        openReferencedBy(focusedCell.colName, value, row);
+        return;
+      }
+      const relation = table.relations?.find(
+        (item) => item.from_column === focusedCell.colName,
+      );
+      if (value == null || (!relation && !isReferenceId(value))) return;
+      referenceLookupAbort.current?.abort();
+      const controller = new AbortController();
+      referenceLookupAbort.current = controller;
+      void resolveReferences(
+        {
+          workspaceId,
+          currentConnectionId: connId,
+          currentTable: table.name,
+          value: String(value),
+          ...(relation
+            ? {
+                declaredTable: relation.to_table,
+                declaredColumn: relation.to_column,
+              }
+            : {}),
+        },
+        controller.signal,
+      )
+        .then((result) => {
+          if (controller.signal.aborted) return;
+          if (result.matches.length === 1) {
+            const match = result.matches[0]!;
+            onNavigateReference?.(
+              match.connectionId,
+              match.table,
+              match.column,
+              value,
+              match.rowIdentity,
+              filtersForForwardReference(
+                referenceTable,
+                focusedCell.colName,
+                match.table,
+                row,
+              ),
+            );
+          } else if (result.matches.length > 1) {
+            setReferenceChooser({
+              matches: result.matches,
+              value,
+              sourceColumn: focusedCell.colName,
+              sourceRow: row,
+            });
+          } else if (relation) {
+            setReferenceNotice("Declared foreign key points to a missing row.");
+            window.setTimeout(() => setReferenceNotice(""), 3000);
+          }
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          if (referenceLookupAbort.current === controller)
+            referenceLookupAbort.current = null;
+        });
+    };
+    window.addEventListener(
+      "pb:cell-reference-command",
+      handleReferenceCommand,
+    );
+    return () =>
+      window.removeEventListener(
+        "pb:cell-reference-command",
+        handleReferenceCommand,
+      );
+  }, [
+    isTabActive,
+    workspaceTabId,
+    focusedCell,
+    displayedRows,
+    connId,
+    workspaceId,
+    table,
+    referenceTable,
+    openReferencedBy,
+    onNavigateReference,
+  ]);
+
   // TanStack Table columns
   const columns = useMemo<ColumnDef<Record<string, any>>[]>(() => {
     const cols: ColumnDef<Record<string, any>>[] = [
@@ -1456,6 +1623,8 @@ export function DataGrid({
             if (
               relation ||
               col.is_foreign_key ||
+              (col.is_primary_key &&
+                (typeof val === "string" || typeof val === "number")) ||
               (typeof val === "string" &&
                 (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
                   val,
@@ -1474,6 +1643,7 @@ export function DataGrid({
                       : undefined
                   }
                   declaredForeignKey={col.is_foreign_key}
+                  isPrimaryKey={col.is_primary_key}
                   onOpen={(match, value) =>
                     onNavigateReference?.(
                       match.connectionId,
@@ -1481,9 +1651,18 @@ export function DataGrid({
                       match.column,
                       value,
                       match.rowIdentity,
+                      filtersForForwardReference(
+                        referenceTable,
+                        col.name,
+                        match.table,
+                        row.original,
+                      ),
                     )
                   }
                   onFind={onFindEverywhere}
+                  onShowReferencedBy={(cellValue) =>
+                    openReferencedBy(col.name, cellValue, row.original)
+                  }
                 />
               );
             }
@@ -1803,7 +1982,7 @@ export function DataGrid({
 
     return cols;
   }, [
-    table,
+    referenceTable,
     extraColumns,
     sortBy,
     sortDesc,
@@ -1812,6 +1991,7 @@ export function DataGrid({
     pageSize,
     onNavigateReference,
     onFindEverywhere,
+    openReferencedBy,
     connId,
     workspaceId,
     copiedCol,
@@ -2376,7 +2556,7 @@ export function DataGrid({
         <Suspense
           fallback={
             <div className="text-muted-foreground p-8 text-center font-mono text-xs">
-              Loading Schema...
+              {t("schema.loadingSchema", "Loading Schema...")}
             </div>
           }
         >
@@ -2842,28 +3022,55 @@ export function DataGrid({
                   (item) => item.from_column === context.colName,
                 );
                 if (connId && workspaceId) {
-                  const { resolveReferences } = await import("@/lib/api");
-                  const result = await resolveReferences({
-                    workspaceId,
-                    currentConnectionId: connId,
-                    currentTable: table.name,
-                    value: String(context.cellValue ?? ""),
-                    ...(rel
-                      ? {
-                          declaredTable: rel.to_table,
-                          declaredColumn: rel.to_column,
-                        }
-                      : {}),
-                  });
-                  const match = result.matches[0];
-                  if (match)
+                  referenceLookupAbort.current?.abort();
+                  const controller = new AbortController();
+                  referenceLookupAbort.current = controller;
+                  const result = await resolveReferences(
+                    {
+                      workspaceId,
+                      currentConnectionId: connId,
+                      currentTable: table.name,
+                      value: String(context.cellValue ?? ""),
+                      ...(rel
+                        ? {
+                            declaredTable: rel.to_table,
+                            declaredColumn: rel.to_column,
+                          }
+                        : {}),
+                    },
+                    controller.signal,
+                  );
+                  if (controller.signal.aborted) return;
+                  if (result.matches.length === 1) {
+                    const match = result.matches[0]!;
                     onNavigateReference(
                       match.connectionId,
                       match.table,
                       match.column,
                       context.cellValue,
                       match.rowIdentity,
+                      filtersForForwardReference(
+                        referenceTable,
+                        context.colName,
+                        match.table,
+                        context.row,
+                      ),
                     );
+                  } else if (result.matches.length > 1) {
+                    setReferenceChooser({
+                      matches: result.matches,
+                      value: context.cellValue,
+                      sourceColumn: context.colName,
+                      sourceRow: context.row,
+                    });
+                  } else if (rel) {
+                    setReferenceNotice(
+                      "Declared foreign key points to a missing row.",
+                    );
+                    window.setTimeout(() => setReferenceNotice(""), 3000);
+                  }
+                  if (referenceLookupAbort.current === controller)
+                    referenceLookupAbort.current = null;
                 }
               },
               disabled:
@@ -2875,6 +3082,18 @@ export function DataGrid({
                   !table.relations?.some(
                     (item) => item.from_column === context.colName,
                   )),
+            });
+          if (context.cellValue != null && String(context.cellValue) !== "")
+            items.push({
+              id: "referenced-by",
+              label: "Referenced by…",
+              onSelect: () =>
+                openReferencedBy(
+                  context.colName,
+                  context.cellValue,
+                  context.row,
+                ),
+              disabled: false,
             });
           return items;
         }}
@@ -2890,6 +3109,126 @@ export function DataGrid({
         }
         t={t}
       />
+
+      {referencedByRequest &&
+        isTabActive &&
+        connId &&
+        workspaceId &&
+        workspaceTabId && (
+          <ReferencedByMenu
+            open
+            workspaceId={workspaceId}
+            connections={workspaceConnections}
+            sourceTabId={workspaceTabId}
+            sourceConnectionId={connId}
+            sourceTable={table.name}
+            sourceColumn={referencedByRequest.column}
+            value={referencedByRequest.value}
+            row={referencedByRequest.row}
+            onClose={() => setReferencedByRequest(null)}
+            onOpenTarget={(candidate) => {
+              setReferencedByRequest(null);
+              if (candidate.engine === "redis") {
+                onNavigateReference?.(
+                  candidate.connectionId,
+                  "Redis keys",
+                  "key",
+                  candidate.redisKey ??
+                    candidate.filters[0]?.value ??
+                    referencedByRequest.value,
+                );
+              } else {
+                onNavigateReference?.(
+                  candidate.connectionId,
+                  candidate.table,
+                  candidate.column,
+                  referencedByRequest.value,
+                  candidate.rowIdentity,
+                  candidate.filters,
+                );
+              }
+            }}
+          />
+        )}
+
+      {referenceChooser && (
+        <div
+          role="dialog"
+          aria-label="Choose referenced row"
+          className="border-border bg-popover text-popover-foreground absolute right-4 bottom-4 z-91 w-80 rounded-md border p-2 shadow-xl"
+        >
+          <strong className="block border-b pb-2">Choose referenced row</strong>
+          <div className="max-h-64 space-y-1 overflow-auto py-2">
+            {referenceChooser.matches.map((match) => (
+              <button
+                key={`${match.connectionId}:${match.table}:${match.column}`}
+                type="button"
+                className="hover:bg-accent flex w-full justify-between rounded px-2 py-1.5 text-left text-xs"
+                onClick={() => {
+                  const candidate = chooseNavigationCandidate(
+                    referenceChooser.matches.map((item) => ({
+                      id: `${item.connectionId}:${item.table}:${item.column}`,
+                      connectionId: item.connectionId,
+                      connectionName: item.connectionName,
+                      table: item.table,
+                      column: item.column,
+                      count: item.count,
+                      rowIdentity: item.rowIdentity,
+                      filters: [
+                        {
+                          column: item.column,
+                          operator: "eq" as const,
+                          value: String(referenceChooser.value),
+                        },
+                      ],
+                    })),
+                    `${match.connectionId}:${match.table}:${match.column}`,
+                  );
+                  if (candidate)
+                    onNavigateReference?.(
+                      candidate.connectionId,
+                      candidate.table,
+                      candidate.column,
+                      referenceChooser.value,
+                      candidate.rowIdentity,
+                      referenceChooser.sourceColumn &&
+                        referenceChooser.sourceRow
+                        ? filtersForForwardReference(
+                            referenceTable,
+                            referenceChooser.sourceColumn,
+                            candidate.table,
+                            referenceChooser.sourceRow,
+                          )
+                        : candidate.filters,
+                    );
+                  setReferenceChooser(null);
+                }}
+              >
+                <span>
+                  {match.connectionName} · {match.table}.{match.column}
+                </span>
+                <span className="text-muted-foreground">{match.count}</span>
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="text-muted-foreground text-xs"
+            onClick={() => setReferenceChooser(null)}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {referenceNotice && (
+        <div
+          role="status"
+          className="text-warning absolute right-4 bottom-4 z-92 rounded border p-2 text-xs"
+        >
+          {referenceNotice}
+        </div>
+      )}
 
       {/* Copied Toast Notification */}
       {copiedNotification && (

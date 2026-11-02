@@ -114,7 +114,7 @@ export function AIAssistantPanel({
         }
       }}
       style={{ width: `min(${width}px, calc(100vw - 56px))` }}
-      className="border-border bg-background fixed top-[calc(var(--titlebar-height)+8px)] right-11 z-[70] flex h-[min(72dvh,640px)] flex-col overflow-hidden rounded-lg border shadow-xl"
+      className="border-border bg-background fixed top-[calc(var(--titlebar-height)+8px)] right-11 z-70 flex h-[min(72dvh,640px)] flex-col overflow-hidden rounded-lg border shadow-xl"
     >
       <div
         role="separator"

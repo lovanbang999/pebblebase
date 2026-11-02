@@ -2366,3 +2366,12 @@ INSERT INTO system_logs (id, level, service, message, ip_address, duration_ms, c
 (349, 'ERROR', 'auth-service', 'Flushed WAL buffer to disk', '192.168.1.181', 55, '2026-05-04 22:12:36'),
 (350, 'INFO', 'notification-service', 'User authentication succeeded', '192.168.1.42', 217, '2026-01-05 07:53:11')
 ON CONFLICT (id) DO NOTHING;
+
+-- Synchronize sequences with max inserted IDs
+SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE(max(id), 1)) FROM users;
+SELECT setval(pg_get_serial_sequence('products', 'id'), COALESCE(max(id), 1)) FROM products;
+SELECT setval(pg_get_serial_sequence('orders', 'id'), COALESCE(max(id), 1)) FROM orders;
+SELECT setval(pg_get_serial_sequence('order_items', 'id'), COALESCE(max(id), 1)) FROM order_items;
+SELECT setval(pg_get_serial_sequence('posts', 'id'), COALESCE(max(id), 1)) FROM posts;
+SELECT setval(pg_get_serial_sequence('comments', 'id'), COALESCE(max(id), 1)) FROM comments;
+SELECT setval(pg_get_serial_sequence('system_logs', 'id'), COALESCE(max(id), 1)) FROM system_logs;

@@ -61,6 +61,8 @@ const KEYMAP_COMMANDS: WorkspaceCommandId[] = [
   "run_from_log",
   "navigate_back",
   "navigate_forward",
+  "navigate_reference",
+  "show_referenced_by",
   "switch_workspace",
   "execute_query",
   "query_history",

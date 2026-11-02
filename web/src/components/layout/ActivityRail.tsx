@@ -88,7 +88,7 @@ export function ActivityRail({
   return (
     <nav
       aria-label={t("studio.tools")}
-      className="bg-card border-border z-20 flex w-[36px] shrink-0 flex-col items-center gap-1 border-r py-1.5"
+      className="bg-card border-border z-20 flex w-9 shrink-0 flex-col items-center gap-1 border-r py-1.5"
     >
       {actions.map(renderButton)}
     </nav>

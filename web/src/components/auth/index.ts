@@ -1,4 +1,5 @@
 export { LoginScreen } from "./LoginScreen";
+export { AuthGuard } from "./AuthGuard";
 export { DefaultPasswordBanner } from "./DefaultPasswordBanner";
 export { PasswordField } from "./PasswordField";
 export { AuditActionBadge } from "./AuditActionBadge";

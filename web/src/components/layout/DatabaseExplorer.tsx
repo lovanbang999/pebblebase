@@ -601,7 +601,7 @@ export function DatabaseExplorer({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-sidebar-border flex h-[30px] shrink-0 items-center justify-between border-b px-2">
+      <div className="border-sidebar-border flex h-7.5 shrink-0 items-center justify-between border-b px-2">
         <div className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
           <Database className="text-muted-foreground size-3.5" />
           <span>{t("explorer.title", "Database")}</span>
@@ -955,14 +955,14 @@ export function DatabaseExplorer({
                       <Unplug className="size-3" />
                       {t("sidebar.connectionFailed", "Connection failed")}
                     </div>
-                    <p className="text-muted-foreground mt-1 break-words">
+                    <p className="text-muted-foreground mt-1 wrap-break-word">
                       {errorSummary(status.error)}
                     </p>
                     <details className="text-muted-foreground mt-1">
                       <summary className="cursor-pointer select-none">
                         {t("explorer.technicalDetails", "Technical details")}
                       </summary>
-                      <pre className="bg-background/70 mt-1 max-h-28 overflow-auto rounded p-1.5 font-mono text-[10px] break-words whitespace-pre-wrap">
+                      <pre className="bg-background/70 mt-1 max-h-28 overflow-auto rounded p-1.5 font-mono text-[10px] wrap-break-word whitespace-pre-wrap">
                         {errorMessage(status.error)}
                       </pre>
                       {canManageConnections && (
