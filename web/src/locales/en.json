@@ -412,7 +412,13 @@
       "inspectCell": "Inspect Cell Detail",
       "columnTitle": "Column: {{column}}",
       "rowActions": "Row Actions",
-      "copied": "Copied to clipboard!"
+      "copied": "Copied to clipboard!",
+      "editCell": "Edit Cell",
+      "setNull": "Set NULL",
+      "sortAsc": "Sort Ascending",
+      "sortDesc": "Sort Descending",
+      "cloneRow": "Clone Row",
+      "deleteRow": "Delete Row"
     },
     "viewMode": {
       "table": "Table View",
@@ -1698,6 +1704,8 @@
     "rowCount": "{{count}} rows",
     "noIncomingFound": "No incoming references found.",
     "partialWarning": "Some reference counts timed out or were skipped.",
-    "checking": "Checking references…"
+    "checking": "Checking references…",
+    "quickGoToReferencedRow": "Go to referenced row",
+    "goToReferencedRowInTable": "Go to referenced row in {{table}} ({{column}} = {{value}})"
   }
 }

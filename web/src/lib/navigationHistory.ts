@@ -36,6 +36,27 @@ export function pushNavigation(
   };
 }
 
+export function updateCurrentNavigationCell(
+  history: NavigationHistory,
+  tabId: string,
+  selectedCell?: { column: string; rowIdentity?: string },
+): NavigationHistory {
+  const current = history.entries[history.cursor];
+  if (!current || current.tabId !== tabId) return history;
+  if (
+    current.selectedCell?.column === selectedCell?.column &&
+    current.selectedCell?.rowIdentity === selectedCell?.rowIdentity
+  ) {
+    return history;
+  }
+  const entries = [...history.entries];
+  entries[history.cursor] = {
+    ...current,
+    selectedCell,
+  };
+  return { ...history, entries };
+}
+
 export function pruneNavigation(
   history: NavigationHistory,
   openTabIds: readonly string[],

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useState, useLayoutEffect } from "react";
 import {
   Edit2,
   Trash2,
@@ -7,6 +7,10 @@ import {
   FileJson,
   ArrowUpRight,
   FileCode,
+  ArrowUp,
+  ArrowDown,
+  CopyPlus,
+  MinusCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "cn";
@@ -27,6 +31,7 @@ export interface ExtraGridContextMenuItem {
   onSelect: () => void;
   disabled?: boolean;
   title?: string;
+  icon?: React.ReactNode;
 }
 
 export interface GridContextMenuProps {
@@ -70,7 +75,6 @@ export const GridContextMenu = React.memo(function GridContextMenu({
   table,
   filters,
   onFiltersChange,
-  onEditRow,
   onEditCell,
   onSetNull,
   onCloneRow,
@@ -84,6 +88,65 @@ export const GridContextMenu = React.memo(function GridContextMenu({
   getExtraMenuItems = () => [],
   t,
 }: GridContextMenuProps) {
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const [coords, setCoords] = useState<{ left: number; top: number }>(() => {
+    if (!contextMenu) return { left: 0, top: 0 };
+    const margin = 12;
+    const estW = 240;
+    const estH = 340;
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
+    const vh = typeof window !== "undefined" ? window.innerHeight : 768;
+
+    let initX = contextMenu.mouseX;
+    let initY = contextMenu.mouseY;
+
+    if (initX + estW > vw - margin) {
+      initX = Math.max(margin, vw - estW - margin);
+    }
+    if (initY + estH > vh - margin) {
+      initY = Math.max(margin, vh - estH - margin);
+    }
+
+    return { left: initX, top: initY };
+  });
+
+  useLayoutEffect(() => {
+    if (!contextMenu || !menuRef.current) return;
+    const rect = menuRef.current.getBoundingClientRect();
+    const margin = 12;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let left = contextMenu.mouseX;
+    let top = contextMenu.mouseY;
+
+    // Horizontal collision: flip left if overflowing right edge
+    if (left + rect.width > vw - margin) {
+      const flippedX = contextMenu.mouseX - rect.width;
+      left =
+        flippedX >= margin
+          ? flippedX
+          : Math.max(margin, vw - rect.width - margin);
+    } else {
+      left = Math.max(margin, left);
+    }
+
+    // Vertical collision: flip upward if overflowing bottom edge
+    if (top + rect.height > vh - margin) {
+      const flippedY = contextMenu.mouseY - rect.height;
+      if (flippedY >= margin) {
+        top = flippedY;
+      } else {
+        top = Math.max(margin, vh - rect.height - margin);
+      }
+    } else {
+      top = Math.max(margin, top);
+    }
+
+    setCoords({ left: Math.round(left), top: Math.round(top) });
+  }, [contextMenu]);
+
   if (!contextMenu) return null;
 
   const targetCol = table.columns.find((c) => c.name === contextMenu.colName);
@@ -94,48 +157,71 @@ export const GridContextMenu = React.memo(function GridContextMenu({
     writeBlocked || !cellTarget || Boolean(targetCol?.is_primary_key);
   const rowIndex = contextMenu.rowIndex ?? 0;
 
-  const item = (
+  const extraItems = getExtraMenuItems(contextMenu);
+  const relation = table.relations?.find(
+    (candidate) => candidate.from_column === contextMenu.colName,
+  );
+  const hasRelationAction = Boolean(
+    relation && onNavigateRelation && cellTarget,
+  );
+  const hasNavigationGroup = hasRelationAction || extraItems.length > 0;
+
+  const renderItem = (
     label: string,
     onSelect: () => void,
-    disabled = false,
-    title?: string,
-    icon?: React.ReactNode,
+    options?: {
+      disabled?: boolean;
+      title?: string;
+      icon?: React.ReactNode;
+      shortcut?: string;
+      destructive?: boolean;
+    },
   ) => (
     <button
       key={label}
       type="button"
-      disabled={disabled}
-      title={title}
+      disabled={options?.disabled}
+      title={options?.title}
       onClick={() => {
         onSelect();
         onClose();
       }}
       className={cn(
-        "text-foreground hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors",
-        disabled && "cursor-not-allowed opacity-50 hover:bg-transparent",
+        "flex w-full cursor-pointer items-center justify-between rounded px-2.5 py-1.5 text-left text-xs transition-colors",
+        options?.destructive
+          ? "text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
+          : "text-foreground hover:bg-muted dark:hover:bg-muted/80",
+        options?.disabled &&
+          "cursor-not-allowed opacity-50 hover:bg-transparent dark:hover:bg-transparent",
       )}
     >
-      {icon}
-      <span>{label}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        {options?.icon}
+        <span className="truncate">{label}</span>
+      </div>
+      {options?.shortcut && (
+        <kbd className="bg-muted text-muted-foreground ml-2 shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px]">
+          {options.shortcut}
+        </kbd>
+      )}
     </button>
   );
 
   return (
     <div
+      ref={menuRef}
       style={{
         position: "fixed",
-        left: `${Math.min(contextMenu.mouseX, window.innerWidth - 230)}px`,
-        top: `${Math.min(contextMenu.mouseY, window.innerHeight - 280)}px`,
+        left: `${coords.left}px`,
+        top: `${coords.top}px`,
       }}
-      className="animate-in fade-in-50 zoom-in-95 border-border bg-background dark:border-border dark:bg-card z-50 w-56 rounded-lg border p-1 font-mono text-xs shadow-2xl duration-100"
+      className="animate-in fade-in-50 zoom-in-95 border-border bg-popover text-popover-foreground z-50 max-h-[calc(100vh-24px)] w-60 overflow-y-auto overscroll-contain rounded-lg border p-1 font-mono text-xs shadow-2xl duration-100"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
-      <div className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground flex items-center justify-between border-b px-2.5 py-1.5 text-[11px] font-semibold">
-        <span className="truncate">
-          {contextMenu.colName &&
-          contextMenu.colName !== "_actions" &&
-          contextMenu.colName !== "_row_index"
+      <div className="border-border text-muted-foreground dark:border-border/80 flex items-center justify-between border-b px-2.5 py-1.5 text-[11px] font-semibold">
+        <span className="truncate font-medium">
+          {cellTarget
             ? t("datagrid.contextMenu.columnTitle", {
                 column: contextMenu.colName,
               })
@@ -149,25 +235,32 @@ export const GridContextMenu = React.memo(function GridContextMenu({
         </Badge>
       </div>
 
-      <div className="py-1">
-        {cellTarget &&
-          item(
-            "Edit Cell",
+      {/* Cell Actions */}
+      {cellTarget && (
+        <div className="py-1">
+          {renderItem(
+            t("datagrid.contextMenu.editCell", "Edit Cell"),
             () => onEditCell(contextMenu.row, contextMenu.colName, rowIndex),
-            cellWriteBlocked,
-            mutationBlockedReason,
-            <Edit2 className="h-3.5 w-3.5" />,
+            {
+              disabled: cellWriteBlocked,
+              title: mutationBlockedReason,
+              icon: <Edit2 className="size-3.5 shrink-0 text-emerald-500" />,
+              shortcut: "Enter",
+            },
           )}
-        {cellTarget &&
-          item(
-            "Set NULL",
+          {renderItem(
+            t("datagrid.contextMenu.setNull", "Set NULL"),
             () => onSetNull(contextMenu.row, contextMenu.colName),
-            cellWriteBlocked,
-            mutationBlockedReason,
+            {
+              disabled: cellWriteBlocked,
+              title: mutationBlockedReason,
+              icon: (
+                <MinusCircle className="size-3.5 shrink-0 text-amber-500" />
+              ),
+            },
           )}
-        {cellTarget &&
-          item(
-            "Copy",
+          {renderItem(
+            t("datagrid.contextMenu.copyCellValue", "Copy Cell Value"),
             () => {
               void navigator.clipboard.writeText(
                 contextMenu.cellValue === null
@@ -176,13 +269,12 @@ export const GridContextMenu = React.memo(function GridContextMenu({
               );
               onCopyNotify?.(t("datagrid.contextMenu.copied"));
             },
-            false,
-            undefined,
-            <Copy className="h-3.5 w-3.5" />,
+            {
+              icon: <Copy className="size-3.5 shrink-0 text-blue-500" />,
+            },
           )}
-        {cellTarget &&
-          item(
-            "Filter by This Value",
+          {renderItem(
+            t("datagrid.contextMenu.filterByValue", "Filter by this Value"),
             () =>
               onFiltersChange([
                 ...filters,
@@ -195,42 +287,15 @@ export const GridContextMenu = React.memo(function GridContextMenu({
                       : String(contextMenu.cellValue),
                 },
               ]),
-            contextMenu.cellValue === undefined ||
-              contextMenu.cellValue === null,
+            {
+              disabled:
+                contextMenu.cellValue === undefined ||
+                contextMenu.cellValue === null,
+              icon: <FilterIcon className="size-3.5 shrink-0 text-amber-500" />,
+            },
           )}
-        {cellTarget &&
-          item("Sort Ascending", () =>
-            onSortChange(contextMenu.colName, false),
-          )}
-        {cellTarget &&
-          item("Sort Descending", () =>
-            onSortChange(contextMenu.colName, true),
-          )}
-        {item("Copy Row as JSON", () => {
-          const cleanRow = Object.fromEntries(
-            Object.entries(contextMenu.row).filter(
-              ([key]) => !key.startsWith("_pb_"),
-            ),
-          );
-          void navigator.clipboard.writeText(JSON.stringify(cleanRow, null, 2));
-          onCopyNotify?.(t("datagrid.contextMenu.copied"));
-        })}
-        {item(
-          "Clone Row",
-          () => onCloneRow(contextMenu.row),
-          writeBlocked,
-          mutationBlockedReason,
-        )}
-        {item(
-          "Delete Row",
-          () => onDeleteRow(contextMenu.row),
-          writeBlocked,
-          mutationBlockedReason,
-          <Trash2 className="h-3.5 w-3.5" />,
-        )}
-        {cellTarget &&
-          item(
-            "Inspect Cell",
+          {renderItem(
+            t("datagrid.contextMenu.inspectCell", "Inspect Cell Detail"),
             () =>
               onInspectCell(
                 contextMenu.colName,
@@ -238,180 +303,125 @@ export const GridContextMenu = React.memo(function GridContextMenu({
                 contextMenu.row,
                 targetCol?.type,
               ),
-            false,
-            undefined,
-            <FileCode className="h-3.5 w-3.5" />,
+            {
+              icon: <FileCode className="text-primary size-3.5 shrink-0" />,
+              shortcut: "Space",
+            },
           )}
-        {(() => {
-          const relation = table.relations?.find(
-            (candidate) => candidate.from_column === contextMenu.colName,
-          );
-          if (!relation || !onNavigateRelation || !cellTarget) return null;
-          return item(`Navigate to ${relation.to_table}`, () =>
-            onNavigateRelation(
-              relation.to_table,
-              relation.to_column,
-              contextMenu.cellValue,
-            ),
-          );
-        })()}
-        {getExtraMenuItems(contextMenu).map((extra) =>
-          item(extra.label, extra.onSelect, extra.disabled, extra.title),
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="hidden">
-        {/* Edit Record */}
-        <button
-          type="button"
-          disabled={isReadOnly}
-          title={isReadOnly ? mutationBlockedReason : undefined}
-          onClick={() => {
-            onEditRow(contextMenu.row);
-            onClose();
-          }}
-          className={cn(
-            "text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors",
-            isReadOnly && "cursor-not-allowed opacity-50 hover:bg-transparent",
-          )}
-        >
-          <Edit2 className="text-success dark:text-success h-3.5 w-3.5 shrink-0" />
-          <span>{t("datagrid.contextMenu.editRecord")}</span>
-        </button>
+      {/* Sorting Actions */}
+      {cellTarget && (
+        <>
+          <div className="border-border/60 my-0.5 border-t" />
+          <div className="py-1">
+            {renderItem(
+              t("datagrid.contextMenu.sortAsc", "Sort Ascending"),
+              () => onSortChange(contextMenu.colName, false),
+              {
+                icon: (
+                  <ArrowUp className="text-muted-foreground size-3.5 shrink-0" />
+                ),
+              },
+            )}
+            {renderItem(
+              t("datagrid.contextMenu.sortDesc", "Sort Descending"),
+              () => onSortChange(contextMenu.colName, true),
+              {
+                icon: (
+                  <ArrowDown className="text-muted-foreground size-3.5 shrink-0" />
+                ),
+              },
+            )}
+          </div>
+        </>
+      )}
 
-        {/* Delete Record */}
-        <button
-          type="button"
-          disabled={isReadOnly}
-          title={isReadOnly ? mutationBlockedReason : undefined}
-          onClick={() => {
-            onDeleteRow(contextMenu.row);
-            onClose();
-          }}
-          className={cn(
-            "text-destructive hover:bg-destructive/10 dark:text-destructive dark:hover:bg-destructive/40 flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors",
-            isReadOnly && "cursor-not-allowed opacity-50 hover:bg-transparent",
-          )}
-        >
-          <Trash2 className="text-destructive h-3.5 w-3.5 shrink-0" />
-          <span>{t("datagrid.contextMenu.deleteRecord")}</span>
-        </button>
-      </div>
-
-      <div className="border-border dark:border-border/80 my-1 border-t" />
-
+      {/* Row Operations */}
+      <div className="border-border/60 my-0.5 border-t" />
       <div className="py-1">
-        {/* Inspect Cell Detail */}
-        {contextMenu.colName && contextMenu.colName !== "_row_index" && (
-          <button
-            type="button"
-            onClick={() => {
-              onInspectCell(
-                contextMenu.colName,
-                contextMenu.cellValue,
-                contextMenu.row,
-                targetCol?.type,
-              );
-              onClose();
-            }}
-            className="text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center justify-between rounded px-2.5 py-1.5 text-left transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <FileCode className="text-primary dark:text-primary h-3.5 w-3.5 shrink-0" />
-              <span>{t("datagrid.contextMenu.inspectCell")}</span>
-            </div>
-            <kbd className="bg-muted/80 text-muted-foreground dark:bg-muted dark:text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
-              Space
-            </kbd>
-          </button>
-        )}
-
-        {/* Copy Cell Value */}
-        {contextMenu.cellValue !== undefined &&
-          contextMenu.cellValue !== null && (
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(String(contextMenu.cellValue));
-                onCopyNotify?.(t("datagrid.contextMenu.copied"));
-                onClose();
-              }}
-              className="text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors"
-            >
-              <Copy className="h-3.5 w-3.5 shrink-0 text-blue-500" />
-              <span>{t("datagrid.contextMenu.copyCellValue")}</span>
-            </button>
-          )}
-
-        {/* Filter by this value */}
-        {contextMenu.colName &&
-          contextMenu.cellValue !== undefined &&
-          contextMenu.cellValue !== null && (
-            <button
-              type="button"
-              onClick={() => {
-                onFiltersChange([
-                  ...filters,
-                  {
-                    column: contextMenu.colName,
-                    operator: "eq",
-                    value: String(contextMenu.cellValue),
-                  },
-                ]);
-                onClose();
-              }}
-              className="text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors"
-            >
-              <FilterIcon className="text-warning h-3.5 w-3.5 shrink-0" />
-              <span>{t("datagrid.contextMenu.filterByValue")}</span>
-            </button>
-          )}
-
-        {/* Copy Row as JSON */}
-        <button
-          type="button"
-          onClick={() => {
-            navigator.clipboard.writeText(
-              JSON.stringify(contextMenu.row, null, 2),
+        {renderItem(
+          t("datagrid.contextMenu.copyRowJson", "Copy Row as JSON"),
+          () => {
+            const cleanRow = Object.fromEntries(
+              Object.entries(contextMenu.row).filter(
+                ([key]) => !key.startsWith("_pb_"),
+              ),
+            );
+            void navigator.clipboard.writeText(
+              JSON.stringify(cleanRow, null, 2),
             );
             onCopyNotify?.(t("datagrid.contextMenu.copied"));
-            onClose();
-          }}
-          className="text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left transition-colors"
-        >
-          <FileJson className="text-primary h-3.5 w-3.5 shrink-0" />
-          <span>{t("datagrid.contextMenu.copyRowJson")}</span>
-        </button>
-
-        {/* Relation Navigation if FK */}
-        {(() => {
-          if (!contextMenu.colName || !onNavigateRelation) return null;
-          const rel = table.relations?.find(
-            (r) => r.from_column === contextMenu.colName,
-          );
-          if (!rel) return null;
-          return (
-            <button
-              type="button"
-              onClick={() => {
-                onNavigateRelation(
-                  rel.to_table,
-                  rel.to_column,
-                  contextMenu.cellValue,
-                );
-                onClose();
-              }}
-              className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-sky-600 transition-colors hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/40"
-            >
-              <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-sky-500" />
-              <span className="truncate">
-                {t("datagrid.contextMenu.navigateToRelation")} ({rel.to_table})
-              </span>
-            </button>
-          );
-        })()}
+          },
+          {
+            icon: <FileJson className="size-3.5 shrink-0 text-purple-500" />,
+          },
+        )}
+        {renderItem(
+          t("datagrid.contextMenu.cloneRow", "Clone Row"),
+          () => onCloneRow(contextMenu.row),
+          {
+            disabled: writeBlocked,
+            title: mutationBlockedReason,
+            icon: (
+              <CopyPlus className="text-muted-foreground size-3.5 shrink-0" />
+            ),
+          },
+        )}
+        {renderItem(
+          t("datagrid.contextMenu.deleteRow", "Delete Row"),
+          () => onDeleteRow(contextMenu.row),
+          {
+            disabled: writeBlocked,
+            title: mutationBlockedReason,
+            destructive: true,
+            icon: <Trash2 className="size-3.5 shrink-0" />,
+          },
+        )}
       </div>
+
+      {/* Foreign Key & External Navigation */}
+      {hasNavigationGroup && (
+        <>
+          <div className="border-border/60 my-0.5 border-t" />
+          <div className="py-1">
+            {hasRelationAction && relation && (
+              <button
+                type="button"
+                onClick={() => {
+                  onNavigateRelation?.(
+                    relation.to_table,
+                    relation.to_column,
+                    contextMenu.cellValue,
+                  );
+                  onClose();
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 rounded px-2.5 py-1.5 text-left text-xs text-sky-600 transition-colors hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/40"
+              >
+                <ArrowUpRight className="size-3.5 shrink-0 text-sky-500" />
+                <span className="truncate">
+                  {t("datagrid.contextMenu.navigateToRelation", {
+                    table: relation.to_table,
+                    defaultValue: `Navigate to ${relation.to_table}`,
+                  })}
+                </span>
+              </button>
+            )}
+            {extraItems.map((extra) =>
+              renderItem(extra.label, extra.onSelect, {
+                disabled: extra.disabled,
+                title: extra.title,
+                icon: extra.icon ?? (
+                  <ArrowUpRight className="size-3.5 shrink-0 text-sky-500" />
+                ),
+              }),
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 });
+
 GridContextMenu.displayName = "GridContextMenu";

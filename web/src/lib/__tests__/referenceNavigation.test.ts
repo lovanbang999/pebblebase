@@ -3,6 +3,7 @@ import {
   chooseNavigationCandidate,
   filtersForForwardReference,
   filtersForReference,
+  findReferencedColumnNames,
   isInferredReferenceValue,
   incomingReferencesFromMetadata,
   pushReferenceNavigation,
@@ -84,6 +85,15 @@ describe("developer reference navigation", () => {
         declared: true,
       },
     ]);
+  });
+
+  it("extracts all column names referenced by foreign keys and relations", () => {
+    expect(findReferencedColumnNames(metadata, "customers")).toEqual(
+      new Set(["tenant_id", "id"]),
+    );
+    expect(findReferencedColumnNames(metadata, "system_logs")).toEqual(
+      new Set(),
+    );
   });
 
   it("keeps inferred scans to the Q8 UUID/ObjectId-shaped value rule", () => {
