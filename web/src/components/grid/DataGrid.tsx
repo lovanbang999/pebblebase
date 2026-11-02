@@ -32,6 +32,7 @@ import {
   Copy,
   RotateCcw,
   Check,
+  ArrowUpRight,
 } from "lucide-react";
 import type {
   Connection,
@@ -102,8 +103,11 @@ import { cn } from "cn";
 import { ReferenceCell } from "./ReferenceCell";
 import { invalidateReferenceCache } from "@/lib/referenceCache";
 import { ReferencedByMenu } from "./ReferencedByMenu";
-import { chooseNavigationCandidate } from "@/lib/referenceNavigation";
-import { filtersForForwardReference } from "@/lib/referenceNavigation";
+import {
+  chooseNavigationCandidate,
+  filtersForForwardReference,
+  findReferencedColumnNames,
+} from "@/lib/referenceNavigation";
 import { useSchemaMetadata } from "@/hooks/useSchemaMetadata";
 import type { ReferenceMatch } from "@/lib/referenceCache";
 
@@ -253,6 +257,10 @@ export function DataGrid({
     (candidate) => candidate.name === table.name,
   );
   const referenceTable = metadataTable ?? table;
+  const referencedColumnNames = useMemo(
+    () => findReferencedColumnNames(schemaMetadata.data, table.name),
+    [schemaMetadata.data, table.name],
+  );
   const [activeSubView, setActiveSubView] = useState<TableSubview>("data");
   const [viewMode, setViewMode] = useState<"table" | "document">(
     dbType === "mongodb" ? "document" : "table",
@@ -742,6 +750,18 @@ export function DataGrid({
     rowIndex: number;
     colName: string;
   } | null>(null);
+  const onFocusedCellValueChangeRef = useRef(onFocusedCellValueChange);
+  const onFocusedCellLocationChangeRef = useRef(onFocusedCellLocationChange);
+  useEffect(() => {
+    onFocusedCellValueChangeRef.current = onFocusedCellValueChange;
+  });
+  useEffect(() => {
+    onFocusedCellLocationChangeRef.current = onFocusedCellLocationChange;
+  });
+  const lastEmittedValueRef = useRef<string | undefined>(undefined);
+  const lastEmittedLocationRef = useRef<
+    { column: string; rowIdentity?: string } | undefined
+  >(undefined);
   const [editingCell, setEditingCell] = useState<{
     rowIndex: number;
     colName: string;
@@ -781,7 +801,11 @@ export function DataGrid({
 
   const handleCellClick = useCallback(
     (_e: React.MouseEvent, rowIndex: number, colName: string) => {
-      setFocusedCell({ rowIndex, colName });
+      setFocusedCell((prev) =>
+        prev?.rowIndex === rowIndex && prev?.colName === colName
+          ? prev
+          : { rowIndex, colName },
+      );
     },
     [],
   );
@@ -1071,12 +1095,15 @@ export function DataGrid({
 
   useEffect(() => {
     const row = focusedCell ? displayedRows[focusedCell.rowIndex] : undefined;
-    onFocusedCellValueChange?.(
+    const nextValue =
       row && focusedCell
         ? searchCellValue(row[focusedCell.colName])
-        : undefined,
-    );
-  }, [focusedCell, displayedRows, onFocusedCellValueChange]);
+        : undefined;
+    if (lastEmittedValueRef.current !== nextValue) {
+      lastEmittedValueRef.current = nextValue;
+      onFocusedCellValueChangeRef.current?.(nextValue);
+    }
+  }, [focusedCell, displayedRows]);
   useEffect(() => {
     const row = focusedCell ? displayedRows[focusedCell.rowIndex] : undefined;
     const keys = table.columns.filter((column) => column.is_primary_key);
@@ -1084,10 +1111,46 @@ export function DataGrid({
       row && keys.length
         ? JSON.stringify(keys.map((column) => row[column.name]))
         : undefined;
-    onFocusedCellLocationChange?.(
-      focusedCell ? { column: focusedCell.colName, rowIdentity } : undefined,
+    const nextLocation = focusedCell
+      ? { column: focusedCell.colName, rowIdentity }
+      : undefined;
+
+    const prevLocation = lastEmittedLocationRef.current;
+    const isSame =
+      (!prevLocation && !nextLocation) ||
+      (prevLocation?.column === nextLocation?.column &&
+        prevLocation?.rowIdentity === nextLocation?.rowIdentity);
+
+    if (!isSame) {
+      lastEmittedLocationRef.current = nextLocation;
+      onFocusedCellLocationChangeRef.current?.(nextLocation);
+    }
+  }, [focusedCell, displayedRows, table.columns]);
+  useEffect(() => {
+    if (
+      !valueEditorOpen ||
+      !focusedCell ||
+      focusedCell.colName === "_row_index"
+    )
+      return;
+    const row = displayedRows[focusedCell.rowIndex];
+    if (!row) return;
+    const column = table.columns.find(
+      (item) => item.name === focusedCell.colName,
     );
-  }, [focusedCell, displayedRows, table.columns, onFocusedCellLocationChange]);
+    if (!column) return;
+    setCellDrawerState((prev) =>
+      prev.row === row && prev.columnName === column.name
+        ? prev
+        : {
+            isOpen: true,
+            columnName: column.name,
+            columnType: column.type,
+            cellValue: row[column.name],
+            row,
+          },
+    );
+  }, [valueEditorOpen, focusedCell, displayedRows, table.columns]);
   useEffect(() => {
     if (!initialSelectedCell) return;
     const keys = table.columns.filter((column) => column.is_primary_key);
@@ -1100,8 +1163,17 @@ export function DataGrid({
     if (
       rowIndex >= 0 &&
       table.columns.some((column) => column.name === initialSelectedCell.column)
-    )
-      setFocusedCell({ rowIndex, colName: initialSelectedCell.column });
+    ) {
+      setFocusedCell((current) => {
+        if (
+          current?.rowIndex === rowIndex &&
+          current?.colName === initialSelectedCell.column
+        ) {
+          return current;
+        }
+        return { rowIndex, colName: initialSelectedCell.column };
+      });
+    }
   }, [initialSelectedCell, displayedRows, table.columns]);
   useEffect(() => {
     const restore = (event: Event) => {
@@ -1124,7 +1196,14 @@ export function DataGrid({
       )
         ? detail.cell.column
         : "_row_index";
-      if (rowIndex >= 0) setFocusedCell({ rowIndex, colName });
+      if (rowIndex >= 0) {
+        setFocusedCell((current) => {
+          if (current?.rowIndex === rowIndex && current?.colName === colName) {
+            return current;
+          }
+          return { rowIndex, colName };
+        });
+      }
     };
     window.addEventListener("pb:restore-cell", restore);
     return () => window.removeEventListener("pb:restore-cell", restore);
@@ -1617,9 +1696,13 @@ export function DataGrid({
               );
             }
 
-            const relation = col.is_foreign_key
-              ? table.relations?.find((item) => item.from_column === col.name)
-              : undefined;
+            const relation =
+              referenceTable.relations?.find(
+                (item) => item.from_column === col.name,
+              ) ??
+              table.relations?.find((item) => item.from_column === col.name);
+            const isPkWithIncoming =
+              col.is_primary_key && referencedColumnNames.has(col.name);
             if (
               relation ||
               col.is_foreign_key ||
@@ -1644,9 +1727,12 @@ export function DataGrid({
                   }
                   declaredForeignKey={col.is_foreign_key}
                   isPrimaryKey={col.is_primary_key}
-                  onOpen={(match, value) =>
+                  hasIncomingReferences={isPkWithIncoming}
+                  onOpen={(match, value) => {
+                    const targetConnectionId =
+                      match.connectionId || connId || "";
                     onNavigateReference?.(
-                      match.connectionId,
+                      targetConnectionId,
                       match.table,
                       match.column,
                       value,
@@ -1655,13 +1741,17 @@ export function DataGrid({
                         referenceTable,
                         col.name,
                         match.table,
-                        row.original,
+                        row,
                       ),
-                    )
-                  }
+                    );
+                  }}
+                  onNavigateRelation={onNavigateRelation}
                   onFind={onFindEverywhere}
-                  onShowReferencedBy={(cellValue) =>
-                    openReferencedBy(col.name, cellValue, row.original)
+                  onShowReferencedBy={
+                    isPkWithIncoming
+                      ? (cellValue) =>
+                          openReferencedBy(col.name, cellValue, row)
+                      : undefined
                   }
                 />
               );
@@ -1727,6 +1817,12 @@ export function DataGrid({
                   columnType={col.type}
                   value={val}
                   onOpenDetail={() => {
+                    const rowIndex = displayedRows.indexOf(
+                      row as Record<string, any>,
+                    );
+                    if (rowIndex >= 0) {
+                      setFocusedCell({ rowIndex, colName: col.name });
+                    }
                     setCellDrawerState({
                       isOpen: true,
                       columnName: col.name,
@@ -1983,6 +2079,7 @@ export function DataGrid({
     return cols;
   }, [
     referenceTable,
+    referencedColumnNames,
     extraColumns,
     sortBy,
     sortDesc,
@@ -1990,6 +2087,7 @@ export function DataGrid({
     page,
     pageSize,
     onNavigateReference,
+    onNavigateRelation,
     onFindEverywhere,
     openReferencedBy,
     connId,
@@ -2871,34 +2969,51 @@ export function DataGrid({
                 </table>
               )}
             </div>
-            {valueEditorOpen && cellDrawerState.row && (
-              <ValueEditorPanel
-                columnName={cellDrawerState.columnName}
-                columnType={cellDrawerState.columnType}
-                value={
-                  rowDrafts[cellDrawerState.row._pb_draft_id] &&
-                  Object.prototype.hasOwnProperty.call(
-                    rowDrafts[cellDrawerState.row._pb_draft_id].current,
-                    cellDrawerState.columnName,
-                  )
-                    ? rowDrafts[cellDrawerState.row._pb_draft_id].current[
-                        cellDrawerState.columnName
-                      ]
-                    : cellDrawerState.cellValue
-                }
-                isReadOnly={isReadOnly || !hasPrimaryKey}
-                width={valueEditorWidth}
-                onWidthChange={setValueEditorWidth}
-                onClose={() => setValueEditorOpen(false)}
-                onApply={(value) =>
-                  stageCellValue(
-                    cellDrawerState.row!,
-                    cellDrawerState.columnName,
-                    value,
-                  )
-                }
-              />
-            )}
+            {(() => {
+              if (!valueEditorOpen) return null;
+              const activeRow =
+                (focusedCell &&
+                  focusedCell.colName !== "_row_index" &&
+                  displayedRows[focusedCell.rowIndex]) ||
+                cellDrawerState.row;
+              const activeColumn =
+                (focusedCell &&
+                  focusedCell.colName !== "_row_index" &&
+                  table.columns.find((c) => c.name === focusedCell.colName)) ||
+                (cellDrawerState.columnName
+                  ? table.columns.find(
+                      (c) => c.name === cellDrawerState.columnName,
+                    )
+                  : undefined);
+              if (!activeRow || !activeColumn) return null;
+
+              const activeValue =
+                rowDrafts[activeRow._pb_draft_id] &&
+                Object.prototype.hasOwnProperty.call(
+                  rowDrafts[activeRow._pb_draft_id].current,
+                  activeColumn.name,
+                )
+                  ? rowDrafts[activeRow._pb_draft_id].current[activeColumn.name]
+                  : activeRow[activeColumn.name];
+
+              const cellKey = `${activeRow._pb_draft_id || activeRow.id || focusedCell?.rowIndex}:${activeColumn.name}`;
+
+              return (
+                <ValueEditorPanel
+                  key={cellKey}
+                  columnName={activeColumn.name}
+                  columnType={activeColumn.type}
+                  value={activeValue}
+                  isReadOnly={isReadOnly || !hasPrimaryKey}
+                  width={valueEditorWidth}
+                  onWidthChange={setValueEditorWidth}
+                  onClose={() => setValueEditorOpen(false)}
+                  onApply={(value) =>
+                    stageCellValue(activeRow, activeColumn.name, value)
+                  }
+                />
+              );
+            })()}
           </div>
 
           <TableExecutionFooter
@@ -2988,6 +3103,10 @@ export function DataGrid({
         onSortChange={onSortChange}
         onNavigateRelation={onNavigateRelation}
         onInspectCell={(colName, cellValue, row, colType) => {
+          const rowIndex = displayedRows.indexOf(row as Record<string, any>);
+          if (rowIndex >= 0) {
+            setFocusedCell({ rowIndex, colName });
+          }
           setCellDrawerState({
             isOpen: true,
             columnName: colName,
@@ -3012,6 +3131,7 @@ export function DataGrid({
                 onFindEverywhere(searchCellValue(context.cellValue)),
               disabled:
                 context.cellValue == null || String(context.cellValue) === "",
+              icon: <Search className="size-3.5 shrink-0 text-amber-500" />,
             });
           if (onNavigateReference)
             items.push({
@@ -3082,6 +3202,7 @@ export function DataGrid({
                   !table.relations?.some(
                     (item) => item.from_column === context.colName,
                   )),
+              icon: <ArrowUpRight className="size-3.5 shrink-0 text-sky-500" />,
             });
           if (context.cellValue != null && String(context.cellValue) !== "")
             items.push({
@@ -3094,6 +3215,7 @@ export function DataGrid({
                   context.row,
                 ),
               disabled: false,
+              icon: <Layers className="size-3.5 shrink-0 text-emerald-500" />,
             });
           return items;
         }}

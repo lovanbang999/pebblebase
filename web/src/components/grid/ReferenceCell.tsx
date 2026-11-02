@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ArrowUpRight } from "lucide-react";
 import { resolveReferences } from "@/lib/api";
 import type { ReferenceMatch } from "@/lib/referenceCache";
 
@@ -18,7 +19,9 @@ export function ReferenceCell({
   declared,
   declaredForeignKey = false,
   isPrimaryKey = false,
+  hasIncomingReferences = false,
   onOpen,
+  onNavigateRelation,
   onFind,
   onShowReferencedBy,
 }: {
@@ -29,7 +32,13 @@ export function ReferenceCell({
   declared?: { table: string; column: string };
   declaredForeignKey?: boolean;
   isPrimaryKey?: boolean;
+  hasIncomingReferences?: boolean;
   onOpen: (match: ReferenceMatch, value: unknown) => void;
+  onNavigateRelation?: (
+    targetTable: string,
+    targetColumn: string,
+    value: unknown,
+  ) => void;
   onFind?: (value: string) => void;
   onShowReferencedBy?: (value: unknown) => void;
 }) {
@@ -41,7 +50,9 @@ export function ReferenceCell({
   const peekId = useId();
   const timer = useRef<number | undefined>(undefined);
   const requestAbort = useRef<AbortController | null>(null);
-  const canResolveForward = Boolean(declared || shapedId(value));
+  const canResolveForward = Boolean(
+    declared || declaredForeignKey || (!isPrimaryKey && shapedId(value)),
+  );
   useEffect(
     () => () => {
       requestAbort.current?.abort();
@@ -50,7 +61,11 @@ export function ReferenceCell({
     [],
   );
   const request = async (): Promise<ReferenceMatch[]> => {
-    if ((!declared && !shapedId(value)) || !connectionId || !workspaceId)
+    if (
+      (!declared && !declaredForeignKey && !shapedId(value)) ||
+      !connectionId ||
+      !workspaceId
+    )
       return [];
     requestAbort.current?.abort();
     const controller = new AbortController();
@@ -87,10 +102,53 @@ export function ReferenceCell({
       (total, match) => total + Math.max(match.count, match.rows.length),
       0,
     ) ?? 0;
+
+  const handleQuickNavigate = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+    window.clearTimeout(timer.current);
+    setPeekOpen(false);
+
+    if (declared) {
+      const targetMatch: ReferenceMatch = {
+        connectionId: connectionId || "",
+        connectionName: "",
+        table: declared.table,
+        column: declared.column,
+        count: 1,
+        rows: [],
+        rowIdentity: JSON.stringify([value]),
+      };
+      onOpen(targetMatch, value);
+      onNavigateRelation?.(declared.table, declared.column, value);
+      return;
+    }
+
+    if (matches && matches.length === 1) {
+      onOpen(matches[0]!, value);
+      return;
+    }
+
+    if (matches && matches.length > 1) {
+      setPeekOpen(true);
+      return;
+    }
+
+    void request().then((results) => {
+      if (results.length === 1) {
+        onOpen(results[0]!, value);
+      } else if (results.length > 1) {
+        setPeekOpen(true);
+      } else if (declared) {
+        setPeekOpen(true);
+      }
+    });
+  };
+
   return (
     <span
       ref={containerRef}
-      className="group/reference relative inline-flex max-w-full"
+      className="group/reference relative flex w-full max-w-full items-center justify-between gap-1"
       onMouseEnter={() => {
         if (!canResolveForward) return;
         timer.current = window.setTimeout(() => {
@@ -123,26 +181,33 @@ export function ReferenceCell({
       <button
         ref={triggerRef}
         type="button"
-        aria-haspopup="dialog"
+        aria-haspopup={
+          canResolveForward || (isPrimaryKey && hasIncomingReferences)
+            ? "dialog"
+            : undefined
+        }
         aria-expanded={peekOpen}
         aria-controls={peekId}
-        className={`hover:text-primary max-w-full truncate font-mono text-xs ${declaredForeignKey || first ? "cursor-pointer underline decoration-dotted underline-offset-4" : isPrimaryKey ? "cursor-pointer" : "cursor-default"}`}
+        className={`hover:text-primary max-w-full truncate font-mono text-xs ${declaredForeignKey || first ? "cursor-pointer underline decoration-dotted underline-offset-4" : isPrimaryKey && hasIncomingReferences ? "cursor-pointer" : "cursor-default"}`}
         title={
           declaredForeignKey && !declared
             ? t("reference.incompleteRelation")
-            : isPrimaryKey
+            : isPrimaryKey && hasIncomingReferences
               ? t("reference.showReferencingTooltip")
               : first || declared
                 ? t("reference.hoverPreview")
-                : t("reference.candidateHover")
+                : canResolveForward
+                  ? t("reference.candidateHover")
+                  : undefined
         }
         onClick={(event) => {
-          event.stopPropagation();
           if (event.metaKey || event.ctrlKey) {
-            if (isPrimaryKey) onShowReferencedBy?.(value);
+            event.stopPropagation();
+            if (isPrimaryKey && hasIncomingReferences)
+              onShowReferencedBy?.(value);
             else if (matches?.length === 1) onOpen(matches[0]!, value);
             else if (matches && matches.length > 1) setPeekOpen(true);
-            else
+            else if (canResolveForward)
               void request().then((result) => {
                 if (result.length === 1) onOpen(result[0]!, value);
                 else if (result.length > 1) setPeekOpen(true);
@@ -153,20 +218,54 @@ export function ReferenceCell({
       >
         {String(value)}
       </button>
-      {isPrimaryKey && onShowReferencedBy && (
+      {canResolveForward && (
         <button
           type="button"
-          aria-label={t("reference.showReferencing")}
-          title={t("reference.showReferencingTooltip")}
-          className="text-muted-foreground hover:text-primary absolute -right-4 opacity-0 transition-opacity group-hover/reference:opacity-100 focus-visible:opacity-100"
-          onClick={(event) => {
-            event.stopPropagation();
-            onShowReferencedBy(value);
-          }}
+          aria-label={
+            declared
+              ? t("reference.goToReferencedRowInTable", {
+                  table: declared.table,
+                  column: declared.column,
+                  value: String(value),
+                  defaultValue: `Go to referenced row in ${declared.table}`,
+                })
+              : t("reference.quickGoToReferencedRow", "Go to referenced row")
+          }
+          title={
+            declared
+              ? t("reference.goToReferencedRowInTable", {
+                  table: declared.table,
+                  column: declared.column,
+                  value: String(value),
+                  defaultValue: `Go to referenced row in ${declared.table} (${declared.column} = ${value})`,
+                })
+              : t("reference.quickGoToReferencedRow", "Go to referenced row")
+          }
+          className="text-muted-foreground hover:text-primary hover:bg-accent/70 inline-flex size-4 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within/cell:opacity-100 group-hover/cell:opacity-100 group-hover/reference:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none"
+          onClick={handleQuickNavigate}
+          onMouseDown={(e) => e.stopPropagation()}
         >
-          ↗
+          <ArrowUpRight className="size-3" />
         </button>
       )}
+      {isPrimaryKey &&
+        hasIncomingReferences &&
+        onShowReferencedBy &&
+        !canResolveForward && (
+          <button
+            type="button"
+            aria-label={t("reference.showReferencing")}
+            title={t("reference.showReferencingTooltip")}
+            className="text-muted-foreground hover:text-primary hover:bg-accent/70 inline-flex size-4 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-focus-within/cell:opacity-100 group-hover/cell:opacity-100 group-hover/reference:opacity-100 focus-visible:opacity-100 focus-visible:ring-1 focus-visible:outline-none"
+            onClick={(event) => {
+              event.stopPropagation();
+              onShowReferencedBy(value);
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <ArrowUpRight className="size-3" />
+          </button>
+        )}
       {peekOpen && (
         <span
           id={peekId}

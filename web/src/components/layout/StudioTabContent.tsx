@@ -7,7 +7,10 @@ import { RedisCliConsole } from "@/components/redis/RedisCliConsole";
 import { DataGrid, EmptyTableScreen } from "@/components/grid";
 import { canManageSettings, canManageUsers, type AuthUser } from "@/lib/auth";
 import { pushReferenceNavigation } from "@/lib/referenceNavigation";
-import type { NavigationHistory } from "@/lib/navigationHistory";
+import {
+  updateCurrentNavigationCell,
+  type NavigationHistory,
+} from "@/lib/navigationHistory";
 import { DEFAULT_PAGE_SIZE } from "@/constants";
 import type {
   Connection,
@@ -117,6 +120,7 @@ export interface StudioTabContentProps {
     table: string,
     readOnly?: boolean,
     state?: Partial<StudioTabState>,
+    schemaName?: string,
   ) => string | undefined;
 }
 
@@ -460,17 +464,9 @@ export function StudioTabContent({
                   onFocusedCellLocationChange={(cell) => {
                     if (cell) {
                       selectedCells.current[tab.id] = cell;
-                      setNavigationHistory((history) => {
-                        const current = history.entries[history.cursor];
-                        if (!current || current.tabId !== tab.id)
-                          return history;
-                        const entries = [...history.entries];
-                        entries[history.cursor] = {
-                          ...current,
-                          selectedCell: cell,
-                        };
-                        return { ...history, entries };
-                      });
+                      setNavigationHistory((history) =>
+                        updateCurrentNavigationCell(history, tab.id, cell),
+                      );
                     }
                   }}
                   onOpenQueryConsole={(query, title) =>
@@ -502,18 +498,29 @@ export function StudioTabContent({
                   onCommitDeleteRow={async (row) => {
                     await handleDeleteRow(tab.connectionId, tableName, row);
                   }}
-                  onNavigateRelation={(targetTable, targetColumn, value) =>
-                    openTableTab(tab.connectionId, targetTable, false, {
-                      filters: [
-                        {
-                          column: targetColumn,
-                          operator: "eq",
-                          value: String(value),
-                        },
-                      ],
-                      page: 0,
-                    })
-                  }
+                  onNavigateRelation={(targetTable, targetColumn, value) => {
+                    const targetTableSchema = tablesByConnection[
+                      tab.connectionId
+                    ]?.find((candidate) => candidate.name === targetTable);
+                    const effectiveSchemaName =
+                      targetTableSchema?.schema_name || tab.schemaName;
+                    openTableTab(
+                      tab.connectionId,
+                      targetTable,
+                      false,
+                      {
+                        filters: [
+                          {
+                            column: targetColumn,
+                            operator: "eq",
+                            value: String(value),
+                          },
+                        ],
+                        page: 0,
+                      },
+                      effectiveSchemaName,
+                    );
+                  }}
                   onNavigateReference={(
                     connectionId,
                     targetTable,
@@ -523,31 +530,43 @@ export function StudioTabContent({
                     targetFilters,
                   ) => {
                     const sourceId = activeTabRef.current?.id;
+                    const effectiveConnId = connectionId || tab.connectionId;
                     const targetConnection = connections.find(
-                      (candidate) => candidate.id === connectionId,
+                      (candidate) => candidate.id === effectiveConnId,
                     );
+                    const targetTableSchema = tablesByConnection[
+                      effectiveConnId
+                    ]?.find((candidate) => candidate.name === targetTable);
+                    const effectiveSchemaName =
+                      targetTableSchema?.schema_name || tab.schemaName;
                     const targetId =
                       targetConnection?.type === "redis"
-                        ? openTableTab(connectionId, "Redis keys", false, {
+                        ? openTableTab(effectiveConnId, "Redis keys", false, {
                             redisSearchKey: String(value ?? ""),
                           })
-                        : openTableTab(connectionId, targetTable, false, {
-                            filters: targetFilters?.length
-                              ? targetFilters
-                              : [
-                                  {
-                                    column: targetColumn,
-                                    operator: "eq",
-                                    value: String(value),
-                                  },
-                                ],
-                            page: 0,
-                            selectedCell: {
-                              column: targetColumn,
-                              rowIdentity:
-                                rowIdentity ?? JSON.stringify([value]),
+                        : openTableTab(
+                            effectiveConnId,
+                            targetTable,
+                            false,
+                            {
+                              filters: targetFilters?.length
+                                ? targetFilters
+                                : [
+                                    {
+                                      column: targetColumn,
+                                      operator: "eq",
+                                      value: String(value),
+                                    },
+                                  ],
+                              page: 0,
+                              selectedCell: {
+                                column: targetColumn,
+                                rowIdentity:
+                                  rowIdentity ?? JSON.stringify([value]),
+                              },
                             },
-                          });
+                            effectiveSchemaName,
+                          );
                     if (targetId)
                       setNavigationHistory((history) => {
                         return pushReferenceNavigation(

@@ -437,7 +437,13 @@
       "inspectCell": "Xem chi tiết ô",
       "columnTitle": "Cột: {{column}}",
       "rowActions": "Tác vụ hàng",
-      "copied": "Đã sao chép vào bộ nhớ tạm!"
+      "copied": "Đã sao chép vào bộ nhớ tạm!",
+      "editCell": "Chỉnh sửa ô",
+      "setNull": "Đặt giá trị NULL",
+      "sortAsc": "Sắp xếp tăng dần",
+      "sortDesc": "Sắp xếp giảm dần",
+      "cloneRow": "Nhân bản hàng",
+      "deleteRow": "Xóa hàng"
     },
     "viewMode": {
       "table": "Xem bảng",
@@ -1698,6 +1704,8 @@
     "rowCount": "{{count}} hàng",
     "noIncomingFound": "Không tìm thấy tham chiếu đến nào.",
     "partialWarning": "Một số số lượng tham chiếu đã hết thời gian hoặc bị bỏ qua.",
-    "checking": "Đang kiểm tra các tham chiếu…"
+    "checking": "Đang kiểm tra các tham chiếu…",
+    "quickGoToReferencedRow": "Đi đến hàng được tham chiếu",
+    "goToReferencedRowInTable": "Đi đến hàng được tham chiếu trong {{table}} ({{column}} = {{value}})"
   }
 }

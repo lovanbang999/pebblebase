@@ -4,6 +4,7 @@ import {
   pruneNavigation,
   pushNavigation,
   stepNavigation,
+  updateCurrentNavigationCell,
 } from "../navigationHistory";
 
 describe("workspace navigation history", () => {
@@ -52,5 +53,37 @@ describe("workspace navigation history", () => {
         selectedCell: { column: "name", rowIdentity: "8" },
       }).entries,
     ).toHaveLength(2);
+  });
+
+  it("updates selected cell on current entry and returns same reference if unchanged", () => {
+    let history = pushNavigation(emptyNavigationHistory(), {
+      tabId: "tab-1",
+      selectedCell: { column: "id", rowIdentity: "1" },
+    });
+
+    // Identical cell should return exact same reference
+    const unchanged = updateCurrentNavigationCell(history, "tab-1", {
+      column: "id",
+      rowIdentity: "1",
+    });
+    expect(unchanged).toBe(history);
+
+    // Mismatched tabId should return exact same reference
+    const mismatch = updateCurrentNavigationCell(history, "tab-2", {
+      column: "title",
+      rowIdentity: "1",
+    });
+    expect(mismatch).toBe(history);
+
+    // New cell should return a new object with updated selectedCell
+    const updated = updateCurrentNavigationCell(history, "tab-1", {
+      column: "title",
+      rowIdentity: "1",
+    });
+    expect(updated).not.toBe(history);
+    expect(updated.entries[updated.cursor]?.selectedCell).toEqual({
+      column: "title",
+      rowIdentity: "1",
+    });
   });
 });

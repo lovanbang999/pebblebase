@@ -39,7 +39,7 @@ export function ValueEditorPanel({
   useEffect(() => {
     setDraft(analysis.rawString);
     setIsNull(value === null || value === undefined);
-  }, [analysis.rawString, value]);
+  }, [analysis.rawString, value, columnName]);
 
   const resizeTo = (nextWidth: number) =>
     onWidthChange(

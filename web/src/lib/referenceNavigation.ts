@@ -99,6 +99,41 @@ export function incomingReferencesFromMetadata(
   return [...results.values()];
 }
 
+export function findReferencedColumnNames(
+  metadata: SchemaMetadata | undefined,
+  tableName: string,
+): Set<string> {
+  const referenced = new Set<string>();
+  if (!metadata?.tables) return referenced;
+
+  for (const candidateTable of metadata.tables) {
+    for (const constraint of candidateTable.constraints ?? []) {
+      if (
+        constraint.kind === "foreign_key" &&
+        constraint.reference_table === tableName &&
+        constraint.reference_columns
+      ) {
+        for (const col of constraint.reference_columns) {
+          referenced.add(col);
+        }
+      }
+    }
+    for (const rel of candidateTable.relations ?? []) {
+      if (rel.to_table === tableName && rel.to_column) {
+        referenced.add(rel.to_column);
+      }
+    }
+  }
+
+  for (const rel of metadata.relations ?? []) {
+    if (rel.to_table === tableName && rel.to_column) {
+      referenced.add(rel.to_column);
+    }
+  }
+
+  return referenced;
+}
+
 export function filtersForReference(
   columns: string[],
   referencedColumns: string[],
