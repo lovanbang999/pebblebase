@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   X,
   Copy,
@@ -45,7 +39,7 @@ export interface CellDetailDrawerProps {
   ) => Promise<void>;
 }
 
-export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
+export function CellDetailDrawer({
   isOpen,
   onClose,
   tableName,
@@ -55,7 +49,7 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
   row,
   isReadOnly = false,
   onSaveCell,
-}) => {
+}: CellDetailDrawerProps) {
   const { t } = useTranslation();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const [activeTab, setActiveTab] = useState<CellContentType>("text");
@@ -422,4 +416,4 @@ export const CellDetailDrawer: React.FC<CellDetailDrawerProps> = ({
       </SheetContent>
     </Sheet>
   );
-};
+}

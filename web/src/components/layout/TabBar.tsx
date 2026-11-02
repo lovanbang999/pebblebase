@@ -4,7 +4,6 @@ import {
   useRef,
   useCallback,
   Fragment,
-  type FC,
   type MouseEvent,
   type DragEvent,
 } from "react";
@@ -50,7 +49,7 @@ interface ContextMenuState {
   y: number;
 }
 
-export const TabBar: FC<TabBarProps> = ({
+export function TabBar({
   tabs,
   activeTabId,
   onSelectTab,
@@ -60,7 +59,7 @@ export const TabBar: FC<TabBarProps> = ({
   onDuplicateTab,
   onNewQueryTab,
   onReorderTabs,
-}) => {
+}: TabBarProps) {
   const { t } = useTranslation();
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -668,4 +667,4 @@ export const TabBar: FC<TabBarProps> = ({
       )}
     </div>
   );
-};
+}

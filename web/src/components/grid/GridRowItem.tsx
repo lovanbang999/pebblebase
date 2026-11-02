@@ -1,4 +1,4 @@
-import { memo, type FC, type MouseEvent } from "react";
+import { memo, type MouseEvent } from "react";
 import { flexRender, type Row } from "@tanstack/react-table";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { cn } from "cn";
@@ -60,106 +60,103 @@ const areEqual = (
   return true;
 };
 
-export const GridRowItem: FC<GridRowItemProps> = memo(
-  ({
-    row,
-    virtualIndex,
-    measureElement,
-    focusedCell,
-    editingCell,
-    numericColumnNames,
-    draftError,
-    onRowContextMenu,
-    onCellClick,
-    onCellContextMenu,
-  }) => {
-    return (
-      <TableRow
-        data-index={virtualIndex}
-        ref={measureElement}
-        className={cn(
-          "group transition-colors",
-          row.original._pb_draft_inserted && "bg-success/70 dark:bg-success/20",
-          row.original._pb_draft_deleted && "line-through opacity-45",
-          row.original._pb_draft_dirty &&
-            !row.original._pb_draft_inserted &&
-            !row.original._pb_draft_deleted &&
-            "bg-warning/50 dark:bg-warning/10",
-        )}
-        title={
-          draftError ||
-          (row.original._pb_draft_deleted ? "Delete pending" : undefined)
-        }
-        onContextMenu={(e) => {
-          e.preventDefault();
-          onRowContextMenu(e, row.original);
-        }}
-      >
-        {row.getVisibleCells().map((cell) => {
-          const colId = cell.column.id.replace("_extra_", "");
-          const isCellFocused =
-            focusedCell?.rowIndex === virtualIndex &&
-            focusedCell?.colName === colId;
-          const isEditingThisCell =
-            editingCell?.rowIndex === virtualIndex &&
-            editingCell?.colName === colId;
+export const GridRowItem = memo(function GridRowItem({
+  row,
+  virtualIndex,
+  measureElement,
+  focusedCell,
+  editingCell,
+  numericColumnNames,
+  draftError,
+  onRowContextMenu,
+  onCellClick,
+  onCellContextMenu,
+}: GridRowItemProps) {
+  return (
+    <TableRow
+      data-index={virtualIndex}
+      ref={measureElement}
+      className={cn(
+        "group transition-colors",
+        row.original._pb_draft_inserted && "bg-success/70 dark:bg-success/20",
+        row.original._pb_draft_deleted && "line-through opacity-45",
+        row.original._pb_draft_dirty &&
+          !row.original._pb_draft_inserted &&
+          !row.original._pb_draft_deleted &&
+          "bg-warning/50 dark:bg-warning/10",
+      )}
+      title={
+        draftError ||
+        (row.original._pb_draft_deleted ? "Delete pending" : undefined)
+      }
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onRowContextMenu(e, row.original);
+      }}
+    >
+      {row.getVisibleCells().map((cell) => {
+        const colId = cell.column.id.replace("_extra_", "");
+        const isCellFocused =
+          focusedCell?.rowIndex === virtualIndex &&
+          focusedCell?.colName === colId;
+        const isEditingThisCell =
+          editingCell?.rowIndex === virtualIndex &&
+          editingCell?.colName === colId;
 
-          return (
-            <TableCell
-              key={cell.id}
-              tabIndex={0}
-              data-cell-editing={isEditingThisCell ? "true" : undefined}
-              data-focused={isCellFocused ? "true" : undefined}
-              onClick={(e) => {
-                e.stopPropagation();
-                onCellClick(e, virtualIndex, colId);
-              }}
-              className={cn(
-                "border-border/80 text-foreground dark:border-border/40 dark:text-foreground relative max-w-sm truncate px-2.5 py-1 font-mono text-xs whitespace-nowrap transition-all outline-none not-last:border-r",
-                numericColumnNames.includes(colId) &&
-                  "text-right tabular-nums [&>div]:justify-end",
-                row.original._pb_draft_changed_columns?.includes(colId) &&
-                  "bg-warning/10",
-                isCellFocused &&
-                  "bg-accent ring-primary relative z-20 font-medium ring-2 ring-inset",
-              )}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onCellContextMenu(
-                  e,
-                  row.original,
-                  colId,
-                  cell.getValue(),
-                  virtualIndex,
-                );
-              }}
-            >
-              {row.original._pb_draft_changed_columns?.includes(colId) && (
-                <span
-                  aria-label="Pending change"
-                  title="Pending change"
-                  className="bg-warning absolute top-1 right-1 size-1.5 rounded-full"
-                />
-              )}
-              {draftError && colId === "_row_index" && (
-                <span
-                  role="img"
-                  aria-label={`Save failed: ${draftError}`}
-                  title={draftError}
-                  className="text-destructive absolute top-1 right-1 inline-flex"
-                >
-                  <AlertCircle className="size-3" />
-                </span>
-              )}
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </TableCell>
-          );
-        })}
-      </TableRow>
-    );
-  },
-  areEqual,
-);
+        return (
+          <TableCell
+            key={cell.id}
+            tabIndex={0}
+            data-cell-editing={isEditingThisCell ? "true" : undefined}
+            data-focused={isCellFocused ? "true" : undefined}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCellClick(e, virtualIndex, colId);
+            }}
+            className={cn(
+              "border-border/80 text-foreground dark:border-border/40 dark:text-foreground relative max-w-sm truncate px-2.5 py-1 font-mono text-xs whitespace-nowrap transition-all outline-none not-last:border-r",
+              numericColumnNames.includes(colId) &&
+                "text-right tabular-nums [&>div]:justify-end",
+              row.original._pb_draft_changed_columns?.includes(colId) &&
+                "bg-warning/10",
+              isCellFocused &&
+                "bg-accent ring-primary relative z-20 font-medium ring-2 ring-inset",
+            )}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCellContextMenu(
+                e,
+                row.original,
+                colId,
+                cell.getValue(),
+                virtualIndex,
+              );
+            }}
+          >
+            {row.original._pb_draft_changed_columns?.includes(colId) && (
+              <span
+                aria-label="Pending change"
+                title="Pending change"
+                className="bg-warning absolute top-1 right-1 size-1.5 rounded-full"
+              />
+            )}
+            {draftError && colId === "_row_index" && (
+              <span
+                role="img"
+                aria-label={`Save failed: ${draftError}`}
+                title={draftError}
+                className="text-destructive absolute top-1 right-1 inline-flex"
+              >
+                <AlertCircle className="size-3" />
+              </span>
+            )}
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        );
+      })}
+    </TableRow>
+  );
+}, areEqual);
 
 GridRowItem.displayName = "GridRowItem";

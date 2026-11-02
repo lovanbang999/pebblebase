@@ -12,7 +12,7 @@ import (
 	"pebblebase/internal/storage"
 )
 
-func setupTestServer(t *testing.T) *http.ServeMux {
+func setupTestServer(t *testing.T) http.Handler {
 	t.Helper()
 	dir := t.TempDir()
 
@@ -48,7 +48,7 @@ func setupTestServer(t *testing.T) *http.ServeMux {
 	}
 	mux.Handle("/", spaHandler(frontendFS))
 
-	return mux
+	return securityHeadersMiddleware(mux)
 }
 
 func TestHealthCheck(t *testing.T) {
@@ -115,5 +115,29 @@ func TestSPA_NonExistentAPI404(t *testing.T) {
 	}
 	if errResp["error"] != "not found" {
 		t.Errorf("expected 'not found', got %q", errResp["error"])
+	}
+}
+
+func TestSecurityHeaders(t *testing.T) {
+	handler := setupTestServer(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	if csp := rec.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "default-src 'self'") {
+		t.Errorf("missing or invalid Content-Security-Policy header: %q", csp)
+	}
+	if xcto := rec.Header().Get("X-Content-Type-Options"); xcto != "nosniff" {
+		t.Errorf("expected X-Content-Type-Options: nosniff, got %q", xcto)
+	}
+	if xfo := rec.Header().Get("X-Frame-Options"); xfo != "DENY" {
+		t.Errorf("expected X-Frame-Options: DENY, got %q", xfo)
+	}
+	if rp := rec.Header().Get("Referrer-Policy"); rp != "strict-origin-when-cross-origin" {
+		t.Errorf("expected Referrer-Policy: strict-origin-when-cross-origin, got %q", rp)
 	}
 }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, type FC } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSchemaMetadata } from "@/hooks/useSchemaMetadata";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
@@ -40,6 +40,78 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "cn";
 
+interface EngineBadgeConfig {
+  label: string;
+  className: string;
+}
+
+const ENGINE_BADGES: Record<string, EngineBadgeConfig> = {
+  postgres: {
+    label: "PostgreSQL",
+    className: "border-primary/20 bg-primary/10 text-primary dark:text-primary",
+  },
+  mysql: {
+    label: "MySQL",
+    className: "border-warning/20 bg-warning/10 text-warning dark:text-warning",
+  },
+  mongodb: {
+    label: "MongoDB",
+    className: "border-primary/20 bg-success/10 text-success dark:text-success",
+  },
+  mssql: {
+    label: "SQL Server",
+    className:
+      "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  },
+  clickhouse: {
+    label: "ClickHouse",
+    className: "border-warning/20 bg-warning/10 text-warning dark:text-warning",
+  },
+  redis: {
+    label: "Redis",
+    className:
+      "border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive",
+  },
+  sqlite: {
+    label: "SQLite",
+    className: "border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-400",
+  },
+};
+
+const DEFAULT_ENGINE_BADGE: EngineBadgeConfig = ENGINE_BADGES.sqlite;
+
+function EngineBadge({ engine }: { engine?: string }) {
+  const config =
+    (engine && ENGINE_BADGES[engine.toLowerCase()]) || DEFAULT_ENGINE_BADGE;
+  return (
+    <Badge
+      variant="outline"
+      className={cn("font-mono text-[11px]", config.className)}
+    >
+      {config.label}
+    </Badge>
+  );
+}
+
+const COLUMN_TYPE_CLASSES: Record<string, string> = {
+  int: "bg-success/10 text-success dark:bg-success/40 dark:text-success border-success/30 dark:border-success",
+  float:
+    "bg-success/10 text-success dark:bg-success/40 dark:text-success border-success/30 dark:border-success",
+  bool: "bg-warning/10 text-warning dark:bg-warning/40 dark:text-warning border-warning/30 dark:border-warning",
+  datetime:
+    "bg-primary/10 text-primary dark:bg-primary/40 dark:text-primary border-primary/30 dark:border-primary",
+  json: "bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 border-pink-200 dark:border-pink-800",
+};
+
+const DEFAULT_COLUMN_TYPE_CLASS =
+  "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800";
+
+function getTypeBadgeClass(colType: string): string {
+  return (
+    COLUMN_TYPE_CLASSES[colType.toLowerCase()] ?? DEFAULT_COLUMN_TYPE_CLASS
+  );
+}
+
 interface SchemaInspectorProps {
   connId?: string;
   table: TableSchema;
@@ -53,14 +125,14 @@ interface SchemaInspectorProps {
   onOpenQueryConsole?: (query?: string, title?: string) => void;
 }
 
-export const SchemaInspector: FC<SchemaInspectorProps> = ({
+export function SchemaInspector({
   connId,
   table: sourceTable,
   view,
   isReadOnly = false,
   onNavigateRelation,
   onOpenQueryConsole,
-}) => {
+}: SchemaInspectorProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [isSeedModalOpen, setIsSeedModalOpen] = useState(false);
@@ -108,90 +180,6 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getEngineBadge = (engine?: string) => {
-    switch (engine) {
-      case "postgres":
-        return (
-          <Badge
-            variant="outline"
-            className="border-primary/20 bg-primary/10 text-primary dark:text-primary font-mono text-[11px]"
-          >
-            PostgreSQL
-          </Badge>
-        );
-      case "mysql":
-        return (
-          <Badge
-            variant="outline"
-            className="border-warning/20 bg-warning/10 text-warning dark:text-warning font-mono text-[11px]"
-          >
-            MySQL
-          </Badge>
-        );
-      case "mongodb":
-        return (
-          <Badge
-            variant="outline"
-            className="border-primary/20 bg-success/10 text-success dark:text-success font-mono text-[11px]"
-          >
-            MongoDB
-          </Badge>
-        );
-      case "mssql":
-        return (
-          <Badge
-            variant="outline"
-            className="border-blue-500/20 bg-blue-500/10 font-mono text-[11px] text-blue-700 dark:text-blue-400"
-          >
-            SQL Server
-          </Badge>
-        );
-      case "clickhouse":
-        return (
-          <Badge
-            variant="outline"
-            className="border-warning/20 bg-warning/10 text-warning dark:text-warning font-mono text-[11px]"
-          >
-            ClickHouse
-          </Badge>
-        );
-      case "redis":
-        return (
-          <Badge
-            variant="outline"
-            className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive font-mono text-[11px]"
-          >
-            Redis
-          </Badge>
-        );
-      default:
-        return (
-          <Badge
-            variant="outline"
-            className="border-sky-500/20 bg-sky-500/10 font-mono text-[11px] text-sky-700 dark:text-sky-400"
-          >
-            SQLite
-          </Badge>
-        );
-    }
-  };
-
-  const getTypeBadgeClass = (colType: string) => {
-    switch (colType) {
-      case "int":
-      case "float":
-        return "bg-success/10 text-success dark:bg-success/40 dark:text-success border-success/30 dark:border-success";
-      case "bool":
-        return "bg-warning/10 text-warning dark:bg-warning/40 dark:text-warning border-warning/30 dark:border-warning";
-      case "datetime":
-        return "bg-primary/10 text-primary dark:bg-primary/40 dark:text-primary border-primary/30 dark:border-primary";
-      case "json":
-        return "bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 border-pink-200 dark:border-pink-800";
-      default:
-        return "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800";
-    }
-  };
-
   return (
     <div className="bg-card/50 text-foreground dark:bg-background dark:text-foreground flex-1 space-y-6 overflow-auto p-4 font-sans md:p-6">
       {/* Legacy combined inspector header remains for non-workspace callers. */}
@@ -206,7 +194,7 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
                 <h2 className="font-mono text-base font-bold tracking-tight">
                   {table.name}
                 </h2>
-                {getEngineBadge(data?.engine)}
+                <EngineBadge engine={data?.engine} />
                 {catalogTable?.gaps.map((gap) => (
                   <span
                     key={gap}
@@ -732,4 +720,4 @@ export const SchemaInspector: FC<SchemaInspectorProps> = ({
       />
     </div>
   );
-};
+}

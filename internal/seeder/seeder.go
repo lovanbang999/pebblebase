@@ -40,7 +40,12 @@ var (
 // GenerateUUID produces an RFC 4122 v4 UUID string without external dependencies.
 func GenerateUUID() string {
 	var b [16]byte
-	_, _ = rand.Read(b[:])
+	if _, err := rand.Read(b[:]); err != nil {
+		now := time.Now().UnixNano()
+		for i := range b {
+			b[i] = byte(now >> (i * 4))
+		}
+	}
 	b[6] = (b[6] & 0x0f) | 0x40 // Version 4
 	b[8] = (b[8] & 0x3f) | 0x80 // Variant RFC 4122
 	return fmt.Sprintf("%08x-%04x-%04x-%04x-%012x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
@@ -49,7 +54,12 @@ func GenerateUUID() string {
 // GenerateRandomHex produces random hex characters.
 func GenerateRandomHex(n int) string {
 	b := make([]byte, n)
-	_, _ = rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		now := time.Now().UnixNano()
+		for i := range b {
+			b[i] = byte(now >> (i % 8))
+		}
+	}
 	return hex.EncodeToString(b)
 }
 

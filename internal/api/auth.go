@@ -42,6 +42,15 @@ type changePasswordRequest struct {
 
 // POST /api/auth/login
 func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
+	ip := audit.IPFromRequest(r)
+	if s.loginLimiter != nil {
+		if allowed, retryAfter := s.loginLimiter.Allow(ip); !allowed {
+			w.Header().Set("Retry-After", strconv.Itoa(retryAfter))
+			writeError(w, http.StatusTooManyRequests, fmt.Sprintf("too many failed login attempts, please try again in %d seconds", retryAfter))
+			return
+		}
+	}
+
 	var req loginRequest
 	if err := decodeBody(r, &req); err != nil {
 		writeError(w, http.StatusBadRequest, err.Error())
@@ -50,8 +59,15 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	token, user, err := s.authSvc.Login(r.Context(), req.Username, req.Password)
 	if err != nil {
+		if s.loginLimiter != nil {
+			s.loginLimiter.RecordFailure(ip)
+		}
 		writeError(w, http.StatusUnauthorized, "invalid username or password")
 		return
+	}
+
+	if s.loginLimiter != nil {
+		s.loginLimiter.Reset(ip)
 	}
 
 	if s.auditLog != nil {

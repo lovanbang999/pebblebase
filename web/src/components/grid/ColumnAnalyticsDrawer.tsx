@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   X,
@@ -81,7 +81,7 @@ function isDateType(type: string): boolean {
   );
 }
 
-export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
+export function ColumnAnalyticsDrawer({
   isOpen,
   onClose,
   connectionId,
@@ -90,7 +90,7 @@ export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
   columns = [],
   onSelectColumn,
   activeFilters = [],
-}) => {
+}: ColumnAnalyticsDrawerProps) {
   const { t } = useTranslation();
 
   const [useFilters, setUseFilters] = useState<boolean>(true);
@@ -809,4 +809,4 @@ export const ColumnAnalyticsDrawer: React.FC<ColumnAnalyticsDrawerProps> = ({
       </div>
     </div>
   );
-};
+}

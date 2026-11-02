@@ -1,4 +1,4 @@
-import { useState, type FC, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   Database,
   CheckCircle2,
@@ -64,13 +64,13 @@ interface ConnectionModalProps {
 const ENVIRONMENTS = DATABASE_ENVIRONMENTS;
 const ENGINES = DATABASE_ENGINES;
 
-export const ConnectionModal: FC<ConnectionModalProps> = ({
+export function ConnectionModal({
   isOpen,
   onClose,
   onSubmit,
   cloneData,
   editData,
-}) => {
+}: ConnectionModalProps) {
   const { t } = useTranslation();
   const [dbType, setDbType] = useState<DatabaseType>(
     editData?.type || cloneData?.type || "postgres",
@@ -959,4 +959,4 @@ export const ConnectionModal: FC<ConnectionModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

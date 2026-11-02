@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, type FC } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Radio,
@@ -37,10 +37,10 @@ interface MessageItem extends RedisPubSubMessage {
   id: string;
 }
 
-export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
+export function RedisPubSubMonitor({
   connId,
   isReadOnly = false,
-}) => {
+}: RedisPubSubMonitorProps) {
   const { t } = useTranslation();
 
   // Channel tags management
@@ -651,7 +651,7 @@ export const RedisPubSubMonitor: FC<RedisPubSubMonitorProps> = ({
       </div>
     </div>
   );
-};
+}
 
 function isJsonPayload(raw: string): boolean {
   const trimmed = raw.trim();

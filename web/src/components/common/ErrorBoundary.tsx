@@ -1,4 +1,4 @@
-import React, { Component, type FC, type ReactNode } from "react";
+import React, { Component, type ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -21,12 +21,12 @@ interface ErrorFallbackViewProps {
   onReset: () => void;
 }
 
-const ErrorFallbackView: FC<ErrorFallbackViewProps> = ({
+function ErrorFallbackView({
   fallbackTitle,
   fallbackMessage,
   errorMessage,
   onReset,
-}) => {
+}: ErrorFallbackViewProps) {
   const { t } = useTranslation();
 
   return (
@@ -67,7 +67,7 @@ const ErrorFallbackView: FC<ErrorFallbackViewProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export class ErrorBoundary extends Component<
   ErrorBoundaryProps,

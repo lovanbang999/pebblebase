@@ -1,4 +1,3 @@
-import type { FC } from "react";
 import { Layers } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -11,11 +10,11 @@ interface EmptyTableScreenProps {
   onReintrospect: () => void;
 }
 
-export const EmptyTableScreen: FC<EmptyTableScreenProps> = ({
+export function EmptyTableScreen({
   connectionName,
   hasTables,
   onReintrospect,
-}) => {
+}: EmptyTableScreenProps) {
   const { t } = useTranslation();
 
   return (
@@ -53,4 +52,4 @@ export const EmptyTableScreen: FC<EmptyTableScreenProps> = ({
       </div>
     </div>
   );
-};
+}

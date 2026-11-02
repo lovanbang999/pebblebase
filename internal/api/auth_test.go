@@ -436,3 +436,43 @@ func TestAdminPasswordResetIsAuditedWithoutSecrets(t *testing.T) {
 		t.Fatal("password reset was not audited")
 	}
 }
+
+func TestLoginRateLimiting(t *testing.T) {
+	env := setupAuthTestServer(t)
+	ip := "203.0.113.50"
+
+	// Trigger 5 failed login attempts
+	for i := 0; i < 5; i++ {
+		body, _ := json.Marshal(map[string]string{
+			"username": "admin",
+			"password": "wrong-password",
+		})
+		req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.RemoteAddr = ip + ":54321"
+		rec := httptest.NewRecorder()
+		env.mux.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusUnauthorized {
+			t.Fatalf("attempt %d: expected 401 Unauthorized, got %d", i+1, rec.Code)
+		}
+	}
+
+	// 6th attempt must be blocked by rate limiter with 429 Too Many Requests
+	body, _ := json.Marshal(map[string]string{
+		"username": "admin",
+		"password": "admin",
+	})
+	req := httptest.NewRequest(http.MethodPost, "/api/auth/login", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	req.RemoteAddr = ip + ":54321"
+	rec := httptest.NewRecorder()
+	env.mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected 429 Too Many Requests, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if retryAfter := rec.Header().Get("Retry-After"); retryAfter == "" {
+		t.Errorf("expected Retry-After header on 429 response")
+	}
+}

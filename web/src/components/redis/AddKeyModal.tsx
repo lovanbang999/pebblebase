@@ -1,4 +1,4 @@
-import { useState, type FC, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -27,12 +27,12 @@ interface AddKeyModalProps {
   onSuccess: (keyName: string) => void;
 }
 
-export const AddKeyModal: FC<AddKeyModalProps> = ({
+export function AddKeyModal({
   connId,
   isOpen,
   onClose,
   onSuccess,
-}) => {
+}: AddKeyModalProps) {
   const { t } = useTranslation();
   const [key, setKey] = useState("");
   const [type, setType] = useState<"string" | "hash" | "list" | "set" | "zset">(
@@ -278,4 +278,4 @@ export const AddKeyModal: FC<AddKeyModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

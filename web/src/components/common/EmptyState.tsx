@@ -1,4 +1,4 @@
-import type { FC, ElementType } from "react";
+import type { ElementType } from "react";
 import { Button } from "@/components/ui/button";
 
 interface EmptyStateProps {
@@ -16,13 +16,13 @@ interface EmptyStateProps {
   };
 }
 
-export const EmptyState: FC<EmptyStateProps> = ({
+export function EmptyState({
   icon: Icon,
   title,
   description,
   action,
   secondaryAction,
-}) => {
+}: EmptyStateProps) {
   return (
     <div className="animate-in fade-in mx-auto my-auto flex max-w-sm flex-col items-center justify-center p-8 text-center duration-200">
       <div className="border-border bg-muted dark:border-border/80 dark:bg-card/80 mb-3 flex h-12 w-12 items-center justify-center rounded-xl border shadow-xs dark:shadow-inner dark:shadow-black/40">
@@ -68,4 +68,4 @@ export const EmptyState: FC<EmptyStateProps> = ({
       )}
     </div>
   );
-};
+}

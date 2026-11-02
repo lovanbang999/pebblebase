@@ -338,10 +338,9 @@ function sameWorkspace(a: PersistedWorkspace, b: PersistedWorkspace): boolean {
 
 export function useTabs() {
   const { t } = useTranslation();
-  const initialRef = useRef<ReturnType<typeof readWorkspace> | null>(null);
-  if (!initialRef.current) initialRef.current = readWorkspace();
-  const [workspace, setWorkspace] = useState(initialRef.current.workspace);
-  const hydratedRef = useRef(initialRef.current.hydrated);
+  const [initialData] = useState(() => readWorkspace());
+  const [workspace, setWorkspace] = useState(initialData.workspace);
+  const hydratedRef = useRef(initialData.hydrated);
   const workspaceRef = useRef(workspace);
   workspaceRef.current = workspace;
 

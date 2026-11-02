@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,6 +38,7 @@ export function FindEverywhereDialog({
   allConnections,
   onOpenMatch,
 }: Props) {
+  const { t } = useTranslation();
   const [value, setValue] = useState(initialValue);
   const [allScopes, setAllScopes] = useState(false);
   const [includeProduction, setIncludeProduction] = useState(false);
@@ -123,11 +125,10 @@ export function FindEverywhereDialog({
       <DialogContent className="flex max-h-[85vh] max-w-3xl flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="border-border border-b p-5">
           <DialogTitle className="flex items-center gap-2">
-            <Search className="size-4" /> Find everywhere
+            <Search className="size-4" /> {t("findEverywhere.title")}
           </DialogTitle>
           <DialogDescription>
-            Search tables and collections in parallel. Results appear as each
-            connection finishes.
+            {t("findEverywhere.description")}
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-2 border-b p-4">
@@ -138,13 +139,15 @@ export function FindEverywhereDialog({
             onKeyDown={(event) => {
               if (event.key === "Enter") void run();
             }}
-            placeholder="Text, UUID, ObjectId or numeric id"
+            placeholder={t("findEverywhere.inputPlaceholder")}
           />
           <Button
             disabled={!value.trim() || running || sources.length === 0}
             onClick={() => void run()}
           >
-            {running ? "Searching…" : "Search"}
+            {running
+              ? t("findEverywhere.searching")
+              : t("findEverywhere.search")}
           </Button>
           {running && (
             <Button
@@ -152,7 +155,7 @@ export function FindEverywhereDialog({
               onClick={() => controller.current?.abort()}
             >
               <X className="mr-1 size-4" />
-              Cancel
+              {t("findEverywhere.cancel")}
             </Button>
           )}
         </div>
@@ -162,7 +165,9 @@ export function FindEverywhereDialog({
               checked={allScopes}
               onCheckedChange={(checked) => setAllScopes(checked === true)}
             />
-            All workspaces ({allConnections.length})
+            {t("findEverywhere.allWorkspaces", {
+              count: allConnections.length,
+            })}
           </label>
           <label className="flex items-center gap-2">
             <Checkbox
@@ -171,22 +176,22 @@ export function FindEverywhereDialog({
                 setIncludeProduction(checked === true)
               }
             />
-            Include production
+            {t("findEverywhere.includeProduction")}
           </label>
           {includeProduction && (
             <span className="text-warning-foreground text-amber-600">
-              Production databases will be searched.
+              {t("findEverywhere.productionWarning")}
             </span>
           )}
           <span className="text-muted-foreground ml-auto">
-            {sources.length} connections in scope
+            {t("findEverywhere.connectionsInScope", { count: sources.length })}
           </span>
         </div>
         <div className="min-h-32 flex-1 space-y-3 overflow-auto p-4">
           {error && <p className="text-destructive text-sm">{error}</p>}
           {!results.length && !running && !error && (
             <p className="text-muted-foreground py-8 text-center text-sm">
-              Enter a value to search the selected workspace.
+              {t("findEverywhere.enterValuePrompt")}
             </p>
           )}
           {groups.map((group) => (
@@ -198,7 +203,7 @@ export function FindEverywhereDialog({
                 <span>{group.connectionName || group.connectionId}</span>
                 <span className="text-muted-foreground text-xs">
                   {group.status === "complete" && !group.note
-                    ? "Complete"
+                    ? t("findEverywhere.complete")
                     : group.note || group.status}
                 </span>
               </header>
@@ -207,7 +212,7 @@ export function FindEverywhereDialog({
                   <div className="text-muted-foreground px-2 py-1 text-xs">
                     {group.note ||
                       (group.status === "complete"
-                        ? "No matches"
+                        ? t("findEverywhere.noMatches")
                         : group.status)}
                   </div>
                 )}

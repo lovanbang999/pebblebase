@@ -1,4 +1,4 @@
-import type { FC, ImgHTMLAttributes } from "react";
+import type { ImgHTMLAttributes } from "react";
 import type { DatabaseType } from "@/lib/types";
 
 interface DatabaseEngineIconProps extends Omit<
@@ -21,13 +21,13 @@ const ENGINE_ICON_PATHS: Record<string, string> = {
   clickhouse: "/icons/engines/clickhouse.svg",
 };
 
-export const DatabaseEngineIcon: FC<DatabaseEngineIconProps> = ({
+export function DatabaseEngineIcon({
   type,
   className = "size-5",
   size,
   style,
   ...props
-}) => {
+}: DatabaseEngineIconProps) {
   const normalized = (type || "").toLowerCase();
   const iconSrc =
     ENGINE_ICON_PATHS[normalized] || "/icons/engines/postgresql.svg";
@@ -43,4 +43,4 @@ export const DatabaseEngineIcon: FC<DatabaseEngineIconProps> = ({
       {...props}
     />
   );
-};
+}

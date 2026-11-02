@@ -3,14 +3,7 @@ import {
   readQueryHistory,
   containsCredentials,
 } from "@/lib/queryHistoryStore";
-import {
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-  type FC,
-} from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
 import { studioEditorTheme } from "@/lib/editorTheme";
@@ -20,6 +13,7 @@ import { javascript, javascriptLanguage } from "@codemirror/lang-javascript";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   autocompletion,
+  type Completion,
   type CompletionContext,
   type CompletionResult,
 } from "@codemirror/autocomplete";
@@ -242,7 +236,7 @@ function createMongoCompletionSource(tables: TableSchema[]) {
       };
     }
 
-    const options: any[] = [];
+    const options: Completion[] = [];
 
     // 3. Collection field names
     for (const t of tables) {
@@ -321,7 +315,7 @@ function createSqlCompletionSource(tables: TableSchema[]) {
       return regex.test(fullDoc);
     });
 
-    const options: any[] = [];
+    const options: Completion[] = [];
     const seen = new Set<string>();
 
     // Add columns of mentioned tables with highest priority (boost: 4)
@@ -391,12 +385,17 @@ function formatLatency(ms?: number): string {
   return ms.toFixed(1); // e.g. "145.2"
 }
 
-const PlanTreeNode: FC<{
+function PlanTreeNode({
+  keyName,
+  value,
+  depth = 0,
+  expandAll = null,
+}: {
   keyName?: string;
-  value: any;
+  value: unknown;
   depth?: number;
   expandAll?: boolean | null;
-}> = ({ keyName, value, depth = 0, expandAll = null }) => {
+}) {
   const isObject = value !== null && typeof value === "object";
   const isArray = Array.isArray(value);
   const [isOpenState, setIsOpenState] = useState<boolean | null>(null);
@@ -445,9 +444,9 @@ const PlanTreeNode: FC<{
     );
   }
 
-  const entries = isArray
-    ? value.map((v: any, i: number) => [String(i), v])
-    : Object.entries(value);
+  const entries: [string, unknown][] = isArray
+    ? (value as unknown[]).map((v, i: number) => [String(i), v])
+    : Object.entries(value as Record<string, unknown>);
   const count = entries.length;
 
   return (
@@ -476,11 +475,11 @@ const PlanTreeNode: FC<{
         {!isOpen && !isArray && value && (
           <span className="text-muted-foreground ml-1 truncate font-sans text-[11px]">
             {String(
-              value["Node Type"] ||
-                value["type"] ||
-                value["table_name"] ||
-                value["stage"] ||
-                value["detail"] ||
+              (value as Record<string, unknown>)["Node Type"] ||
+                (value as Record<string, unknown>)["type"] ||
+                (value as Record<string, unknown>)["table_name"] ||
+                (value as Record<string, unknown>)["stage"] ||
+                (value as Record<string, unknown>)["detail"] ||
                 "",
             )}
           </span>
@@ -502,7 +501,7 @@ const PlanTreeNode: FC<{
       )}
     </div>
   );
-};
+}
 
 interface QueryConsoleProps {
   connection: Connection;
@@ -514,7 +513,7 @@ interface QueryConsoleProps {
   onOpenAISettings?: () => void;
 }
 
-export const QueryConsole: FC<QueryConsoleProps> = ({
+export function QueryConsole({
   connection,
   workspaceTabId,
   tables,
@@ -522,7 +521,7 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
   onNavigateToTable,
   onQueryChange,
   onOpenAISettings,
-}) => {
+}: QueryConsoleProps) {
   const { t } = useTranslation();
   const isMongo = connection.type === "mongodb";
   const isMysql = connection.type === "mysql";
@@ -859,8 +858,10 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         schema: condensedSchema,
       });
       setAiGeneratedResult(res);
-    } catch (err: any) {
-      setAiErrorNotice(err?.message || t("ai.generateFailed"));
+    } catch (err: unknown) {
+      setAiErrorNotice(
+        err instanceof Error ? err.message : t("ai.generateFailed"),
+      );
     } finally {
       setIsGeneratingAi(false);
     }
@@ -883,8 +884,8 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         schema: condensedSchema,
       });
       setAiFixedResult(res);
-    } catch (err: any) {
-      setAiErrorNotice(err?.message || t("ai.fixFailed"));
+    } catch (err: unknown) {
+      setAiErrorNotice(err instanceof Error ? err.message : t("ai.fixFailed"));
     } finally {
       setIsFixingWithAi(false);
     }
@@ -912,8 +913,10 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
         schema: condensedSchema,
       });
       setAiOptimizationResult(res);
-    } catch (err: any) {
-      setAiErrorNotice(err?.message || t("ai.optimizeFailed"));
+    } catch (err: unknown) {
+      setAiErrorNotice(
+        err instanceof Error ? err.message : t("ai.optimizeFailed"),
+      );
     } finally {
       setIsOptimizingWithAi(false);
     }
@@ -1631,8 +1634,9 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       // Auto-switch to the plan tab to display the result
       setActiveResultsTab("plan");
       setPlanExpandAll(null);
-    } catch (err: any) {
-      const msg = err.message || "Failed to explain query";
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Failed to explain query";
       setTabs((prev) =>
         prev.map((t) => (t.id === targetTabId ? { ...t, error: msg } : t)),
       );
@@ -4086,4 +4090,4 @@ export const QueryConsole: FC<QueryConsoleProps> = ({
       </Dialog>
     </div>
   );
-};
+}

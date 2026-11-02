@@ -272,7 +272,42 @@
     "select_table_to_view": "Chọn một bảng ở danh sách bên trái để xem chi tiết sai khác",
     "columns_count": "{{count}} cột",
     "indexes_count": "{{count}} chỉ mục",
-    "target_engine": "Hệ quản trị đích"
+    "target_engine": "Hệ quản trị đích",
+    "catalogUnavailable": "Cả hai catalog PostgreSQL phải truy cập được và hoàn chỉnh.",
+    "change": {
+      "added": "Đã thêm",
+      "changed": "Đã thay đổi",
+      "removed": "Đã xóa"
+    },
+    "copiedScript": "Đã sao chép tập lệnh.",
+    "copyFailed": "Không thể sao chép tập lệnh.",
+    "copyScript": "Sao chép tập lệnh",
+    "destinationLabel": "Đích (cần thay đổi)",
+    "destructiveChange": "Phá hủy: dữ liệu có thể bị mất",
+    "destructiveDefault": "Các thay đổi DROP TABLE/COLUMN không được chọn theo mặc định.",
+    "directionDescription": "SQL được tạo sẽ làm cho đích khớp với nguồn. Chưa có gì được thực thi tại đây.",
+    "focusSql": "SQL cho khác biệt đang chọn",
+    "fullScript": "Tập lệnh migration đã tạo",
+    "loadingCatalog": "Đang tải siêu dữ liệu schema dùng chung…",
+    "migrationTitle": "Migration schema (xem lại trước khi chạy)",
+    "noMetadataDifferences": "Không có sự khác biệt nào trong siêu dữ liệu schema được hỗ trợ.",
+    "noSelectedChanges": "Chọn các điểm khác biệt để tạo tập lệnh.",
+    "object": {
+      "column": "Cột",
+      "constraint": "Ràng buộc",
+      "index": "Chỉ mục",
+      "table": "Bảng"
+    },
+    "openDestinationConsole": "Mở trong console đích",
+    "postgresRequired": "Chọn hai kết nối PostgreSQL riêng biệt, có thể kết nối được để so sánh schema.",
+    "refreshCatalog": "Làm mới schema",
+    "requiredDependency": "Cần thiết bởi một thay đổi khác đã chọn",
+    "scopeNotice": "Chỉ áp dụng cho bảng, cột, chỉ mục và ràng buộc PK/FK/unique trong schema public. Views, functions, sequences, triggers và các đối tượng khác không được chuyển đổi. Hãy xem lại ép kiểu dữ liệu và phụ thuộc trước khi chạy.",
+    "searchDifferences": "Tìm kiếm khác biệt",
+    "selectAllChanges": "Chọn tất cả",
+    "selectionCount": "Đã chọn {{selected}} trên {{total}} (bao gồm các phụ thuộc)",
+    "sourceLabel": "Nguồn (schema mong muốn)",
+    "swapPair": "Hoán đổi nguồn và đích"
   },
   "datagrid": {
     "tableViews": "Chế độ xem bảng",
@@ -636,6 +671,34 @@
       "copied": "Đã sao chép kế hoạch!",
       "no_plan_title": "Chưa có kế hoạch thực thi",
       "no_plan_desc": "Bấm Phân tích để phân tích và hiển thị trực quan kế hoạch thực thi cùng các chỉ số hiệu năng."
+    },
+    "historyFailed": "Thất bại",
+    "historySuccess": "Thành công",
+    "storageCredentialWarning": "Các câu lệnh chứa thông tin đăng nhập không thể được lưu vào lịch sử hoặc tập lệnh.",
+    "transaction": {
+      "aborted": "Giao dịch bị hủy — Yêu cầu Rollback",
+      "abortedExecution": "Giao dịch đã bị hủy. Cần Rollback trước khi thực thi thêm các câu lệnh khác.",
+      "alreadyRunning": "Một câu lệnh đang được thực thi trong console này.",
+      "auto": "Tx: Tự động",
+      "closeFailed": "Không thể đóng giao dịch",
+      "closeWarning": "Đóng tab này sẽ rollback giao dịch chưa được commit. Tiếp tục?",
+      "closed": "Tab console đã đóng. Các thay đổi đã được rollback.",
+      "commit": "Commit",
+      "commitSwitch": "Commit và chuyển đổi",
+      "expired": "Phiên console đã hết hạn hoặc bị đóng. Các thay đổi chưa commit đã được rollback.",
+      "failed": "Thao tác giao dịch thất bại",
+      "idle": "Phiên console đã hết thời gian chờ. Các thay đổi chưa commit đã được rollback.",
+      "manual": "Tx: Thủ công",
+      "mode": "Chế độ giao dịch",
+      "pending": "{{count}} câu lệnh đang chờ",
+      "readOnly": "Chế độ thủ công không khả dụng trên kết nối chỉ đọc.",
+      "rollback": "Rollback",
+      "rolledBack": "Giao dịch đã được rollback.",
+      "switchAction": "Rollback và chuyển đổi",
+      "switchDescription": "Commit hoặc rollback các thay đổi chưa lưu trước khi chuyển sang chế độ Tự động.",
+      "switchTitle": "Chuyển sang chế độ Tự động?",
+      "unavailable": "Chế độ thủ công không khả dụng cho kết nối này. Hãy rollback bất kỳ giao dịch nào đang mở.",
+      "unsupported": "Giao dịch thủ công hiện chỉ hỗ trợ PostgreSQL và MySQL."
     }
   },
   "tabs": {
@@ -657,7 +720,8 @@
     "queryTabTooltip": "Bảng SQL",
     "noTabsOpen": "Không có tab nào đang mở",
     "scrollLeft": "Cuộn sang trái",
-    "scrollRight": "Cuộn sang phải"
+    "scrollRight": "Cuộn sang phải",
+    "confirmCloseTransaction": "Console này đang có giao dịch mở. Đóng và rollback công việc chưa lưu?"
   },
   "schema": {
     "dataGrid": "Lưới Dữ Liệu",
@@ -687,7 +751,8 @@
     "primary": "CHÍNH (PRIMARY)",
     "secondary": "PHỤ (SECONDARY)",
     "unique": "DUY NHẤT",
-    "none": "Không có"
+    "none": "Không có",
+    "constraints": "Ràng buộc khóa chính, khóa ngoại và unique"
   },
   "auth": {
     "login": "Đăng Nhập",
@@ -861,7 +926,13 @@
       "load": "Tải vào trình soạn thảo",
       "executedAt": "Đã thực thi",
       "by": "bởi"
-    }
+    },
+    "deleteConfirm": "Xóa tập lệnh {{title}}?",
+    "deleteScript": "Xóa tập lệnh",
+    "editScript": "Chỉnh sửa / đổi tên tập lệnh",
+    "operationFailed": "Không thể lưu hoặc xóa tập lệnh.",
+    "scriptBody": "Nội dung tập lệnh",
+    "scriptTitle": "Tiêu đề tập lệnh"
   },
   "library": {
     "folder": "Thư mục",
@@ -902,7 +973,10 @@
     "loadError": "Không thể tải sơ đồ ERD",
     "loadErrorDesc": "Không thể kết nối hoặc phân tích lược đồ và các quan hệ cơ sở dữ liệu.",
     "errorDetails": "Chi tiết lỗi",
-    "retryConnection": "Thử lại kết nối"
+    "retryConnection": "Thử lại kết nối",
+    "refreshCatalog": "Làm mới schema",
+    "renderLimit": "Hiển thị {{shown}} trên {{total}} bảng. Tìm kiếm để thu hẹp với schema lớn.",
+    "showMore": "Hiển thị thêm 40 bảng"
   },
   "diagnostics": {
     "unknownConnection": "Cơ sở dữ liệu hiện tại",
@@ -1311,7 +1385,9 @@
       "copyOutput": "Sao chép kết quả",
       "autocompleteSuggestions": "Gợi ý tự động hoàn thành",
       "pressTabToApply": "Nhấn Tab để áp dụng",
-      "emptyListOrSet": "(danh sách hoặc tập hợp trống)"
+      "emptyListOrSet": "(danh sách hoặc tập hợp trống)",
+      "multilinePlaceholder": "Một lệnh trên mỗi dòng. Nhấn Enter để chạy, Shift+Enter để xuống dòng.",
+      "productionConfirm": "Chạy {{count}} lệnh ghi trên kết nối production {{connection}}?"
     },
     "loadingStudio": "Đang tải Redis Studio...",
     "keyBrowser": "Trình duyệt Redis Key",
@@ -1534,6 +1610,57 @@
     "technicalDetails": "Chi tiết kỹ thuật",
     "copyDiagnostic": "Sao chép thông tin chẩn đoán",
     "exportComplete": "Xuất dữ liệu hoàn tất",
-    "activeEditorConnection": "Kết nối của trình soạn thảo hiện tại"
+    "activeEditorConnection": "Kết nối của trình soạn thảo hiện tại",
+    "collapseNode": "Thu gọn",
+    "expandNode": "Mở rộng"
+  },
+  "findEverywhere": {
+    "title": "Tìm kiếm khắp nơi",
+    "description": "Tìm kiếm song song trong các bảng và bộ sưu tập. Kết quả xuất hiện ngay khi mỗi kết nối hoàn tất.",
+    "inputPlaceholder": "Văn bản, UUID, ObjectId hoặc ID số",
+    "search": "Tìm kiếm",
+    "searching": "Đang tìm…",
+    "cancel": "Hủy",
+    "allWorkspaces": "Tất cả không gian làm việc ({{count}})",
+    "includeProduction": "Bao gồm môi trường production",
+    "productionWarning": "Các cơ sở dữ liệu production sẽ được tìm kiếm.",
+    "connectionsInScope": "{{count}} kết nối trong phạm vi",
+    "enterValuePrompt": "Nhập giá trị để tìm kiếm trong không gian làm việc đã chọn.",
+    "complete": "Hoàn thành",
+    "noMatches": "Không tìm thấy kết quả"
+  },
+  "runFromLog": {
+    "title": "Chạy từ Log",
+    "description": "Phân tích log cơ sở dữ liệu thành câu lệnh. Không có gì được thực thi cho đến khi bạn chọn Chạy trong console.",
+    "pasteLabel": "Dán log truy vấn hoặc lệnh",
+    "sampleSuffix": "mẫu",
+    "logAriaLabel": "Log cơ sở dữ liệu",
+    "logPlaceholder": "Dán câu lệnh SQL, log debug TypeORM/Prisma, log Mongoose hoặc đầu ra Redis CLI vào đây…",
+    "destinationLabel": "Chạy trong",
+    "noSuitableConnection": "Không có kết nối phù hợp trong không gian làm việc này cho {{kind}}.",
+    "noMatchingTable": "Không có kết nối {{engine}} nào trong không gian làm việc này chứa “{{table}}”.",
+    "previewPlaceholder": "Bản xem trước câu lệnh sẽ xuất hiện tại đây.",
+    "copyStatement": "Sao chép câu lệnh",
+    "copied": "Đã sao chép",
+    "runInConsole": "Chạy trong console"
+  },
+  "workspaces": {
+    "allSources": "Tất cả nguồn dữ liệu",
+    "cancel": "Hủy",
+    "colour": "Màu sắc",
+    "confirmDelete": "Xóa không gian làm việc {{name}}? Các kết nối vẫn khả dụng trong Tất cả nguồn dữ liệu.",
+    "confirmSwitch": "Chuyển không gian làm việc và hủy các thay đổi đang chờ? Giao dịch thủ công đang mở sẽ bị rollback. Nội dung truy vấn và bố cục tab sẽ được lưu, nhưng các thay đổi dữ liệu chưa commit sẽ mất.",
+    "create": "Tạo không gian làm việc",
+    "delete": "Xóa không gian làm việc",
+    "keepOne": "Giữ lại ít nhất một không gian làm việc.",
+    "loadFailed": "Không thể tải cấu hình không gian làm việc.",
+    "loading": "Đang tải không gian làm việc…",
+    "manage": "Quản lý không gian làm việc",
+    "name": "Tên",
+    "noOtherMembership": "Không có không gian làm việc khác",
+    "save": "Lưu không gian làm việc",
+    "saveFailed": "Không thể lưu thay đổi không gian làm việc.",
+    "showAll": "Hiển thị tất cả nguồn dữ liệu",
+    "snapshotFailed": "Không thể lưu bố cục không gian làm việc hiện tại. Thao tác chuyển đổi đã bị hủy để bảo vệ dữ liệu của bạn."
   }
 }

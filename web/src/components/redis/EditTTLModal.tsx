@@ -1,4 +1,4 @@
-import { useState, type FC, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Dialog,
@@ -21,14 +21,14 @@ interface EditTTLModalProps {
   onSuccess: (newTTL: number) => void;
 }
 
-export const EditTTLModal: FC<EditTTLModalProps> = ({
+export function EditTTLModal({
   connId,
   keyName,
   currentTTL,
   isOpen,
   onClose,
   onSuccess,
-}) => {
+}: EditTTLModalProps) {
   const { t } = useTranslation();
   const [ttl, setTtl] = useState(currentTTL > 0 ? String(currentTTL) : "");
   const [persist, setPersist] = useState(currentTTL === -1);
@@ -163,4 +163,4 @@ export const EditTTLModal: FC<EditTTLModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

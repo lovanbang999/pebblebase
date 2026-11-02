@@ -22,84 +22,81 @@ export interface GridPaginationFooterProps {
 
 const DEFAULT_PAGE_SIZE_OPTIONS = [25, 50, 100, 250, 500];
 
-export const GridPaginationFooter: React.FC<GridPaginationFooterProps> =
-  React.memo(
-    ({
-      page,
-      pageSize,
-      totalCount,
-      totalPages,
-      onPageChange,
-      onPageSizeChange,
-      pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
-      t,
-    }) => {
-      return (
-        <div className="border-border bg-card/80 text-muted-foreground dark:border-border dark:bg-card/40 dark:text-muted-foreground flex h-8 min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 font-sans text-xs sm:px-4">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <span className="truncate">
-              {totalCount === 0
-                ? `0 ${t("datagrid.records")}`
-                : `${t("datagrid.showing")} ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} ${t("datagrid.of")} ${totalCount}`}
-            </span>
-            <div className="ml-1 hidden shrink-0 items-center gap-1.5 sm:ml-2 sm:flex">
-              <span className="text-muted-foreground text-[11px]">
-                {t("datagrid.perPage")}
-              </span>
-              <Select
-                value={String(pageSize)}
-                onValueChange={(val) => val && onPageSizeChange(Number(val))}
-              >
-                <SelectTrigger
-                  aria-label={t("datagrid.perPage")}
-                  className="h-6 w-16 px-2 py-0 font-mono text-xs"
-                >
-                  <SelectValue placeholder={String(pageSize)} />
-                </SelectTrigger>
-                <SelectContent side="top" align="start" className="min-w-16">
-                  {pageSizeOptions.map((sizeOpt) => (
-                    <SelectItem key={sizeOpt} value={String(sizeOpt)}>
-                      {sizeOpt}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <span className="text-muted-foreground text-[11px] whitespace-nowrap">
-              {t("datagrid.page")} {page + 1} {t("datagrid.of")} {totalPages}
-            </span>
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                disabled={page <= 0}
-                onClick={() => onPageChange(page - 1)}
-                aria-label={t("datagrid.previousPage")}
-                title={t("datagrid.previousPage")}
-                className="text-foreground"
-              >
-                <ChevronLeft className="h-3.5 w-3.5" />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                disabled={page + 1 >= totalPages}
-                onClick={() => onPageChange(page + 1)}
-                aria-label={t("datagrid.nextPage")}
-                title={t("datagrid.nextPage")}
-                className="text-foreground"
-              >
-                <ChevronRight className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </div>
+export const GridPaginationFooter = React.memo(function GridPaginationFooter({
+  page,
+  pageSize,
+  totalCount,
+  totalPages,
+  onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  t,
+}: GridPaginationFooterProps) {
+  return (
+    <div className="border-border bg-card/80 text-muted-foreground dark:border-border dark:bg-card/40 dark:text-muted-foreground flex h-8 min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 font-sans text-xs sm:px-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+        <span className="truncate">
+          {totalCount === 0
+            ? `0 ${t("datagrid.records")}`
+            : `${t("datagrid.showing")} ${page * pageSize + 1} - ${Math.min((page + 1) * pageSize, totalCount)} ${t("datagrid.of")} ${totalCount}`}
+        </span>
+        <div className="ml-1 hidden shrink-0 items-center gap-1.5 sm:ml-2 sm:flex">
+          <span className="text-muted-foreground text-[11px]">
+            {t("datagrid.perPage")}
+          </span>
+          <Select
+            value={String(pageSize)}
+            onValueChange={(val) => val && onPageSizeChange(Number(val))}
+          >
+            <SelectTrigger
+              aria-label={t("datagrid.perPage")}
+              className="h-6 w-16 px-2 py-0 font-mono text-xs"
+            >
+              <SelectValue placeholder={String(pageSize)} />
+            </SelectTrigger>
+            <SelectContent side="top" align="start" className="min-w-16">
+              {pageSizeOptions.map((sizeOpt) => (
+                <SelectItem key={sizeOpt} value={String(sizeOpt)}>
+                  {sizeOpt}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      );
-    },
+      </div>
+
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-muted-foreground text-[11px] whitespace-nowrap">
+          {t("datagrid.page")} {page + 1} {t("datagrid.of")} {totalPages}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            disabled={page <= 0}
+            onClick={() => onPageChange(page - 1)}
+            aria-label={t("datagrid.previousPage")}
+            title={t("datagrid.previousPage")}
+            className="text-foreground"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            disabled={page + 1 >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+            aria-label={t("datagrid.nextPage")}
+            title={t("datagrid.nextPage")}
+            className="text-foreground"
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
+});
 GridPaginationFooter.displayName = "GridPaginationFooter";

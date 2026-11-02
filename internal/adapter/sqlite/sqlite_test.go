@@ -423,4 +423,3 @@ func TestSQLiteAggregate(t *testing.T) {
 		t.Errorf("expected total_rows=5, got %d", tStats.TotalRows)
 	}
 }
-

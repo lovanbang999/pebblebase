@@ -1,4 +1,4 @@
-import { useRef, type FC, type KeyboardEvent } from "react";
+import { useRef, type KeyboardEvent } from "react";
 import {
   Table as TableIcon,
   Columns3,
@@ -26,29 +26,31 @@ const tabItems = [
   { id: "ddl", key: "ddlView", fallback: "DDL", Icon: FileCode2 },
 ] as const;
 
-export const TableSubviewTabs: FC<TableSubviewTabsProps> = ({
+export function TableSubviewTabs({
   activeView,
   onViewChange,
   table,
   connectionName,
   dbType,
-}) => (
-  <TabsContent
-    activeView={activeView}
-    onViewChange={onViewChange}
-    table={table}
-    connectionName={connectionName}
-    dbType={dbType}
-  />
-);
+}: TableSubviewTabsProps) {
+  return (
+    <TabsContent
+      activeView={activeView}
+      onViewChange={onViewChange}
+      table={table}
+      connectionName={connectionName}
+      dbType={dbType}
+    />
+  );
+}
 
-const TabsContent: FC<TableSubviewTabsProps> = ({
+function TabsContent({
   activeView,
   onViewChange,
   table,
   connectionName,
   dbType,
-}) => {
+}: TableSubviewTabsProps) {
   const { t } = useTranslation();
   const tabListRef = useRef<HTMLDivElement>(null);
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -116,4 +118,4 @@ const TabsContent: FC<TableSubviewTabsProps> = ({
       </div>
     </div>
   );
-};
+}

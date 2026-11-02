@@ -1,10 +1,11 @@
-import { useState, useMemo, type FC } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "cn";
+import { type ClickHouseComplexKind } from "@/lib/clickhouse";
 
-export type ClickHouseComplexKind = "array" | "map" | "tuple";
+export type { ClickHouseComplexKind };
 
 interface ClickHouseComplexCellProps {
   kind: ClickHouseComplexKind;
@@ -12,66 +13,6 @@ interface ClickHouseComplexCellProps {
   value: unknown;
   onOpenDetail?: () => void;
   className?: string;
-}
-
-/**
- * Detects if a column or value is a ClickHouse complex structure: Array, Map, or Tuple.
- */
-export function detectClickHouseComplexType(
-  columnType?: string,
-  val?: unknown,
-): ClickHouseComplexKind | null {
-  if (columnType) {
-    const lower = columnType.toLowerCase().trim();
-    if (
-      lower === "array" ||
-      lower.startsWith("array(") ||
-      lower.startsWith("array")
-    ) {
-      return "array";
-    }
-    if (
-      lower === "map" ||
-      lower.startsWith("map(") ||
-      lower.startsWith("map")
-    ) {
-      return "map";
-    }
-    if (
-      lower === "tuple" ||
-      lower.startsWith("tuple(") ||
-      lower.startsWith("tuple")
-    ) {
-      return "tuple";
-    }
-  }
-
-  if (val === null || val === undefined) {
-    return null;
-  }
-
-  if (Array.isArray(val)) {
-    return "array";
-  }
-
-  if (typeof val === "object") {
-    return "map";
-  }
-
-  if (typeof val === "string") {
-    const trimmed = val.trim();
-    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
-      return "array";
-    }
-    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-      return "map";
-    }
-    if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
-      return "tuple";
-    }
-  }
-
-  return null;
 }
 
 /**
@@ -100,13 +41,13 @@ function parseComplexValue(val: unknown, kind: ClickHouseComplexKind): any {
   }
 }
 
-export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
+export function ClickHouseComplexCell({
   kind,
   columnType,
   value,
   onOpenDetail,
   className,
-}) => {
+}: ClickHouseComplexCellProps) {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
 
@@ -332,4 +273,4 @@ export const ClickHouseComplexCell: FC<ClickHouseComplexCellProps> = ({
       )}
     </div>
   );
-};
+}

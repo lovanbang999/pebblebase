@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FC } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -29,11 +29,7 @@ const severityClass: Record<OperationSeverity, string> = {
   error: "text-destructive",
 };
 
-export const OutputPanel: FC<OutputPanelProps> = ({
-  events,
-  onClear,
-  onClose,
-}) => {
+export function OutputPanel({ events, onClear, onClose }: OutputPanelProps) {
   const { t } = useTranslation();
   const headingRef = useRef<HTMLHeadingElement>(null);
   const resizeStart = useRef<{ y: number; height: number } | null>(null);
@@ -170,4 +166,4 @@ export const OutputPanel: FC<OutputPanelProps> = ({
       </div>
     </section>
   );
-};
+}

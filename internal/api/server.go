@@ -41,6 +41,7 @@ type Server struct {
 	authEnabled     bool
 	consoleSessions *consolesession.Manager
 	consoleCancel   context.CancelFunc
+	loginLimiter    *LoginRateLimiter
 }
 
 // NewServer creates a Server wired with the given dependencies.
@@ -60,6 +61,7 @@ func NewServer(store *storage.Store, enc *storage.Encryptor, authSvc *auth.Servi
 		migrationSvc: migrationSvc,
 		aiSvc:        aiSvc,
 		authEnabled:  authEnabled,
+		loginLimiter: NewLoginRateLimiter(5, 1*time.Minute),
 	}
 }
 

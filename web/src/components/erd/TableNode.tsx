@@ -266,7 +266,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
 
             {/* Compact Mode Notice */}
             {compactMode && hiddenCount > 0 && (
-              <div className="border-border bg-card/70 text-muted-foreground dark:border-border/60 dark:bg-card/50 dark:text-muted-foreground flex h-[26px] items-center justify-center border-t px-2.5 text-center text-[11px] italic">
+              <div className="border-border bg-card/70 text-muted-foreground dark:border-border/60 dark:bg-card/50 dark:text-muted-foreground flex h-6.5 items-center justify-center border-t px-2.5 text-center text-[11px] italic">
                 {t("erd.columnsHidden", { count: hiddenCount })}
               </div>
             )}

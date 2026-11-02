@@ -1,4 +1,4 @@
-import { useState, useMemo, type FC, type FormEvent } from "react";
+import { useState, useMemo, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { Save, Trash2, Key, AlertCircle, Loader2, Plus } from "lucide-react";
 import type { TableSchema, ColumnSchema } from "@/lib/types";
@@ -104,14 +104,14 @@ interface RowModalProps {
   onDelete?: () => Promise<void>;
 }
 
-export const RowModal: FC<RowModalProps> = ({
+export function RowModal({
   isOpen,
   onClose,
   table,
   initialRow,
   onSave,
   onDelete,
-}) => {
+}: RowModalProps) {
   const { t } = useTranslation();
   const isDuplicate = Boolean(
     initialRow && "_isDuplicate" in initialRow && initialRow._isDuplicate,
@@ -813,4 +813,4 @@ export const RowModal: FC<RowModalProps> = ({
       </AlertDialog>
     </Dialog>
   );
-};
+}

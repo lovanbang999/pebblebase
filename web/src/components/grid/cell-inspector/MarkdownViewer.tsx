@@ -17,11 +17,11 @@ interface MarkdownViewerProps {
  * - Lists and task checkboxes (- [x], - [ ])
  * - Markdown tables (| col1 | col2 |)
  */
-export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
+export function MarkdownViewer({
   content,
   isReadOnly = false,
   onContentChange,
-}) => {
+}: MarkdownViewerProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"preview" | "raw">("preview");
   const [rawText, setRawText] = useState(content);
@@ -416,4 +416,4 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
       </div>
     </div>
   );
-};
+}

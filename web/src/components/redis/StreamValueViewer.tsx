@@ -1,4 +1,3 @@
-import { type FC } from "react";
 import { useTranslation } from "react-i18next";
 import { Badge } from "@/components/ui/badge";
 import { Activity } from "lucide-react";
@@ -9,10 +8,10 @@ interface StreamValueViewerProps {
   length?: number;
 }
 
-export const StreamValueViewer: FC<StreamValueViewerProps> = ({
+export function StreamValueViewer({
   entries = [],
   length,
-}) => {
+}: StreamValueViewerProps) {
   const { t } = useTranslation();
 
   return (
@@ -61,4 +60,4 @@ export const StreamValueViewer: FC<StreamValueViewerProps> = ({
       </div>
     </div>
   );
-};
+}

@@ -1,4 +1,4 @@
-import { useState, useMemo, type FC } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
@@ -61,12 +61,12 @@ interface MigrationRunnerProps {
   isReadOnly?: boolean;
 }
 
-export const MigrationRunner: FC<MigrationRunnerProps> = ({
+export function MigrationRunner({
   connId,
   table,
   engine = "sqlite",
   isReadOnly = false,
-}) => {
+}: MigrationRunnerProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -910,4 +910,4 @@ export const MigrationRunner: FC<MigrationRunnerProps> = ({
       </AlertDialog>
     </div>
   );
-};
+}

@@ -1,4 +1,3 @@
-import type { FC } from "react";
 import { Plus, ShieldCheck, Terminal, Zap } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,7 @@ interface WelcomeScreenProps {
   onOpenNewConnection: () => void;
 }
 
-export const WelcomeScreen: FC<WelcomeScreenProps> = ({
-  onOpenNewConnection,
-}) => {
+export function WelcomeScreen({ onOpenNewConnection }: WelcomeScreenProps) {
   const { t } = useTranslation();
 
   return (
@@ -88,4 +85,4 @@ export const WelcomeScreen: FC<WelcomeScreenProps> = ({
       </div>
     </div>
   );
-};
+}

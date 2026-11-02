@@ -1296,7 +1296,9 @@
     "reload": "Reload",
     "sandboxedIframe": "Sandboxed Iframe",
     "htmlPreview": "HTML Preview",
-    "htmlPlaceholder": "Type HTML code here..."
+    "htmlPlaceholder": "Type HTML code here...",
+    "collapseNode": "Collapse",
+    "expandNode": "Expand"
   },
   "redis": {
     "tabs": {
@@ -1630,5 +1632,35 @@
     "confirmDelete": "Delete workspace {{name}}? Connections remain available in All sources.",
     "confirmSwitch": "Switch workspace and discard pending changes? Open manual transactions will be rolled back. Query text and tab layout will be saved, but staged data changes will be lost.",
     "snapshotFailed": "Could not save the current workspace layout. Switching was cancelled to preserve your open work."
+  },
+  "findEverywhere": {
+    "title": "Find everywhere",
+    "description": "Search tables and collections in parallel. Results appear as each connection finishes.",
+    "inputPlaceholder": "Text, UUID, ObjectId or numeric id",
+    "search": "Search",
+    "searching": "Searching…",
+    "cancel": "Cancel",
+    "allWorkspaces": "All workspaces ({{count}})",
+    "includeProduction": "Include production",
+    "productionWarning": "Production databases will be searched.",
+    "connectionsInScope": "{{count}} connections in scope",
+    "enterValuePrompt": "Enter a value to search the selected workspace.",
+    "complete": "Complete",
+    "noMatches": "No matches"
+  },
+  "runFromLog": {
+    "title": "Run from Log",
+    "description": "Parse a database log into a statement. Nothing runs until you choose Run in console.",
+    "pasteLabel": "Paste query or command log",
+    "sampleSuffix": "sample",
+    "logAriaLabel": "Database log",
+    "logPlaceholder": "Paste SQL queries, TypeORM/Prisma debug logs, Mongoose logs, or Redis CLI output here…",
+    "destinationLabel": "Run in",
+    "noSuitableConnection": "No suitable connection in this workspace for {{kind}}.",
+    "noMatchingTable": "No {{engine}} connection in this workspace has “{{table}}”.",
+    "previewPlaceholder": "Statement preview will appear here.",
+    "copyStatement": "Copy statement",
+    "copied": "Copied",
+    "runInConsole": "Run in console"
   }
 }

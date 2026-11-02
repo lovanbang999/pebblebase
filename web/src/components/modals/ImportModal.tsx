@@ -2,7 +2,6 @@ import {
   useState,
   useRef,
   useEffect,
-  type FC,
   type ChangeEvent,
   type DragEvent,
 } from "react";
@@ -90,7 +89,7 @@ function getEstimatedSize(
   return formatBytes(estimated);
 }
 
-export const ImportModal: FC<ImportModalProps> = ({
+export function ImportModal({
   isOpen,
   onClose,
   connId,
@@ -105,7 +104,7 @@ export const ImportModal: FC<ImportModalProps> = ({
   isReadOnly = false,
   page = 0,
   pageSize = 100,
-}) => {
+}: ImportModalProps) {
   const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -1028,4 +1027,4 @@ export const ImportModal: FC<ImportModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type FC } from "react";
+import { useEffect, useRef } from "react";
 import { Check, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { OperationEvent } from "./OutputPanel";
@@ -13,14 +13,14 @@ interface NotificationPanelProps {
   onClose: () => void;
 }
 
-export const NotificationPanel: FC<NotificationPanelProps> = ({
+export function NotificationPanel({
   open,
   notifications,
   onReadAll,
   onDismiss,
   onClear,
   onClose,
-}) => {
+}: NotificationPanelProps) {
   const { t } = useTranslation();
   const headingRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -129,4 +129,4 @@ export const NotificationPanel: FC<NotificationPanelProps> = ({
       </section>
     </div>
   );
-};
+}

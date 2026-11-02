@@ -1,4 +1,4 @@
-import { type FC, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DatabaseType } from "@/lib/types";
 import {
@@ -40,7 +40,7 @@ export interface TableContextMenuProps {
   onDangerAction: (type: "truncate" | "drop") => void;
 }
 
-export const TableContextMenu: FC<TableContextMenuProps> = ({
+export function TableContextMenu({
   tableName,
   engine,
   canImport,
@@ -62,7 +62,7 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
   onExport,
   onTogglePin,
   onDangerAction,
-}) => {
+}: TableContextMenuProps) {
   const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
   const [adjustedPos, setAdjustedPos] = useState({ x, y });
@@ -434,4 +434,4 @@ export const TableContextMenu: FC<TableContextMenuProps> = ({
       </div>
     </div>
   );
-};
+}
