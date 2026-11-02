@@ -22,7 +22,6 @@ import type { TableSubview } from "./TableSubviewTabs";
 import type { ExportFormat } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Select,
   SelectContent,
@@ -118,7 +117,6 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
   onRevertDrafts,
 }) => (
   <div className="border-border bg-background dark:border-border dark:bg-background flex min-h-10 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-1">
-    <SidebarTrigger className="mr-1 size-7 shrink-0" />
     {onFindEverywhere && (
       <Button
         type="button"
@@ -193,7 +191,7 @@ export const TableActionToolbar: FC<TableActionToolbarProps> = ({
         >
           <SelectTrigger
             aria-label={t("datagrid.perPage")}
-            className="h-7 w-[4.5rem] text-[11px]"
+            className="h-7 w-18 text-[11px]"
           >
             <SelectValue />
           </SelectTrigger>

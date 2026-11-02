@@ -102,23 +102,25 @@ export function WorkspaceControl({
               size="sm"
               variant="outline"
               disabled={!ready}
-              className="h-7 max-w-56 gap-1.5 text-xs"
+              className="border-border bg-background hover:border-border/80 hover:bg-accent/50 h-7 max-w-56 gap-1.5 rounded-md px-2 text-xs transition-colors"
             >
               <span
-                className="size-2 shrink-0 rounded-full"
+                className="size-2.5 shrink-0 rounded-xs"
                 style={{
                   backgroundColor: showAll
                     ? "var(--muted-foreground)"
-                    : active?.colour,
+                    : active?.colour || "#5fb865",
                 }}
               />
-              <span className="truncate">
+              <span className="truncate font-semibold">
                 {showAll
                   ? t("workspaces.allSources")
                   : (active?.name ?? t("workspaces.loading"))}
               </span>
-              <span className="text-muted-foreground">{count}</span>
-              <ChevronDown className="size-3" />
+              <span className="bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 font-mono text-[10px] font-semibold">
+                {count}
+              </span>
+              <ChevronDown className="text-muted-foreground size-3 shrink-0" />
             </Button>
           }
         />

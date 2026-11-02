@@ -93,6 +93,21 @@ const icons: Partial<Record<WorkspaceCommandId, typeof Database>> = {
   open_sql_file: FileCode2,
 };
 
+const ENGINE_CODES: Record<string, string> = {
+  postgres: "Pg",
+  postgresql: "Pg",
+  mysql: "My",
+  mariadb: "My",
+  mssql: "Ms",
+  sqlserver: "Ms",
+  mongodb: "Mg",
+  mongo: "Mg",
+  redis: "Rd",
+  sqlite: "Sq",
+  sqlite3: "Sq",
+  clickhouse: "Ch",
+};
+
 export default function DesktopTitleBar({
   workspaceControl,
   nativeOnly = false,
@@ -168,11 +183,11 @@ export default function DesktopTitleBar({
         `[data-command-menu="${openMenu}"]`,
       );
       const items = menu
-        ? [
-            ...menu.querySelectorAll<HTMLButtonElement>(
+        ? Array.from(
+            menu.querySelectorAll<HTMLButtonElement>(
               "[role=menuitem]:not(:disabled), [role=menuitemradio]:not(:disabled)",
             ),
-          ]
+          )
         : [];
       if (!items.length) return;
       event.preventDefault();
@@ -494,7 +509,7 @@ export default function DesktopTitleBar({
                   setOpenMenu(openMenu === menuName ? null : menuName)
                 }
                 className={cn(
-                  "hover:bg-accent focus-visible:ring-ring h-7 rounded px-2 text-xs focus-visible:ring-1 focus-visible:outline-none",
+                  "hover:bg-accent focus-visible:ring-ring h-7 rounded-sm px-2 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none",
                   openMenu === menuName && "bg-accent",
                 )}
               >
@@ -534,24 +549,26 @@ export default function DesktopTitleBar({
             onClick={() =>
               setOpenMenu(openMenu === "connection" ? null : "connection")
             }
-            className="border-border bg-background hover:bg-accent flex h-7 max-w-64 items-center gap-1.5 rounded border px-2 max-[767px]:max-w-36"
+            className="border-border bg-background hover:border-border/80 hover:bg-accent/50 flex h-7 max-w-64 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors max-[767px]:max-w-36"
           >
-            <span className="bg-success size-1.5 shrink-0 rounded-full" />
+            {activeConnection ? (
+              <span className="bg-muted text-muted-foreground inline-grid h-4 min-w-5 shrink-0 place-items-center rounded-xs px-1 font-mono text-[9.5px] font-semibold">
+                {ENGINE_CODES[activeConnection.type.toLowerCase()] ||
+                  activeConnection.type.slice(0, 2).toUpperCase()}
+              </span>
+            ) : (
+              <span className="bg-muted-foreground/50 size-1.5 shrink-0 rounded-full" />
+            )}
             <span className="truncate font-medium">
               {activeConnection?.name || t("sidebar.noActiveConn")}
             </span>
-            {activeConnection && (
-              <span className="text-muted-foreground shrink-0 text-[10px] uppercase">
-                {activeConnection.type}
-              </span>
-            )}
             {activeConnection?.environment === "production" && (
-              <span className="text-destructive shrink-0 text-[9px] font-bold tracking-wide uppercase">
+              <span className="border-destructive/40 text-destructive shrink-0 rounded-xs border px-1 text-[9px] font-bold tracking-wide uppercase">
                 {t("studio.production", "Production")}
               </span>
             )}
             {activeConnection?.read_only && (
-              <span className="text-warning shrink-0 text-[9px] font-semibold tracking-wide uppercase">
+              <span className="border-warning/40 text-warning shrink-0 rounded-xs border px-1 text-[9px] font-semibold tracking-wide uppercase">
                 {t("studio.readOnly", "Read-only")}
               </span>
             )}
@@ -571,22 +588,23 @@ export default function DesktopTitleBar({
                       setOpenMenu(null);
                       onSelectConnection(connection);
                     }}
-                    className="hover:bg-accent flex h-8 w-full items-center gap-2 rounded px-2 text-left text-xs"
+                    className="hover:bg-accent flex h-8 w-full items-center gap-2 rounded-md px-2 text-left text-xs transition-colors"
                   >
-                    <span
-                      className={cn(
-                        "size-1.5 rounded-full",
-                        connection.id === activeConnection?.id
-                          ? "bg-success"
-                          : "bg-muted-foreground/50",
-                      )}
-                    />
-                    <span className="min-w-0 flex-1 truncate">
+                    <span className="bg-muted text-muted-foreground inline-grid h-4 min-w-5 shrink-0 place-items-center rounded-xs px-1 font-mono text-[9.5px] font-semibold">
+                      {ENGINE_CODES[connection.type.toLowerCase()] ||
+                        connection.type.slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate font-medium">
                       {connection.name}
                     </span>
-                    <span className="text-muted-foreground font-mono text-[10px]">
-                      {connection.type.toUpperCase()}
-                    </span>
+                    <span
+                      className={cn(
+                        "ml-auto size-1.5 rounded-full",
+                        connection.id === activeConnection?.id
+                          ? "bg-success"
+                          : "bg-transparent",
+                      )}
+                    />
                   </button>
                 ))}
                 <div className="border-border my-1 border-t" />
@@ -674,7 +692,7 @@ export default function DesktopTitleBar({
           aria-label={label("search_everywhere")}
           title={`${label("search_everywhere")} (${isMac ? "⌘K" : "Ctrl+K"})`}
           onClick={onOpenCommandPalette}
-          className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-7 items-center justify-center rounded"
+          className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7.5 w-8 items-center justify-center rounded-md transition-colors"
         >
           <Search className="size-4" />
         </button>
@@ -687,10 +705,12 @@ export default function DesktopTitleBar({
             onClick={() =>
               setOpenMenu(openMenu === "account" ? null : "account")
             }
-            className="hover:bg-accent flex h-7 items-center gap-1 rounded px-1.5"
+            className="hover:bg-accent flex h-7.5 items-center gap-1.5 rounded-md px-2 text-xs transition-colors"
           >
             <Settings2 className="size-4" />
-            <span className="max-w-24 truncate">{user?.username || ""}</span>
+            <span className="max-w-24 truncate font-medium">
+              {user?.username || ""}
+            </span>
           </button>
           {openMenu === "account" &&
             menuSurface("account", accountMenu(), "right")}
@@ -798,7 +818,7 @@ function ToolbarButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-8 items-center justify-center rounded disabled:cursor-not-allowed disabled:opacity-35",
+        "text-muted-foreground hover:bg-accent hover:text-foreground flex h-7.5 w-8 items-center justify-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-35",
         active && "bg-accent text-foreground",
       )}
     >

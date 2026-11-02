@@ -153,7 +153,7 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
             placeholder={t("tableDanger.typeToConfirmPlaceholder", {
               table: tableName,
             })}
-            className="focus-visible:ring-destructive/30 dark:focus-visible:ring-destructive/30 h-8 font-mono text-xs"
+            className="focus-visible:ring-destructive/30 dark:focus-visible:ring-destructive/30 h-8 py-1.5 font-mono text-xs"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter" && isConfirmed && !isExecuting) {
