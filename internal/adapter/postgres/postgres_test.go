@@ -210,16 +210,16 @@ func TestQuery_Filter(t *testing.T) {
 	}
 	t.Cleanup(func() { a.Close() })
 
-	// Seed has a user with name "Alice".
-	res, err := a.Query(ctx, "users", adapter_QueryOptions_filter("name", "eq", "Alice"))
+	// Seed has a user with name "Alice Thomas".
+	res, err := a.Query(ctx, "users", adapter_QueryOptions_filter("name", "eq", "Alice Thomas"))
 	if err != nil {
 		t.Fatalf("Query with filter: %v", err)
 	}
 	if len(res.Rows) == 0 {
-		t.Error("Query: expected at least 1 row for filter name=Alice")
+		t.Error("Query: expected at least 1 row for filter name=Alice Thomas")
 	}
 	for _, row := range res.Rows {
-		if row["name"] != "Alice" {
+		if row["name"] != "Alice Thomas" {
 			t.Errorf("Query: unexpected row %v", row)
 		}
 	}

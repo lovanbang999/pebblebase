@@ -34,6 +34,8 @@ export type WorkspaceCommandId =
   | "run_from_log"
   | "navigate_back"
   | "navigate_forward"
+  | "navigate_reference"
+  | "show_referenced_by"
   | "switch_workspace"
   | "theme_dark"
   | "theme_light"
@@ -257,6 +259,18 @@ export const WORKSPACE_COMMANDS: Record<WorkspaceCommandId, WorkspaceCommand> =
       fallback: "Forward",
       shortcut: "Ctrl+Alt+→",
     },
+    navigate_reference: {
+      id: "navigate_reference",
+      labelKey: "workspace.goToReferencedRow",
+      fallback: "Go to referenced row",
+      shortcut: "Ctrl+B",
+    },
+    show_referenced_by: {
+      id: "show_referenced_by",
+      labelKey: "workspace.referencedBy",
+      fallback: "Referenced by…",
+      shortcut: "Alt+F7",
+    },
     switch_workspace: {
       id: "switch_workspace",
       labelKey: "commands.switchWorkspace",
@@ -404,6 +418,8 @@ export const WORKSPACE_MENUS: Record<CommandMenu, WorkspaceCommand[]> = {
     command("run_from_log"),
     command("navigate_back"),
     command("navigate_forward"),
+    command("navigate_reference"),
+    command("show_referenced_by"),
     command("switch_workspace"),
     command("next_tab"),
     command("previous_tab"),

@@ -2,13 +2,17 @@ import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchSchemaMetadata } from "@/lib/api";
 import { mapSchemaMetadata, schemaMetadataKey } from "@/lib/schemaMetadata";
-export function useSchemaMetadata(connectionId: string, table?: string) {
+export function useSchemaMetadata(
+  connectionId: string,
+  table?: string,
+  enabled = true,
+) {
   const client = useQueryClient();
   const query = useQuery({
     queryKey: schemaMetadataKey(connectionId, table),
     queryFn: ({ signal }) =>
       fetchSchemaMetadata(connectionId, table, signal).then(mapSchemaMetadata),
-    enabled: Boolean(connectionId),
+    enabled: Boolean(connectionId) && enabled,
     staleTime: 60_000,
   });
   const refresh = useCallback(

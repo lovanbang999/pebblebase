@@ -212,7 +212,7 @@ func TestQuery_Filter(t *testing.T) {
 
 	res, err := a.Query(ctx, "users", adapter.QueryOptions{
 		Filters: []adapter.Filter{
-			{Column: "email", Operator: "eq", Value: "alice@example.com"},
+			{Column: "email", Operator: "eq", Value: "alice.thomas31@pebblebase.dev"},
 		},
 	})
 	if err != nil {
@@ -221,8 +221,8 @@ func TestQuery_Filter(t *testing.T) {
 	if len(res.Rows) != 1 {
 		t.Fatalf("expected 1 row, got %d", len(res.Rows))
 	}
-	if res.Rows[0]["name"] != "Alice" {
-		t.Errorf("expected name 'Alice', got %v", res.Rows[0]["name"])
+	if res.Rows[0]["name"] != "Alice Thomas" {
+		t.Errorf("expected name 'Alice Thomas', got %v", res.Rows[0]["name"])
 	}
 }
 

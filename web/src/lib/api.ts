@@ -35,30 +35,36 @@ import { getAuthHeaders, useAuthStore } from "./auth";
 
 const BASE_URL = "/api";
 
-export async function resolveReferences(input: {
-  workspaceId: string;
-  currentConnectionId: string;
-  currentTable: string;
-  value: string;
-  declaredTable?: string;
-  declaredColumn?: string;
-}): Promise<ReferenceResult> {
+export async function resolveReferences(
+  input: {
+    workspaceId: string;
+    currentConnectionId: string;
+    currentTable: string;
+    value: string;
+    declaredTable?: string;
+    declaredColumn?: string;
+  },
+  signal?: AbortSignal,
+): Promise<ReferenceResult> {
   const load = async () => {
     const response = await fetch(`${BASE_URL}/references/resolve`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify(input),
+      signal,
     });
     return handleResponse<ReferenceResult>(response);
   };
   return input.declaredTable
     ? load()
-    : resolveCachedReference(
-        input.workspaceId,
-        input.value,
-        load,
-        input.currentConnectionId,
-      );
+    : signal
+      ? load()
+      : resolveCachedReference(
+          input.workspaceId,
+          input.value,
+          load,
+          input.currentConnectionId,
+        );
 }
 
 export async function findEverywhere(

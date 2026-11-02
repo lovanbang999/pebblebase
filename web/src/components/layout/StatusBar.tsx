@@ -49,7 +49,7 @@ export function StatusBar({
         </span>
       </span>
       {connection?.read_only && (
-        <span className="flex shrink-0 items-center gap-1 text-[var(--studio-warning)]">
+        <span className="text-warning flex shrink-0 items-center gap-1">
           <ShieldAlert aria-hidden="true" className="size-3" />
           {t("studio.readOnly")}
         </span>

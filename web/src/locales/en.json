@@ -42,7 +42,9 @@
     "aiAttachResult": "Attach current result",
     "aiResultAttached": "Result attached (up to 20 rows)",
     "aiClear": "Clear conversation",
-    "aiNotConfigured": "No AI provider and API key are configured. Ask an administrator to configure one in Settings."
+    "aiNotConfigured": "No AI provider and API key are configured. Ask an administrator to configure one in Settings.",
+    "resizeAI": "Resize AI panel",
+    "resizeOutput": "Resize Output panel"
   },
   "workspace": {
     "confirmDeleteDirtyTabs": "This connection has tabs with unsaved staged changes. Delete the connection and discard those changes?",
@@ -169,7 +171,8 @@
       "truncateTable": "Truncate Table (Empty Data)...",
       "dropTable": "Drop Table (Delete)...",
       "actionsTooltip": "Table actions (Right-click)"
-    }
+    },
+    "connect": "Connect"
   },
   "tableDanger": {
     "truncateTitle": "Truncate Table: {{table}}",
@@ -282,7 +285,8 @@
       "removed": "Removed",
       "changed": "Changed"
     },
-    "scopeNotice": "Public-schema tables, columns, indexes and PK/FK/unique constraints only. Views, functions, sequences, triggers, identity/generated attributes and other objects are not migrated. Review type casts and external dependencies before running."
+    "scopeNotice": "Public-schema tables, columns, indexes and PK/FK/unique constraints only. Views, functions, sequences, triggers, identity/generated attributes and other objects are not migrated. Review type casts and external dependencies before running.",
+    "loadingSchemaDiff": "Loading Schema Diff..."
   },
   "datagrid": {
     "tableViews": "Table views",
@@ -426,7 +430,11 @@
       "inspectArray": "Inspect array details",
       "inspectMap": "Inspect map details",
       "inspectTuple": "Inspect tuple details"
-    }
+    },
+    "noActiveFilters": "No filters or sort",
+    "rowsInTable": "Rows in {{table}}",
+    "resizeColumn": "Resize {{column}} column",
+    "primaryKeyRequired": "Editing and deleting rows requires a primary key."
   },
   "connection": {
     "title": "Database Connection Manager",
@@ -552,7 +560,8 @@
     "copied": "Copied!",
     "close": "Close",
     "cancel": "Cancel",
-    "add": "Add"
+    "add": "Add",
+    "dismiss": "Dismiss"
   },
   "errorBoundary": {
     "defaultTitle": "Something went wrong in this view",
@@ -674,7 +683,8 @@
     },
     "storageCredentialWarning": "Credential-bearing statements cannot be stored in history or scripts.",
     "historySuccess": "Success",
-    "historyFailed": "Failed"
+    "historyFailed": "Failed",
+    "loadingQueryConsole": "Loading Query Console..."
   },
   "tabs": {
     "unsavedChanges": "Unsaved changes",
@@ -727,7 +737,8 @@
     "secondary": "SECONDARY",
     "unique": "UNIQUE",
     "none": "None",
-    "constraints": "Primary, foreign and unique constraints"
+    "constraints": "Primary, foreign and unique constraints",
+    "loadingSchema": "Loading Schema..."
   },
   "auth": {
     "login": "Sign In",
@@ -951,7 +962,8 @@
     "retryConnection": "Retry Connection",
     "renderLimit": "Showing {{shown}} of {{total}} tables. Search narrows large schemas.",
     "showMore": "Show 40 more",
-    "refreshCatalog": "Refresh schema"
+    "refreshCatalog": "Refresh schema",
+    "unsupportedRedis": "ERD is not supported for Redis databases"
   },
   "diagnostics": {
     "unknownConnection": "Active Database",
@@ -1587,7 +1599,10 @@
     "technicalDetails": "Technical details",
     "copyDiagnostic": "Copy diagnostic",
     "exportComplete": "Export complete",
-    "activeEditorConnection": "Active editor connection"
+    "activeEditorConnection": "Active editor connection",
+    "ddlCopied": "DDL copied",
+    "reconnect": "Reconnect",
+    "copyConnectionName": "Copy Name"
   },
   "settings": {
     "title": "Settings",
@@ -1662,5 +1677,27 @@
     "copyStatement": "Copy statement",
     "copied": "Copied",
     "runInConsole": "Run in console"
+  },
+  "reference": {
+    "showReferencing": "Show rows referencing this value",
+    "showReferencingTooltip": "Ctrl+Click: referenced by… / Alt+F7",
+    "preview": "Referenced row preview",
+    "loading": "Loading reference…",
+    "more": "+{{count}} more",
+    "openTarget": "Open {{connection}} · {{table}} ({{count}})",
+    "followEverywhere": "Follow everywhere",
+    "missingRow": "Declared foreign key points to a missing row.",
+    "noRowFound": "No referenced row found.",
+    "incompleteRelation": "Foreign key metadata is available, but the target relation is incomplete.",
+    "hoverPreview": "Referenced value; hover for a row preview",
+    "candidateHover": "UUID/ObjectId candidate; hover to check for a matching primary key",
+    "menuTitle": "Referenced by",
+    "closeMenu": "Close referenced by",
+    "includeProduction": "Include production sources",
+    "productionWarning": "Production data will be read.",
+    "rowCount": "{{count}} rows",
+    "noIncomingFound": "No incoming references found.",
+    "partialWarning": "Some reference counts timed out or were skipped.",
+    "checking": "Checking references…"
   }
 }

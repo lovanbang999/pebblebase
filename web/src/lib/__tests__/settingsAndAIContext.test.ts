@@ -12,6 +12,8 @@ describe("registered settings keymap", () => {
     expect(shortcuts.get("run_from_log")).toBe("Ctrl+Shift+L");
     expect(shortcuts.get("navigate_back")).toBe("Ctrl+Alt+←");
     expect(shortcuts.get("navigate_forward")).toBe("Ctrl+Alt+→");
+    expect(shortcuts.get("navigate_reference")).toBe("Ctrl+B");
+    expect(shortcuts.get("show_referenced_by")).toBe("Alt+F7");
     expect(shortcuts.get("switch_workspace")).toBe("Ctrl+Alt+1..9");
     expect(shortcuts.get("execute_query")).toBe("Ctrl+Enter");
     expect(shortcuts.get("query_history")).toBe("Ctrl+E");

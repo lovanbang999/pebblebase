@@ -42,7 +42,9 @@
     "aiAttachResult": "Đính kèm kết quả hiện tại",
     "aiResultAttached": "Đã đính kèm kết quả (tối đa 20 dòng)",
     "aiClear": "Xóa cuộc trò chuyện",
-    "aiNotConfigured": "Chưa cấu hình nhà cung cấp AI và khóa API. Hãy nhờ quản trị viên cấu hình trong Cài đặt."
+    "aiNotConfigured": "Chưa cấu hình nhà cung cấp AI và khóa API. Hãy nhờ quản trị viên cấu hình trong Cài đặt.",
+    "resizeAI": "Thay đổi kích thước bảng AI",
+    "resizeOutput": "Thay đổi kích thước bảng đầu ra"
   },
   "settings": {
     "title": "Cài đặt",
@@ -194,7 +196,8 @@
       "truncateTable": "Xóa sạch dữ liệu (Truncate)...",
       "dropTable": "Xóa bảng vĩnh viễn (Drop)...",
       "actionsTooltip": "Thao tác với bảng (Chuột phải)"
-    }
+    },
+    "connect": "Kết nối"
   },
   "tableDanger": {
     "truncateTitle": "Xóa sạch dữ liệu bảng: {{table}}",
@@ -307,7 +310,8 @@
     "selectAllChanges": "Chọn tất cả",
     "selectionCount": "Đã chọn {{selected}} trên {{total}} (bao gồm các phụ thuộc)",
     "sourceLabel": "Nguồn (schema mong muốn)",
-    "swapPair": "Hoán đổi nguồn và đích"
+    "swapPair": "Hoán đổi nguồn và đích",
+    "loadingSchemaDiff": "Đang tải so sánh lược đồ..."
   },
   "datagrid": {
     "tableViews": "Chế độ xem bảng",
@@ -451,7 +455,11 @@
       "inspectArray": "Xem chi tiết mảng",
       "inspectMap": "Xem chi tiết bản đồ key-value",
       "inspectTuple": "Xem chi tiết tuple"
-    }
+    },
+    "noActiveFilters": "Không có bộ lọc hoặc sắp xếp",
+    "rowsInTable": "Các hàng trong bảng {{table}}",
+    "resizeColumn": "Thay đổi kích thước cột {{column}}",
+    "primaryKeyRequired": "Việc chỉnh sửa và xóa hàng yêu cầu khóa chính."
   },
   "connection": {
     "title": "Quản lý Kết nối Cơ sở Dữ liệu",
@@ -577,7 +585,8 @@
     "copied": "Đã sao chép!",
     "close": "Đóng",
     "cancel": "Hủy",
-    "add": "Thêm"
+    "add": "Thêm",
+    "dismiss": "Bỏ qua"
   },
   "errorBoundary": {
     "defaultTitle": "Đã xảy ra lỗi trong chế độ xem này",
@@ -699,7 +708,8 @@
       "switchTitle": "Chuyển sang chế độ Tự động?",
       "unavailable": "Chế độ thủ công không khả dụng cho kết nối này. Hãy rollback bất kỳ giao dịch nào đang mở.",
       "unsupported": "Giao dịch thủ công hiện chỉ hỗ trợ PostgreSQL và MySQL."
-    }
+    },
+    "loadingQueryConsole": "Đang tải bảng điều khiển truy vấn..."
   },
   "tabs": {
     "unsavedChanges": "Thay đổi chưa lưu",
@@ -752,7 +762,8 @@
     "secondary": "PHỤ (SECONDARY)",
     "unique": "DUY NHẤT",
     "none": "Không có",
-    "constraints": "Ràng buộc khóa chính, khóa ngoại và unique"
+    "constraints": "Ràng buộc khóa chính, khóa ngoại và unique",
+    "loadingSchema": "Đang tải lược đồ..."
   },
   "auth": {
     "login": "Đăng Nhập",
@@ -976,7 +987,8 @@
     "retryConnection": "Thử lại kết nối",
     "refreshCatalog": "Làm mới schema",
     "renderLimit": "Hiển thị {{shown}} trên {{total}} bảng. Tìm kiếm để thu hẹp với schema lớn.",
-    "showMore": "Hiển thị thêm 40 bảng"
+    "showMore": "Hiển thị thêm 40 bảng",
+    "unsupportedRedis": "ERD không được hỗ trợ cho cơ sở dữ liệu Redis"
   },
   "diagnostics": {
     "unknownConnection": "Cơ sở dữ liệu hiện tại",
@@ -1612,7 +1624,10 @@
     "exportComplete": "Xuất dữ liệu hoàn tất",
     "activeEditorConnection": "Kết nối của trình soạn thảo hiện tại",
     "collapseNode": "Thu gọn",
-    "expandNode": "Mở rộng"
+    "expandNode": "Mở rộng",
+    "ddlCopied": "Đã sao chép DDL",
+    "reconnect": "Kết nối lại",
+    "copyConnectionName": "Sao chép tên"
   },
   "findEverywhere": {
     "title": "Tìm kiếm khắp nơi",
@@ -1662,5 +1677,27 @@
     "saveFailed": "Không thể lưu thay đổi không gian làm việc.",
     "showAll": "Hiển thị tất cả nguồn dữ liệu",
     "snapshotFailed": "Không thể lưu bố cục không gian làm việc hiện tại. Thao tác chuyển đổi đã bị hủy để bảo vệ dữ liệu của bạn."
+  },
+  "reference": {
+    "showReferencing": "Hiển thị các hàng tham chiếu giá trị này",
+    "showReferencingTooltip": "Ctrl+Click: được tham chiếu bởi… / Alt+F7",
+    "preview": "Xem trước hàng được tham chiếu",
+    "loading": "Đang tải tham chiếu…",
+    "more": "+{{count}} mục khác",
+    "openTarget": "Mở {{connection}} · {{table}} ({{count}})",
+    "followEverywhere": "Theo dõi ở mọi nơi",
+    "missingRow": "Khóa ngoại đã khai báo trỏ đến một hàng không tồn tại.",
+    "noRowFound": "Không tìm thấy hàng được tham chiếu.",
+    "incompleteRelation": "Siêu dữ liệu khóa ngoại khả dụng, nhưng quan hệ đích chưa hoàn chỉnh.",
+    "hoverPreview": "Giá trị được tham chiếu; di chuột để xem trước hàng",
+    "candidateHover": "Ứng viên UUID/ObjectId; di chuột để kiểm tra khóa chính phù hợp",
+    "menuTitle": "Được tham chiếu bởi",
+    "closeMenu": "Đóng menu tham chiếu",
+    "includeProduction": "Bao gồm nguồn dữ liệu production",
+    "productionWarning": "Dữ liệu production sẽ được đọc.",
+    "rowCount": "{{count}} hàng",
+    "noIncomingFound": "Không tìm thấy tham chiếu đến nào.",
+    "partialWarning": "Một số số lượng tham chiếu đã hết thời gian hoặc bị bỏ qua.",
+    "checking": "Đang kiểm tra các tham chiếu…"
   }
 }

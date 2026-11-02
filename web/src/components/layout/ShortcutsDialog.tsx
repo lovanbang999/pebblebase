@@ -28,6 +28,8 @@ const shortcuts: WorkspaceCommandId[] = [
   "query_history",
   "next_tab",
   "previous_tab",
+  "navigate_reference",
+  "show_referenced_by",
   "close_active_tab",
 ];
 

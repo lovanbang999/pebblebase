@@ -234,7 +234,7 @@ export const SHORTCUTS = {
   // Navigation / views
   queryConsole: isMac ? "⌥Q" : "Alt+Q",
   erd: isMac ? "⌥E" : "Alt+E",
-  sidebar: isMac ? "⌘B" : "Ctrl+B",
+  sidebar: isMac ? "⌘⇧B" : "Ctrl+Shift+B",
   commandPalette: isMac ? "⌘K" : "Ctrl+K",
   commandPaletteFull: isMac ? "Cmd+K" : "Ctrl+K",
 

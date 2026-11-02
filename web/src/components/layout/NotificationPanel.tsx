@@ -32,7 +32,7 @@ export function NotificationPanel({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-[80]"
+      className="fixed inset-0 z-80"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
@@ -100,7 +100,7 @@ export function NotificationPanel({
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-medium">{item.title}</div>
-                  <p className="text-muted-foreground mt-0.5 text-[11px] break-words">
+                  <p className="text-muted-foreground mt-0.5 text-[11px] wrap-break-word">
                     {item.message}
                   </p>
                   <time className="text-muted-foreground mt-1 block text-[10px]">
