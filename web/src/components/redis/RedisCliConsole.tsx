@@ -21,7 +21,6 @@ import {
   useRef,
   useEffect,
   useMemo,
-  type FC,
   type KeyboardEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -199,7 +198,7 @@ const redisLanguage = StreamLanguage.define({
   },
 });
 
-export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
+export function RedisCliConsole({
   connId,
   isReadOnly = false,
   connectionName,
@@ -207,7 +206,7 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
   initialCommand,
   workspaceTabId,
   onCommandChange,
-}) => {
+}: RedisCliConsoleProps) {
   const { t } = useTranslation();
 
   const [inputCommand, setInputCommand] = useState(initialCommand ?? "");
@@ -827,10 +826,10 @@ export const RedisCliConsole: FC<RedisCliConsoleProps> = ({
       </AlertDialog>
     </div>
   );
-};
+}
 
 // Helper component to render command results in tabular or key-value format
-const RenderCliResult: FC<{ result: RawQueryResult }> = ({ result }) => {
+function RenderCliResult({ result }: { result: RawQueryResult }) {
   const { t } = useTranslation();
   const { columns, rows } = result;
 
@@ -871,4 +870,4 @@ const RenderCliResult: FC<{ result: RawQueryResult }> = ({ result }) => {
       </table>
     </div>
   );
-};
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type FC } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Search,
@@ -76,11 +76,11 @@ function formatTTL(
   return `${(ttl / 3600).toFixed(1)}h`;
 }
 
-export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
+export function RedisKeyBrowser({
   connId,
   isReadOnly,
   initialKeySearch,
-}) => {
+}: RedisKeyBrowserProps) {
   const { t } = useTranslation();
 
   // Query and Scan states
@@ -707,4 +707,4 @@ export const RedisKeyBrowser: FC<RedisKeyBrowserProps> = ({
       )}
     </div>
   );
-};
+}

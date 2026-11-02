@@ -82,7 +82,7 @@ function renderValueBadge(val: unknown) {
   );
 }
 
-const TreeNode: React.FC<TreeNodeProps> = ({
+function TreeNode({
   keyName,
   value,
   path,
@@ -91,7 +91,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   onCopyPath,
   expandedMap,
   onToggleExpand,
-}) => {
+}: TreeNodeProps) {
   const isObject = value !== null && typeof value === "object";
   const isArray = Array.isArray(value);
   const isExpanded = expandedMap[path] ?? depth < 2;
@@ -208,14 +208,14 @@ const TreeNode: React.FC<TreeNodeProps> = ({
       )}
     </div>
   );
-};
+}
 
-export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
+export function JsonTreeViewer({
   initialValue,
   rawString,
   isReadOnly = false,
   onValueChange,
-}) => {
+}: JsonTreeViewerProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"tree" | "code">("tree");
   const [codeValue, setCodeValue] = useState<string>(rawString);
@@ -441,4 +441,4 @@ export const JsonTreeViewer: React.FC<JsonTreeViewerProps> = ({
       </div>
     </div>
   );
-};
+}

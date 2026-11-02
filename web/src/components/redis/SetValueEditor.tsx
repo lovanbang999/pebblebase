@@ -1,4 +1,4 @@
-import { useState, useMemo, type FC } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,13 +14,13 @@ interface SetValueEditorProps {
   onRefresh: () => void;
 }
 
-export const SetValueEditor: FC<SetValueEditorProps> = ({
+export function SetValueEditor({
   connId,
   keyName,
   members = [],
   isReadOnly,
   onRefresh,
-}) => {
+}: SetValueEditorProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [newMember, setNewMember] = useState("");
@@ -163,4 +163,4 @@ export const SetValueEditor: FC<SetValueEditorProps> = ({
       </div>
     </div>
   );
-};
+}

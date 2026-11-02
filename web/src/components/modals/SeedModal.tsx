@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, type FC } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import CodeMirror from "@uiw/react-codemirror";
 import { sql, PostgreSQL, MySQL, SQLite } from "@codemirror/lang-sql";
@@ -35,14 +35,14 @@ interface SeedModalProps {
   onRunInConsole?: (sql: string, title?: string) => void;
 }
 
-export const SeedModal: FC<SeedModalProps> = ({
+export function SeedModal({
   isOpen,
   onClose,
   connId,
   tableName,
   engine = "postgres",
   onRunInConsole,
-}) => {
+}: SeedModalProps) {
   const { t } = useTranslation();
   const [count, setCount] = useState<number>(SEED_CONFIG.DEFAULT_COUNT);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -307,4 +307,4 @@ export const SeedModal: FC<SeedModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,13 +20,13 @@ interface StringValueEditorProps {
   onSaved: () => void;
 }
 
-export const StringValueEditor: FC<StringValueEditorProps> = ({
+export function StringValueEditor({
   connId,
   keyName,
   initialValue,
   isReadOnly,
   onSaved,
-}) => {
+}: StringValueEditorProps) {
   const { t } = useTranslation();
   const [val, setVal] = useState(initialValue);
   const [mode, setMode] = useState<"text" | "json">(() => {
@@ -161,4 +161,4 @@ export const StringValueEditor: FC<StringValueEditorProps> = ({
       </div>
     </div>
   );
-};
+}

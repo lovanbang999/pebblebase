@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FC } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Clipboard,
@@ -23,14 +23,14 @@ interface AIAssistantPanelProps {
   onClose: () => void;
 }
 
-export const AIAssistantPanel: FC<AIAssistantPanelProps> = ({
+export function AIAssistantPanel({
   connection,
   tables,
   resultRows = [],
   onReviewQuery,
   onOpenSettings,
   onClose,
-}) => {
+}: AIAssistantPanelProps) {
   const { t } = useTranslation();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -351,4 +351,4 @@ export const AIAssistantPanel: FC<AIAssistantPanelProps> = ({
       </div>
     </section>
   );
-};
+}

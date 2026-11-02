@@ -8,11 +8,11 @@ interface HtmlPreviewViewerProps {
   onContentChange?: (val: string) => void;
 }
 
-export const HtmlPreviewViewer: React.FC<HtmlPreviewViewerProps> = ({
+export function HtmlPreviewViewer({
   content,
   isReadOnly = false,
   onContentChange,
-}) => {
+}: HtmlPreviewViewerProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<"preview" | "source">("preview");
   const [htmlCode, setHtmlCode] = useState(content);
@@ -134,4 +134,4 @@ export const HtmlPreviewViewer: React.FC<HtmlPreviewViewerProps> = ({
       </div>
     </div>
   );
-};
+}

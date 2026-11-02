@@ -177,4 +177,3 @@ Send either of the generated files located in `build/bin/`:
   ```text
   %APPDATA%\pebblebase (C:\Users\<User>\AppData\Roaming\pebblebase)
   ```
-

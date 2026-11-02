@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import type { FC } from "react";
 import {
   AlertCircle,
   RefreshCw,
@@ -29,14 +28,14 @@ interface ErrorBannerProps {
 
 const COPY_FEEDBACK_MS = 2000;
 
-export const ErrorBanner: FC<ErrorBannerProps> = ({
+export function ErrorBanner({
   message,
   onDismiss,
   onRetry,
   isRetrying = false,
   activeConnectionName,
   onEditConnection,
-}) => {
+}: ErrorBannerProps) {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -102,7 +101,7 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
           )}
 
           {/* Context Name & Summary */}
-          <span className="text-destructive dark:text-destructive min-w-0 text-sm break-words">
+          <span className="text-destructive dark:text-destructive min-w-0 text-sm wrap-break-word">
             {activeConnectionName && (
               <strong className="font-semibold">
                 {activeConnectionName}:{" "}
@@ -232,4 +231,4 @@ export const ErrorBanner: FC<ErrorBannerProps> = ({
       )}
     </div>
   );
-};
+}

@@ -1,4 +1,3 @@
-import type { FC } from "react";
 import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -20,12 +19,12 @@ interface DeleteRowDialogProps {
   onConfirm: () => Promise<void>;
 }
 
-export const DeleteRowDialog: FC<DeleteRowDialogProps> = ({
+export function DeleteRowDialog({
   rowToDelete,
   tableName,
   onClose,
   onConfirm,
-}) => {
+}: DeleteRowDialogProps) {
   const { t } = useTranslation();
 
   return (
@@ -108,4 +107,4 @@ export const DeleteRowDialog: FC<DeleteRowDialogProps> = ({
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+}

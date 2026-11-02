@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, type FC } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -72,7 +72,7 @@ interface PaletteItem {
   action: () => void;
 }
 
-export const CommandPalette: FC<CommandPaletteProps> = ({
+export function CommandPalette({
   isOpen,
   onClose,
   connections,
@@ -86,7 +86,7 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
   onFindEverywhere,
   theme,
   canManageSettings,
-}) => {
+}: CommandPaletteProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -503,4 +503,4 @@ export const CommandPalette: FC<CommandPaletteProps> = ({
     </div>,
     document.body,
   );
-};
+}

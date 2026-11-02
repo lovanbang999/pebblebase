@@ -1,4 +1,4 @@
-import { useState, useMemo, type FC } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,13 +14,13 @@ interface HashValueEditorProps {
   onRefresh: () => void;
 }
 
-export const HashValueEditor: FC<HashValueEditorProps> = ({
+export function HashValueEditor({
   connId,
   keyName,
   fields,
   isReadOnly,
   onRefresh,
-}) => {
+}: HashValueEditorProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [editingField, setEditingField] = useState<string | null>(null);
@@ -294,4 +294,4 @@ export const HashValueEditor: FC<HashValueEditorProps> = ({
       </div>
     </div>
   );
-};
+}

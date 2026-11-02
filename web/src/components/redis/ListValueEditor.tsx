@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,13 +21,13 @@ interface ListValueEditorProps {
   onRefresh: () => void;
 }
 
-export const ListValueEditor: FC<ListValueEditorProps> = ({
+export function ListValueEditor({
   connId,
   keyName,
   items = [],
   isReadOnly,
   onRefresh,
-}) => {
+}: ListValueEditorProps) {
   const { t } = useTranslation();
   const [pushValue, setPushValue] = useState("");
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
@@ -240,4 +240,4 @@ export const ListValueEditor: FC<ListValueEditorProps> = ({
       </div>
     </div>
   );
-};
+}

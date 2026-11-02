@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type FC,
-  type PointerEvent,
-} from "react";
+import { useEffect, useMemo, useState, type PointerEvent } from "react";
 import { X, Save, RotateCcw, GripVertical } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { analyzeCellContent } from "./cell-inspector/cellContentTypeDetector";
@@ -28,7 +22,7 @@ interface ValueEditorPanelProps {
   onApply: (value: unknown) => void;
 }
 
-export const ValueEditorPanel: FC<ValueEditorPanelProps> = ({
+export function ValueEditorPanel({
   columnName,
   columnType,
   value,
@@ -37,7 +31,7 @@ export const ValueEditorPanel: FC<ValueEditorPanelProps> = ({
   onWidthChange,
   onClose,
   onApply,
-}) => {
+}: ValueEditorPanelProps) {
   const { t } = useTranslation();
   const analysis = useMemo(() => analyzeCellContent(value), [value]);
   const [draft, setDraft] = useState(analysis.rawString);
@@ -211,4 +205,4 @@ export const ValueEditorPanel: FC<ValueEditorPanelProps> = ({
       </footer>
     </aside>
   );
-};
+}

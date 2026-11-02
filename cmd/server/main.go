@@ -38,7 +38,7 @@ func main() {
 
 	addr := ":" + port
 	log.Printf("Pebblebase server starting on %s (data: %s, auth: %v)", addr, dataDir, authEnabled)
-	server := &http.Server{Addr: addr, Handler: inst.Mux}
+	server := &http.Server{Addr: addr, Handler: securityHeadersMiddleware(inst.Mux)}
 	stop, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	go func() {
@@ -51,6 +51,24 @@ func main() {
 	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("server stopped unexpectedly")
 	}
+}
+
+// securityHeadersMiddleware applies web security defense headers to all responses.
+func securityHeadersMiddleware(next http.Handler) http.Handler {
+	csp := "default-src 'self'; " +
+		"script-src 'self' 'unsafe-inline'; " +
+		"style-src 'self' 'unsafe-inline'; " +
+		"font-src 'self' data:; " +
+		"img-src 'self' data: blob:; " +
+		"connect-src 'self' http://localhost:* http://127.0.0.1:* https://api.openai.com https://generativelanguage.googleapis.com https://api.anthropic.com https://api.groq.com;"
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Security-Policy", csp)
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		next.ServeHTTP(w, r)
+	})
 }
 
 // spaHandler serves embedded static assets or falls back to index.html for SPA routing.

@@ -1,4 +1,4 @@
-import { useState, useMemo, type FC } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,13 +23,13 @@ interface ZSetValueEditorProps {
   onRefresh: () => void;
 }
 
-export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
+export function ZSetValueEditor({
   connId,
   keyName,
   members = [],
   isReadOnly,
   onRefresh,
-}) => {
+}: ZSetValueEditorProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [sortDesc, setSortDesc] = useState(false);
@@ -309,4 +309,4 @@ export const ZSetValueEditor: FC<ZSetValueEditorProps> = ({
       </div>
     </div>
   );
-};
+}

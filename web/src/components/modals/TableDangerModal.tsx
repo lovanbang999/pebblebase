@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC } from "react";
+import { useState, useEffect } from "react";
 import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -27,14 +27,14 @@ interface TableDangerModalProps {
   onSuccess: (message: string) => void;
 }
 
-export const TableDangerModal: FC<TableDangerModalProps> = ({
+export function TableDangerModal({
   isOpen,
   actionType,
   tableName,
   connection,
   onClose,
   onSuccess,
-}) => {
+}: TableDangerModalProps) {
   const { t } = useTranslation();
   const [confirmInput, setConfirmInput] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
@@ -205,4 +205,4 @@ export const TableDangerModal: FC<TableDangerModalProps> = ({
       </AlertDialogContent>
     </AlertDialog>
   );
-};
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, type FC, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import {
   Sparkles,
   Eye,
@@ -110,11 +110,11 @@ const DEFAULT_PROVIDERS: AIProviderInfo[] = [
   },
 ];
 
-export const AISettingsModal: FC<AISettingsModalProps> = ({
+export function AISettingsModal({
   isOpen,
   onClose,
   onSuccess,
-}) => {
+}: AISettingsModalProps) {
   const { t } = useTranslation();
 
   const [providers, setProviders] =
@@ -651,4 +651,4 @@ export const AISettingsModal: FC<AISettingsModalProps> = ({
       </DialogContent>
     </Dialog>
   );
-};
+}

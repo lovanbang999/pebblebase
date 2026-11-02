@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import {
   Database,
@@ -23,13 +22,13 @@ function formatNumber(num: number): string {
   return new Intl.NumberFormat().format(num);
 }
 
-export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
+export function QuickStatsBar({
   table,
   stats,
   totalFilteredRows,
   isFiltered = false,
   onOpenAnalytics,
-}) => {
+}: QuickStatsBarProps) {
   const { t } = useTranslation();
 
   const totalRows = stats?.total_rows ?? 0;
@@ -140,4 +139,4 @@ export const QuickStatsBar: React.FC<QuickStatsBarProps> = ({
       </div>
     </div>
   );
-};
+}

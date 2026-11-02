@@ -1,4 +1,4 @@
-import { useMemo, useState, type FC } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ArrowLeftRight,
@@ -32,14 +32,14 @@ interface SchemaDiffProps {
   ) => void;
   onError?: (message: string | null) => void;
 }
-export const SchemaDiff: FC<SchemaDiffProps> = ({
+export function SchemaDiff({
   connections,
   activeConnectionId,
   sourceConnectionId,
   targetConnectionId,
   onConnectionPairChange,
   onOpenQueryConsole,
-}) => {
+}: SchemaDiffProps) {
   const { t } = useTranslation();
   const postgres = connections.filter(
     (connection) => connection.type === "postgres",
@@ -190,7 +190,7 @@ export const SchemaDiff: FC<SchemaDiffProps> = ({
       ) : null}
     </div>
   );
-};
+}
 function DiffResults({
   items,
   destinationId,

@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { KeyRound, Radio, Terminal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ interface RedisStudioProps {
 
 type RedisTab = "keys" | "pubsub" | "cli";
 
-export const RedisStudio: FC<RedisStudioProps> = ({
+export function RedisStudio({
   connId,
   isReadOnly = false,
   connectionName,
@@ -26,7 +26,7 @@ export const RedisStudio: FC<RedisStudioProps> = ({
   initialKeySearch,
   initialCommand,
   workspaceTabId,
-}) => {
+}: RedisStudioProps) {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<RedisTab>(
     initialCommand ? "cli" : "keys",
@@ -108,4 +108,4 @@ export const RedisStudio: FC<RedisStudioProps> = ({
       </div>
     </div>
   );
-};
+}

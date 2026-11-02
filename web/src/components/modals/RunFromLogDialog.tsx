@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, Clipboard, Play, WandSparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +42,7 @@ export function RunFromLogDialog({
   tablesByConnection,
   onRun,
 }: Props) {
+  const { t } = useTranslation();
   const [log, setLog] = useState("");
   const [tables, setTables] =
     useState<Record<string, TableSchema[]>>(tablesByConnection);
@@ -143,7 +145,7 @@ export function RunFromLogDialog({
             <span key={index}>{part}</span>
           );
         })
-    : "Statement preview will appear here.";
+    : t("runFromLog.previewPlaceholder");
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -151,17 +153,14 @@ export function RunFromLogDialog({
         <DialogHeader className="border-border border-b p-5">
           <DialogTitle className="flex items-center gap-2">
             <WandSparkles className="size-4" />
-            Run from Log
+            {t("runFromLog.title")}
           </DialogTitle>
-          <DialogDescription>
-            Parse a database log into a statement. Nothing runs until you choose
-            Run in console.
-          </DialogDescription>
+          <DialogDescription>{t("runFromLog.description")}</DialogDescription>
         </DialogHeader>
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-5">
           <div className="flex items-center justify-between gap-3">
             <span className="text-muted-foreground text-xs">
-              Paste query or command log
+              {t("runFromLog.pasteLabel")}
             </span>
             <div className="flex flex-wrap gap-1">
               {RUN_FROM_LOG_SAMPLES.map((sample) => (
@@ -171,17 +170,17 @@ export function RunFromLogDialog({
                   variant="outline"
                   onClick={() => setLog(sample.text)}
                 >
-                  {sample.label} sample
+                  {sample.label} {t("runFromLog.sampleSuffix")}
                 </Button>
               ))}
             </div>
           </div>
           <Textarea
-            aria-label="Database log"
+            aria-label={t("runFromLog.logAriaLabel")}
             value={log}
             onChange={(event) => setLog(event.target.value)}
             className="min-h-28 font-mono text-xs"
-            placeholder="Paste a TypeORM, Prisma, Mongoose, or Redis log…"
+            placeholder={t("runFromLog.logPlaceholder")}
           />
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <span className="bg-muted rounded px-2 py-1">
@@ -215,9 +214,9 @@ export function RunFromLogDialog({
             </pre>
           </div>
           <label className="grid gap-1 text-xs">
-            <span>Target connection</span>
+            <span>{t("runFromLog.destinationLabel")}</span>
             <select
-              aria-label="Target connection"
+              aria-label={t("runFromLog.destinationLabel")}
               className="border-input bg-background h-8 rounded-md border px-2"
               value={chosen?.id ?? ""}
               onChange={(event) => setSelectedConnectionId(event.target.value)}
@@ -246,10 +245,10 @@ export function RunFromLogDialog({
             {copyState ? (
               <>
                 <Check className="size-3.5" />
-                Copied
+                {t("runFromLog.copied")}
               </>
             ) : (
-              "Copy statement"
+              t("runFromLog.copyStatement")
             )}
           </Button>
           <Button
@@ -259,7 +258,7 @@ export function RunFromLogDialog({
             disabled={!chosen || !parsed.statement || parsed.kind === "unknown"}
           >
             <Play className="size-3.5" />
-            Run in console
+            {t("runFromLog.runInConsole")}
           </Button>
         </DialogFooter>
       </DialogContent>

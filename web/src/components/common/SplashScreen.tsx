@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import packageJson from "../../../package.json";
 
@@ -7,10 +6,10 @@ interface SplashScreenProps {
   version?: string;
 }
 
-export const SplashScreen: React.FC<SplashScreenProps> = ({
+export function SplashScreen({
   message,
   version = `v${packageJson.version}`,
-}) => {
+}: SplashScreenProps) {
   const { t } = useTranslation();
   const displayMessage =
     message ?? t("auth.initializing", "Initializing Studio...");
@@ -66,6 +65,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export default SplashScreen;

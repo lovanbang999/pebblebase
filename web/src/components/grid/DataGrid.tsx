@@ -6,7 +6,6 @@ import {
   lazy,
   Suspense,
   useCallback,
-  type FC,
   type FormEvent,
 } from "react";
 import {
@@ -45,10 +44,8 @@ import { exportTableData, fetchTableStats, type ExportFormat } from "@/lib/api";
 import { useTranslation } from "react-i18next";
 import { EmptyState } from "@/components/common";
 import { QuickStatsBar } from "./QuickStatsBar";
-import {
-  ClickHouseComplexCell,
-  detectClickHouseComplexType,
-} from "./ClickHouseComplexCell";
+import { ClickHouseComplexCell } from "./ClickHouseComplexCell";
+import { detectClickHouseComplexType } from "@/lib/clickhouse";
 import {
   VIRTUALIZER_ROW_HEIGHT,
   VIRTUALIZER_OVERSCAN,
@@ -193,7 +190,7 @@ function isReferenceId(value: unknown): boolean {
   );
 }
 
-export const DataGrid: FC<DataGridProps> = ({
+export function DataGrid({
   table,
   rows,
   totalCount,
@@ -229,7 +226,7 @@ export const DataGrid: FC<DataGridProps> = ({
   dbType,
   connectionName,
   queryTimeMs,
-}) => {
+}: DataGridProps) {
   const { t } = useTranslation();
   const [activeSubView, setActiveSubView] = useState<TableSubview>("data");
   const [viewMode, setViewMode] = useState<"table" | "document">(
@@ -2903,4 +2900,4 @@ export const DataGrid: FC<DataGridProps> = ({
       )}
     </div>
   );
-};
+}
