@@ -59,7 +59,7 @@ import {
   type NavigationHistory,
 } from "@/lib/navigationHistory";
 import { ErrorBanner, ErrorBoundary } from "@/components/common";
-import { AuthGuard, DefaultPasswordBanner } from "@/components/auth";
+import { AuthGuard } from "@/components/auth";
 import {
   getRecentItems,
   addRecentItem,
@@ -711,17 +711,39 @@ function PebblebaseStudio() {
     );
   }, []);
 
+  const handleOpenWelcomeHistory = useCallback(() => {
+    const connection = selectedConnection || activeConnection;
+    if (!connection) return;
+    const tabId = openQueryTab(connection.id);
+    window.setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("pb:query-command", {
+          detail: { tabId, command: "history" },
+        }),
+      );
+    }, 100);
+  }, [activeConnection, openQueryTab, selectedConnection]);
+
   const dispatchQueryCommand = useCallback(
     (command: "run" | "explain" | "history") => {
-      if (activeTab?.type !== "query") return;
+      if (activeTab?.type !== "query") {
+        if (command === "history") {
+          handleOpenWelcomeHistory();
+        }
+        return;
+      }
       window.dispatchEvent(
         new CustomEvent("pb:query-command", {
           detail: { tabId: activeTab.id, command },
         }),
       );
     },
-    [activeTab],
+    [activeTab, handleOpenWelcomeHistory],
   );
+
+  const handleOpenHistory = useCallback(() => {
+    dispatchQueryCommand("history");
+  }, [dispatchQueryCommand]);
   const dispatchCellReferenceCommand = useCallback(
     (action: "forward" | "reverse") => {
       const tab = activeTabRef.current;
@@ -1081,19 +1103,6 @@ function PebblebaseStudio() {
     setIsCommandPaletteOpen(true);
   }, []);
 
-  const handleOpenWelcomeHistory = useCallback(() => {
-    const connection = selectedConnection || activeConnection;
-    if (!connection) return;
-    const tabId = openQueryTab(connection.id);
-    window.setTimeout(() => {
-      window.dispatchEvent(
-        new CustomEvent("pb:query-command", {
-          detail: { tabId, command: "history" },
-        }),
-      );
-    }, 100);
-  }, [activeConnection, openQueryTab, selectedConnection]);
-
   // Derived workspace tool-window selection.
   const activeToolWindow = toolWindows.scripts
     ? "scripts"
@@ -1268,6 +1277,7 @@ function PebblebaseStudio() {
       className="bg-background text-foreground flex h-dvh w-screen flex-col overflow-hidden font-sans transition-colors"
     >
       <DesktopTitleBar
+        theme={theme}
         workspaceControl={
           <WorkspaceControl
             workspaces={namedWorkspaces.workspaces}
@@ -1323,6 +1333,7 @@ function PebblebaseStudio() {
           onToggleDatabase={() => handleToggleToolWindow("database")}
           onToggleScripts={() => handleToggleToolWindow("scripts")}
           onToggleOutput={handleToggleOutput}
+          onOpenHistory={handleOpenHistory}
         />
         {toolWindows.database ? (
           <Sidebar
@@ -1425,11 +1436,6 @@ function PebblebaseStudio() {
         >
           {namedWorkspaces.ready && connectionsReady ? (
             <>
-              {isDefaultPassword && (
-                <DefaultPasswordBanner
-                  onChangePassword={handleOpenChangePassword}
-                />
-              )}
               {/* Chrome/DataGrip Style Tab Bar */}
               {connections.length > 0 && (
                 <TabBar
@@ -1716,6 +1722,8 @@ function PebblebaseStudio() {
         }
         hasError={Boolean(activeErrorMessage)}
         tableName={activeTab?.type === "table" ? activeTab.tableName : null}
+        isDefaultPassword={isDefaultPassword}
+        onChangePassword={handleOpenChangePassword}
       />
     </div>
   );

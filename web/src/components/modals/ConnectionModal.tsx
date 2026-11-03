@@ -505,15 +505,15 @@ export function ConnectionModal({
                 }
                 className="w-full"
               >
-                <TabsList className="bg-muted/90 dark:bg-card/90 grid h-9 w-full grid-cols-4 p-1">
+                <TabsList className="border-border bg-muted/60 dark:border-border grid h-10 w-full grid-cols-4 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
                   {ENVIRONMENTS.map((env) => (
                     <TabsTrigger
                       key={env.key}
                       value={env.key}
-                      className="gap-1.5 text-xs font-medium transition-all"
+                      className="data-active:border-border dark:data-active:border-border/80 data-active:bg-background dark:data-active:bg-card/90 data-active:text-foreground gap-1.5 border-transparent py-0.5 text-xs font-medium transition-all data-active:shadow-xs"
                     >
                       <span
-                        className={`h-2 w-2 shrink-0 rounded-full ${env.dotClass}`}
+                        className={`size-2 shrink-0 rounded-full ${env.dotClass}`}
                       />
                       <span>{env.label}</span>
                     </TabsTrigger>
@@ -573,12 +573,18 @@ export function ConnectionModal({
               onValueChange={(val) => setMode(val as "form" | "url")}
               className="w-full"
             >
-              <TabsList className="bg-muted/90 dark:bg-card/90 grid h-9 w-full grid-cols-2 p-1">
-                <TabsTrigger value="form" className="gap-2 text-xs font-medium">
+              <TabsList className="border-border bg-muted/60 dark:border-border grid h-10 w-full grid-cols-2 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
+                <TabsTrigger
+                  value="form"
+                  className="data-active:border-border dark:data-active:border-border/80 data-active:bg-background dark:data-active:bg-card/90 data-active:text-foreground gap-2 border-transparent py-0.5 text-xs font-medium transition-all data-active:shadow-xs"
+                >
                   <Server className="size-3.5 shrink-0" />
                   <span>{t("connection.formParameters")}</span>
                 </TabsTrigger>
-                <TabsTrigger value="url" className="gap-2 text-xs font-medium">
+                <TabsTrigger
+                  value="url"
+                  className="data-active:border-border dark:data-active:border-border/80 data-active:bg-background dark:data-active:bg-card/90 data-active:text-foreground gap-2 border-transparent py-0.5 text-xs font-medium transition-all data-active:shadow-xs"
+                >
                   <Terminal className="size-3.5 shrink-0" />
                   <span>{t("connection.connectionUrl")}</span>
                 </TabsTrigger>

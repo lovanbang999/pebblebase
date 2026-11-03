@@ -100,7 +100,7 @@ export function WorkspaceHome({
                 variant="outline"
                 disabled={!enabled}
                 onClick={action}
-                className="h-auto min-h-16 justify-start gap-3 rounded-lg px-4 py-3 text-left transition-colors"
+                className="border-border bg-card hover:bg-muted dark:bg-card/40 dark:hover:bg-accent/40 h-auto min-h-16 justify-start gap-3 rounded-lg px-4 py-3 text-left shadow-xs transition-colors"
               >
                 <Icon
                   aria-hidden="true"

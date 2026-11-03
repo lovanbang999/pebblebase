@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Trash2,
+  Loader2,
+  Copy,
+  Check,
+  ArrowDownToLine,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   AlertDialog,
@@ -39,6 +46,7 @@ export function TableDangerModal({
   const [confirmInput, setConfirmInput] = useState("");
   const [isExecuting, setIsExecuting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [copiedTableTarget, setCopiedTableTarget] = useState(false);
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -46,6 +54,7 @@ export function TableDangerModal({
       setConfirmInput("");
       setIsExecuting(false);
       setErrorMsg(null);
+      setCopiedTableTarget(false);
     }
   }, [isOpen, tableName]);
 
@@ -142,9 +151,73 @@ export function TableDangerModal({
         <div className="my-3 space-y-2">
           <label className="text-muted-foreground dark:text-muted-foreground block font-mono text-[11px]">
             {isTruncate
-              ? t("tableDanger.truncateConfirmHelp", { table: tableName })
-              : t("tableDanger.dropConfirmHelp", { table: tableName })}
+              ? t(
+                  "tableDanger.truncateConfirmPrompt",
+                  "To confirm truncation, please type the table name below:",
+                )
+              : t(
+                  "tableDanger.dropConfirmPrompt",
+                  "To confirm dropping, please type the table name below:",
+                )}
           </label>
+
+          <div className="border-border bg-muted/50 dark:bg-muted/30 flex items-center justify-between gap-2 rounded-md border p-1 pl-2.5 font-mono text-xs">
+            <span
+              className="text-foreground min-w-0 flex-1 truncate font-medium select-all"
+              title={tableName}
+            >
+              {tableName}
+            </span>
+            <div className="flex shrink-0 items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                className="text-muted-foreground hover:text-foreground h-6 gap-1 px-2 text-[11px]"
+                title={
+                  copiedTableTarget
+                    ? t("common.copied", "Copied!")
+                    : t("commands.copy", "Copy")
+                }
+                onClick={() => {
+                  if (tableName) {
+                    void navigator.clipboard.writeText(tableName);
+                    setCopiedTableTarget(true);
+                    setTimeout(() => setCopiedTableTarget(false), 2000);
+                  }
+                }}
+              >
+                {copiedTableTarget ? (
+                  <Check className="size-3 shrink-0 text-emerald-500" />
+                ) : (
+                  <Copy className="size-3 shrink-0" />
+                )}
+                <span>
+                  {copiedTableTarget
+                    ? t("common.copied", "Copied!")
+                    : t("commands.copy", "Copy")}
+                </span>
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="xs"
+                className="h-6 gap-1 px-2 text-[11px]"
+                title={t(
+                  "tableDanger.fillInputTooltip",
+                  "Fill table name into confirmation input",
+                )}
+                onClick={() => {
+                  if (tableName) {
+                    setConfirmInput(tableName);
+                  }
+                }}
+              >
+                <ArrowDownToLine className="size-3 shrink-0" />
+                <span>{t("sidebar.fillInput", "Fill")}</span>
+              </Button>
+            </div>
+          </div>
 
           <Input
             value={confirmInput}

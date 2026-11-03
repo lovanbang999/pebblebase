@@ -12,19 +12,20 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   Copy,
   Database,
   FileCode2,
   Folder,
   GitCompare,
+  History,
   Minus,
+  Moon,
   MoreHorizontal,
   Play,
   Search,
   Settings2,
-  Sparkles,
   Square,
+  Sun,
   Terminal,
   Workflow,
   X,
@@ -67,6 +68,7 @@ interface DesktopTitleBarProps {
   onSelectConnection?: (connection: Connection) => void;
   onOpenCommandPalette?: () => void;
   onCommand?: (command: WorkspaceCommandId) => void;
+  theme?: "dark" | "light";
 }
 
 const MENUS: CommandMenu[] = [
@@ -84,7 +86,7 @@ const icons: Partial<Record<WorkspaceCommandId, typeof Database>> = {
   toggle_database: Database,
   toggle_scripts: Folder,
   execute_query: Play,
-  query_history: Clock3,
+  query_history: History,
   open_query_console: Terminal,
   open_erd: Workflow,
   open_diff: GitCompare,
@@ -125,9 +127,16 @@ export default function DesktopTitleBar({
   onSelectConnection = () => {},
   onOpenCommandPalette = () => {},
   onCommand = () => {},
+  theme,
 }: DesktopTitleBarProps) {
   const { t } = useTranslation();
   const isDesktop = isDesktopApp();
+  const isDark =
+    theme !== undefined
+      ? theme === "dark"
+      : typeof document !== "undefined"
+        ? document.documentElement.classList.contains("dark")
+        : true;
   const user = useAuthStore((state) => state.user);
   const { updateInfo, checkOnStartup } = useUpdateStore();
   const fontSize = useFontSizeStore((state) => state.fontSize);
@@ -221,12 +230,8 @@ export default function DesktopTitleBar({
     if (item.disabled) return true;
     if (id === "navigate_back") return !canNavigateBack;
     if (id === "navigate_forward") return !canNavigateForward;
-    if (
-      id === "execute_query" ||
-      id === "explain_query" ||
-      id === "query_history"
-    )
-      return !canRunQuery || (id === "query_history" && !canOpenHistory);
+    if (id === "execute_query" || id === "explain_query") return !canRunQuery;
+    if (id === "query_history") return !canOpenHistory && !activeConnection;
     if (id === "export_csv" || id === "export_json" || id === "import_csv")
       return activeTab?.type !== "table";
     if (id === "open_query_console" || id === "open_sql_file")
@@ -255,7 +260,7 @@ export default function DesktopTitleBar({
 
   const menuCommand = (id: WorkspaceCommandId) => {
     const definition = WORKSPACE_COMMANDS[id];
-    const Icon = icons[id];
+    const Icon = id === "toggle_theme" ? (isDark ? Sun : Moon) : icons[id];
     const isDisabled = disabled(id);
     const reason = definition.disabledReason
       ? t(
@@ -276,7 +281,14 @@ export default function DesktopTitleBar({
         {Icon ? (
           <Icon
             aria-hidden="true"
-            className="text-muted-foreground size-3.5 shrink-0"
+            className={cn(
+              "size-3.5 shrink-0",
+              id === "toggle_theme"
+                ? isDark
+                  ? "text-warning"
+                  : "text-primary"
+                : "text-muted-foreground",
+            )}
           />
         ) : (
           <span className="size-3.5 shrink-0" />
@@ -375,8 +387,12 @@ export default function DesktopTitleBar({
         onClick={() => dispatch("toggle_theme")}
         className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
       >
-        <Sparkles className="size-3.5" />
-        {label("toggle_theme")}
+        {isDark ? (
+          <Sun className="text-warning size-3.5 shrink-0" />
+        ) : (
+          <Moon className="text-primary size-3.5 shrink-0" />
+        )}
+        <span className="min-w-0 flex-1 truncate">{label("toggle_theme")}</span>
       </button>
     </div>
   );
@@ -652,7 +668,7 @@ export default function DesktopTitleBar({
           disabled={disabled("query_history")}
           onClick={() => dispatch("query_history")}
         >
-          <Clock3 className="size-4" />
+          <History className="size-4" />
         </ToolbarButton>
         <ToolbarButton
           label={label("toggle_scripts")}

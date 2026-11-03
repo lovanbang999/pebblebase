@@ -8,6 +8,8 @@ interface StatusBarProps {
   isLoading: boolean;
   hasError: boolean;
   tableName?: string | null;
+  isDefaultPassword?: boolean;
+  onChangePassword?: () => void;
 }
 
 export function StatusBar({
@@ -15,6 +17,8 @@ export function StatusBar({
   isLoading,
   hasError,
   tableName,
+  isDefaultPassword,
+  onChangePassword,
 }: StatusBarProps) {
   const { t } = useTranslation();
   const status = isLoading
@@ -67,6 +71,20 @@ export function StatusBar({
         {tableName ? ` · ${tableName}` : ""}
       </span>
       <div className="flex-1" />
+      {isDefaultPassword && (
+        <button
+          type="button"
+          onClick={onChangePassword}
+          title={t(
+            "auth.defaultCredentialsWarning",
+            "You are using the default password. Please change it immediately.",
+          )}
+          className="text-warning hover:text-warning/80 flex shrink-0 cursor-pointer items-center gap-1 font-medium transition-colors hover:underline focus-visible:outline-none"
+        >
+          <AlertTriangle aria-hidden="true" className="size-3 shrink-0" />
+          <span>{t("studio.defaultPassword", "Default password")}</span>
+        </button>
+      )}
       <span className="hidden shrink-0 sm:inline">UTF-8</span>
       <span className="shrink-0 font-mono">v{packageJson.version}</span>
     </footer>
