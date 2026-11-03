@@ -21,6 +21,8 @@ import {
   Copy,
   Pencil,
   Unplug,
+  ArrowDownToLine,
+  Check,
   type LucideIcon,
 } from "lucide-react";
 import type { Connection, DatabaseType, TableSchema } from "@/lib/types";
@@ -204,6 +206,7 @@ export function DatabaseExplorer({
   const [deletingConnection, setDeletingConnection] =
     useState<Connection | null>(null);
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+  const [copiedDeleteTarget, setCopiedDeleteTarget] = useState(false);
   const [dangerModal, setDangerModal] = useState<{
     connectionId: string;
     tableName: string;
@@ -1334,6 +1337,7 @@ export function DatabaseExplorer({
           if (!open) {
             setDeletingConnection(null);
             setDeleteConfirmationInput("");
+            setCopiedDeleteTarget(false);
           }
         }}
       >
@@ -1346,16 +1350,82 @@ export function DatabaseExplorer({
               {t("sidebar.removeConnDesc", { name: deletingConnection?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <label className="text-muted-foreground space-y-2 text-xs">
-            {t("sidebar.removeConnConfirmHelp", {
-              name: deletingConnection?.name,
-            })}
+          <div className="space-y-2 text-xs">
+            <span className="text-muted-foreground block">
+              {t(
+                "sidebar.removeConnConfirmPrompt",
+                "To confirm deletion, please type the connection name below:",
+              )}
+            </span>
+            <div className="border-border bg-muted/50 dark:bg-muted/30 flex items-center justify-between gap-2 rounded-md border p-1 pl-2.5 font-mono text-xs">
+              <span
+                className="text-foreground min-w-0 flex-1 truncate font-medium select-all"
+                title={deletingConnection?.name}
+              >
+                {deletingConnection?.name}
+              </span>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="xs"
+                  className="text-muted-foreground hover:text-foreground h-6 gap-1 px-2 text-[11px]"
+                  title={
+                    copiedDeleteTarget
+                      ? t("common.copied", "Copied!")
+                      : t("sidebar.copyConnectionName", "Copy connection name")
+                  }
+                  onClick={() => {
+                    if (deletingConnection?.name) {
+                      void navigator.clipboard.writeText(
+                        deletingConnection.name,
+                      );
+                      setCopiedDeleteTarget(true);
+                      setTimeout(() => setCopiedDeleteTarget(false), 2000);
+                    }
+                  }}
+                >
+                  {copiedDeleteTarget ? (
+                    <Check className="size-3 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Copy className="size-3 shrink-0" />
+                  )}
+                  <span>
+                    {copiedDeleteTarget
+                      ? t("common.copied", "Copied!")
+                      : t("commands.copy", "Copy")}
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="xs"
+                  className="h-6 gap-1 px-2 text-[11px]"
+                  title={t(
+                    "sidebar.fillInputTooltip",
+                    "Fill connection name into confirmation input",
+                  )}
+                  onClick={() => {
+                    if (deletingConnection?.name) {
+                      setDeleteConfirmationInput(deletingConnection.name);
+                    }
+                  }}
+                >
+                  <ArrowDownToLine className="size-3 shrink-0" />
+                  <span>{t("sidebar.fillInput", "Fill")}</span>
+                </Button>
+              </div>
+            </div>
             <Input
               value={deleteConfirmationInput}
               onChange={(event) =>
                 setDeleteConfirmationInput(event.target.value)
               }
-              placeholder={deletingConnection?.name}
+              placeholder={t("sidebar.typeToConfirmPlaceholder", {
+                name: deletingConnection?.name,
+              })}
+              autoFocus
+              className="font-mono text-xs"
               onKeyDown={(event) => {
                 if (
                   event.key === "Enter" &&
@@ -1364,10 +1434,12 @@ export function DatabaseExplorer({
                 ) {
                   onDeleteConnection(deletingConnection.id);
                   setDeletingConnection(null);
+                  setDeleteConfirmationInput("");
+                  setCopiedDeleteTarget(false);
                 }
               }}
             />
-          </label>
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel>
               {t("rowModal.cancel", "Cancel")}
@@ -1378,9 +1450,11 @@ export function DatabaseExplorer({
                 if (deletingConnection && deleteConfirmed) {
                   onDeleteConnection(deletingConnection.id);
                   setDeletingConnection(null);
+                  setDeleteConfirmationInput("");
+                  setCopiedDeleteTarget(false);
                 }
               }}
-              className="bg-destructive text-destructive-foreground"
+              className="bg-destructive hover:bg-destructive/90 dark:bg-destructive dark:hover:bg-destructive/90 cursor-pointer text-white shadow-xs"
             >
               {t("sidebar.deleteConnButton", "Delete connection")}
             </AlertDialogAction>

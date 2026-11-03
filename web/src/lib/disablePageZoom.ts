@@ -65,8 +65,13 @@ export function shouldPreventPageZoom(
 }
 
 export function installPageZoomGuards(
-  windowTarget: EventHost = window,
-  documentTarget: EventHost = document,
+  windowTarget: EventHost = typeof window !== "undefined"
+    ? window
+    : ({} as EventHost),
+  documentTarget: EventHost = typeof document !== "undefined"
+    ? document
+    : ({} as EventHost),
+  viewportTarget?: (EventHost & { scale?: number }) | null,
 ): () => void {
   if (installedCleanup) return installedCleanup;
 
@@ -145,10 +150,60 @@ export function installPageZoomGuards(
   windowTarget.addEventListener("keydown", keydown, eventOptions);
   documentTarget.addEventListener("keydown", keydown, eventOptions);
 
+  const vp =
+    viewportTarget !== undefined
+      ? viewportTarget
+      : typeof window !== "undefined"
+        ? (window.visualViewport as (VisualViewport & EventHost) | null)
+        : null;
+  let resetVisualViewport: EventListener | null = null;
+  if (vp && typeof vp.addEventListener === "function") {
+    resetVisualViewport = () => {
+      const scale = typeof vp.scale === "number" ? vp.scale : 1;
+      if (Math.abs(scale - 1) > 0.01) {
+        const meta =
+          typeof document !== "undefined" &&
+          typeof document.querySelector === "function"
+            ? document.querySelector('meta[name="viewport"]')
+            : null;
+        if (meta) {
+          meta.setAttribute(
+            "content",
+            "width=device-width, initial-scale=1.0001, maximum-scale=1.0001, minimum-scale=1.0001, user-scalable=no",
+          );
+          if (typeof window !== "undefined") {
+            window.setTimeout(() => {
+              meta.setAttribute(
+                "content",
+                "width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no",
+              );
+            }, 10);
+          }
+        }
+        if (
+          typeof window !== "undefined" &&
+          (window.pageXOffset !== 0 || window.pageYOffset !== 0)
+        ) {
+          window.scrollTo(0, 0);
+        }
+      }
+    };
+    vp.addEventListener("resize", resetVisualViewport);
+    vp.addEventListener("scroll", resetVisualViewport);
+  }
+
   let active = true;
   installedCleanup = () => {
     if (!active) return;
     active = false;
+    if (
+      resetVisualViewport &&
+      vp &&
+      typeof vp.removeEventListener === "function"
+    ) {
+      vp.removeEventListener("resize", resetVisualViewport);
+      vp.removeEventListener("scroll", resetVisualViewport);
+    }
     windowTarget.removeEventListener("wheel", wheel, true);
     documentTarget.removeEventListener("wheel", wheel, true);
     windowTarget.removeEventListener("gesturestart", gesture, true);

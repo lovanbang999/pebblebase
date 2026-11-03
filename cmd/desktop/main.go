@@ -37,6 +37,7 @@ func main() {
 			// Ensure WebKitGTK compositor has flushed the dark splash frame to the window buffer
 			time.Sleep(120 * time.Millisecond)
 			runtime.WindowShow(ctx)
+			disableLinuxPinchZoom()
 		},
 		AssetServer: &assetserver.Options{
 			Assets:  frontendFS,

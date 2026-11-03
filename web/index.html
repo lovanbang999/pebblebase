@@ -14,7 +14,12 @@
     <script>
       (function () {
         function shouldAllow(target) {
-          return Boolean(target && target.closest && target.closest('[data-allow-zoom], .react-flow'));
+          try {
+            var el = target && target.nodeType === 3 ? target.parentElement : target;
+            return Boolean(el && el.closest && el.closest('[data-allow-zoom], .react-flow'));
+          } catch (_) {
+            return false;
+          }
         }
         function onWheel(e) {
           if (shouldAllow(e.target)) return;
@@ -24,7 +29,7 @@
         }
         function onTouch(e) {
           if (shouldAllow(e.target)) return;
-          if (e.touches && e.touches.length > 1) {
+          if ((e.touches && e.touches.length > 1) || (typeof e.scale === 'number' && e.scale !== 1)) {
             e.preventDefault();
           }
         }
@@ -54,6 +59,25 @@
         document.addEventListener('gestureend', onGesture, opts);
         window.addEventListener('keydown', onKeyDown, opts);
         document.addEventListener('keydown', onKeyDown, opts);
+
+        if (window.visualViewport) {
+          var resetViewport = function () {
+            if (Math.abs(window.visualViewport.scale - 1) > 0.01) {
+              var meta = document.querySelector('meta[name="viewport"]');
+              if (meta) {
+                meta.setAttribute('content', 'width=device-width, initial-scale=1.0001, maximum-scale=1.0001, minimum-scale=1.0001, user-scalable=no');
+                setTimeout(function () {
+                  meta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no');
+                }, 10);
+              }
+              if (window.pageXOffset !== 0 || window.pageYOffset !== 0) {
+                window.scrollTo(0, 0);
+              }
+            }
+          };
+          window.visualViewport.addEventListener('resize', resetViewport);
+          window.visualViewport.addEventListener('scroll', resetViewport);
+        }
       })();
     </script>
     <title>Pebblebase Studio</title>
@@ -62,6 +86,7 @@
       *::before,
       *::after {
         box-sizing: border-box;
+        touch-action: none;
       }
       html,
       body {
@@ -70,6 +95,8 @@
         width: 100%;
         height: 100%;
         overflow: hidden;
+        touch-action: none;
+        overscroll-behavior: none;
         font-family:
           "Geist Variable",
           system-ui,
@@ -82,6 +109,20 @@
           sans-serif;
         user-select: none;
         -webkit-user-select: none;
+      }
+      .overflow-auto,
+      .overflow-y-auto,
+      .overflow-x-auto,
+      textarea,
+      pre,
+      input {
+        touch-action: pan-x pan-y;
+      }
+      [data-allow-zoom],
+      [data-allow-zoom] *,
+      .react-flow,
+      .react-flow * {
+        touch-action: auto;
       }
       html.dark,
       html.dark body {

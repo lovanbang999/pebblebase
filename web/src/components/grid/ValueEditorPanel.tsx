@@ -6,6 +6,8 @@ import { JsonTreeViewer } from "./cell-inspector/JsonTreeViewer";
 import { MarkdownViewer } from "./cell-inspector/MarkdownViewer";
 import { HtmlPreviewViewer } from "./cell-inspector/HtmlPreviewViewer";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "cn";
 import {
   VALUE_EDITOR_MAX_WIDTH,
   VALUE_EDITOR_MIN_WIDTH,
@@ -152,14 +154,18 @@ export function ValueEditorPanel({
         </Button>
       </header>
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-auto p-3">
-        <label className="flex items-center gap-2 text-xs">
-          <input
-            type="checkbox"
+        <label
+          className={cn(
+            "text-foreground flex w-fit items-center gap-2 text-xs select-none",
+            isReadOnly ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+          )}
+        >
+          <Checkbox
             checked={isNull}
             disabled={isReadOnly}
-            onChange={(event) => setIsNull(event.target.checked)}
+            onCheckedChange={(checked) => setIsNull(checked === true)}
           />
-          {t("datagrid.setNull", "Set NULL")}
+          <span>{t("datagrid.setNull", "Set NULL")}</span>
         </label>
         <textarea
           aria-label={t("datagrid.value", "Cell value")}

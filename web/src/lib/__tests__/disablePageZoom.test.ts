@@ -170,4 +170,39 @@ describe("page zoom gesture guard", () => {
       false,
     );
   });
+
+  it("resets visual viewport when scale deviates from 1", () => {
+    let metaContent = "width=device-width, initial-scale=1";
+    const mockMeta = {
+      setAttribute: (_name: string, val: string) => {
+        metaContent = val;
+      },
+      getAttribute: () => metaContent,
+    };
+
+    const vpHost = new EventHost() as EventHost & { scale: number };
+    vpHost.scale = 1.5;
+
+    // Mock document.querySelector for node environment
+    const originalDoc = (globalThis as unknown as { document?: unknown })
+      .document;
+    (globalThis as unknown as { document: unknown }).document = {
+      querySelector: (selector: string) =>
+        selector === 'meta[name="viewport"]' ? mockMeta : null,
+    };
+
+    cleanup = installPageZoomGuards(windowHost, documentHost, vpHost);
+    const resizeReg = vpHost.registrations.find(
+      (entry) => entry.type === "resize",
+    );
+    expect(resizeReg).toBeDefined();
+
+    vpHost.dispatch(new Event("resize"));
+    expect(metaContent).toContain("1.0001");
+
+    cleanup();
+    expect(vpHost.registrations).toHaveLength(0);
+
+    (globalThis as unknown as { document: unknown }).document = originalDoc;
+  });
 });
