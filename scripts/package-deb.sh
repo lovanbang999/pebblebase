@@ -12,9 +12,9 @@ cd "$PROJECT_ROOT"
 # Resolve package version dynamically from env var or web/package.json
 if [ -z "$VERSION" ]; then
   if command -v node &> /dev/null && [ -f "web/package.json" ]; then
-    VERSION=$(node -p "require('./web/package.json').version" 2>/dev/null || echo "1.0.2")
+    VERSION=$(node -p "require('./web/package.json').version" 2>/dev/null || echo "1.1.0")
   else
-    VERSION="1.0.2"
+    VERSION="1.1.0"
   fi
 fi
 VERSION="${VERSION#v}"
