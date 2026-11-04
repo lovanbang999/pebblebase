@@ -2,7 +2,9 @@ package mysql_test
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"pebblebase/internal/adapter"
@@ -14,7 +16,8 @@ func testDSN(t *testing.T) string {
 	t.Helper()
 	dsn := os.Getenv("PEBBLEBASE_TEST_MYSQL_DSN")
 	if dsn == "" {
-		dsn = "pebble:pebble@tcp(localhost:3306)/pebble_test?parseTime=true"
+		t.Skip("PEBBLEBASE_TEST_MYSQL_DSN not set — skipping MySQL integration test")
+		return ""
 	}
 	ctx := context.Background()
 	a, err := mysqladapter.New(ctx, dsn)
@@ -313,5 +316,69 @@ func TestMutate_CRUD(t *testing.T) {
 	}
 	if len(resDel.Rows) != 0 {
 		t.Errorf("expected 0 rows after delete, got %d", len(resDel.Rows))
+	}
+}
+
+// TestMySQL_ZeroDateAndUtf8mb4 verifies MySQL 8.0 utf8mb4 4-byte unicode encoding
+// and zero-date handling ("0000-00-00 00:00:00").
+func TestMySQL_ZeroDateAndUtf8mb4(t *testing.T) {
+	ctx := context.Background()
+	a, err := mysqladapter.New(ctx, testDSN(t))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	defer a.Close()
+
+	setupSQL := `
+	DROP TABLE IF EXISTS test_mysql_encoding;
+	CREATE TABLE test_mysql_encoding (
+		id INT AUTO_INCREMENT PRIMARY KEY,
+		content VARCHAR(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+		zero_dt VARCHAR(30) NULL,
+		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+	`
+	for _, stmt := range strings.Split(setupSQL, ";") {
+		trimmed := strings.TrimSpace(stmt)
+		if trimmed != "" {
+			if _, err := a.ExecuteRaw(ctx, trimmed); err != nil {
+				t.Fatalf("setup table failed: %v", err)
+			}
+		}
+	}
+
+	t.Cleanup(func() {
+		_, _ = a.ExecuteRaw(context.Background(), "DROP TABLE IF EXISTS test_mysql_encoding;")
+	})
+
+	// 1. Validate 4-byte utf8mb4 emoji storage and retrieval
+	const testEmojiStr = "🚀 Pebblebase Rocks! 🎉 世界 🌍 データベース"
+	const testZeroDate = "0000-00-00 00:00:00"
+
+	err = a.Mutate(ctx, "test_mysql_encoding", adapter.MutationOp{
+		Type: "insert",
+		Values: map[string]any{
+			"content": testEmojiStr,
+			"zero_dt": testZeroDate,
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to insert utf8mb4 row: %v", err)
+	}
+
+	// 2. Query back and verify fidelity
+	res, err := a.Query(ctx, "test_mysql_encoding", adapter.QueryOptions{Limit: 1})
+	if err != nil || len(res.Rows) == 0 {
+		t.Fatalf("failed to query utf8mb4 row: %v", err)
+	}
+
+	gotContent := fmt.Sprintf("%v", res.Rows[0]["content"])
+	if gotContent != testEmojiStr {
+		t.Errorf("utf8mb4 content mismatch: got %q, want %q", gotContent, testEmojiStr)
+	}
+
+	gotZeroDate := fmt.Sprintf("%v", res.Rows[0]["zero_dt"])
+	if gotZeroDate != testZeroDate {
+		t.Errorf("zero date mismatch: got %q, want %q", gotZeroDate, testZeroDate)
 	}
 }

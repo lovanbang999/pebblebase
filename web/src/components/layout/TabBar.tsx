@@ -515,6 +515,8 @@ export function TabBar({
                     render={
                       <button
                         type="button"
+                        aria-label={t("tabs.close", "Close tab")}
+                        data-testid="close-tab-btn"
                         draggable={false}
                         onDragStart={(e) => e.stopPropagation()}
                         onClick={(e) => {

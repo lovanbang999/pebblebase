@@ -6,3 +6,4 @@ export { ThemeToggle } from "./ThemeToggle";
 export { SplashScreen } from "./SplashScreen";
 export { WelcomeScreen } from "./WelcomeScreen";
 export { UpdateDialog } from "./UpdateDialog";
+export { OfflineRecoveryBanner } from "./OfflineRecoveryBanner";

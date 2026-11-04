@@ -2,8 +2,11 @@ package postgres_test
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
+	"time"
 
 	pgadapter "pebblebase/internal/adapter/postgres"
 )
@@ -222,5 +225,109 @@ func TestQuery_Filter(t *testing.T) {
 		if row["name"] != "Alice Thomas" {
 			t.Errorf("Query: unexpected row %v", row)
 		}
+	}
+}
+
+// TestPostgres_AdvancedTypesAndTriggers verifies PostgreSQL 16 advanced data types:
+// JSONB, ARRAY, UUID, and execution of dollar-quoted trigger functions.
+func TestPostgres_AdvancedTypesAndTriggers(t *testing.T) {
+	ctx := context.Background()
+	a, err := pgadapter.New(ctx, testDSN(t))
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+	t.Cleanup(func() { a.Close() })
+
+	setupDDL := `
+	CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+	DROP TABLE IF EXISTS test_pg_advanced CASCADE;
+	DROP FUNCTION IF EXISTS trg_func_set_updated_at() CASCADE;
+
+	CREATE TABLE test_pg_advanced (
+		id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+		meta JSONB NOT NULL,
+		tags TEXT[] NOT NULL,
+		updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+	);
+
+	CREATE OR REPLACE FUNCTION trg_func_set_updated_at()
+	RETURNS TRIGGER AS $$
+	BEGIN
+		NEW.updated_at = NOW();
+		RETURN NEW;
+	END;
+	$$ LANGUAGE plpgsql;
+
+	CREATE TRIGGER trg_test_pg_advanced_updated
+	BEFORE UPDATE ON test_pg_advanced
+	FOR EACH ROW
+	EXECUTE FUNCTION trg_func_set_updated_at();
+	`
+
+	if _, err := a.ExecuteRaw(ctx, setupDDL); err != nil {
+		t.Fatalf("setup DDL failed: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_, _ = a.ExecuteRaw(context.Background(), `
+			DROP TABLE IF EXISTS test_pg_advanced CASCADE;
+			DROP FUNCTION IF EXISTS trg_func_set_updated_at() CASCADE;
+		`)
+	})
+
+	// 1. Validate UUID, JSONB, and ARRAY insertion & query
+	insertSQL := `
+	INSERT INTO test_pg_advanced (meta, tags)
+	VALUES ('{"tier": "enterprise", "features": ["sso", "audit"]}'::jsonb, ARRAY['go', 'postgres', 'docker'])
+	RETURNING id, meta, tags, updated_at;
+	`
+	insertRes, err := a.ExecuteRaw(ctx, insertSQL)
+	if err != nil {
+		t.Fatalf("insert with JSONB and ARRAY failed: %v", err)
+	}
+	if len(insertRes.Rows) != 1 {
+		t.Fatalf("expected 1 inserted row, got %d", len(insertRes.Rows))
+	}
+
+	row := insertRes.Rows[0]
+	uuidVal := fmt.Sprintf("%v", row["id"])
+	if len(uuidVal) < 32 || !strings.Contains(uuidVal, "-") {
+		t.Errorf("expected valid UUID, got %s", uuidVal)
+	}
+
+	metaVal := fmt.Sprintf("%v", row["meta"])
+	if !strings.Contains(metaVal, "enterprise") || !strings.Contains(metaVal, "sso") {
+		t.Errorf("expected JSONB meta to contain 'enterprise' and 'sso', got %s", metaVal)
+	}
+
+	tagsVal := fmt.Sprintf("%v", row["tags"])
+	if !strings.Contains(tagsVal, "postgres") || !strings.Contains(tagsVal, "docker") {
+		t.Errorf("expected ARRAY tags to contain 'postgres' and 'docker', got %s", tagsVal)
+	}
+
+	initialUpdatedAt := fmt.Sprintf("%v", row["updated_at"])
+
+	// 2. Validate Dollar-quoted trigger execution on UPDATE
+	time.Sleep(50 * time.Millisecond) // ensure time step for trigger
+	updateSQL := fmt.Sprintf(`
+	UPDATE test_pg_advanced
+	SET meta = '{"tier": "enterprise_plus", "features": ["sso", "audit", "rbac"]}'::jsonb
+	WHERE id = '%s'
+	RETURNING updated_at;
+	`, uuidVal)
+
+	updateRes, err := a.ExecuteRaw(ctx, updateSQL)
+	if err != nil {
+		t.Fatalf("update failed: %v", err)
+	}
+	if len(updateRes.Rows) != 1 {
+		t.Fatalf("expected 1 row updated, got %d", len(updateRes.Rows))
+	}
+
+	newUpdatedAt := fmt.Sprintf("%v", updateRes.Rows[0]["updated_at"])
+	if newUpdatedAt == initialUpdatedAt {
+		t.Errorf("dollar-quoted trigger did not update timestamp: initial=%s, new=%s",
+			initialUpdatedAt, newUpdatedAt)
 	}
 }

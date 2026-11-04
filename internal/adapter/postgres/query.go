@@ -47,7 +47,7 @@ func queryTable(ctx context.Context, pool *pgxpool.Pool, table string, opts adap
 		}
 		row := make(map[string]any, len(colNames))
 		for i, col := range colNames {
-			row[col] = values[i]
+			row[col] = formatPostgresValue(values[i])
 		}
 		result = append(result, row)
 	}

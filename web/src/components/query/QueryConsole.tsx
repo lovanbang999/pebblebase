@@ -71,7 +71,7 @@ import { QUERY_EDITOR_MIN_HEIGHT } from "@/constants/workspaceLayout";
 import { splitQueryStatements } from "@/lib/queryStatements";
 import { useConsoleTransactions } from "@/hooks/useConsoleTransactions";
 import { getDefaultConsoleTransaction } from "@/lib/settingsPreferences";
-import { isWritingStatement } from "@/lib/querySafety";
+import { isWritingStatement, isHazardousStatement } from "@/lib/querySafety";
 
 interface ConsoleStatementResult {
   id: string;
@@ -114,6 +114,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -775,6 +776,19 @@ export function QueryConsole({
   }, []);
 
   const [isRunning, setIsRunning] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [hazardousStatements, setHazardousStatements] = useState<
+    string[] | null
+  >(null);
+
+  const handleCancelQuery = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsRunning(false);
+  }, []);
+
   const {
     states: transactionStates,
     transition: transactionTransition,
@@ -1331,16 +1345,27 @@ export function QueryConsole({
   // All console execution passes through this function so confirmation and
   // pinned-session behavior can be added at one boundary in Phase 4B.
   const runStatements = useCallback(
-    async (statements: string[]) => {
+    async (statements: string[], skipHazardCheck = false) => {
       const runnable = statements
         .map((statement) => statement.trim())
         .filter(Boolean);
       if (!runnable.length || isRunning || isFinishingTransaction) return;
+
+      if (
+        !skipHazardCheck &&
+        runnable.some((stmt) => isHazardousStatement(stmt, connection.type))
+      ) {
+        setHazardousStatements(runnable);
+        return;
+      }
+
       if (!confirmConsoleStatements(runnable)) return;
 
       const targetTabId = activeTab.id;
       const statementResults: ConsoleStatementResult[] = [];
       const outputEntries: ConsoleOutputEntry[] = [];
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
       setIsRunning(true);
       setActiveResultsTab("results");
       setActiveStatementResultId(null);
@@ -1367,6 +1392,7 @@ export function QueryConsole({
 
       try {
         for (const statement of runnable) {
+          if (abortController.signal.aborted) break;
           const statementId = `statement-${Date.now()}-${statementResults.length}`;
           const started = performance.now();
           try {
@@ -1374,6 +1400,7 @@ export function QueryConsole({
               targetTabId,
               statement,
               isWritingStatement(statement, connection.type),
+              abortController.signal,
             );
             const roundTrip = Number((performance.now() - started).toFixed(2));
             const executionTime =
@@ -1432,6 +1459,38 @@ export function QueryConsole({
               tabId: targetTabId,
             });
           } catch (err: unknown) {
+            if (
+              abortController.signal.aborted ||
+              (err as Error)?.name === "AbortError"
+            ) {
+              const message = "Query cancelled by user";
+              statementResults.push({
+                id: statementId,
+                statement,
+                result: null,
+                error: message,
+              });
+              outputEntries.push({
+                id: statementId,
+                statement,
+                message,
+                status: "error",
+              });
+              setActiveStatementResultId(statementId);
+              setTabs((prev) =>
+                prev.map((tab) =>
+                  tab.id === targetTabId
+                    ? {
+                        ...tab,
+                        error: message,
+                        statementResults: [...statementResults],
+                        outputEntries: [...outputEntries],
+                      }
+                    : tab,
+                ),
+              );
+              break;
+            }
             const message =
               err instanceof Error ? err.message : "Execution error";
             statementResults.push({
@@ -1476,6 +1535,7 @@ export function QueryConsole({
           }
         }
       } finally {
+        abortControllerRef.current = null;
         setIsRunning(false);
       }
     },
@@ -1541,13 +1601,26 @@ export function QueryConsole({
           isMongo ? "mongodb" : "sql",
         ).map((item) => item.statement);
       }
-      const range = splitQueryStatements(
-        source,
-        isMongo ? "mongodb" : "sql",
-      ).find(
+      const ranges = splitQueryStatements(source, isMongo ? "mongodb" : "sql");
+      if (!ranges.length) return [];
+
+      const exact = ranges.find(
         (item) => selection.head >= item.start && selection.head <= item.end,
       );
-      return range ? [range.statement] : [];
+      if (exact) return [exact.statement];
+
+      for (let i = 0; i < ranges.length; i++) {
+        const nextStart =
+          i + 1 < ranges.length ? ranges[i + 1].start : Infinity;
+        if (selection.head >= ranges[i].start && selection.head < nextStart) {
+          return [ranges[i].statement];
+        }
+      }
+
+      if (selection.head < ranges[0].start) {
+        return [ranges[0].statement];
+      }
+      return [ranges[ranges.length - 1].statement];
     },
     [isMongo],
   );
@@ -1702,6 +1775,23 @@ export function QueryConsole({
     return () =>
       window.removeEventListener("pb:review-ai-query", handleReviewAIDraft);
   }, [workspaceTabId, handleQueryChange]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      (window as any).__pb_set_query = (val: string) => {
+        handleQueryChange(val);
+        const v = editorViewRef.current;
+        if (v) {
+          v.dispatch({
+            changes: { from: 0, to: v.state.doc.length, insert: val },
+            selection: { anchor: val.length },
+          });
+          v.focus();
+        }
+      };
+      (window as any).__pb_run_query = () => handleRunAtCaret();
+    }
+  }, [handleQueryChange, handleRunAtCaret]);
 
   // CodeMirror Extensions with Dialect, Keymaps & Dynamic Autocomplete
   const extensions = useMemo(() => {
@@ -2200,6 +2290,21 @@ export function QueryConsole({
               </>
             )}
           </Button>
+
+          {isRunning && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleCancelQuery}
+              disabled={isFinishingTransaction}
+              className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive h-7 shrink-0 cursor-pointer gap-1.5 text-xs font-semibold shadow-xs transition-all"
+              title="Cancel running query"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>Cancel</span>
+            </Button>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger
@@ -2793,9 +2898,15 @@ export function QueryConsole({
                   onChange={(val) => handleQueryChange(val)}
                   onCreateEditor={(view) => {
                     editorViewRef.current = view;
+                    if (typeof window !== "undefined") {
+                      (window as any).__pb_editor_view = view;
+                    }
                     setHasEditorSelection(!view.state.selection.main.empty);
                   }}
                   onUpdate={(viewUpdate) => {
+                    if (typeof window !== "undefined") {
+                      (window as any).__pb_editor_view = viewUpdate.view;
+                    }
                     if (viewUpdate.selectionSet) {
                       setHasEditorSelection(
                         !viewUpdate.state.selection.main.empty,
@@ -3801,6 +3912,68 @@ export function QueryConsole({
               {t("console.tab.close")}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hazardous Query Confirmation Dialog */}
+      <Dialog
+        open={Boolean(hazardousStatements)}
+        onOpenChange={(open) => {
+          if (!open) setHazardousStatements(null);
+        }}
+      >
+        <DialogContent
+          data-testid="hazardous-query-modal"
+          className="border-destructive/40 bg-background text-foreground max-w-md rounded-xl border p-6 shadow-2xl"
+        >
+          <DialogHeader>
+            <div className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <DialogTitle className="text-destructive text-base font-semibold">
+                Hazardous Query Warning
+              </DialogTitle>
+            </div>
+            <DialogDescription className="text-muted-foreground pt-2 text-xs">
+              The statement you are attempting to execute performs an
+              unconstrained table modification or destructive schema operation:
+            </DialogDescription>
+          </DialogHeader>
+
+          {hazardousStatements && (
+            <div className="border-destructive/30 bg-destructive/5 text-destructive mt-3 max-h-36 overflow-y-auto rounded-md border p-2.5 font-mono text-xs">
+              {hazardousStatements.map((stmt, idx) => (
+                <div key={idx} className="whitespace-pre-wrap">
+                  {stmt}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <DialogFooter className="mt-5 flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setHazardousStatements(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              data-testid="confirm-hazardous-run"
+              onClick={() => {
+                const stmts = hazardousStatements;
+                setHazardousStatements(null);
+                if (stmts) {
+                  runStatements(stmts, true);
+                }
+              }}
+            >
+              Confirm & Run
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

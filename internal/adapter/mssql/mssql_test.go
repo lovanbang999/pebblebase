@@ -1,6 +1,9 @@
 package mssql
 
 import (
+	"context"
+	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -231,5 +234,117 @@ func TestIsMutationSQL(t *testing.T) {
 		if isMutationSQL(strings.ToUpper(q)) {
 			t.Errorf("expected isMutationSQL(%q) = false", q)
 		}
+	}
+}
+
+// TestMSSQL_LiveIntegration validates SQL Server connectivity, schema isolation (e.g. sales vs dbo),
+// identity column auto-increment generation, and table introspection against Microsoft SQL Server.
+func TestMSSQL_LiveIntegration(t *testing.T) {
+	dsn := os.Getenv("PEBBLEBASE_TEST_MSSQL_DSN")
+	if dsn == "" {
+		t.Skip("PEBBLEBASE_TEST_MSSQL_DSN not set — skipping MSSQL live integration test")
+	}
+
+	ctx := context.Background()
+	a, err := New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("MSSQL New failed: %v", err)
+	}
+	defer a.Close()
+
+	if err := a.Ping(ctx); err != nil {
+		t.Fatalf("MSSQL Ping failed: %v", err)
+	}
+
+	setupSQL := `
+	IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = 'sales')
+		EXEC('CREATE SCHEMA sales');
+
+	IF OBJECT_ID('sales.orders', 'U') IS NOT NULL DROP TABLE sales.orders;
+	IF OBJECT_ID('dbo.orders', 'U') IS NOT NULL DROP TABLE dbo.orders;
+
+	CREATE TABLE sales.orders (
+		order_id INT IDENTITY(1,1) PRIMARY KEY,
+		title NVARCHAR(100) NOT NULL,
+		created_at DATETIME2 DEFAULT SYSUTCDATETIME()
+	);
+
+	CREATE TABLE dbo.orders (
+		order_id INT IDENTITY(1000,1) PRIMARY KEY,
+		title NVARCHAR(100) NOT NULL,
+		created_at DATETIME2 DEFAULT SYSUTCDATETIME()
+	);
+	`
+	if _, err := a.ExecuteRaw(ctx, setupSQL); err != nil {
+		t.Fatalf("setup MSSQL schema failed: %v", err)
+	}
+
+	t.Cleanup(func() {
+		cleanup := `
+		IF OBJECT_ID('sales.orders', 'U') IS NOT NULL DROP TABLE sales.orders;
+		IF OBJECT_ID('dbo.orders', 'U') IS NOT NULL DROP TABLE dbo.orders;
+		`
+		_, _ = a.ExecuteRaw(context.Background(), cleanup)
+	})
+
+	// 1. Insert rows and verify identity column auto-increment behavior
+	err = a.Mutate(ctx, "sales.orders", adapter.MutationOp{
+		Type: "insert",
+		Values: map[string]any{
+			"title": "Sales Order 1",
+		},
+	})
+	if err != nil {
+		t.Fatalf("insert into sales.orders failed: %v", err)
+	}
+
+	err = a.Mutate(ctx, "dbo.orders", adapter.MutationOp{
+		Type: "insert",
+		Values: map[string]any{
+			"title": "DBO Order 1",
+		},
+	})
+	if err != nil {
+		t.Fatalf("insert into dbo.orders failed: %v", err)
+	}
+
+	// 2. Query each table and verify schema isolation and starting identity IDs
+	salesRes, err := a.Query(ctx, "sales.orders", adapter.QueryOptions{Limit: 1})
+	if err != nil || len(salesRes.Rows) == 0 {
+		t.Fatalf("query sales.orders failed: %v", err)
+	}
+	salesID := fmt.Sprintf("%v", salesRes.Rows[0]["order_id"])
+	if salesID != "1" {
+		t.Errorf("expected sales.orders identity start at 1, got %s", salesID)
+	}
+
+	dboRes, err := a.Query(ctx, "dbo.orders", adapter.QueryOptions{Limit: 1})
+	if err != nil || len(dboRes.Rows) == 0 {
+		t.Fatalf("query dbo.orders failed: %v", err)
+	}
+	dboID := fmt.Sprintf("%v", dboRes.Rows[0]["order_id"])
+	if dboID != "1000" {
+		t.Errorf("expected dbo.orders identity start at 1000, got %s", dboID)
+	}
+
+	// 3. Introspect schema isolation
+	tables, err := a.Introspect(ctx)
+	if err != nil {
+		t.Fatalf("MSSQL Introspect failed: %v", err)
+	}
+
+	foundSales := false
+	foundDbo := false
+	for _, tbl := range tables {
+		if tbl.Name == "sales.orders" {
+			foundSales = true
+		}
+		if tbl.Name == "orders" || tbl.Name == "dbo.orders" {
+			foundDbo = true
+		}
+	}
+	if !foundSales || !foundDbo {
+		t.Errorf("schema isolation introspect mismatch: foundSales=%v, foundDbo=%v",
+			foundSales, foundDbo)
 	}
 }

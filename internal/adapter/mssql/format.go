@@ -19,12 +19,12 @@ func formatMSSQLValue(v any, ct *sql.ColumnType) any {
 	// Specialized MSSQL types
 	switch val := v.(type) {
 	case mssql.UniqueIdentifier:
-		return val.String()
+		return strings.ToLower(val.String())
 	case *mssql.UniqueIdentifier:
 		if val == nil {
 			return nil
 		}
-		return val.String()
+		return strings.ToLower(val.String())
 	case mssql.DateTimeOffset:
 		return time.Time(val).Format(time.RFC3339Nano)
 	case *mssql.DateTimeOffset:
@@ -74,8 +74,10 @@ func formatBytes(b []byte, ct *sql.ColumnType) any {
 	// If column is UNIQUEIDENTIFIER and was read as 16 raw bytes:
 	if (typeName == "UNIQUEIDENTIFIER" || typeName == "UUID") && len(b) == 16 {
 		var uid mssql.UniqueIdentifier
-		copy(uid[:], b)
-		return uid.String()
+		if err := uid.Scan(b); err == nil {
+			return strings.ToLower(uid.String())
+		}
+		return strings.ToLower(uid.String())
 	}
 
 	// Text/VarChar types stored as raw bytes

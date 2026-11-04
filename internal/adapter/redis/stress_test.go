@@ -3,12 +3,30 @@ package redis
 import (
 	"context"
 	"fmt"
+	"os"
 	"runtime"
 	"testing"
 	"time"
 
 	goredis "github.com/redis/go-redis/v9"
 )
+
+func setupStressRedis(t testing.TB) *Adapter {
+	if dsn := os.Getenv("PEBBLEBASE_TEST_REDIS_DSN"); dsn != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		adp, err := New(ctx, dsn)
+		if err == nil {
+			t.Cleanup(func() {
+				_ = adp.Client().FlushDB(context.Background()).Err()
+				_ = adp.Close()
+			})
+			return adp
+		}
+	}
+	adp, _ := setupTestRedis(t)
+	return adp
+}
 
 // TestStress_50kKeysScan tests scanning and paginating across 50,000 keys of various Redis data types
 // to verify zero memory leaks, zero goroutine leaks, and sub-second pagination performance.
@@ -17,7 +35,7 @@ func TestStress_50kKeysScan(t *testing.T) {
 		t.Skip("skipping 50k keys stress test in short mode")
 	}
 
-	adp, _ := setupTestRedis(t)
+	adp := setupStressRedis(t)
 	ctx := context.Background()
 	client := adp.Client()
 

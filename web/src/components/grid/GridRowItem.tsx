@@ -10,6 +10,7 @@ export interface GridRowItemProps {
   measureElement?: (el: HTMLElement | null) => void;
   focusedCell: { rowIndex: number; colName: string } | null;
   editingCell: { rowIndex: number; colName: string } | null;
+  inlineValue?: string;
   numericColumnNames: string[];
   draftError?: string;
   onRowContextMenu: (e: MouseEvent, row: Record<string, any>) => void;
@@ -54,6 +55,9 @@ const areEqual = (
     prevIsEditing &&
     prevProps.editingCell?.colName !== nextProps.editingCell?.colName
   ) {
+    return false;
+  }
+  if (nextIsEditing && prevProps.inlineValue !== nextProps.inlineValue) {
     return false;
   }
 

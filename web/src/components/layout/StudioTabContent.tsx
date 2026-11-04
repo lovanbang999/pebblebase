@@ -1,6 +1,8 @@
 import React, { lazy, Suspense } from "react";
+import { AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
+import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/common";
 import { WorkspaceHome } from "@/components/common/WorkspaceHome";
 import { RedisCliConsole } from "@/components/redis/RedisCliConsole";
@@ -65,6 +67,7 @@ export interface StudioTabContentProps {
       };
       isLoading?: boolean;
       isFetching?: boolean;
+      error?: unknown;
       refetch?: () => Promise<unknown>;
     }
   >;
@@ -402,193 +405,219 @@ export function StudioTabContent({
                   />
                 )
               ) : (
-                <DataGrid
-                  connId={connection.id}
-                  workspaceTabId={tab.id}
-                  workspaceId={namedWorkspacesScopeId}
-                  workspaceConnections={scopedConnections}
-                  isTabActive={isSelectedTab}
-                  initialSelectedCell={state.selectedCell}
-                  dbType={connection.type}
-                  connectionName={connection.name}
-                  queryTimeMs={rowQuery?.data?.query_time_ms}
-                  table={tableSchema}
-                  rows={rowQuery?.data?.rows || []}
-                  totalCount={rowQuery?.data?.total_count || 0}
-                  isLoading={Boolean(
-                    rowQuery?.isLoading || rowQuery?.isFetching,
+                <div className="flex h-full w-full flex-col overflow-hidden">
+                  {Boolean(rowQuery?.error) && (
+                    <div
+                      role="alert"
+                      data-testid="table-fetch-error-banner"
+                      className="border-destructive/30 bg-destructive/10 text-destructive flex shrink-0 items-center justify-between border-b px-4 py-2 font-mono text-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="size-4 shrink-0" />
+                        <span>
+                          {rowQuery.error instanceof Error
+                            ? rowQuery.error.message
+                            : "Failed to fetch table records. Network connection dropped."}
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => rowQuery.refetch?.()}
+                        className="border-destructive/40 text-destructive hover:bg-destructive/20 h-6 cursor-pointer text-[11px]"
+                      >
+                        {t("common.retry", "Retry")}
+                      </Button>
+                    </div>
                   )}
-                  page={state.page || 0}
-                  pageSize={state.pageSize || DEFAULT_PAGE_SIZE}
-                  onPageChange={(page) => updateTabState(tab.id, { page })}
-                  onPageSizeChange={(pageSize) =>
-                    updateTabState(tab.id, { pageSize, page: 0 })
-                  }
-                  sortBy={state.sortBy || ""}
-                  sortDesc={Boolean(state.sortDesc)}
-                  onSortChange={(sortBy, sortDesc) =>
-                    updateTabState(tab.id, {
-                      sortBy,
-                      sortDesc,
-                      page: 0,
-                    })
-                  }
-                  filters={state.filters || []}
-                  onFiltersChange={(filters) =>
-                    updateTabState(tab.id, { filters, page: 0 })
-                  }
-                  onRefresh={async () => {
-                    await Promise.all([
-                      refreshConnectionTables(tab.connectionId),
-                      rowQuery?.refetch?.(),
-                    ]);
-                  }}
-                  onScrollPositionChange={(scrollLeft, scrollTop) =>
-                    updateTabState(tab.id, {
-                      scrollLeft,
-                      scrollTop,
-                    })
-                  }
-                  initialScrollPosition={{
-                    left: state.scrollLeft || 0,
-                    top: state.scrollTop || 0,
-                  }}
-                  isReadOnly={Boolean(connection.read_only)}
-                  onFindEverywhere={(value) => {
-                    findFocusedValues.current[tab.id] = value;
-                    openFindEverywhere(value ?? "");
-                  }}
-                  onFocusedCellValueChange={(value) => {
-                    findFocusedValues.current[tab.id] = value;
-                  }}
-                  onFocusedCellLocationChange={(cell) => {
-                    if (cell) {
-                      selectedCells.current[tab.id] = cell;
-                      setNavigationHistory((history) =>
-                        updateCurrentNavigationCell(history, tab.id, cell),
-                      );
+                  <DataGrid
+                    connId={connection.id}
+                    workspaceTabId={tab.id}
+                    workspaceId={namedWorkspacesScopeId}
+                    workspaceConnections={scopedConnections}
+                    isTabActive={isSelectedTab}
+                    initialSelectedCell={state.selectedCell}
+                    dbType={connection.type}
+                    connectionName={connection.name}
+                    queryTimeMs={rowQuery?.data?.query_time_ms}
+                    table={tableSchema}
+                    rows={rowQuery?.data?.rows || []}
+                    totalCount={rowQuery?.data?.total_count || 0}
+                    isLoading={Boolean(
+                      rowQuery?.isLoading || rowQuery?.isFetching,
+                    )}
+                    page={state.page || 0}
+                    pageSize={state.pageSize || DEFAULT_PAGE_SIZE}
+                    onPageChange={(page) => updateTabState(tab.id, { page })}
+                    onPageSizeChange={(pageSize) =>
+                      updateTabState(tab.id, { pageSize, page: 0 })
                     }
-                  }}
-                  onOpenQueryConsole={(query, title) =>
-                    openQueryTab(tab.connectionId, query, title)
-                  }
-                  onAddRow={() =>
-                    onOpenRowModal(tab.connectionId, tableName, tab.id, null)
-                  }
-                  onEditRow={(row) =>
-                    onOpenRowModal(tab.connectionId, tableName, tab.id, row)
-                  }
-                  onDuplicateRow={(row) =>
-                    onOpenRowModal(
-                      tab.connectionId,
-                      tableName,
-                      tab.id,
-                      row,
-                      true,
-                    )
-                  }
-                  onCommitRow={async (original, values) => {
-                    await handleSaveRow(
-                      tab.connectionId,
-                      tableName,
-                      original,
-                      values,
-                    );
-                  }}
-                  onCommitDeleteRow={async (row) => {
-                    await handleDeleteRow(tab.connectionId, tableName, row);
-                  }}
-                  onNavigateRelation={(targetTable, targetColumn, value) => {
-                    const targetTableSchema = tablesByConnection[
-                      tab.connectionId
-                    ]?.find((candidate) => candidate.name === targetTable);
-                    const effectiveSchemaName =
-                      targetTableSchema?.schema_name || tab.schemaName;
-                    openTableTab(
-                      tab.connectionId,
-                      targetTable,
-                      false,
-                      {
-                        filters: [
-                          {
-                            column: targetColumn,
-                            operator: "eq",
-                            value: String(value),
-                          },
-                        ],
+                    sortBy={state.sortBy || ""}
+                    sortDesc={Boolean(state.sortDesc)}
+                    onSortChange={(sortBy, sortDesc) =>
+                      updateTabState(tab.id, {
+                        sortBy,
+                        sortDesc,
                         page: 0,
-                      },
-                      effectiveSchemaName,
-                    );
-                  }}
-                  onNavigateReference={(
-                    connectionId,
-                    targetTable,
-                    targetColumn,
-                    value,
-                    rowIdentity,
-                    targetFilters,
-                  ) => {
-                    const sourceId = activeTabRef.current?.id;
-                    const effectiveConnId = connectionId || tab.connectionId;
-                    const targetConnection = connections.find(
-                      (candidate) => candidate.id === effectiveConnId,
-                    );
-                    const targetTableSchema = tablesByConnection[
-                      effectiveConnId
-                    ]?.find((candidate) => candidate.name === targetTable);
-                    const effectiveSchemaName =
-                      targetTableSchema?.schema_name || tab.schemaName;
-                    const targetId =
-                      targetConnection?.type === "redis"
-                        ? openTableTab(effectiveConnId, "Redis keys", false, {
-                            redisSearchKey: String(value ?? ""),
-                          })
-                        : openTableTab(
-                            effectiveConnId,
-                            targetTable,
-                            false,
+                      })
+                    }
+                    filters={state.filters || []}
+                    onFiltersChange={(filters) =>
+                      updateTabState(tab.id, { filters, page: 0 })
+                    }
+                    onRefresh={async () => {
+                      await Promise.all([
+                        refreshConnectionTables(tab.connectionId),
+                        rowQuery?.refetch?.(),
+                      ]);
+                    }}
+                    onScrollPositionChange={(scrollLeft, scrollTop) =>
+                      updateTabState(tab.id, {
+                        scrollLeft,
+                        scrollTop,
+                      })
+                    }
+                    initialScrollPosition={{
+                      left: state.scrollLeft || 0,
+                      top: state.scrollTop || 0,
+                    }}
+                    isReadOnly={Boolean(connection.read_only)}
+                    onFindEverywhere={(value) => {
+                      findFocusedValues.current[tab.id] = value;
+                      openFindEverywhere(value ?? "");
+                    }}
+                    onFocusedCellValueChange={(value) => {
+                      findFocusedValues.current[tab.id] = value;
+                    }}
+                    onFocusedCellLocationChange={(cell) => {
+                      if (cell) {
+                        selectedCells.current[tab.id] = cell;
+                        setNavigationHistory((history) =>
+                          updateCurrentNavigationCell(history, tab.id, cell),
+                        );
+                      }
+                    }}
+                    onOpenQueryConsole={(query, title) =>
+                      openQueryTab(tab.connectionId, query, title)
+                    }
+                    onAddRow={() =>
+                      onOpenRowModal(tab.connectionId, tableName, tab.id, null)
+                    }
+                    onEditRow={(row) =>
+                      onOpenRowModal(tab.connectionId, tableName, tab.id, row)
+                    }
+                    onDuplicateRow={(row) =>
+                      onOpenRowModal(
+                        tab.connectionId,
+                        tableName,
+                        tab.id,
+                        row,
+                        true,
+                      )
+                    }
+                    onCommitRow={async (original, values) => {
+                      await handleSaveRow(
+                        tab.connectionId,
+                        tableName,
+                        original,
+                        values,
+                      );
+                    }}
+                    onCommitDeleteRow={async (row) => {
+                      await handleDeleteRow(tab.connectionId, tableName, row);
+                    }}
+                    onNavigateRelation={(targetTable, targetColumn, value) => {
+                      const targetTableSchema = tablesByConnection[
+                        tab.connectionId
+                      ]?.find((candidate) => candidate.name === targetTable);
+                      const effectiveSchemaName =
+                        targetTableSchema?.schema_name || tab.schemaName;
+                      openTableTab(
+                        tab.connectionId,
+                        targetTable,
+                        false,
+                        {
+                          filters: [
                             {
-                              filters: targetFilters?.length
-                                ? targetFilters
-                                : [
-                                    {
-                                      column: targetColumn,
-                                      operator: "eq",
-                                      value: String(value),
-                                    },
-                                  ],
-                              page: 0,
+                              column: targetColumn,
+                              operator: "eq",
+                              value: String(value),
+                            },
+                          ],
+                          page: 0,
+                        },
+                        effectiveSchemaName,
+                      );
+                    }}
+                    onNavigateReference={(
+                      connectionId,
+                      targetTable,
+                      targetColumn,
+                      value,
+                      rowIdentity,
+                      targetFilters,
+                    ) => {
+                      const sourceId = activeTabRef.current?.id;
+                      const effectiveConnId = connectionId || tab.connectionId;
+                      const targetConnection = connections.find(
+                        (candidate) => candidate.id === effectiveConnId,
+                      );
+                      const targetTableSchema = tablesByConnection[
+                        effectiveConnId
+                      ]?.find((candidate) => candidate.name === targetTable);
+                      const effectiveSchemaName =
+                        targetTableSchema?.schema_name || tab.schemaName;
+                      const targetId =
+                        targetConnection?.type === "redis"
+                          ? openTableTab(effectiveConnId, "Redis keys", false, {
+                              redisSearchKey: String(value ?? ""),
+                            })
+                          : openTableTab(
+                              effectiveConnId,
+                              targetTable,
+                              false,
+                              {
+                                filters: targetFilters?.length
+                                  ? targetFilters
+                                  : [
+                                      {
+                                        column: targetColumn,
+                                        operator: "eq",
+                                        value: String(value),
+                                      },
+                                    ],
+                                page: 0,
+                                selectedCell: {
+                                  column: targetColumn,
+                                  rowIdentity:
+                                    rowIdentity ?? JSON.stringify([value]),
+                                },
+                              },
+                              effectiveSchemaName,
+                            );
+                      if (targetId)
+                        setNavigationHistory((history) => {
+                          return pushReferenceNavigation(
+                            history,
+                            {
+                              tabId: sourceId ?? targetId,
+                              selectedCell: sourceId
+                                ? selectedCells.current[sourceId]
+                                : undefined,
+                            },
+                            {
+                              tabId: targetId,
                               selectedCell: {
                                 column: targetColumn,
                                 rowIdentity:
                                   rowIdentity ?? JSON.stringify([value]),
                               },
                             },
-                            effectiveSchemaName,
                           );
-                    if (targetId)
-                      setNavigationHistory((history) => {
-                        return pushReferenceNavigation(
-                          history,
-                          {
-                            tabId: sourceId ?? targetId,
-                            selectedCell: sourceId
-                              ? selectedCells.current[sourceId]
-                              : undefined,
-                          },
-                          {
-                            tabId: targetId,
-                            selectedCell: {
-                              column: targetColumn,
-                              rowIdentity:
-                                rowIdentity ?? JSON.stringify([value]),
-                            },
-                          },
-                        );
-                      });
-                  }}
-                />
+                        });
+                    }}
+                  />
+                </div>
               )}
             </div>
           );

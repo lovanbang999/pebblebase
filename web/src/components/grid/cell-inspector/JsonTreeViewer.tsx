@@ -309,7 +309,10 @@ export function JsonTreeViewer({
   };
 
   return (
-    <div className="bg-background flex h-full flex-col overflow-hidden">
+    <div
+      data-testid="json-tree-viewer"
+      className="bg-background flex h-full flex-col overflow-hidden"
+    >
       {/* Sub-toolbar */}
       <div className="border-border bg-card/70 dark:border-border dark:bg-card/50 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 text-xs">
         <div className="flex items-center gap-1.5">

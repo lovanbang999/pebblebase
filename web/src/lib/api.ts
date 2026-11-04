@@ -282,6 +282,7 @@ export async function deleteRow(
 export async function executeRawQuery(
   connId: string,
   query: string,
+  signal?: AbortSignal,
 ): Promise<RawQueryResult> {
   const res = await fetch(
     `${BASE_URL}/connections/${encodeURIComponent(connId)}/query`,
@@ -289,6 +290,7 @@ export async function executeRawQuery(
       method: "POST",
       headers: { "Content-Type": "application/json", ...getAuthHeaders() },
       body: JSON.stringify({ query }),
+      signal,
     },
   );
   return handleResponse<RawQueryResult>(res);
