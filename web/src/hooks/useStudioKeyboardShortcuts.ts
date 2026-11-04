@@ -1,7 +1,12 @@
 import { useEffect } from "react";
 import type { NamedWorkspace } from "@/lib/namedWorkspaces";
 import type { StudioTab } from "@/lib/types";
-import { isDesktopApp, quitDesktopApp, toggleFullscreen } from "@/lib/platform";
+import {
+  isDesktopApp,
+  quitDesktopApp,
+  toggleFullscreen,
+  evaluateDesktopShortcut,
+} from "@/lib/platform";
 import { useFontSizeStore } from "@/lib/fontSizeStore";
 
 type MutableRef<T> = { current: T };
@@ -131,13 +136,28 @@ export function useStudioKeyboardShortcuts({
         return;
       }
 
-      if (
-        (event.metaKey || event.ctrlKey) &&
-        event.key.toLowerCase() === "w" &&
-        activeTab
-      ) {
+      // Desktop shortcut suppression & tab close protection (Ctrl+R, Ctrl+W, Ctrl+Shift+I, F12)
+      const isDesktop = isDesktopApp();
+      const isDebug = import.meta.env.DEV || Boolean((window as any).__DEBUG__);
+      const suppressionAction = evaluateDesktopShortcut(event, {
+        isDesktop,
+        isDebug,
+        hasActiveTab: Boolean(activeTab),
+      });
+
+      if (suppressionAction === "reload" || suppressionAction === "devtools") {
         event.preventDefault();
-        closeTab(activeTab.id);
+        return;
+      }
+      if (suppressionAction === "suppressClose") {
+        event.preventDefault();
+        return;
+      }
+      if (suppressionAction === "closeTab") {
+        event.preventDefault();
+        if (activeTab) {
+          closeTab(activeTab.id);
+        }
         return;
       }
 

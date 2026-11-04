@@ -58,7 +58,11 @@ import {
   stepNavigation,
   type NavigationHistory,
 } from "@/lib/navigationHistory";
-import { ErrorBanner, ErrorBoundary } from "@/components/common";
+import {
+  ErrorBanner,
+  ErrorBoundary,
+  OfflineRecoveryBanner,
+} from "@/components/common";
 import { AuthGuard } from "@/components/auth";
 import {
   getRecentItems,
@@ -1307,6 +1311,11 @@ function PebblebaseStudio() {
         onSelectConnection={handleSelectConnectionWithRecent}
         onOpenCommandPalette={handleOpenCommandPalette}
         onCommand={handleWorkspaceCommand}
+      />
+      <OfflineRecoveryBanner
+        onReconnect={async () => {
+          await queryClient.invalidateQueries();
+        }}
       />
       <SidebarProvider
         defaultOpen={true}

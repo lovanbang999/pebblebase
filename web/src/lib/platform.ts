@@ -292,3 +292,51 @@ export function getShortcutTooltip(
   }
   return "";
 }
+
+export interface ShortcutSuppressionContext {
+  isDesktop: boolean;
+  isDebug: boolean;
+  hasActiveTab: boolean;
+}
+
+export type SuppressedShortcutAction =
+  "reload" | "devtools" | "closeTab" | "suppressClose" | null;
+
+/**
+ * Evaluates whether a keyboard shortcut should be suppressed or handled specially
+ * to prevent disruptive browser defaults (such as closing the window or reloading in desktop builds).
+ */
+export function evaluateDesktopShortcut(
+  event: Pick<
+    KeyboardEvent,
+    "ctrlKey" | "metaKey" | "shiftKey" | "altKey" | "key"
+  >,
+  ctx: ShortcutSuppressionContext,
+): SuppressedShortcutAction {
+  const mod = event.ctrlKey || event.metaKey;
+  const key = event.key.toLowerCase();
+
+  // 1. Close tab / window protection (Ctrl+W / Cmd+W)
+  if (mod && !event.shiftKey && !event.altKey && key === "w") {
+    return ctx.hasActiveTab ? "closeTab" : "suppressClose";
+  }
+
+  // 2. Production desktop specific overrides
+  if (ctx.isDesktop && !ctx.isDebug) {
+    // Suppress reload (Ctrl+R / Cmd+R)
+    if (mod && !event.shiftKey && !event.altKey && key === "r") {
+      return "reload";
+    }
+
+    // Suppress DevTools inspector (Ctrl+Shift+I / Cmd+Option+I / F12)
+    if (
+      (mod && event.shiftKey && key === "i") ||
+      (event.metaKey && event.altKey && key === "i") ||
+      event.key === "F12"
+    ) {
+      return "devtools";
+    }
+  }
+
+  return null;
+}

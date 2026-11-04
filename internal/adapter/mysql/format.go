@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // formatMySQLValue normalizes scanned MySQL row values into clean JSON-serializable types.
@@ -103,6 +104,15 @@ func normalizeMutationValue(val any) any {
 			cleanHex := strings.ReplaceAll(trimmed, "-", "")
 			if decoded, err := hex.DecodeString(cleanHex); err == nil && len(decoded) == 16 {
 				return decoded
+			}
+		}
+		// ISO 8601 / RFC3339 datetime: e.g. 2026-11-03T15:30:00Z -> parse to time.Time
+		if strings.Contains(trimmed, "T") && (strings.HasSuffix(trimmed, "Z") || strings.Contains(trimmed, "+") || strings.Contains(trimmed, "-")) {
+			if parsed, err := time.Parse(time.RFC3339Nano, trimmed); err == nil {
+				return parsed
+			}
+			if parsed, err := time.Parse(time.RFC3339, trimmed); err == nil {
+				return parsed
 			}
 		}
 	}

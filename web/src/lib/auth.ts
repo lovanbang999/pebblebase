@@ -61,11 +61,22 @@ const storage = {
   },
 };
 
+function getInitialToken(): string | null {
+  try {
+    const raw = storage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
-      token: null,
+      token: getInitialToken(),
       isDefaultPassword: false,
       rememberMe: shouldRememberAuth(),
       isInitialized: false,

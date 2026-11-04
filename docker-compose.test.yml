@@ -1,0 +1,95 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pebblebase-test-postgres
+    environment:
+      POSTGRES_USER: pebble
+      POSTGRES_PASSWORD: pebble
+      POSTGRES_DB: pebble_test
+    ports:
+      - "54329:5432"
+    volumes:
+      - ./testdata/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pebble -d pebble_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  mysql:
+    image: mysql:8.0
+    container_name: pebblebase-test-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: pebble
+      MYSQL_DATABASE: pebble_test
+      MYSQL_USER: pebble
+      MYSQL_PASSWORD: pebble
+    ports:
+      - "33069:3306"
+    volumes:
+      - ./testdata/seed-mysql.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "pebble", "-ppebble"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  mongodb:
+    image: mongo:7.0
+    container_name: pebblebase-test-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: pebble
+      MONGO_INITDB_ROOT_PASSWORD: pebble
+      MONGO_INITDB_DATABASE: pebble_test
+    ports:
+      - "27019:27017"
+    volumes:
+      - ./testdata/seed-mongo.js:/docker-entrypoint-initdb.d/seed.js:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  redis:
+    image: redis:7-alpine
+    container_name: pebblebase-test-redis
+    ports:
+      - "46379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24-alpine
+    container_name: pebblebase-test-clickhouse
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: pebble
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    ports:
+      - "48123:8123"
+      - "49000:9000"
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--user", "default", "--password", "pebble", "--query", "SELECT 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: pebblebase-test-mssql
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "PebblePass123!"
+      MSSQL_PID: "Developer"
+    ports:
+      - "41433:1433"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P PebblePass123! -C -Q 'SELECT 1' 2>/dev/null || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P PebblePass123! -Q 'SELECT 1' 2>/dev/null || exit 1"]
+      interval: 4s
+      timeout: 4s
+      retries: 25

@@ -1,7 +1,9 @@
 package clickhouse
 
 import (
+	"context"
 	"net"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -178,5 +180,89 @@ func TestIsMutationSQL(t *testing.T) {
 		if isMutationSQL(strings.ToUpper(q)) {
 			t.Errorf("expected isMutationSQL(%q) = false", q)
 		}
+	}
+}
+
+// TestClickHouse_LiveIntegration tests live connection, schema introspection,
+// batch row insertion, and high-throughput analytical aggregate queries against ClickHouse.
+func TestClickHouse_LiveIntegration(t *testing.T) {
+	dsn := os.Getenv("PEBBLEBASE_TEST_CLICKHOUSE_DSN")
+	if dsn == "" {
+		t.Skip("PEBBLEBASE_TEST_CLICKHOUSE_DSN not set — skipping ClickHouse live integration test")
+	}
+
+	ctx := context.Background()
+	a, err := New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("ClickHouse New failed: %v", err)
+	}
+	defer a.Close()
+
+	if err := a.Ping(ctx); err != nil {
+		t.Fatalf("ClickHouse Ping failed: %v", err)
+	}
+
+	setupSQL := `
+	CREATE TABLE IF NOT EXISTS test_clickhouse_analytics (
+		event_id UInt64,
+		user_id UInt64,
+		action String,
+		duration_ms Float64,
+		event_date Date DEFAULT today(),
+		created_at DateTime DEFAULT now()
+	) ENGINE = MergeTree()
+	ORDER BY (event_date, event_id);
+	`
+	if _, err := a.ExecuteRaw(ctx, setupSQL); err != nil {
+		t.Fatalf("setup ClickHouse table failed: %v", err)
+	}
+
+	t.Cleanup(func() {
+		_, _ = a.ExecuteRaw(context.Background(), "DROP TABLE IF EXISTS test_clickhouse_analytics;")
+	})
+
+	// 1. High-throughput bulk insert
+	records := [][]any{
+		{uint64(1), uint64(101), "click", 45.2},
+		{uint64(2), uint64(101), "view", 120.0},
+		{uint64(3), uint64(102), "click", 30.5},
+		{uint64(4), uint64(103), "purchase", 540.8},
+		{uint64(5), uint64(102), "view", 95.0},
+	}
+	_, err = a.BulkInsert(ctx, "test_clickhouse_analytics", []string{"event_id", "user_id", "action", "duration_ms"}, records)
+	if err != nil {
+		t.Fatalf("ClickHouse BulkInsert failed: %v", err)
+	}
+
+	// 2. High-throughput analytical aggregate query
+	aggQuery := `
+	SELECT action, count() AS total_events, sum(duration_ms) AS total_duration, avg(duration_ms) AS avg_duration
+	FROM test_clickhouse_analytics
+	GROUP BY action
+	ORDER BY total_events DESC;
+	`
+	aggRes, err := a.ExecuteRaw(ctx, aggQuery)
+	if err != nil {
+		t.Fatalf("analytical aggregate query failed: %v", err)
+	}
+
+	if len(aggRes.Rows) == 0 {
+		t.Fatal("expected aggregate results, got 0 rows")
+	}
+
+	// 3. Schema Introspect
+	tables, err := a.Introspect(ctx)
+	if err != nil {
+		t.Fatalf("ClickHouse Introspect failed: %v", err)
+	}
+	found := false
+	for _, tbl := range tables {
+		if tbl.Name == "test_clickhouse_analytics" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected table test_clickhouse_analytics in Introspect results")
 	}
 }

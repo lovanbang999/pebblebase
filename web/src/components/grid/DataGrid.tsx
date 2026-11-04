@@ -33,6 +33,7 @@ import {
   RotateCcw,
   Check,
   ArrowUpRight,
+  Code2,
 } from "lucide-react";
 import type {
   Connection,
@@ -101,6 +102,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "cn";
 import { ReferenceCell } from "./ReferenceCell";
+import { formatByteSize } from "./cell-inspector/cellContentTypeDetector";
 import { invalidateReferenceCache } from "@/lib/referenceCache";
 import { ReferencedByMenu } from "./ReferencedByMenu";
 import {
@@ -767,6 +769,7 @@ export function DataGrid({
     colName: string;
   } | null>(null);
   const [inlineValue, setInlineValue] = useState<string>("");
+  const isCancellingCellEditRef = useRef(false);
 
   const startEditingCell = useCallback(
     (row: Record<string, any>, colName: string, rowIndex: number) => {
@@ -774,6 +777,7 @@ export function DataGrid({
       const colSchema = table.columns.find((c) => c.name === colName);
       if (colSchema?.is_primary_key) return;
 
+      isCancellingCellEditRef.current = false;
       setFocusedCell({ rowIndex, colName });
       setEditingCell({ rowIndex, colName });
       const currentVal = row[colName];
@@ -1616,13 +1620,26 @@ export function DataGrid({
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
                         e.preventDefault();
-                        saveCellEdit(row, col.name);
+                        e.stopPropagation();
+                        saveCellEdit(
+                          row,
+                          col.name,
+                          (e.target as HTMLInputElement).value,
+                        );
                       } else if (e.key === "Escape") {
                         e.preventDefault();
+                        e.stopPropagation();
+                        isCancellingCellEditRef.current = true;
                         setEditingCell(null);
                       }
                     }}
-                    onBlur={() => saveCellEdit(row, col.name)}
+                    onBlur={(e) => {
+                      if (isCancellingCellEditRef.current) {
+                        isCancellingCellEditRef.current = false;
+                        return;
+                      }
+                      saveCellEdit(row, col.name, e.target.value);
+                    }}
                     className="h-6 font-mono text-xs"
                   />
                 </div>
@@ -1664,13 +1681,26 @@ export function DataGrid({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-                      saveCellEdit(row, col.name);
+                      e.stopPropagation();
+                      saveCellEdit(
+                        row,
+                        col.name,
+                        (e.target as HTMLInputElement).value,
+                      );
                     } else if (e.key === "Escape") {
                       e.preventDefault();
+                      e.stopPropagation();
+                      isCancellingCellEditRef.current = true;
                       setEditingCell(null);
                     }
                   }}
-                  onBlur={() => saveCellEdit(row, col.name)}
+                  onBlur={(e) => {
+                    if (isCancellingCellEditRef.current) {
+                      isCancellingCellEditRef.current = false;
+                      return;
+                    }
+                    saveCellEdit(row, col.name, e.target.value);
+                  }}
                   className="h-6 font-mono text-xs"
                 />
               </div>
@@ -1694,6 +1724,50 @@ export function DataGrid({
                   NULL
                 </span>
               );
+            }
+
+            // Large cell threshold (>= 500 KB) -> Render stylized summary badge "{... X.X MB}"
+            const isLargeString =
+              typeof val === "string" && val.length >= 500 * 1024;
+            const isLargeObject = typeof val === "object" && val !== null;
+
+            if (isLargeString || isLargeObject) {
+              const byteSize = isLargeString
+                ? (val as string).length
+                : JSON.stringify(val).length;
+              if (byteSize >= 500 * 1024) {
+                return (
+                  <button
+                    type="button"
+                    data-testid="large-cell-badge"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const rIndex = displayedRows.indexOf(
+                        row as Record<string, any>,
+                      );
+                      if (rIndex >= 0) {
+                        setFocusedCell({ rowIndex: rIndex, colName: col.name });
+                      }
+                      setCellDrawerState({
+                        isOpen: true,
+                        columnName: col.name,
+                        columnType: col.type,
+                        cellValue: val,
+                        row,
+                      });
+                      setValueEditorOpen(true);
+                    }}
+                    className="border-warning/40 bg-warning/15 text-warning hover:bg-warning/25 dark:border-warning/50 dark:bg-warning/25 dark:text-warning inline-flex cursor-pointer items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] font-semibold shadow-2xs transition-colors"
+                    title={t(
+                      "grid.largeCell.inspect",
+                      "Click to inspect large payload",
+                    )}
+                  >
+                    <Code2 className="size-3" />
+                    <span>{`{... ${formatByteSize(byteSize)}}`}</span>
+                  </button>
+                );
+              }
             }
 
             const relation =
@@ -2174,6 +2248,7 @@ export function DataGrid({
     async (
       row: Record<string, any>,
       colName: string,
+      explicitVal?: unknown,
       moveFocusDown = false,
     ) => {
       if (!editingCell) {
@@ -2190,24 +2265,28 @@ export function DataGrid({
       }
 
       const colSchema = table.columns.find((c) => c.name === colName);
-      let parsedVal: any = inlineValue;
+      const rawVal = explicitVal !== undefined ? explicitVal : inlineValue;
+      let parsedVal: any = rawVal;
 
       if (colSchema) {
-        if (inlineValue === "" && colSchema.nullable) {
+        if (rawVal === "" && colSchema.nullable) {
           parsedVal = null;
         } else if (colSchema.type === "int") {
-          const p = parseInt(inlineValue, 10);
-          parsedVal = isNaN(p) ? inlineValue : p;
+          const p =
+            typeof rawVal === "number" ? rawVal : parseInt(String(rawVal), 10);
+          parsedVal = isNaN(p) ? rawVal : p;
         } else if (colSchema.type === "float") {
-          const p = parseFloat(inlineValue);
-          parsedVal = isNaN(p) ? inlineValue : p;
+          const p =
+            typeof rawVal === "number" ? rawVal : parseFloat(String(rawVal));
+          parsedVal = isNaN(p) ? rawVal : p;
         } else if (colSchema.type === "bool") {
-          parsedVal = inlineValue === "true";
+          parsedVal = rawVal === true || rawVal === "true";
         } else if (colSchema.type === "json") {
           try {
-            parsedVal = JSON.parse(inlineValue);
+            parsedVal =
+              typeof rawVal === "string" ? JSON.parse(rawVal) : rawVal;
           } catch {
-            parsedVal = inlineValue;
+            parsedVal = rawVal;
           }
         }
       }
@@ -2930,6 +3009,11 @@ export function DataGrid({
                               measureElement={rowVirtualizer.measureElement}
                               focusedCell={focusedCell}
                               editingCell={editingCell}
+                              inlineValue={
+                                editingCell?.rowIndex === virtualRow.index
+                                  ? inlineValue
+                                  : undefined
+                              }
                               numericColumnNames={numericColumnNames}
                               draftError={
                                 draftErrors[row.original._pb_draft_id]

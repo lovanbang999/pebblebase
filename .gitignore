@@ -2,6 +2,7 @@
 # Go
 # =============================================================================
 /pebblebase
+/desktop
 /bin/
 *.exe
 *.exe~
@@ -20,6 +21,9 @@ web/dist/*
 !web/dist/.gitkeep
 !web/dist/index.html
 web/.oxlintrc.cache
+web/test-results/
+web/playwright-report/
+web/e2e/.auth/
 .vite/
 npm-debug.log*
 yarn-debug.log*

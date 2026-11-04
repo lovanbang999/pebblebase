@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -13,6 +15,101 @@ import (
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+const (
+	defaultWindowWidth  = 1366
+	defaultWindowHeight = 850
+	minWindowWidth      = 1024
+	minWindowHeight     = 640
+)
+
+// WindowState holds persisted geometry and display state of the desktop application window.
+type WindowState struct {
+	X           int  `json:"x"`
+	Y           int  `json:"y"`
+	Width       int  `json:"width"`
+	Height      int  `json:"height"`
+	IsMaximized bool `json:"is_maximized"`
+}
+
+// DefaultWindowState returns standard fallback geometry.
+func DefaultWindowState() WindowState {
+	return WindowState{
+		X:           -1, // -1 signals to center window on primary display
+		Y:           -1,
+		Width:       defaultWindowWidth,
+		Height:      defaultWindowHeight,
+		IsMaximized: true,
+	}
+}
+
+// Clamp validates geometry against minimum bounds and resets off-screen coordinates.
+func (ws *WindowState) Clamp() {
+	if ws.Width < minWindowWidth {
+		ws.Width = minWindowWidth
+	}
+	if ws.Height < minWindowHeight {
+		ws.Height = minWindowHeight
+	}
+	// If X or Y are out of reasonable bounds (e.g., negative off-screen), reset to center
+	if ws.X < -50 || ws.Y < -50 {
+		ws.X = -1
+		ws.Y = -1
+	}
+}
+
+// WindowStateFilePath returns the path to window_state.json in dataDir.
+func WindowStateFilePath(dataDir string) string {
+	return filepath.Join(dataDir, "window_state.json")
+}
+
+// LoadWindowState reads the persisted window state from dataDir, or returns default.
+func LoadWindowState(dataDir string) WindowState {
+	def := DefaultWindowState()
+	if dataDir == "" {
+		return def
+	}
+
+	filePath := WindowStateFilePath(dataDir)
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return def
+	}
+
+	var state WindowState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return def
+	}
+
+	state.Clamp()
+	return state
+}
+
+// SaveWindowState writes window state to dataDir atomically.
+func SaveWindowState(dataDir string, state WindowState) error {
+	if dataDir == "" {
+		return errors.New("empty dataDir")
+	}
+
+	state.Clamp()
+
+	if err := os.MkdirAll(dataDir, 0755); err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	filePath := WindowStateFilePath(dataDir)
+	tmpPath := filePath + ".tmp"
+	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpPath, filePath)
+}
 
 // App struct holds desktop application state and lifecycle handlers.
 type App struct {
@@ -87,14 +184,49 @@ func (a *App) startup(ctx context.Context) {
 	}()
 }
 
+// SaveCurrentWindowMetrics captures live window coordinates and size from Wails runtime and saves to disk.
+func (a *App) SaveCurrentWindowMetrics(ctx context.Context) {
+	if a.inst != nil && a.inst.DataDir != "" {
+		x, y := runtime.WindowGetPosition(ctx)
+		w, h := runtime.WindowGetSize(ctx)
+		maximized := runtime.WindowIsMaximised(ctx)
+		_ = SaveWindowState(a.inst.DataDir, WindowState{
+			X:           x,
+			Y:           y,
+			Width:       w,
+			Height:      h,
+			IsMaximized: maximized,
+		})
+	}
+}
+
 // shutdown is called at application termination.
 func (a *App) shutdown(ctx context.Context) {
+	if a.ctx != nil {
+		a.SaveCurrentWindowMetrics(a.ctx)
+	}
 	if a.httpServer != nil {
 		a.httpServer.Shutdown(ctx)
 	}
 	if a.inst != nil {
 		a.inst.Close()
 	}
+}
+
+// GetWindowState returns the current persisted window state.
+func (a *App) GetWindowState() WindowState {
+	if a.inst != nil && a.inst.DataDir != "" {
+		return LoadWindowState(a.inst.DataDir)
+	}
+	return DefaultWindowState()
+}
+
+// SaveWindowState updates the window state on disk.
+func (a *App) SaveWindowState(state WindowState) error {
+	if a.inst != nil && a.inst.DataDir != "" {
+		return SaveWindowState(a.inst.DataDir, state)
+	}
+	return nil
 }
 
 // GetServerURL returns the loopback URL for the frontend if needed.

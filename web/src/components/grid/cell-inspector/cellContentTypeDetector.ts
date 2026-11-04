@@ -22,7 +22,7 @@ export const LARGE_PAYLOAD_THRESHOLD_BYTES = 500 * 1024; // 500 KB
 export function formatByteSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 /**
@@ -59,8 +59,8 @@ export function analyzeCellContent(value: unknown): CellContentAnalysis {
       (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
       (trimmed.startsWith("[") && trimmed.endsWith("]"))
     ) {
-      // If oversized, skip auto JSON parse unless user explicitly requests
-      if (!isLargePayload) {
+      // Parse JSON payload (up to 10MB) so interactive tree viewer can render
+      if (byteSize < 10 * 1024 * 1024) {
         try {
           parsedJson = JSON.parse(trimmed);
         } catch (e: any) {

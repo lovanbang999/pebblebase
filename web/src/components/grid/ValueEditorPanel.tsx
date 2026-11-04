@@ -92,13 +92,14 @@ export function ValueEditorPanel({
   };
   const preview =
     analysis.type === "json"
-      ? (() => {
+      ? (analysis.parsedJson ??
+        (() => {
           try {
             return JSON.parse(draft);
           } catch {
             return null;
           }
-        })()
+        })())
       : null;
 
   return (

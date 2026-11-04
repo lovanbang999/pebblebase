@@ -66,7 +66,12 @@ export function useConsoleTransactions(
     [expired, transition],
   );
   const execute = useCallback(
-    async (tab: string, statement: string, write: boolean) => {
+    async (
+      tab: string,
+      statement: string,
+      write: boolean,
+      signal?: AbortSignal,
+    ) => {
       let state =
         current.current[tab] ?? getDefaultConsoleTransaction(connection);
       if (state.aborted)
@@ -98,7 +103,7 @@ export function useConsoleTransactions(
         }
         const result = state.sessionId
           ? await executeConsoleSession(state.sessionId, statement)
-          : await executeRawQuery(connection.id, statement);
+          : await executeRawQuery(connection.id, statement, signal);
         if (state.sessionId)
           transition(tab, { type: "success", write, now: Date.now() });
         return result;

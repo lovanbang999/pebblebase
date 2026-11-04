@@ -2,6 +2,8 @@ package redis
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -198,5 +200,36 @@ func TestNew_ConnectionFailureTimeout(t *testing.T) {
 	}
 	if elapsed > 6*time.Second {
 		t.Errorf("connection attempt took too long: %v (expected <= 5s)", elapsed)
+	}
+}
+
+// TestRedis_LiveContainerConnection verifies live connection to a Redis 7 instance.
+func TestRedis_LiveContainerConnection(t *testing.T) {
+	dsn := os.Getenv("PEBBLEBASE_TEST_REDIS_DSN")
+	if dsn == "" {
+		t.Skip("PEBBLEBASE_TEST_REDIS_DSN not set — skipping real Redis container test")
+	}
+
+	ctx := context.Background()
+	adp, err := New(ctx, dsn)
+	if err != nil {
+		t.Fatalf("Redis New failed: %v", err)
+	}
+	defer adp.Close()
+
+	if err := adp.Ping(ctx); err != nil {
+		t.Fatalf("Redis Ping failed: %v", err)
+	}
+
+	client := adp.Client()
+	testKey := fmt.Sprintf("pb_test:%d", time.Now().UnixNano())
+	if err := client.Set(ctx, testKey, "hello_redis7", 10*time.Second).Err(); err != nil {
+		t.Fatalf("failed to set test key in Redis 7: %v", err)
+	}
+	defer client.Del(ctx, testKey)
+
+	val, err := client.Get(ctx, testKey).Result()
+	if err != nil || val != "hello_redis7" {
+		t.Fatalf("unexpected value from Redis 7: %v (err=%v)", val, err)
 	}
 }

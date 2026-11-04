@@ -24,20 +24,33 @@ func main() {
 		log.Printf("warning: frontend assets not loaded: %v", err)
 	}
 
+	windowState := app.GetWindowState()
+	startState := options.Normal
+	if windowState.IsMaximized {
+		startState = options.Maximised
+	}
+
 	err = wails.Run(&options.App{
 		Title:            "Pebblebase Studio",
-		Width:            1366,
-		Height:           850,
+		Width:            windowState.Width,
+		Height:           windowState.Height,
 		MinWidth:         1024,
 		MinHeight:        640,
-		WindowStartState: options.Maximised,
+		WindowStartState: startState,
 		Frameless:        true,
 		StartHidden:      true,
 		OnDomReady: func(ctx context.Context) {
+			if !windowState.IsMaximized && windowState.X >= 0 && windowState.Y >= 0 {
+				runtime.WindowSetPosition(ctx, windowState.X, windowState.Y)
+			}
 			// Ensure WebKitGTK compositor has flushed the dark splash frame to the window buffer
 			time.Sleep(120 * time.Millisecond)
 			runtime.WindowShow(ctx)
 			disableLinuxPinchZoom()
+		},
+		OnBeforeClose: func(ctx context.Context) bool {
+			app.SaveCurrentWindowMetrics(ctx)
+			return false
 		},
 		AssetServer: &assetserver.Options{
 			Assets:  frontendFS,

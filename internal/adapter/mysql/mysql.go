@@ -42,9 +42,17 @@ func New(ctx context.Context, dsn string) (*MySQLAdapter, error) {
 	db.SetConnMaxLifetime(30 * time.Minute)
 
 	a := &MySQLAdapter{db: db}
-	if err := a.Ping(ctx); err != nil {
+	var pingErr error
+	for attempt := 0; attempt < 5; attempt++ {
+		pingErr = a.Ping(ctx)
+		if pingErr == nil {
+			break
+		}
+		time.Sleep(250 * time.Millisecond)
+	}
+	if pingErr != nil {
 		db.Close()
-		return nil, err
+		return nil, pingErr
 	}
 	return a, nil
 }

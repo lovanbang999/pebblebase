@@ -2,31 +2,89 @@ package mongodb_test
 
 import (
 	"context"
+	"net/url"
 	"os"
+	"strings"
 	"testing"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"pebblebase/internal/adapter"
 	"pebblebase/internal/adapter/mongodb"
 )
 
 func getTestMongoURI() string {
-	if uri := os.Getenv("TEST_MONGODB_URI"); uri != "" {
-		return uri
-	}
-	return "mongodb://pebble:pebble@localhost:27017/pebble_test?authSource=admin"
+	return os.Getenv("TEST_MONGODB_URI")
 }
 
 func setupMongoAdapter(t *testing.T) (*mongodb.Adapter, context.Context) {
 	t.Helper()
+	uri := getTestMongoURI()
+	if uri == "" {
+		t.Skip("TEST_MONGODB_URI not set — skipping MongoDB live integration tests")
+		return nil, nil
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	t.Cleanup(cancel)
 
-	uri := getTestMongoURI()
-	a, err := mongodb.New(ctx, uri)
+	// Seed isolated test database with expected test fixtures
+	rawClient, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
 	if err != nil {
 		t.Skipf("MongoDB not reachable at %s: %v (skipping integration tests)", uri, err)
 		return nil, nil
+	}
+	defer rawClient.Disconnect(context.Background())
+
+	if err := rawClient.Ping(ctx, nil); err != nil {
+		t.Skipf("MongoDB ping failed at %s: %v (skipping integration tests)", uri, err)
+		return nil, nil
+	}
+
+	dbName := "pebble_adapter_test"
+	if parsed, err := url.Parse(uri); err == nil && len(parsed.Path) > 1 {
+		dbName = strings.TrimPrefix(parsed.Path, "/")
+	}
+	db := rawClient.Database(dbName)
+
+	_ = db.Collection("users").Drop(ctx)
+	_ = db.Collection("products").Drop(ctx)
+	_ = db.Collection("orders").Drop(ctx)
+
+	now := time.Now().Truncate(time.Millisecond)
+	users := []any{
+		bson.M{"name": "Alice", "email": "alice@example.com", "age": int32(28), "is_active": true, "created_at": now, "profile": bson.M{"city": "NYC"}},
+		bson.M{"name": "Bob", "email": "bob@example.com", "age": int32(34), "is_active": true, "created_at": now, "profile": bson.M{"city": "LA"}},
+		bson.M{"name": "Charlie", "email": "charlie@example.com", "age": int32(22), "is_active": false, "created_at": now, "profile": bson.M{"city": "Chicago"}},
+		bson.M{"name": "Dave", "email": "dave@example.com", "age": int32(41), "is_active": true, "created_at": now, "profile": bson.M{"city": "Houston"}},
+		bson.M{"name": "Eve", "email": "eve@example.com", "age": int32(29), "is_active": false, "created_at": now, "profile": bson.M{"city": "Seattle"}},
+	}
+	if _, err := db.Collection("users").InsertMany(ctx, users); err != nil {
+		t.Fatalf("failed to seed users: %v", err)
+	}
+
+	products := []any{
+		bson.M{"name": "Mechanical Keyboard", "price": 120.0, "color": "black", "warranty_months": int32(24), "tags": []any{"usb", "rgb"}},
+		bson.M{"name": "Laptop Pro", "price": 1999.99},
+		bson.M{"name": "Mouse Pad", "price": 19.99},
+	}
+	if _, err := db.Collection("products").InsertMany(ctx, products); err != nil {
+		t.Fatalf("failed to seed products: %v", err)
+	}
+
+	orders := []any{
+		bson.M{"order_number": "ORD-1", "total": 120.0},
+	}
+	if _, err := db.Collection("orders").InsertMany(ctx, orders); err != nil {
+		t.Fatalf("failed to seed orders: %v", err)
+	}
+
+	a, err := mongodb.New(ctx, uri)
+	if err != nil {
+		t.Fatalf("mongodb.New() failed: %v", err)
 	}
 	t.Cleanup(func() { _ = a.Close() })
 	return a, ctx
