@@ -465,6 +465,22 @@ export function StudioTabContent({
                     onFiltersChange={(filters) =>
                       updateTabState(tab.id, { filters, page: 0 })
                     }
+                    rawFilter={state.rawFilter || ""}
+                    onRawFilterChange={(rawFilter) =>
+                      updateTabState(tab.id, { rawFilter, page: 0 })
+                    }
+                    projection={state.projection || ""}
+                    onProjectionChange={(projection) =>
+                      updateTabState(tab.id, { projection, page: 0 })
+                    }
+                    maxTimeMS={state.maxTimeMS || 0}
+                    onMaxTimeMSChange={(maxTimeMS) =>
+                      updateTabState(tab.id, { maxTimeMS, page: 0 })
+                    }
+                    collation={state.collation || ""}
+                    onCollationChange={(collation) =>
+                      updateTabState(tab.id, { collation, page: 0 })
+                    }
                     onRefresh={async () => {
                       await Promise.all([
                         refreshConnectionTables(tab.connectionId),

@@ -19,6 +19,8 @@ import { LimitStageEditor } from "./LimitStageEditor";
 import { ProjectStageEditor } from "./ProjectStageEditor";
 import { LookupStageEditor } from "./LookupStageEditor";
 import { UnwindStageEditor } from "./UnwindStageEditor";
+import { FacetStageEditor } from "./FacetStageEditor";
+import { StageLivePreview } from "./StageLivePreview";
 
 export function PipelineStageCard({
   stageItem,
@@ -26,6 +28,9 @@ export function PipelineStageCard({
   totalStages,
   draggedIndex,
   tables,
+  connId,
+  collection,
+  activeStagesUpToThis,
   onDragStart,
   onDragOver,
   onDrop,
@@ -259,7 +264,24 @@ export function PipelineStageCard({
             }
           />
         )}
+
+        {stageItem.stage.type === "$facet" && (
+          <FacetStageEditor
+            config={stageItem.stage.config}
+            onChange={(newConf) =>
+              onUpdateStage(index, { type: "$facet", config: newConf })
+            }
+          />
+        )}
       </div>
+
+      {/* Accordion Live Preview Drawer */}
+      <StageLivePreview
+        connId={connId}
+        collection={collection}
+        activeStagesUpToThis={activeStagesUpToThis}
+        isStageEnabled={stageItem.enabled}
+      />
     </div>
   );
 }

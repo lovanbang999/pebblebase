@@ -120,6 +120,10 @@ export interface RowQueryParams {
   sort_by?: string;
   sort_desc?: boolean;
   filters?: FilterOption[];
+  raw_filter?: string;
+  projection?: string;
+  max_time_ms?: number;
+  collation?: string;
   include_header?: boolean;
 }
 
@@ -177,6 +181,10 @@ export interface StudioTabState {
   filters: FilterOption[];
   sortBy: string;
   sortDesc: boolean;
+  rawFilter?: string;
+  projection?: string;
+  maxTimeMS?: number;
+  collation?: string;
   queryText?: string;
   diffSourceConnectionId?: string;
   diffTargetConnectionId?: string;
@@ -514,4 +522,45 @@ export interface AIQueryAssistResponse {
   query: string;
   explanation: string;
   indexes?: string[];
+}
+
+export interface MongoTypeDistribution {
+  type: string;
+  count: number;
+  percentage: number;
+}
+
+export interface MongoFieldStats {
+  min?: unknown;
+  max?: unknown;
+  avg?: number;
+  min_length?: number;
+  max_length?: number;
+  avg_length?: number;
+  distinct_samples?: unknown[];
+}
+
+export interface MongoFieldAnalysis {
+  name: string;
+  count: number;
+  frequency: number;
+  missing_count: number;
+  missing_rate: number;
+  types: MongoTypeDistribution[];
+  is_polymorphic: boolean;
+  stats: MongoFieldStats;
+}
+
+export interface MongoSchemaAnalysisResult {
+  collection: string;
+  total_sampled: number;
+  total_fields: number;
+  execution_time_ms: number;
+  fields: MongoFieldAnalysis[];
+}
+
+export interface PipelinePreviewResult {
+  documents: Record<string, unknown>[];
+  count: number;
+  execution_time_ms: number;
 }

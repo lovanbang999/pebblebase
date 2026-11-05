@@ -221,6 +221,10 @@ export function usePebblebaseStudio({
           state.sortBy || "",
           Boolean(state.sortDesc),
           state.filters || [],
+          state.rawFilter || "",
+          state.projection || "",
+          state.maxTimeMS || 0,
+          state.collation || "",
         ],
         queryFn: ({ signal }: { signal: AbortSignal }) =>
           fetchRows(
@@ -232,6 +236,10 @@ export function usePebblebaseStudio({
               sort_by: state.sortBy || undefined,
               sort_desc: Boolean(state.sortDesc),
               filters: state.filters || [],
+              raw_filter: state.rawFilter || undefined,
+              projection: state.projection || undefined,
+              max_time_ms: state.maxTimeMS || undefined,
+              collation: state.collation || undefined,
             },
             signal,
           ),

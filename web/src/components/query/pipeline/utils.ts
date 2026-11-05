@@ -104,6 +104,23 @@ export function createDefaultStage(type: StageType): StageConfig {
           preserveNullAndEmptyArrays: false,
         },
       };
+    case "$facet":
+      return {
+        type: "$facet",
+        config: {
+          mode: "raw",
+          rawJson: JSON.stringify(
+            {
+              categorizedByStatus: [
+                { $group: { _id: "$status", count: { $sum: 1 } } },
+              ],
+              latestDocs: [{ $sort: { _id: -1 } }, { $limit: 5 }],
+            },
+            null,
+            2,
+          ),
+        },
+      };
   }
 }
 
@@ -257,6 +274,15 @@ export function generateStageObject(
       }
       return { $unwind: formattedPath };
     }
+
+    case "$facet": {
+      const { rawJson } = stageConfig.config;
+      try {
+        return { $facet: JSON.parse(rawJson) };
+      } catch {
+        return null;
+      }
+    }
   }
 }
 
@@ -279,6 +305,8 @@ export function getStageBadgeStyle(type: StageType): string {
       return "bg-destructive/10 text-destructive dark:text-destructive border-destructive/30";
     case "$unwind":
       return "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30";
+    case "$facet":
+      return "bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/30";
   }
 }
 

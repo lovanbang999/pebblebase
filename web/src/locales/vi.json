@@ -1220,6 +1220,7 @@
       "project": "Chiếu ($project)",
       "lookup": "Kết hợp ($lookup)",
       "unwind": "Mở mảng ($unwind)",
+      "facet": "Phân nhánh ($facet)",
       "delete": "Xóa stage",
       "duplicate": "Nhân bản stage",
       "move_up": "Di chuyển lên",

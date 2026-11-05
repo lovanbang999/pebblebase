@@ -28,6 +28,8 @@ import type {
   AIProviderInfo,
   AIQueryAssistRequest,
   AIQueryAssistResponse,
+  MongoSchemaAnalysisResult,
+  PipelinePreviewResult,
 } from "./types";
 import type { FindConnectionResult } from "./findEverywhere";
 import { resolveCachedReference, type ReferenceResult } from "./referenceCache";
@@ -224,6 +226,12 @@ export async function fetchRows(
     }
   }
 
+  if (params.raw_filter) searchParams.set("raw_filter", params.raw_filter);
+  if (params.projection) searchParams.set("projection", params.projection);
+  if (params.max_time_ms !== undefined)
+    searchParams.set("max_time_ms", String(params.max_time_ms));
+  if (params.collation) searchParams.set("collation", params.collation);
+
   const queryStr = searchParams.toString();
   const url = `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/rows${queryStr ? `?${queryStr}` : ""}`;
   const res = await fetch(url, { headers: getAuthHeaders(), signal });
@@ -332,6 +340,12 @@ export function getTableExportUrl(
       }
     }
   }
+
+  if (params.raw_filter) searchParams.set("raw_filter", params.raw_filter);
+  if (params.projection) searchParams.set("projection", params.projection);
+  if (params.max_time_ms !== undefined)
+    searchParams.set("max_time_ms", String(params.max_time_ms));
+  if (params.collation) searchParams.set("collation", params.collation);
   const queryStr = searchParams.toString();
   return `${BASE_URL}/connections/${encodeURIComponent(connId)}/tables/${encodeURIComponent(table)}/export?${queryStr}`;
 }
@@ -547,6 +561,51 @@ export async function fetchTableStats(
     { headers: getAuthHeaders() },
   );
   return handleResponse<TableStats>(res);
+}
+
+export async function fetchMongoSchemaAnalysis(
+  connectionId: string,
+  table: string,
+  sampleSize: number = 1000,
+  signal?: AbortSignal,
+): Promise<MongoSchemaAnalysisResult> {
+  const params = new URLSearchParams();
+  if (sampleSize) {
+    params.set("sample_size", String(sampleSize));
+  }
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connectionId)}/tables/${encodeURIComponent(table)}/mongo-schema?${params.toString()}`,
+    {
+      headers: getAuthHeaders(),
+      signal,
+    },
+  );
+  return handleResponse<MongoSchemaAnalysisResult>(res);
+}
+
+export async function fetchPipelinePreview(
+  connectionId: string,
+  table: string,
+  stages: unknown,
+  limit: number = 10,
+  signal?: AbortSignal,
+): Promise<PipelinePreviewResult> {
+  const res = await fetch(
+    `${BASE_URL}/connections/${encodeURIComponent(connectionId)}/tables/${encodeURIComponent(table)}/pipeline-preview`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({
+        stages,
+        limit,
+      }),
+      signal,
+    },
+  );
+  return handleResponse<PipelinePreviewResult>(res);
 }
 
 // ---------------------------------------------------------------------------

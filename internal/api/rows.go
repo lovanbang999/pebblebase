@@ -224,11 +224,22 @@ func parseQueryOptions(r *http.Request) (adapter.QueryOptions, error) {
 		})
 	}
 
+	maxTimeMS := 0
+	if v := q.Get("max_time_ms"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			maxTimeMS = n
+		}
+	}
+
 	return adapter.QueryOptions{
-		Limit:    limit,
-		Offset:   offset,
-		SortBy:   q.Get("sort_by"),
-		SortDesc: sortDesc,
-		Filters:  filters,
+		Limit:      limit,
+		Offset:     offset,
+		SortBy:     q.Get("sort_by"),
+		SortDesc:   sortDesc,
+		Filters:    filters,
+		RawFilter:  q.Get("raw_filter"),
+		Projection: q.Get("projection"),
+		MaxTimeMS:  maxTimeMS,
+		Collation:  q.Get("collation"),
 	}, nil
 }

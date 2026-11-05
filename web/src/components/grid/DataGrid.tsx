@@ -70,6 +70,11 @@ const SchemaInspector = lazy(() =>
     default: m.SchemaInspector,
   })),
 );
+const MongoSchemaAnalyzer = lazy(() =>
+  import("@/components/schema/MongoSchemaAnalyzer").then((m) => ({
+    default: m.MongoSchemaAnalyzer,
+  })),
+);
 const ColumnAnalyticsDrawer = lazy(() =>
   import("./ColumnAnalyticsDrawer").then((m) => ({
     default: m.ColumnAnalyticsDrawer,
@@ -167,6 +172,14 @@ interface DataGridProps {
   dbType?: DatabaseType;
   connectionName?: string;
   queryTimeMs?: number;
+  rawFilter?: string;
+  onRawFilterChange?: (filter: string) => void;
+  projection?: string;
+  onProjectionChange?: (projection: string) => void;
+  maxTimeMS?: number;
+  onMaxTimeMSChange?: (ms: number) => void;
+  collation?: string;
+  onCollationChange?: (collation: string) => void;
 }
 
 import { DocumentView } from "./DocumentView";
@@ -248,6 +261,14 @@ export function DataGrid({
   dbType,
   connectionName,
   queryTimeMs,
+  rawFilter,
+  onRawFilterChange,
+  projection,
+  onProjectionChange,
+  maxTimeMS,
+  onMaxTimeMSChange,
+  collation,
+  onCollationChange,
 }: DataGridProps) {
   const { t } = useTranslation();
   const schemaMetadata = useSchemaMetadata(
@@ -2696,6 +2717,7 @@ export function DataGrid({
         <TableFilterBar
           table={table}
           dbType={dbType}
+          connId={connId}
           quickSearch={quickSearch}
           onQuickSearchChange={setQuickSearch}
           quickSearchInputRef={quickSearchInputRef}
@@ -2712,6 +2734,22 @@ export function DataGrid({
           sortBy={sortBy}
           sortDesc={sortDesc}
           onSortChange={onSortChange}
+          rawFilter={rawFilter}
+          onRawFilterChange={onRawFilterChange}
+          projection={projection}
+          onProjectionChange={onProjectionChange}
+          maxTimeMS={maxTimeMS}
+          onMaxTimeMSChange={onMaxTimeMSChange}
+          collation={collation}
+          onCollationChange={onCollationChange}
+          onExecuteMongoQuery={() => onRefresh?.()}
+          onResetMongoQuery={() => {
+            onRawFilterChange?.("");
+            onProjectionChange?.("");
+            onMaxTimeMSChange?.(0);
+            onCollationChange?.("");
+            onRefresh?.();
+          }}
           t={t}
         />
       )}
@@ -2737,14 +2775,18 @@ export function DataGrid({
             </div>
           }
         >
-          <SchemaInspector
-            connId={connId}
-            table={table}
-            view={activeSubView}
-            isReadOnly={isReadOnly}
-            onNavigateRelation={onNavigateRelation}
-            onOpenQueryConsole={onOpenQueryConsole}
-          />
+          {activeSubView === "schema" && dbType === "mongodb" ? (
+            <MongoSchemaAnalyzer connId={connId ?? ""} tableName={table.name} />
+          ) : (
+            <SchemaInspector
+              connId={connId}
+              table={table}
+              view={activeSubView === "schema" ? "columns" : activeSubView}
+              isReadOnly={isReadOnly}
+              onNavigateRelation={onNavigateRelation}
+              onOpenQueryConsole={onOpenQueryConsole}
+            />
+          )}
         </Suspense>
       ) : (
         <>
@@ -2931,6 +2973,18 @@ export function DataGrid({
                   onSaveCell={async (row, columnName, value) =>
                     stageCellValue(row, columnName, value)
                   }
+                  onCloneRow={(row) => {
+                    const clone = Object.fromEntries(
+                      Object.entries(row).filter(
+                        ([key]) => !key.startsWith("_pb_"),
+                      ),
+                    );
+                    for (const column of table.columns) {
+                      if (column.is_primary_key) delete clone[column.name];
+                    }
+                    delete clone._id;
+                    stageWholeRow(null, clone);
+                  }}
                   onNavigateRelation={onNavigateRelation}
                   t={t}
                 />

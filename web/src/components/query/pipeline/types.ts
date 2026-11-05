@@ -1,7 +1,14 @@
 import type { Connection, TableSchema, RawQueryResult } from "@/lib/types";
 
 export type StageType =
-  "$match" | "$group" | "$sort" | "$limit" | "$project" | "$lookup" | "$unwind";
+  | "$match"
+  | "$group"
+  | "$sort"
+  | "$limit"
+  | "$project"
+  | "$lookup"
+  | "$unwind"
+  | "$facet";
 
 export interface MatchFilterRule {
   id: string;
@@ -81,6 +88,11 @@ export interface UnwindStageConfig {
   preserveNullAndEmptyArrays: boolean;
 }
 
+export interface FacetStageConfig {
+  mode: "visual" | "raw";
+  rawJson: string;
+}
+
 export type StageConfig =
   | { type: "$match"; config: MatchStageConfig }
   | { type: "$group"; config: GroupStageConfig }
@@ -88,7 +100,8 @@ export type StageConfig =
   | { type: "$limit"; config: LimitStageConfig }
   | { type: "$project"; config: ProjectStageConfig }
   | { type: "$lookup"; config: LookupStageConfig }
-  | { type: "$unwind"; config: UnwindStageConfig };
+  | { type: "$unwind"; config: UnwindStageConfig }
+  | { type: "$facet"; config: FacetStageConfig };
 
 export interface PipelineStageItem {
   id: string;
@@ -138,12 +151,20 @@ export interface UnwindStageEditorProps {
   onChange: (conf: UnwindStageConfig) => void;
 }
 
+export interface FacetStageEditorProps {
+  config: FacetStageConfig;
+  onChange: (conf: FacetStageConfig) => void;
+}
+
 export interface PipelineStageCardProps {
   stageItem: PipelineStageItem;
   index: number;
   totalStages: number;
   draggedIndex: number | null;
   tables: TableSchema[];
+  connId?: string;
+  collection?: string;
+  activeStagesUpToThis?: Record<string, unknown>[];
   onDragStart: (e: React.DragEvent<HTMLDivElement>, index: number) => void;
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>, targetIndex: number) => void;

@@ -17,14 +17,16 @@ import (
 
 // Ensure Adapter implements adapter.Adapter and optional interfaces at compile time.
 var (
-	_ adapter.Adapter            = (*Adapter)(nil)
-	_ adapter.RawRunner          = (*Adapter)(nil)
-	_ adapter.StreamExporter     = (*Adapter)(nil)
-	_ adapter.BulkImporter       = (*Adapter)(nil)
-	_ adapter.QueryExplainer     = (*Adapter)(nil)
-	_ adapter.DDLProvider        = (*Adapter)(nil)
-	_ adapter.TableStatsProvider = (*Adapter)(nil)
-	_ adapter.MigrationRunner    = (*Adapter)(nil)
+	_ adapter.Adapter             = (*Adapter)(nil)
+	_ adapter.RawRunner           = (*Adapter)(nil)
+	_ adapter.StreamExporter      = (*Adapter)(nil)
+	_ adapter.BulkImporter        = (*Adapter)(nil)
+	_ adapter.QueryExplainer      = (*Adapter)(nil)
+	_ adapter.DDLProvider         = (*Adapter)(nil)
+	_ adapter.TableStatsProvider  = (*Adapter)(nil)
+	_ adapter.MigrationRunner     = (*Adapter)(nil)
+	_ adapter.MongoSchemaAnalyzer = (*Adapter)(nil)
+	_ adapter.PipelinePreviewer   = (*Adapter)(nil)
 )
 
 // Adapter implements adapter.Adapter for MongoDB.

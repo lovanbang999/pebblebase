@@ -3,6 +3,9 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -48,7 +51,7 @@ func (a *Adapter) mutateInsert(ctx context.Context, coll *mongo.Collection, valu
 				}
 			}
 		}
-		doc[k] = v
+		doc[k] = normalizeMutationValue(k, v)
 	}
 
 	if _, err := coll.InsertOne(ctx, doc); err != nil {
@@ -73,7 +76,7 @@ func (a *Adapter) mutateUpdate(ctx context.Context, coll *mongo.Collection, wher
 		if k == "_id" {
 			continue
 		}
-		updateSet[k] = v
+		updateSet[k] = normalizeMutationValue(k, v)
 	}
 
 	if len(updateSet) == 0 {
@@ -84,6 +87,58 @@ func (a *Adapter) mutateUpdate(ctx context.Context, coll *mongo.Collection, wher
 		return fmt.Errorf("mongodb: update error: %w", err)
 	}
 	return nil
+}
+
+func normalizeMutationValue(k string, v any) any {
+	switch val := v.(type) {
+	case string:
+		// Check for ObjectId hex string on ID fields
+		lowerK := strings.ToLower(k)
+		if len(val) == 24 && (lowerK == "_id" || strings.HasSuffix(lowerK, "id") || strings.HasSuffix(lowerK, "_id")) {
+			if oid, err := primitive.ObjectIDFromHex(val); err == nil {
+				return oid
+			}
+		}
+		// Check for ISO 8601 Date string
+		if len(val) >= 19 && (strings.Contains(val, "T") || strings.Contains(val, "-")) {
+			if t, err := time.Parse(time.RFC3339Nano, val); err == nil {
+				return primitive.NewDateTimeFromTime(t)
+			}
+			if t, err := time.Parse(time.RFC3339, val); err == nil {
+				return primitive.NewDateTimeFromTime(t)
+			}
+		}
+		return val
+
+	case map[string]any:
+		// MongoDB Extended JSON support
+		if oid, ok := val["$oid"].(string); ok && len(oid) == 24 {
+			if parsedOid, err := primitive.ObjectIDFromHex(oid); err == nil {
+				return parsedOid
+			}
+		}
+		if dateVal, ok := val["$date"]; ok {
+			if dateStr, ok := dateVal.(string); ok {
+				if t, err := time.Parse(time.RFC3339Nano, dateStr); err == nil {
+					return primitive.NewDateTimeFromTime(t)
+				}
+			}
+		}
+		if longStr, ok := val["$numberLong"].(string); ok {
+			if i, err := strconv.ParseInt(longStr, 10, 64); err == nil {
+				return i
+			}
+		}
+		if decStr, ok := val["$numberDecimal"].(string); ok {
+			if dec, err := primitive.ParseDecimal128(decStr); err == nil {
+				return dec
+			}
+		}
+		return val
+
+	default:
+		return val
+	}
 }
 
 func (a *Adapter) mutateDelete(ctx context.Context, coll *mongo.Collection, where map[string]any) error {

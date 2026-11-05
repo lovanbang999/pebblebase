@@ -15,13 +15,37 @@ import (
 	"pebblebase/internal/adapter"
 )
 
+var relaxedKeyRe = regexp.MustCompile(`([{,]\s*)([a-zA-Z0-9_$-]+)\s*:`)
+
+func parseBsonDocument(raw string, out any) error {
+	raw = strings.TrimSpace(raw)
+	if !strings.HasPrefix(raw, "{") {
+		raw = "{" + raw + "}"
+	}
+	err := bson.UnmarshalExtJSON([]byte(raw), true, out)
+	if err == nil {
+		return nil
+	}
+	// Attempt relaxed key-quoting fallback
+	relaxed := relaxedKeyRe.ReplaceAllString(raw, `$1"$2":`)
+	return bson.UnmarshalExtJSON([]byte(relaxed), true, out)
+}
+
 // Query fetches documents matching opts from the specified MongoDB collection.
 func (a *Adapter) Query(ctx context.Context, table string, opts adapter.QueryOptions) (adapter.QueryResult, error) {
 	coll := a.db.Collection(table)
 
-	filter, err := buildFilter(opts.Filters)
-	if err != nil {
-		return adapter.QueryResult{}, fmt.Errorf("mongodb: build filter: %w", err)
+	var filter bson.M
+	if strings.TrimSpace(opts.RawFilter) != "" {
+		if err := parseBsonDocument(opts.RawFilter, &filter); err != nil {
+			return adapter.QueryResult{}, fmt.Errorf("mongodb: parse raw filter: %w", err)
+		}
+	} else {
+		var err error
+		filter, err = buildFilter(opts.Filters)
+		if err != nil {
+			return adapter.QueryResult{}, fmt.Errorf("mongodb: build filter: %w", err)
+		}
 	}
 
 	totalCount, err := coll.CountDocuments(ctx, filter)
@@ -37,6 +61,31 @@ func (a *Adapter) Query(ctx context.Context, table string, opts adapter.QueryOpt
 	findOpts := options.Find().
 		SetSkip(int64(opts.Offset)).
 		SetLimit(int64(limit))
+
+	if strings.TrimSpace(opts.Projection) != "" {
+		var proj bson.M
+		if err := parseBsonDocument(opts.Projection, &proj); err == nil && len(proj) > 0 {
+			findOpts.SetProjection(proj)
+		}
+	}
+
+	if opts.MaxTimeMS > 0 {
+		findOpts.SetMaxTime(time.Duration(opts.MaxTimeMS) * time.Millisecond)
+	}
+
+	if strings.TrimSpace(opts.Collation) != "" {
+		var colDoc struct {
+			Locale   string `bson:"locale"`
+			Strength int    `bson:"strength"`
+		}
+		if err := parseBsonDocument(opts.Collation, &colDoc); err == nil && colDoc.Locale != "" {
+			c := &options.Collation{Locale: colDoc.Locale}
+			if colDoc.Strength > 0 {
+				c.Strength = colDoc.Strength
+			}
+			findOpts.SetCollation(c)
+		}
+	}
 
 	if opts.SortBy != "" {
 		dir := 1
@@ -161,9 +210,9 @@ func cleanValue(v any) any {
 	case primitive.ObjectID:
 		return val.Hex()
 	case primitive.DateTime:
-		return val.Time().Format(time.RFC3339)
+		return val.Time().UTC().Format(time.RFC3339)
 	case primitive.Timestamp:
-		return time.Unix(int64(val.T), 0).Format(time.RFC3339)
+		return time.Unix(int64(val.T), 0).UTC().Format(time.RFC3339)
 	case primitive.Decimal128:
 		return val.String()
 	case primitive.Binary:
