@@ -375,6 +375,27 @@ export default function UpdateDialog({
             )}
           </div>
 
+          {/* System Package Notice if binary is in non-writable system directory */}
+          {hasUpdate && updateInfo?.canAutoUpdate === false && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-300">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <div className="flex-1 space-y-1">
+                <p className="font-medium">
+                  {updateInfo?.updateNotice ||
+                    t(
+                      "updates.systemPackageNotice",
+                      "Installed in system directory (/usr/bin). Manual package update is required.",
+                    )}
+                </p>
+                <div className="flex items-center gap-2 pt-0.5 font-mono text-[11px] opacity-90">
+                  <code className="rounded bg-black/10 px-1.5 py-0.5 dark:bg-white/10">
+                    sudo dpkg -i pebblebase_{updateInfo.latestVersion}_amd64.deb
+                  </code>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Release Notes section */}
           {hasUpdate && updateInfo?.releaseNotes && (
             <div className="min-w-0 space-y-1.5">
@@ -464,11 +485,15 @@ export default function UpdateDialog({
               <p className="pl-6 font-mono text-[11px] break-all text-red-600/90 dark:text-red-400/90">
                 {applyError}
               </p>
-              {updateInfo?.downloadUrl && (
+              {(updateInfo?.releaseUrl || updateInfo?.downloadUrl) && (
                 <div className="flex items-center justify-between pt-1 pl-6">
                   <button
                     type="button"
-                    onClick={() => openExternalUrl(updateInfo.downloadUrl)}
+                    onClick={() =>
+                      openExternalUrl(
+                        updateInfo.releaseUrl || updateInfo.downloadUrl,
+                      )
+                    }
                     className="inline-flex cursor-pointer items-center gap-1 text-xs text-blue-600 underline hover:no-underline dark:text-blue-400"
                   >
                     {t(
@@ -548,17 +573,36 @@ export default function UpdateDialog({
                 : t("updates.close", "Close")}
             </Button>
 
-            {hasUpdate && applyPhase === "idle" && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={handleUpdateNow}
-                className="bg-primary hover:bg-success h-8.5 cursor-pointer gap-1.5 px-4 text-xs font-medium text-white shadow-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                {t("updates.updateNow", "Update Now")}
-              </Button>
-            )}
+            {hasUpdate &&
+              applyPhase === "idle" &&
+              (updateInfo?.canAutoUpdate === false ? (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() =>
+                    openExternalUrl(
+                      updateInfo.releaseUrl || updateInfo.downloadUrl,
+                    )
+                  }
+                  className="bg-primary hover:bg-success h-8.5 cursor-pointer gap-1.5 px-4 text-xs font-medium text-white shadow-xs"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {t(
+                    "updates.downloadReleasePackage",
+                    "Download Release Package",
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleUpdateNow}
+                  className="bg-primary hover:bg-success h-8.5 cursor-pointer gap-1.5 px-4 text-xs font-medium text-white shadow-xs"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  {t("updates.updateNow", "Update Now")}
+                </Button>
+              ))}
           </div>
         </div>
       </DialogContent>

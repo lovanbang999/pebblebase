@@ -1261,6 +1261,8 @@
     "installSuccessDesc": "The new version is ready. Restart Pebblebase to complete the update.",
     "restartNow": "Restart Pebblebase Now",
     "installFailedTitle": "Failed to apply update",
+    "systemPackageNotice": "Pebblebase is installed in a system directory. Please update via package manager or download manually.",
+    "downloadReleasePackage": "Download Release Package",
     "downloadManual": "Download manually from GitHub",
     "retry": "Retry",
     "autoCheckStartup": "Automatically check for updates on startup",

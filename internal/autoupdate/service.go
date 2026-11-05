@@ -215,6 +215,7 @@ func (s *Service) CheckForUpdate(ctx context.Context, force bool) (*UpdateInfo, 
 		ReleaseNotes:   ghRelease.Body,
 		ReleaseURL:     ghRelease.HTMLURL,
 		PublishedAt:    ghRelease.PublishedAt,
+		CanAutoUpdate:  true,
 	}
 
 	// Match platform binary asset and optional signature
@@ -227,12 +228,15 @@ func (s *Service) CheckForUpdate(ctx context.Context, force bool) (*UpdateInfo, 
 			info.SignatureURL = asset.BrowserDownloadURL
 		}
 
+		if isIgnoredAsset(name) {
+			continue
+		}
+
 		// Detect platform-matching asset (prefer direct binary or archive)
 		if strings.Contains(name, goos) && (strings.Contains(name, goarch) ||
 			strings.Contains(name, "universal") ||
 			strings.Contains(name, "all")) {
-			if info.AssetURL == "" || (!strings.HasSuffix(name, ".sig") &&
-				!strings.HasSuffix(name, ".minisig")) {
+			if info.AssetURL == "" || isArchiveAsset(name) {
 				info.AssetURL = asset.BrowserDownloadURL
 				info.DownloadURL = asset.BrowserDownloadURL
 				info.Size = asset.Size
@@ -241,11 +245,50 @@ func (s *Service) CheckForUpdate(ctx context.Context, force bool) (*UpdateInfo, 
 		}
 	}
 
+	// Check if current running executable directory has write permissions
+	if exe, err := os.Executable(); err == nil {
+		targetDir := filepath.Dir(exe)
+		probeFile := filepath.Join(targetDir, fmt.Sprintf(".pb_check_probe_%d_%d", os.Getpid(), time.Now().UnixNano()))
+		if probe, err := os.OpenFile(probeFile, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600); err != nil {
+			if os.IsPermission(err) {
+				info.CanAutoUpdate = false
+				info.UpdateNotice = fmt.Sprintf("Pebblebase is installed in a system directory (%s). Auto-update requires manual installation or package manager update.", targetDir)
+			}
+		} else {
+			_ = probe.Close()
+			_ = os.Remove(probeFile)
+		}
+	}
+
 	s.mu.RLock()
 	info.RequiresSig = len(s.publicKey) > 0
 	s.mu.RUnlock()
 
 	return info, nil
+}
+
+// isIgnoredAsset checks if an asset filename is a checksum, signature, or package metadata file.
+func isIgnoredAsset(name string) bool {
+	lower := strings.ToLower(name)
+	ignoredSuffixes := []string{
+		".sha256", ".sha512", ".sha1", ".md5",
+		".sig", ".minisig", ".asc",
+		".txt",
+	}
+	for _, suffix := range ignoredSuffixes {
+		if strings.HasSuffix(lower, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
+// isArchiveAsset checks if an asset filename is an archive format (.tar.gz, .zip).
+func isArchiveAsset(name string) bool {
+	lower := strings.ToLower(name)
+	return strings.HasSuffix(lower, ".tar.gz") ||
+		strings.HasSuffix(lower, ".tgz") ||
+		strings.HasSuffix(lower, ".zip")
 }
 
 // CompareSemver compares semver strings v1 and v2.
@@ -415,6 +458,26 @@ func (s *Service) ApplyUpdate(ctx context.Context, targetBinaryPath string, info
 		}
 	}
 
+	// Pre-flight check: verify write permission to target location before downloading
+	resolvedTarget := targetBinaryPath
+	if resolvedTarget == "" {
+		if exe, err := os.Executable(); err == nil {
+			resolvedTarget = exe
+		}
+	}
+	if resolvedTarget != "" {
+		targetDir := filepath.Dir(resolvedTarget)
+		probeFile := filepath.Join(targetDir, fmt.Sprintf(".pb_write_probe_%d_%d", os.Getpid(), time.Now().UnixNano()))
+		if probe, err := os.OpenFile(probeFile, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600); err != nil {
+			if os.IsPermission(err) {
+				return fmt.Errorf("permission denied writing to %s: Pebblebase is installed in a system directory. Please update using 'sudo dpkg -i <file>.deb' or download the release manually", targetDir)
+			}
+		} else {
+			_ = probe.Close()
+			_ = os.Remove(probeFile)
+		}
+	}
+
 	// 4. Download asset to temporary file with secure 0600 permissions
 	tempDir, err := os.MkdirTemp("", "pebblebase-update-*")
 	if err != nil {
@@ -475,7 +538,7 @@ func (s *Service) ApplyUpdate(ctx context.Context, targetBinaryPath string, info
 		return fmt.Errorf("failed to extract binary from update archive: %w", err)
 	}
 
-	// 7. Make binary executable (0755) and replace targetBinaryPath
+	// 7. Make binary executable (0755) and replace targetBinaryPath atomically
 	if err := os.Chmod(binaryFile, 0755); err != nil {
 		return fmt.Errorf("failed to set executable permissions: %w", err)
 	}
@@ -488,26 +551,49 @@ func (s *Service) ApplyUpdate(ctx context.Context, targetBinaryPath string, info
 		targetBinaryPath = exe
 	}
 
-	if err := os.MkdirAll(filepath.Dir(targetBinaryPath), 0755); err != nil {
+	targetDir := filepath.Dir(targetBinaryPath)
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return fmt.Errorf("failed to create target binary parent directory: %w", err)
 	}
 
-	if err := os.Rename(binaryFile, targetBinaryPath); err != nil {
-		// Fallback for cross-device moves (e.g., /tmp on a different mount)
-		in, errCopy := os.Open(binaryFile)
-		if errCopy != nil {
-			return fmt.Errorf("failed to replace binary: %w", errCopy)
+	// Create staging binary in targetDir (same filesystem) for safe atomic rename
+	stagingPath := filepath.Join(targetDir, fmt.Sprintf(".pebblebase-update-%d.tmp", time.Now().UnixNano()))
+
+	in, err := os.Open(binaryFile)
+	if err != nil {
+		return fmt.Errorf("failed to open extracted binary: %w", err)
+	}
+	defer in.Close()
+
+	out, err := os.OpenFile(stagingPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	if err != nil {
+		if os.IsPermission(err) {
+			return fmt.Errorf("permission denied writing to %s: Pebblebase is installed in a system directory. Please update using 'sudo dpkg -i' or download the release manually", targetDir)
 		}
-		defer in.Close()
-		out, errCreate := os.OpenFile(targetBinaryPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
-		if errCreate != nil {
-			return fmt.Errorf("failed to replace binary: %w", errCreate)
-		}
-		if _, errCopyData := io.Copy(out, in); errCopyData != nil {
-			out.Close()
-			return fmt.Errorf("failed to copy binary: %w", errCopyData)
-		}
+		return fmt.Errorf("failed to create update staging binary: %w", err)
+	}
+	if _, err := io.Copy(out, in); err != nil {
 		out.Close()
+		_ = os.Remove(stagingPath)
+		return fmt.Errorf("failed to write update staging binary: %w", err)
+	}
+	out.Close()
+
+	_ = os.Chmod(stagingPath, 0755)
+
+	// Atomically rename stagingPath over targetBinaryPath.
+	// On Linux/Unix, replacing a running binary via rename works cleanly without ETXTBSY.
+	if err := os.Rename(stagingPath, targetBinaryPath); err != nil {
+		// Fallback for Windows where a running binary cannot be overwritten directly:
+		oldPath := targetBinaryPath + fmt.Sprintf(".old-%d", time.Now().UnixNano())
+		if errOld := os.Rename(targetBinaryPath, oldPath); errOld == nil {
+			if errRenameNew := os.Rename(stagingPath, targetBinaryPath); errRenameNew == nil {
+				_ = os.Remove(oldPath)
+				return nil
+			}
+		}
+		_ = os.Remove(stagingPath)
+		return fmt.Errorf("failed to replace binary: %w", err)
 	}
 
 	return nil

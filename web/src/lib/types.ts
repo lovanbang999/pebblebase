@@ -435,12 +435,15 @@ export interface UpdateInfo {
   latestVersion: string;
   hasUpdate: boolean;
   downloadUrl: string;
+  releaseUrl?: string;
   releaseNotes: string;
   publishedAt: string;
   size: number;
   signature?: string;
   requiresSig: boolean;
   assetFound: boolean;
+  canAutoUpdate?: boolean;
+  updateNotice?: string;
 }
 
 export interface UpdateSettings {
