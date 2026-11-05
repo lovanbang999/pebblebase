@@ -68,10 +68,16 @@ function readWorkspace(): { workspace: PersistedWorkspace; hydrated: boolean } {
         expandedNodeIds: parsed.expandedNodeIds.filter(
           (item): item is string => typeof item === "string",
         ),
-        toolWindows: {
-          ...DEFAULT_TOOL_WINDOWS,
-          ...(parsed.toolWindows || {}),
-        },
+        toolWindows: (() => {
+          const tw = {
+            ...DEFAULT_TOOL_WINDOWS,
+            ...(parsed.toolWindows || {}),
+          };
+          if (tw.database && tw.scripts) {
+            tw.scripts = false;
+          }
+          return tw;
+        })(),
         sidebarWidth:
           typeof parsed.sidebarWidth === "number"
             ? Math.min(
@@ -1008,10 +1014,19 @@ export function useTabs() {
 
   const setToolWindows = useCallback(
     (toolWindows: Partial<WorkspaceToolWindows>) => {
-      commit((current) => ({
-        ...current,
-        toolWindows: { ...current.toolWindows, ...toolWindows },
-      }));
+      commit((current) => {
+        const next = { ...current.toolWindows, ...toolWindows };
+        // Primary sidebar panels (database and scripts) are mutually exclusive: only one can be open at a time
+        if (toolWindows.database && next.scripts) {
+          next.scripts = false;
+        } else if (toolWindows.scripts && next.database) {
+          next.database = false;
+        }
+        return {
+          ...current,
+          toolWindows: next,
+        };
+      });
     },
     [commit],
   );

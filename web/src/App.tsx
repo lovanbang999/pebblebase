@@ -1108,10 +1108,10 @@ function PebblebaseStudio() {
   }, []);
 
   // Derived workspace tool-window selection.
-  const activeToolWindow = toolWindows.scripts
-    ? "scripts"
-    : toolWindows.database
-      ? "database"
+  const activeToolWindow = toolWindows.database
+    ? "database"
+    : toolWindows.scripts
+      ? "scripts"
       : null;
   const canRunQuery = Boolean(
     activeTab?.type === "query" &&
@@ -1344,7 +1344,7 @@ function PebblebaseStudio() {
           onToggleOutput={handleToggleOutput}
           onOpenHistory={handleOpenHistory}
         />
-        {toolWindows.database ? (
+        {activeToolWindow === "database" ? (
           <Sidebar
             collapsible="none"
             className="border-border relative h-full min-h-0 shrink-0 overflow-visible border-r"
@@ -1401,7 +1401,7 @@ function PebblebaseStudio() {
                   openErdTab(connectionId);
               }}
               onOpenNewConnection={handleOpenNewConnection}
-              onHideToolWindow={() => setToolWindows({ database: false })}
+              onHideToolWindow={() => handleToggleToolWindow("database")}
               onRefreshConnection={refreshConnectionTables}
               onDuplicateConnection={handleCloneConnection}
               onEditConnection={handleEditConnection}
@@ -1409,7 +1409,7 @@ function PebblebaseStudio() {
             />
             <SidebarRail />
           </Sidebar>
-        ) : toolWindows.scripts ? (
+        ) : activeToolWindow === "scripts" ? (
           <Sidebar
             collapsible="none"
             className="border-border relative h-full min-h-0 shrink-0 overflow-visible border-r"
@@ -1433,6 +1433,7 @@ function PebblebaseStudio() {
                 )
               }
               onSelectSavedQuery={handleSelectSavedQueryWithRecent}
+              onHideToolWindow={() => handleToggleToolWindow("scripts")}
             />
             <SidebarRail />
           </Sidebar>

@@ -9,7 +9,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { containsCredentials } from "@/lib/queryHistoryStore";
 import { useEffect, useState } from "react";
-import { FileCode2, FolderOpen, Plus, Terminal } from "lucide-react";
+import {
+  FileCode2,
+  Folder,
+  FolderOpen,
+  PanelLeftClose,
+  Plus,
+  Terminal,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type {
   Connection,
@@ -24,12 +31,6 @@ import {
   fetchSavedQueries,
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarRail,
-} from "@/components/ui/sidebar";
 import { cn } from "cn";
 
 interface ScriptsToolWindowProps {
@@ -45,6 +46,7 @@ interface ScriptsToolWindowProps {
   onSavedQueriesChange: (queries: SavedQuery[]) => void;
   onOpenSqlFile: () => void;
   onSelectHistory: (connectionId: string, query: string) => void;
+  onHideToolWindow?: () => void;
 }
 
 export function ScriptsToolWindow({
@@ -60,6 +62,7 @@ export function ScriptsToolWindow({
   onSavedQueriesChange,
   onOpenSqlFile,
   onSelectHistory,
+  onHideToolWindow,
 }: ScriptsToolWindowProps) {
   const { t } = useTranslation();
   const queryTabs = tabs.filter((tab) => tab.type === "query");
@@ -147,15 +150,13 @@ export function ScriptsToolWindow({
   }, [activeConnectionId]);
 
   return (
-    <Sidebar
-      collapsible="offcanvas"
-      className="border-sidebar-border bg-sidebar border-r"
-    >
-      <SidebarHeader className="border-sidebar-border flex h-9 flex-row items-center justify-between border-b px-2 py-1">
-        <span className="text-xs font-medium">
-          {t("commands.scriptsWindow", "Scripts")}
-        </span>
-        <div className="flex items-center">
+    <div className="bg-sidebar flex min-h-0 flex-1 flex-col">
+      <div className="border-sidebar-border flex h-7.5 shrink-0 items-center justify-between border-b px-2">
+        <div className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
+          <Folder className="text-muted-foreground size-3.5" />
+          <span>{t("commands.scriptsWindow", "Scripts")}</span>
+        </div>
+        <div className="flex items-center gap-0.5">
           <Button
             type="button"
             variant="ghost"
@@ -182,9 +183,24 @@ export function ScriptsToolWindow({
           >
             <Plus className="size-3.5" />
           </Button>
+          {onHideToolWindow && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              aria-label={t(
+                "commands.hideToolWindow",
+                "Hide scripts tool window",
+              )}
+              title={t("commands.hideToolWindow", "Hide scripts tool window")}
+              onClick={onHideToolWindow}
+            >
+              <PanelLeftClose className="size-3.5" />
+            </Button>
+          )}
         </div>
-      </SidebarHeader>
-      <SidebarContent className="gap-0 px-1.5 py-2">
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-1.5 py-2">
         <div className="text-muted-foreground mb-1 px-2 font-mono text-[10px] font-semibold tracking-wide uppercase">
           {t("commands.openConsoles", "Open Consoles")}
         </div>
@@ -351,7 +367,7 @@ export function ScriptsToolWindow({
             )}
           </div>
         </div>
-      </SidebarContent>
+      </div>
       <Dialog
         open={scriptDialog}
         onOpenChange={(open) => {
@@ -386,7 +402,6 @@ export function ScriptsToolWindow({
           </Button>
         </DialogContent>
       </Dialog>
-      <SidebarRail />
-    </Sidebar>
+    </div>
   );
 }
