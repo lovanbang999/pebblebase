@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MongoQueryBar } from "./MongoQueryBar";
 
 interface TableFilterBarProps {
   table: TableSchema;
@@ -32,6 +33,17 @@ interface TableFilterBarProps {
   sortBy: string;
   sortDesc: boolean;
   onSortChange: (column: string, desc: boolean) => void;
+  connId?: string;
+  rawFilter?: string;
+  onRawFilterChange?: (filter: string) => void;
+  projection?: string;
+  onProjectionChange?: (proj: string) => void;
+  maxTimeMS?: number;
+  onMaxTimeMSChange?: (ms: number) => void;
+  collation?: string;
+  onCollationChange?: (col: string) => void;
+  onExecuteMongoQuery?: () => void;
+  onResetMongoQuery?: () => void;
   t: (key: string, options?: any) => string;
 }
 
@@ -54,8 +66,51 @@ export function TableFilterBar({
   sortBy,
   sortDesc,
   onSortChange,
+  connId,
+  rawFilter,
+  onRawFilterChange,
+  projection,
+  onProjectionChange,
+  maxTimeMS,
+  onMaxTimeMSChange,
+  collation,
+  onCollationChange,
+  onExecuteMongoQuery,
+  onResetMongoQuery,
   t,
 }: TableFilterBarProps) {
+  if (dbType === "mongodb") {
+    return (
+      <MongoQueryBar
+        connId={connId ?? ""}
+        tableName={table.name}
+        filter={rawFilter ?? ""}
+        onFilterChange={onRawFilterChange ?? (() => {})}
+        project={projection ?? ""}
+        onProjectChange={onProjectionChange}
+        sort={sortBy ? `{ ${sortBy}: ${sortDesc ? -1 : 1} }` : ""}
+        onSortChange={(sortStr) => {
+          if (!sortStr || !sortStr.trim()) {
+            onSortChange("", false);
+            return;
+          }
+          const match = sortStr.match(
+            /(?:\{\s*)?["']?([a-zA-Z0-9_.]+)["']?\s*:\s*(-?1)/,
+          );
+          if (match) {
+            onSortChange(match[1], match[2] === "-1");
+          }
+        }}
+        collation={collation ?? ""}
+        onCollationChange={onCollationChange}
+        maxTimeMS={maxTimeMS ?? 0}
+        onMaxTimeMSChange={onMaxTimeMSChange}
+        onExecute={onExecuteMongoQuery ?? (() => {})}
+        onReset={onResetMongoQuery ?? (() => {})}
+      />
+    );
+  }
+
   return (
     <div className="border-border bg-card/80 dark:border-border dark:bg-card/30 flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5">
       <div className="relative w-44 shrink-0">

@@ -153,6 +153,8 @@ func (s *Server) RegisterRoutes(mux *http.ServeMux) {
 	// Column Analytics & Table Statistics
 	mux.Handle("GET /api/connections/{id}/tables/{table}/aggregate", protect(http.HandlerFunc(s.handleAggregate)))
 	mux.Handle("GET /api/connections/{id}/tables/{table}/stats", protect(http.HandlerFunc(s.handleTableStats)))
+	mux.Handle("GET /api/connections/{id}/tables/{table}/mongo-schema", protect(http.HandlerFunc(s.handleMongoSchemaAnalysis)))
+	mux.Handle("POST /api/connections/{id}/tables/{table}/pipeline-preview", protect(http.HandlerFunc(s.handlePipelinePreview)))
 
 	// Saved Queries (Query Library)
 	mux.Handle("GET /api/connections/{id}/saved-queries", protect(http.HandlerFunc(s.listSavedQueries)))

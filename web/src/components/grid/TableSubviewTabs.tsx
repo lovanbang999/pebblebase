@@ -4,12 +4,13 @@ import {
   Columns3,
   ListTree,
   FileCode2,
+  PieChart,
 } from "lucide-react";
 import type { DatabaseType, TableSchema } from "@/lib/types";
 import { cn } from "cn";
 import { useTranslation } from "react-i18next";
 
-export type TableSubview = "data" | "columns" | "indexes" | "ddl";
+export type TableSubview = "data" | "schema" | "columns" | "indexes" | "ddl";
 
 interface TableSubviewTabsProps {
   activeView: TableSubview;
@@ -21,6 +22,13 @@ interface TableSubviewTabsProps {
 
 const tabItems = [
   { id: "data", key: "dataView", fallback: "Data", Icon: TableIcon },
+  {
+    id: "schema",
+    key: "schemaView",
+    fallback: "Schema",
+    Icon: PieChart,
+    mongoOnly: true,
+  },
   { id: "columns", key: "columnsView", fallback: "Columns", Icon: Columns3 },
   { id: "indexes", key: "indexesView", fallback: "Indexes", Icon: ListTree },
   { id: "ddl", key: "ddlView", fallback: "DDL", Icon: FileCode2 },
@@ -83,27 +91,32 @@ function TabsContent({
         onKeyDown={handleKeyDown}
         className="flex h-full items-center gap-1"
       >
-        {tabItems.map(({ id, key, fallback, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={activeView === id}
-            tabIndex={activeView === id ? 0 : -1}
-            onClick={() => onViewChange(id)}
-            className={cn(
-              "inline-flex h-8 items-center gap-1.5 border-b-2 px-2.5 text-xs transition-colors",
-              activeView === id
-                ? "border-primary text-foreground font-medium"
-                : "text-muted-foreground hover:text-foreground border-transparent",
-            )}
-          >
-            <Icon className="size-3.5" />
-            {id === "columns" && dbType === "mongodb"
-              ? t("datagrid.fieldsView", "Fields")
-              : t(`datagrid.${key}`, fallback)}
-          </button>
-        ))}
+        {tabItems
+          .filter(
+            (item) =>
+              !("mongoOnly" in item && item.mongoOnly) || dbType === "mongodb",
+          )
+          .map(({ id, key, fallback, Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={activeView === id}
+              tabIndex={activeView === id ? 0 : -1}
+              onClick={() => onViewChange(id)}
+              className={cn(
+                "inline-flex h-8 items-center gap-1.5 border-b-2 px-2.5 text-xs transition-colors",
+                activeView === id
+                  ? "border-primary text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground border-transparent",
+              )}
+            >
+              <Icon className="size-3.5" />
+              {id === "columns" && dbType === "mongodb"
+                ? t("datagrid.fieldsView", "Fields")
+                : t(`datagrid.${key}`, fallback)}
+            </button>
+          ))}
       </div>
       <span className="flex-1" />
       <div

@@ -1195,6 +1195,7 @@
       "project": "Project ($project)",
       "lookup": "Lookup ($lookup)",
       "unwind": "Unwind ($unwind)",
+      "facet": "Facet ($facet)",
       "delete": "Remove stage",
       "duplicate": "Duplicate stage",
       "move_up": "Move stage up",

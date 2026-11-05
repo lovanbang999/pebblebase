@@ -97,6 +97,19 @@ export function PipelineBuilder({
     return `db.${target}.aggregate(${JSON.stringify(pipelineArray, null, 2)})`;
   }, [collection, pipelineArray]);
 
+  // Compute active stages up to a specific index for intermediate preview
+  const getStagesUpTo = (idx: number) => {
+    const result: Record<string, unknown>[] = [];
+    for (let i = 0; i <= idx; i++) {
+      const item = stages[i];
+      if (item && item.enabled) {
+        const obj = generateStageObject(item.stage);
+        if (obj) result.push(obj);
+      }
+    }
+    return result;
+  };
+
   // Stage Operations
   const handleAddStage = (type: StageType) => {
     const newStage: PipelineStageItem = {
@@ -350,6 +363,13 @@ export function PipelineBuilder({
                 <Layers className="size-3.5 text-orange-500" />
                 <span>{t("pipeline.stage.unwind")}</span>
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleAddStage("$facet")}
+                className="cursor-pointer gap-2"
+              >
+                <Sparkles className="size-3.5 text-pink-500" />
+                <span>{t("pipeline.stage.facet")}</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -446,6 +466,9 @@ export function PipelineBuilder({
                 totalStages={stages.length}
                 draggedIndex={draggedIndex}
                 tables={tables}
+                connId={connection.id}
+                collection={collection}
+                activeStagesUpToThis={getStagesUpTo(index)}
                 onDragStart={handleDragStart}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}

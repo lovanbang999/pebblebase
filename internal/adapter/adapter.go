@@ -150,11 +150,15 @@ type AggregateResult struct {
 
 // QueryOptions controls filtering, sorting, and pagination for Query calls.
 type QueryOptions struct {
-	Limit    int
-	Offset   int
-	Filters  []Filter
-	SortBy   string
-	SortDesc bool
+	Limit      int
+	Offset     int
+	Filters    []Filter
+	SortBy     string
+	SortDesc   bool
+	RawFilter  string
+	Projection string
+	MaxTimeMS  int
+	Collation  string
 }
 
 // Filter represents a single WHERE condition applied to a Query.
@@ -200,4 +204,60 @@ type SchemaConstraint struct {
 }
 type ConstraintProvider interface {
 	GetSchemaConstraints(context.Context) (map[string][]SchemaConstraint, error)
+}
+
+// MongoTypeDistribution holds the count and percentage for a specific BSON type.
+type MongoTypeDistribution struct {
+	Type       string  `json:"type"`
+	Count      int     `json:"count"`
+	Percentage float64 `json:"percentage"`
+}
+
+// MongoFieldStats provides descriptive statistics for numeric, date, and string values.
+type MongoFieldStats struct {
+	Min             any      `json:"min,omitempty"`
+	Max             any      `json:"max,omitempty"`
+	Avg             *float64 `json:"avg,omitempty"`
+	MinLength       *int     `json:"min_length,omitempty"`
+	MaxLength       *int     `json:"max_length,omitempty"`
+	AvgLength       *float64 `json:"avg_length,omitempty"`
+	DistinctSamples []any    `json:"distinct_samples,omitempty"`
+}
+
+// MongoFieldAnalysis captures the complete sampled schema profile for a collection field.
+type MongoFieldAnalysis struct {
+	Name          string                  `json:"name"`
+	Count         int                     `json:"count"`
+	Frequency     float64                 `json:"frequency"`
+	MissingCount  int                     `json:"missing_count"`
+	MissingRate   float64                 `json:"missing_rate"`
+	Types         []MongoTypeDistribution `json:"types"`
+	IsPolymorphic bool                    `json:"is_polymorphic"`
+	Stats         MongoFieldStats         `json:"stats"`
+}
+
+// MongoSchemaAnalysisResult represents the aggregate outcome of collection schema sampling.
+type MongoSchemaAnalysisResult struct {
+	Collection      string               `json:"collection"`
+	TotalSampled    int                  `json:"total_sampled"`
+	TotalFields     int                  `json:"total_fields"`
+	ExecutionTimeMs float64              `json:"execution_time_ms"`
+	Fields          []MongoFieldAnalysis `json:"fields"`
+}
+
+// MongoSchemaAnalyzer is implemented by database adapters capable of sampling documents and analyzing field schemas.
+type MongoSchemaAnalyzer interface {
+	AnalyzeSchema(ctx context.Context, table string, sampleSize int) (*MongoSchemaAnalysisResult, error)
+}
+
+// PipelinePreviewResult holds intermediate documents and execution metrics for aggregation stages.
+type PipelinePreviewResult struct {
+	Documents       []map[string]any `json:"documents"`
+	Count           int              `json:"count"`
+	ExecutionTimeMs float64          `json:"execution_time_ms"`
+}
+
+// PipelinePreviewer is implemented by database adapters capable of previewing aggregation pipeline stages.
+type PipelinePreviewer interface {
+	PreviewPipeline(ctx context.Context, table string, stagesJSON string, limit int) (*PipelinePreviewResult, error)
 }

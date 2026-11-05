@@ -1,17 +1,34 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
-  ChevronDown as ChevronDownIcon,
-  ChevronUp as ChevronUpIcon,
+  ListTree,
+  Code2,
+  Table as TableIcon,
   Copy,
+  CopyPlus,
   Check,
   Edit2,
   Trash2,
-  ArrowUpRight,
+  Maximize2,
+  Minimize2,
+  Save,
+  AlertCircle,
 } from "lucide-react";
+import CodeMirror from "@uiw/react-codemirror";
+import { json } from "@codemirror/lang-json";
 import { cn } from "cn";
 import type { TableSchema } from "@/lib/types";
+import { DocumentTreeNode } from "./bson/DocumentTreeNode";
+import {
+  detectBsonType,
+  formatBsonValue,
+  type BsonType,
+} from "./bson/bsonTypes";
+import { BsonBadge } from "./bson/BsonBadge";
+import { BsonCellEditor } from "./cell-inspector/BsonCellEditor";
 
 const COPY_FEEDBACK_MS = 2000;
+
+export type DocumentSubViewMode = "tree" | "json" | "table";
 
 export interface DocumentViewProps {
   rows: Record<string, any>[];
@@ -27,6 +44,7 @@ export interface DocumentViewProps {
     columnName: string,
     newValue: any,
   ) => Promise<void>;
+  onCloneRow?: (row: Record<string, any>) => Promise<void> | void;
   onNavigateRelation?: (
     targetTable: string,
     targetColumn: string,
@@ -35,578 +53,667 @@ export interface DocumentViewProps {
   t: (key: string, opts?: any) => string;
 }
 
+// Helper to flatten nested objects for the flattened Table View sub-mode
+function flattenDoc(
+  obj: Record<string, any>,
+  prefix = "",
+  depth = 0,
+  maxDepth = 2,
+): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [key, val] of Object.entries(obj)) {
+    if (key.startsWith("_pb_")) continue;
+    const path = prefix ? `${prefix}.${key}` : key;
+    if (val !== null && typeof val === "object" && depth < maxDepth) {
+      if (Array.isArray(val)) {
+        if (val.length === 0) {
+          result[path] = val;
+        } else {
+          val.slice(0, 3).forEach((item, idx) => {
+            if (typeof item === "object" && item !== null) {
+              Object.assign(
+                result,
+                flattenDoc(item, `${path}.${idx}`, depth + 1, maxDepth),
+              );
+            } else {
+              result[`${path}.${idx}`] = item;
+            }
+          });
+        }
+      } else {
+        Object.assign(result, flattenDoc(val, path, depth + 1, maxDepth));
+      }
+    } else {
+      result[path] = val;
+    }
+  }
+  return result;
+}
+
 export const DocumentView = React.memo(function DocumentView({
   rows,
   table,
-  extraColumns,
   page,
   pageSize,
   isReadOnly,
   onEditRow,
   onDeleteRow,
   onSaveCell,
-  onNavigateRelation,
+  onCloneRow,
   t,
 }: DocumentViewProps) {
-  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [copiedRow, setCopiedRow] = useState<number | null>(null);
-  const [editingDocIdx, setEditingDocIdx] = useState<number | null>(null);
-  const [editingValues, setEditingValues] = useState<Record<string, string>>(
+  const [subView, setSubView] = useState<DocumentSubViewMode>("tree");
+  const [expandedPathsByDoc, setExpandedPathsByDoc] = useState<
+    Record<number, Set<string>>
+  >({});
+  const [copiedDocIdx, setCopiedDocIdx] = useState<number | null>(null);
+
+  // Active inline cell editing: { docIdx, path }
+  const [editingCell, setEditingCell] = useState<{
+    docIdx: number;
+    path: string;
+    type: BsonType;
+  } | null>(null);
+
+  // Raw JSON edit mode per document card
+  const [rawJsonDocs, setRawJsonDocs] = useState<Record<number, string>>({});
+  const [jsonErrors, setJsonErrors] = useState<Record<number, string | null>>(
     {},
   );
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Helper: get field display type label
-  const getTypeLabel = (key: string, val: any): string => {
-    const col = table.columns.find((c) => c.name === key);
-    if (col) {
-      if (col.type === "int") return "Int32";
-      if (col.type === "float") return "Double";
-      if (col.type === "bool") return "Boolean";
-      if (col.type === "datetime") return "Date";
-      if (col.type === "json") return "Object";
-      if (col.type === "uuid") return "UUID";
-      if (col.type === "binary") return "Binary";
-      return "String";
-    }
-    if (val === null || val === undefined) return "Null";
-    if (typeof val === "number")
-      return Number.isInteger(val) ? "Int32" : "Double";
-    if (typeof val === "boolean") return "Boolean";
-    if (typeof val === "object") return "Object";
-    return "String";
-  };
+  const pkCol = table.columns.find((c) => c.is_primary_key);
+  const pkKey = pkCol?.name ?? "_id";
 
-  const enterEditMode = (idx: number, row: Record<string, any>) => {
-    if (isReadOnly) return;
-    const draft: Record<string, string> = {};
-    Object.entries(row).forEach(([k, v]) => {
-      if (!k.startsWith("_pb_")) {
-        draft[k] =
-          v === null || v === undefined
-            ? ""
-            : typeof v === "object"
-              ? JSON.stringify(v)
-              : String(v);
+  // Initialize or get expanded paths for a document
+  const getDocExpandedPaths = useCallback(
+    (docIdx: number, row: Record<string, any>): Set<string> => {
+      if (expandedPathsByDoc[docIdx]) {
+        return expandedPathsByDoc[docIdx];
       }
-    });
-    setEditingDocIdx(idx);
-    setEditingValues(draft);
-    setExpandedRows((prev) => {
-      const next = new Set(prev);
-      next.add(idx);
-      return next;
-    });
-  };
-
-  const cancelEdit = () => {
-    setEditingDocIdx(null);
-    setEditingValues({});
-    setIsSaving(false);
-  };
-
-  const isDocModified = (row: Record<string, any>): boolean => {
-    if (editingDocIdx === null) return false;
-    return Object.entries(editingValues).some(([k, v]) => {
-      const orig = row[k];
-      const origStr =
-        orig === null || orig === undefined
-          ? ""
-          : typeof orig === "object"
-            ? JSON.stringify(orig)
-            : String(orig);
-      return v !== origStr;
-    });
-  };
-
-  const handleUpdate = async (row: Record<string, any>) => {
-    if (!onSaveCell || isSaving) return;
-    setIsSaving(true);
-    try {
-      const changedEntries = Object.entries(editingValues).filter(([k, v]) => {
-        const orig = row[k];
-        const origStr =
-          orig === null || orig === undefined
-            ? ""
-            : typeof orig === "object"
-              ? JSON.stringify(orig)
-              : String(orig);
-        return v !== origStr;
+      // By default, expand first-level objects and arrays
+      const initial = new Set<string>();
+      Object.entries(row).forEach(([k, v]) => {
+        if (v !== null && typeof v === "object") {
+          initial.add(k);
+        }
       });
-      for (const [key, rawVal] of changedEntries) {
-        const colSchema = table.columns.find((c) => c.name === key);
-        let parsed: any = rawVal;
-        if (colSchema) {
-          if (rawVal === "" && colSchema.nullable) parsed = null;
-          else if (colSchema.type === "int") {
-            const p = parseInt(rawVal, 10);
-            parsed = isNaN(p) ? rawVal : p;
-          } else if (colSchema.type === "float") {
-            const p = parseFloat(rawVal);
-            parsed = isNaN(p) ? rawVal : p;
-          } else if (colSchema.type === "bool") parsed = rawVal === "true";
-          else if (colSchema.type === "json") {
-            try {
-              parsed = JSON.parse(rawVal);
-            } catch {
-              parsed = rawVal;
-            }
+      return initial;
+    },
+    [expandedPathsByDoc],
+  );
+
+  const togglePathExpand = (docIdx: number, path: string) => {
+    setExpandedPathsByDoc((prev) => {
+      const current = prev[docIdx]
+        ? new Set(prev[docIdx])
+        : getDocExpandedPaths(docIdx, rows[docIdx] ?? {});
+      if (current.has(path)) {
+        current.delete(path);
+      } else {
+        current.add(path);
+      }
+      return { ...prev, [docIdx]: current };
+    });
+  };
+
+  const handleExpandAll = () => {
+    const next: Record<number, Set<string>> = {};
+    rows.forEach((row, idx) => {
+      const allPaths = new Set<string>();
+      const collect = (val: any, prefix: string) => {
+        if (val !== null && typeof val === "object") {
+          allPaths.add(prefix);
+          if (Array.isArray(val)) {
+            val.forEach((item, i) => collect(item, `${prefix}.${i}`));
+          } else {
+            Object.entries(val).forEach(([k, v]) =>
+              collect(v, prefix ? `${prefix}.${k}` : k),
+            );
           }
         }
-        await onSaveCell(row, key, parsed);
-      }
-      cancelEdit();
-    } catch (err) {
-      console.error("Document inline update failed:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Escape key to cancel editing
-  useEffect(() => {
-    if (editingDocIdx === null) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancelEdit();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [editingDocIdx]);
-
-  const toggleExpand = (idx: number) => {
-    setExpandedRows((prev) => {
-      const next = new Set(prev);
-      if (next.has(idx)) next.delete(idx);
-      else next.add(idx);
-      return next;
+      };
+      Object.entries(row).forEach(([k, v]) => collect(v, k));
+      next[idx] = allPaths;
     });
+    setExpandedPathsByDoc(next);
   };
 
-  const handleCopyJson = (row: Record<string, any>, idx: number) => {
-    navigator.clipboard.writeText(JSON.stringify(row, null, 2));
-    setCopiedRow(idx);
-    setTimeout(() => setCopiedRow(null), COPY_FEEDBACK_MS);
+  const handleCollapseAll = () => {
+    const next: Record<number, Set<string>> = {};
+    rows.forEach((_, idx) => {
+      next[idx] = new Set<string>();
+    });
+    setExpandedPathsByDoc(next);
   };
 
-  // All field keys for a given row (schema + dynamic)
-  const allFieldKeys = (row: Record<string, any>) => {
-    const schemaKeys = table.columns.map((c) => c.name);
-    const rowKeys = Object.keys(row).filter((k) => !k.startsWith("_pb_"));
-    return Array.from(
-      new Set([...schemaKeys, ...extraColumns, ...rowKeys]),
-    ).filter((k) => k in row);
-  };
-
-  const renderValue = (key: string, val: any, _row: Record<string, any>) => {
-    if (val === undefined) {
-      return (
-        <span className="text-muted-foreground text-[11px] italic select-none">
-          —
-        </span>
-      );
-    }
-    if (val === null) {
-      return (
-        <span className="text-muted-foreground font-mono text-[11px] italic">
-          null
-        </span>
-      );
-    }
-
-    const colSchema = table.columns.find((c) => c.name === key);
-
-    // Foreign key navigation
-    if (colSchema?.is_foreign_key && onNavigateRelation) {
-      const rel = table.relations?.find((r) => r.from_column === key);
-      if (rel) {
-        return (
-          <button
-            type="button"
-            onClick={() => onNavigateRelation(rel.to_table, rel.to_column, val)}
-            className="inline-flex cursor-pointer items-center gap-1 font-mono text-[11px] text-sky-600 hover:underline dark:text-sky-400"
-          >
-            {String(val)}
-            <ArrowUpRight className="h-3 w-3 shrink-0" />
-          </button>
-        );
-      }
-    }
-
-    if (typeof val === "boolean") {
-      return (
-        <span
-          className={cn(
-            "rounded border px-1.5 py-px font-mono text-[11px] font-semibold",
-            val
-              ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/40 dark:text-success"
-              : "border-border bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground dark:border-transparent",
-          )}
-        >
-          {String(val)}
-        </span>
-      );
-    }
-
-    if (typeof val === "object") {
-      const json = JSON.stringify(val);
-      const isLong = json.length > 80;
-      return (
-        <span
-          className="text-warning dark:text-warning/90 cursor-help font-mono text-[11px] break-all"
-          title={JSON.stringify(val, null, 2)}
-        >
-          {isLong ? json.slice(0, 80) + "…" : json}
-        </span>
-      );
-    }
-
-    if (colSchema?.is_primary_key) {
-      return (
-        <span className="text-warning dark:text-warning font-mono text-[11px] font-semibold">
-          {String(val)}
-        </span>
-      );
-    }
-
-    if (typeof val === "number") {
-      return (
-        <span className="font-mono text-[11px] text-blue-700 dark:text-blue-300">
-          {String(val)}
-        </span>
-      );
-    }
-
-    // String
-    const str = String(val);
-    const isDate =
-      colSchema?.type === "datetime" || /^\d{4}-\d{2}-\d{2}T/.test(str);
-    if (isDate) {
-      return (
-        <span className="font-mono text-[11px] text-violet-700 dark:text-violet-300">
-          &quot;{str}&quot;
-        </span>
-      );
-    }
-    return (
-      <span className="text-success dark:text-success font-mono text-[11px]">
-        &quot;{str}&quot;
-      </span>
+  const handleCopyDocJson = (row: Record<string, any>, idx: number) => {
+    const cleanDoc = Object.fromEntries(
+      Object.entries(row).filter(([k]) => !k.startsWith("_pb_")),
     );
+    navigator.clipboard.writeText(JSON.stringify(cleanDoc, null, 2));
+    setCopiedDocIdx(idx);
+    setTimeout(() => setCopiedDocIdx(null), COPY_FEEDBACK_MS);
   };
+
+  const handleStartCellEdit = (
+    docIdx: number,
+    path: string,
+    _val: unknown,
+    type: BsonType,
+  ) => {
+    if (isReadOnly) return;
+    setEditingCell({ docIdx, path, type });
+  };
+
+  const handleSaveCellEdit = async (
+    _docIdx: number,
+    row: Record<string, any>,
+    path: string,
+    newVal: unknown,
+  ) => {
+    if (!onSaveCell) return;
+    await onSaveCell(row, path, newVal);
+    setEditingCell(null);
+  };
+
+  // JSON View Raw Edit Handler
+  const handleSaveJsonDoc = async (
+    row: Record<string, any>,
+    docIdx: number,
+  ) => {
+    const raw = rawJsonDocs[docIdx];
+    if (!raw || !onSaveCell) return;
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (
+        typeof parsed !== "object" ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
+        throw new Error("Document must be a JSON object");
+      }
+
+      // Update changed root fields
+      for (const [key, val] of Object.entries(parsed)) {
+        if (key === pkKey) continue;
+        if (JSON.stringify(row[key]) !== JSON.stringify(val)) {
+          await onSaveCell(row, key, val);
+        }
+      }
+
+      setJsonErrors((prev) => ({ ...prev, [docIdx]: null }));
+    } catch (err) {
+      setJsonErrors((prev) => ({
+        ...prev,
+        [docIdx]: err instanceof Error ? err.message : "Invalid JSON syntax",
+      }));
+    }
+  };
+
+  // Flattened Table View calculations
+  const flattenedRows = useMemo(() => {
+    if (subView !== "table") return [];
+    return rows.map((r) => flattenDoc(r));
+  }, [rows, subView]);
+
+  const flattenedColumns = useMemo(() => {
+    if (subView !== "table") return [];
+    const colSet = new Set<string>();
+    flattenedRows.forEach((r) => {
+      Object.keys(r).forEach((k) => colSet.add(k));
+    });
+    // Ensure primary key is first
+    const list = Array.from(colSet).filter((k) => k !== pkKey);
+    return [pkKey, ...list];
+  }, [flattenedRows, pkKey, subView]);
 
   return (
-    <div className="bg-background dark:bg-background flex-1 space-y-2 overflow-auto p-3">
-      {rows.map((row, globalIdx) => {
-        const rowNumber = page * pageSize + globalIdx + 1;
-        const keys = allFieldKeys(row);
-        const isExpanded = expandedRows.has(globalIdx);
-        const visibleKeys = isExpanded ? keys : keys.slice(0, 15);
-        const hasMore = keys.length > 15;
-
-        // Primary key field shown prominently at top
-        const pkCol = table.columns.find((c) => c.is_primary_key);
-        const pkKey = pkCol?.name ?? "_id";
-        const pkVal = row[pkKey];
-
-        return (
-          <div
-            key={globalIdx}
+    <div className="bg-background dark:bg-background flex flex-1 flex-col overflow-hidden">
+      {/* Sub-Header Toolbar: Tri-Mode View Switcher + Expansion Controls */}
+      <div className="border-border bg-card/60 dark:border-border dark:bg-card/40 flex h-10 shrink-0 items-center justify-between border-b px-3">
+        <div className="border-border/80 bg-background/80 flex items-center gap-1 rounded-md border p-0.5">
+          <button
+            type="button"
+            onClick={() => setSubView("tree")}
             className={cn(
-              "group bg-background dark:bg-card overflow-hidden rounded-lg border transition-colors",
-              editingDocIdx === globalIdx
-                ? "border-primary/60 ring-primary/20 dark:border-primary/40 ring-1"
-                : "border-border hover:border-border dark:border-border dark:hover:border-border",
+              "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs font-medium transition-colors",
+              subView === "tree"
+                ? "bg-primary text-primary-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground",
             )}
-            onDoubleClick={() => {
-              if (!isReadOnly && editingDocIdx !== globalIdx)
-                enterEditMode(globalIdx, row);
-            }}
+            title="Recursive Tree View"
           >
-            {/* Card Header: row# + primary key + actions */}
-            <div className="border-border bg-card/70 dark:border-border dark:bg-card/70 flex items-center justify-between border-b px-3 py-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <span className="text-muted-foreground dark:text-muted-foreground w-6 shrink-0 text-right font-mono text-[11px] select-none">
-                  {rowNumber}
-                </span>
-                <span className="text-muted-foreground dark:text-muted-foreground shrink-0 font-mono text-[11px]">
-                  {pkKey}:
-                </span>
-                <span className="text-warning dark:text-warning truncate font-mono text-[11px] font-semibold">
-                  {pkVal !== undefined && pkVal !== null ? (
-                    String(pkVal)
-                  ) : (
-                    <span className="text-muted-foreground italic">null</span>
-                  )}
-                </span>
-                {editingDocIdx === globalIdx && (
-                  <span className="border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/40 dark:text-success ml-1 rounded border px-1.5 py-px font-mono text-[10px] select-none">
-                    editing
-                  </span>
-                )}
-              </div>
+            <ListTree className="size-3.5" />
+            <span>Tree</span>
+          </button>
 
-              {/* Per-card actions — hidden when editing */}
-              {editingDocIdx !== globalIdx && (
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                  {!isReadOnly && (
-                    <span className="text-muted-foreground dark:text-muted-foreground mr-1 hidden font-mono text-[10px] select-none group-hover:inline">
-                      double-click to edit
+          <button
+            type="button"
+            onClick={() => setSubView("json")}
+            className={cn(
+              "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs font-medium transition-colors",
+              subView === "json"
+                ? "bg-primary text-primary-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            title="Raw JSON Document Editor"
+          >
+            <Code2 className="size-3.5" />
+            <span>JSON</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSubView("table")}
+            className={cn(
+              "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-1 font-mono text-xs font-medium transition-colors",
+              subView === "table"
+                ? "bg-primary text-primary-foreground shadow-2xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            title="Flattened Dot-Notation Table View"
+          >
+            <TableIcon className="size-3.5" />
+            <span>Table</span>
+          </button>
+        </div>
+
+        {subView === "tree" && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleExpandAll}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted flex cursor-pointer items-center gap-1 rounded px-2 py-1 font-mono text-[11px]"
+              title="Expand all nested branches"
+            >
+              <Maximize2 className="size-3.5" />
+              <span>Expand All</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleCollapseAll}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted flex cursor-pointer items-center gap-1 rounded px-2 py-1 font-mono text-[11px]"
+              title="Collapse all nested branches"
+            >
+              <Minimize2 className="size-3.5" />
+              <span>Collapse All</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 space-y-3 overflow-auto p-3">
+        {/* ========================================================================= */}
+        {/* SUBVIEW 1: RECURSIVE TREE VIEW (Compass Core View)                        */}
+        {/* ========================================================================= */}
+        {subView === "tree" &&
+          rows.map((row, globalIdx) => {
+            const rowNumber = page * pageSize + globalIdx + 1;
+            const pkVal = row[pkKey];
+            const pkType = detectBsonType(pkVal, pkKey);
+            const formattedPk = formatBsonValue(pkVal, pkType, pkKey);
+            const expandedPaths = getDocExpandedPaths(globalIdx, row);
+
+            const rootKeys = Object.keys(row).filter(
+              (k) => !k.startsWith("_pb_"),
+            );
+
+            return (
+              <div
+                key={globalIdx}
+                className="group bg-card/60 dark:bg-card/40 border-border hover:border-border/80 overflow-hidden rounded-lg border shadow-2xs transition-colors"
+              >
+                {/* Document Card Header */}
+                <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="text-muted-foreground w-6 shrink-0 text-right font-mono text-[11px] select-none">
+                      #{rowNumber}
                     </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => handleCopyJson(row, globalIdx)}
-                    title={t("datagrid.documentView.copyJson")}
-                    className="text-muted-foreground hover:bg-muted dark:hover:bg-muted cursor-pointer rounded p-1 transition-colors hover:text-blue-600 dark:hover:text-blue-400"
-                  >
-                    {copiedRow === globalIdx ? (
-                      <Check className="text-success h-3.5 w-3.5" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onEditRow(row)}
-                    disabled={isReadOnly}
-                    title={t("datagrid.editRecordTooltip")}
-                    className={cn(
-                      "text-muted-foreground hover:bg-muted hover:text-success dark:hover:bg-muted dark:hover:text-success cursor-pointer rounded p-1 transition-colors",
-                      isReadOnly &&
-                        "pointer-events-none cursor-not-allowed opacity-40",
-                    )}
-                  >
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDeleteRow(row)}
-                    disabled={isReadOnly}
-                    title={t("datagrid.deleteRecordTooltip")}
-                    className={cn(
-                      "text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:bg-destructive/40 dark:hover:text-destructive cursor-pointer rounded p-1 transition-colors",
-                      isReadOnly &&
-                        "pointer-events-none cursor-not-allowed opacity-40",
-                    )}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-            </div>
+                    <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
+                      {pkKey}:
+                    </span>
+                    <span className="text-warning dark:text-warning truncate font-mono text-[11px] font-semibold">
+                      {formattedPk.display}
+                    </span>
+                    <BsonBadge type={pkType} />
+                  </div>
 
-            {/* Field list — Compass-style, one per line with line numbers */}
-            <div className="py-1">
-              {visibleKeys
-                .filter((k) => k !== pkKey)
-                .map((key, fieldIdx) => {
-                  const isPk = table.columns.find(
-                    (c) => c.name === key,
-                  )?.is_primary_key;
-                  const isEditing = editingDocIdx === globalIdx;
-                  const typeLabel = getTypeLabel(key, row[key]);
-                  const fieldLineNum = fieldIdx + 2; // starts at 2 (1 = _id)
-                  const currentVal = editingValues[key] ?? "";
-                  const origStr = (() => {
-                    const orig = row[key];
-                    return orig === null || orig === undefined
-                      ? ""
-                      : typeof orig === "object"
-                        ? JSON.stringify(orig)
-                        : String(orig);
-                  })();
-                  const isDirty = isEditing && currentVal !== origStr;
+                  {/* Actions Toolbar */}
+                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyDocJson(row, globalIdx)}
+                      title={t("datagrid.documentView.copyJson", "Copy JSON")}
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer rounded p-1"
+                    >
+                      {copiedDocIdx === globalIdx ? (
+                        <Check className="text-success size-3.5" />
+                      ) : (
+                        <Copy className="size-3.5" />
+                      )}
+                    </button>
 
-                  return (
-                    <div
-                      key={key}
+                    {onCloneRow && !isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => onCloneRow(row)}
+                        title="Clone Document (Generate New _id)"
+                        className="text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer rounded p-1"
+                      >
+                        <CopyPlus className="size-3.5" />
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => onEditRow(row)}
+                      disabled={isReadOnly}
+                      title={t("datagrid.editRecordTooltip", "Edit Record")}
                       className={cn(
-                        "flex min-w-0 items-center gap-0 border-l-2 transition-colors",
-                        isEditing && isDirty
-                          ? "border-l-success bg-success/40 dark:bg-success/10"
-                          : "border-l-transparent",
+                        "text-muted-foreground hover:text-success hover:bg-muted cursor-pointer rounded p-1",
+                        isReadOnly && "pointer-events-none opacity-40",
                       )}
                     >
-                      {/* Line number */}
-                      {isEditing && (
-                        <span className="text-muted-foreground dark:text-muted-foreground w-8 shrink-0 self-start pt-0.75 pr-2 text-right font-mono text-[10px] select-none">
-                          {fieldLineNum}
-                        </span>
+                      <Edit2 className="size-3.5" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => onDeleteRow(row)}
+                      disabled={isReadOnly}
+                      title={t("datagrid.deleteRecordTooltip", "Delete Record")}
+                      className={cn(
+                        "text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded p-1",
+                        isReadOnly && "pointer-events-none opacity-40",
                       )}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                </div>
 
-                      {/* Field name */}
-                      <span
-                        className={cn(
-                          "text-muted-foreground shrink-0 self-start truncate font-mono text-[11px]",
-                          isEditing
-                            ? "min-w-35 px-2 pt-0.75"
-                            : "min-w-30 px-3 py-px",
-                        )}
-                      >
-                        {key}
-                      </span>
-                      <span className="text-muted-foreground dark:text-muted-foreground shrink-0 self-start pt-0.75 font-mono text-[11px]">
-                        :
-                      </span>
-
-                      {/* Value — textarea in edit mode, styled display otherwise */}
-                      {isEditing && !isPk ? (
-                        <textarea
-                          rows={1}
-                          value={currentVal}
-                          onChange={(e) => {
-                            const el = e.target;
-                            el.style.height = "auto";
-                            el.style.height = `${el.scrollHeight}px`;
-                            setEditingValues((prev) => ({
-                              ...prev,
-                              [key]: e.target.value,
-                            }));
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && e.ctrlKey) {
-                              e.preventDefault();
-                              const el = e.currentTarget;
-                              const start =
-                                el.selectionStart ?? currentVal.length;
-                              const end = el.selectionEnd ?? currentVal.length;
-                              const newVal =
-                                currentVal.slice(0, start) +
-                                "\n" +
-                                currentVal.slice(end);
-                              setEditingValues((prev) => ({
-                                ...prev,
-                                [key]: newVal,
-                              }));
-                              setTimeout(() => {
-                                el.selectionStart = el.selectionEnd = start + 1;
-                                el.style.height = "auto";
-                                el.style.height = `${el.scrollHeight}px`;
-                              }, 0);
-                            }
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          ref={(el) => {
-                            if (el) {
-                              el.style.height = "auto";
-                              el.style.height = `${el.scrollHeight}px`;
-                            }
-                          }}
-                          className={cn(
-                            "text-foreground dark:text-foreground min-w-0 flex-1 resize-none overflow-hidden border-0 border-b bg-transparent px-2 py-px font-mono text-[11px] leading-5 transition-colors focus:outline-none",
-                            isDirty
-                              ? "border-b-success dark:border-b-success"
-                              : "border-b-border focus:border-b-border dark:border-b-border dark:focus:border-b-border",
-                          )}
-                          autoFocus={
-                            key === visibleKeys.filter((k) => k !== pkKey)[0]
-                          }
-                        />
-                      ) : (
-                        <span
-                          className={cn(
-                            "min-w-0 flex-1 font-mono text-[11px] wrap-break-word",
-                            isEditing
-                              ? "text-muted-foreground dark:text-muted-foreground px-2 py-px"
-                              : "px-2 py-px",
-                          )}
-                        >
-                          {isEditing ? (
-                            <span className="text-warning dark:text-warning">
-                              {String(row[key] ?? "")}
-                            </span>
-                          ) : (
-                            renderValue(key, row[key], row)
-                          )}
-                        </span>
-                      )}
-
-                      {/* Type label (Compass-style, right side) */}
-                      <span
-                        className={cn(
-                          "shrink-0 self-start pt-0.75 pl-2 font-mono text-[10px]",
-                          isEditing
-                            ? "text-muted-foreground min-w-14 pr-3 text-right"
-                            : "text-muted-foreground dark:text-foreground min-w-14 pr-3 text-right",
-                        )}
-                      >
-                        {typeLabel}
-                      </span>
-                    </div>
-                  );
-                })}
-
-              {/* Expand / collapse — not shown in edit mode */}
-              {hasMore && editingDocIdx !== globalIdx && (
-                <button
-                  type="button"
-                  onClick={() => toggleExpand(globalIdx)}
-                  className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-muted-foreground mt-1.5 ml-3 flex cursor-pointer items-center gap-1 font-mono text-[11px] transition-colors select-none"
-                >
-                  {isExpanded ? (
-                    <>
-                      <ChevronUpIcon className="h-3.5 w-3.5" />
-                      {t("datagrid.documentView.collapse")}
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDownIcon className="h-3.5 w-3.5" />
-                      {t("datagrid.documentView.expand")} (+{keys.length - 15}{" "}
-                      fields)
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            {/* "Document modified." amber banner — only when editing AND changes exist */}
-            {editingDocIdx === globalIdx && (
-              <div
-                className={cn(
-                  "flex items-center justify-between border-t px-3 py-2 transition-colors",
-                  isDocModified(row)
-                    ? "border-warning/30 bg-warning/10 dark:border-warning/60 dark:bg-warning/30"
-                    : "border-border bg-card/60 dark:border-border dark:bg-card/60",
-                )}
-              >
-                <span
-                  className={cn(
-                    "font-mono text-[11px] transition-opacity",
-                    isDocModified(row)
-                      ? "text-warning dark:text-warning opacity-100"
-                      : "opacity-0 select-none",
-                  )}
-                >
-                  Document modified.
-                </span>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={cancelEdit}
-                    className="border-border bg-background text-foreground hover:bg-card dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted cursor-pointer rounded border px-3 py-1.5 font-mono text-[11px] font-medium tracking-wide uppercase transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isSaving || !onSaveCell || !isDocModified(row)}
-                    onClick={() => handleUpdate(row)}
-                    className={cn(
-                      "rounded border px-3 py-1.5 font-mono text-[11px] font-semibold tracking-wide uppercase transition-colors",
-                      isSaving || !onSaveCell || !isDocModified(row)
-                        ? "border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted cursor-not-allowed"
-                        : "border-primary bg-primary hover:bg-primary/90 cursor-pointer text-white",
-                    )}
-                  >
-                    {isSaving ? "Saving..." : "Update"}
-                  </button>
+                {/* Recursive Document Tree Fields */}
+                <div className="py-1">
+                  {rootKeys.map((key) => {
+                    return (
+                      <DocumentTreeNode
+                        key={key}
+                        keyName={key}
+                        value={row[key]}
+                        path={key}
+                        depth={0}
+                        isReadOnly={isReadOnly}
+                        expandedPaths={expandedPaths}
+                        onToggleExpand={(p) => togglePathExpand(globalIdx, p)}
+                        activeEditingPath={
+                          editingCell?.docIdx === globalIdx
+                            ? editingCell.path
+                            : null
+                        }
+                        onStartEdit={(p, val, typ) =>
+                          handleStartCellEdit(globalIdx, p, val, typ)
+                        }
+                        onSaveEdit={(p, val) =>
+                          handleSaveCellEdit(globalIdx, row, p, val)
+                        }
+                        onCancelEdit={() => setEditingCell(null)}
+                      />
+                    );
+                  })}
                 </div>
               </div>
-            )}
+            );
+          })}
+
+        {/* ========================================================================= */}
+        {/* SUBVIEW 2: RAW JSON VIEW & EDITOR                                         */}
+        {/* ========================================================================= */}
+        {subView === "json" &&
+          rows.map((row, globalIdx) => {
+            const rowNumber = page * pageSize + globalIdx + 1;
+            const pkVal = row[pkKey];
+            const cleanDoc = Object.fromEntries(
+              Object.entries(row).filter(([k]) => !k.startsWith("_pb_")),
+            );
+            const initialJson = JSON.stringify(cleanDoc, null, 2);
+            const currentJson = rawJsonDocs[globalIdx] ?? initialJson;
+            const isModified = currentJson !== initialJson;
+            const error = jsonErrors[globalIdx];
+
+            return (
+              <div
+                key={globalIdx}
+                className="group bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs"
+              >
+                {/* JSON Card Header */}
+                <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground font-mono text-[11px] select-none">
+                      #{rowNumber}
+                    </span>
+                    <span className="text-muted-foreground font-mono text-[11px]">
+                      {pkKey}:
+                    </span>
+                    <span className="text-warning font-mono text-[11px] font-semibold">
+                      {String(pkVal)}
+                    </span>
+                    {isModified && (
+                      <span className="border-warning/40 bg-warning/10 text-warning rounded border px-1.5 py-px font-mono text-[10px]">
+                        modified
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {isModified && (
+                      <button
+                        type="button"
+                        onClick={() => handleSaveJsonDoc(row, globalIdx)}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 font-mono text-xs font-semibold"
+                      >
+                        <Save className="size-3" />
+                        <span>Save</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => handleCopyDocJson(row, globalIdx)}
+                      title="Copy JSON"
+                      className="text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer rounded p-1"
+                    >
+                      {copiedDocIdx === globalIdx ? (
+                        <Check className="text-success size-3.5" />
+                      ) : (
+                        <Copy className="size-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* CodeMirror JSON Editor */}
+                <div className="border-border/40 border-t font-mono text-xs">
+                  <CodeMirror
+                    value={currentJson}
+                    height="auto"
+                    extensions={[json()]}
+                    theme="dark"
+                    editable={!isReadOnly}
+                    onChange={(val) => {
+                      setRawJsonDocs((prev) => ({ ...prev, [globalIdx]: val }));
+                      if (jsonErrors[globalIdx]) {
+                        setJsonErrors((prev) => ({
+                          ...prev,
+                          [globalIdx]: null,
+                        }));
+                      }
+                    }}
+                    className="overflow-hidden"
+                  />
+                </div>
+
+                {error && (
+                  <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-1.5 border-t px-3 py-1.5 font-mono text-xs">
+                    <AlertCircle className="size-3.5 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+        {/* ========================================================================= */}
+        {/* SUBVIEW 3: FLATTENED TABLE VIEW                                           */}
+        {/* ========================================================================= */}
+        {subView === "table" && (
+          <div className="border-border bg-card/60 overflow-x-auto rounded-lg border shadow-2xs">
+            <table className="w-full caption-bottom border-collapse text-left text-xs">
+              <thead className="border-border bg-muted/50 text-muted-foreground border-b font-mono text-[11px]">
+                <tr>
+                  <th className="w-10 px-3 py-2 text-center select-none">#</th>
+                  {flattenedColumns.map((col) => (
+                    <th key={col} className="px-3 py-2 font-semibold">
+                      <div className="flex items-center gap-1">
+                        <span>{col}</span>
+                        {col === pkKey && (
+                          <span className="text-warning text-[10px] font-bold">
+                            (PK)
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                  <th className="w-20 px-3 py-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-border/40 divide-y font-mono text-[11px]">
+                {flattenedRows.map((fRow, idx) => {
+                  const origRow = rows[idx];
+                  const rowNumber = page * pageSize + idx + 1;
+
+                  return (
+                    <tr
+                      key={idx}
+                      className="group hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="text-muted-foreground px-3 py-1.5 text-center select-none">
+                        {rowNumber}
+                      </td>
+                      {flattenedColumns.map((col) => {
+                        const cellVal = fRow[col];
+                        const cellType = detectBsonType(cellVal, col);
+                        const fmt = formatBsonValue(cellVal, cellType, col);
+                        const isEditingThis =
+                          editingCell?.docIdx === idx &&
+                          editingCell?.path === col;
+
+                        return (
+                          <td
+                            key={col}
+                            className="max-w-64 truncate px-3 py-1.5"
+                            onDoubleClick={() => {
+                              if (
+                                !isReadOnly &&
+                                col !== pkKey &&
+                                cellType !== "Object" &&
+                                cellType !== "Array"
+                              ) {
+                                handleStartCellEdit(
+                                  idx,
+                                  col,
+                                  cellVal,
+                                  cellType,
+                                );
+                              }
+                            }}
+                          >
+                            {isEditingThis ? (
+                              <BsonCellEditor
+                                path={col}
+                                initialValue={cellVal}
+                                type={cellType}
+                                onSave={(p, val) =>
+                                  handleSaveCellEdit(idx, origRow, p, val)
+                                }
+                                onCancel={() => setEditingCell(null)}
+                              />
+                            ) : (
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className={cn(
+                                    col === pkKey &&
+                                      "text-warning font-semibold",
+                                    cellType === "String" &&
+                                      "text-emerald-600 dark:text-emerald-400",
+                                    (cellType === "Int32" ||
+                                      cellType === "Int64") &&
+                                      "text-orange-600 dark:text-orange-400",
+                                    (cellType === "Double" ||
+                                      cellType === "Decimal128") &&
+                                      "text-orange-700 dark:text-orange-300",
+                                    cellType === "Date" &&
+                                      "text-blue-600 dark:text-blue-400",
+                                    cellType === "Boolean" &&
+                                      "font-semibold text-purple-600 dark:text-purple-400",
+                                    (cellType === "Null" ||
+                                      cellType === "Undefined") &&
+                                      "text-zinc-500 italic",
+                                  )}
+                                >
+                                  {fmt.display}
+                                </span>
+                                <BsonBadge
+                                  type={cellType}
+                                  className="origin-left scale-85"
+                                />
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-1.5 text-right">
+                        <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyDocJson(origRow, idx)}
+                            title="Copy JSON"
+                            className="text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer rounded p-1"
+                          >
+                            <Copy className="size-3" />
+                          </button>
+                          {onCloneRow && !isReadOnly && (
+                            <button
+                              type="button"
+                              onClick={() => onCloneRow(origRow)}
+                              title="Clone"
+                              className="text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer rounded p-1"
+                            >
+                              <CopyPlus className="size-3" />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onDeleteRow(origRow)}
+                            disabled={isReadOnly}
+                            title="Delete"
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded p-1"
+                          >
+                            <Trash2 className="size-3" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        );
-      })}
+        )}
+      </div>
     </div>
   );
 });
+
 DocumentView.displayName = "DocumentView";
