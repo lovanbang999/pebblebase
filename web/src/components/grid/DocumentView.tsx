@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   ListTree,
   Code2,
@@ -15,8 +15,10 @@ import {
 } from "lucide-react";
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "cn";
 import type { TableSchema } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DocumentTreeNode } from "./bson/DocumentTreeNode";
 import {
   detectBsonType,
@@ -37,6 +39,8 @@ export interface DocumentViewProps {
   page: number;
   pageSize: number;
   isReadOnly: boolean;
+  isTabActive?: boolean;
+  isLoading?: boolean;
   onEditRow: (row: Record<string, any>) => void;
   onDeleteRow: (row: Record<string, any>) => void;
   onSaveCell?: (
@@ -90,23 +94,188 @@ function flattenDoc(
   return result;
 }
 
+export function DocumentViewSkeleton({ className }: { className?: string }) {
+  return (
+    <div
+      data-testid="document-view-skeleton"
+      className={cn(
+        "bg-background dark:bg-background flex flex-1 flex-col overflow-hidden",
+        className,
+      )}
+    >
+      {/* Sub-Header Toolbar Skeleton */}
+      <div className="border-border bg-card/60 dark:border-border dark:bg-card/40 flex h-10 shrink-0 items-center justify-between border-b px-3">
+        <div className="border-border/80 bg-background/80 flex items-center gap-1 rounded-md border p-0.5">
+          <Skeleton className="h-6 w-14 rounded" />
+          <Skeleton className="h-6 w-14 rounded" />
+          <Skeleton className="h-6 w-14 rounded" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-6 w-20 rounded" />
+          <Skeleton className="h-6 w-20 rounded" />
+        </div>
+      </div>
+
+      {/* Main Content Area: Stacked Compass Document Cards */}
+      <div className="flex-1 space-y-3 overflow-y-auto p-3">
+        {/* Card 1: Rich Object Card Skeleton */}
+        <div className="bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs">
+          <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-3.5 w-6 rounded" />
+              <Skeleton className="h-3.5 w-8 rounded" />
+              <Skeleton className="h-3.5 w-48 rounded" />
+              <Skeleton className="h-4 w-14 rounded-full" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Skeleton className="size-5 rounded" />
+              <Skeleton className="size-5 rounded" />
+              <Skeleton className="size-5 rounded" />
+            </div>
+          </div>
+          <div className="space-y-2.5 p-3 font-mono text-xs">
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-12 rounded" />
+              <Skeleton className="h-3 w-48 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-14 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="h-3 w-36 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-12 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-14 rounded" />
+              <Skeleton className="h-3 w-20 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-10 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="size-3.5 rounded" />
+              <Skeleton className="h-3 w-10 rounded" />
+              <Skeleton className="h-3 w-24 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-12 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-6">
+              <Skeleton className="h-3 w-6 rounded" />
+              <Skeleton className="h-3 w-20 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-10 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-24 rounded" />
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-10 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Medium Object Card Skeleton */}
+        <div className="bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs">
+          <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-3.5 w-6 rounded" />
+              <Skeleton className="h-3.5 w-8 rounded" />
+              <Skeleton className="h-3.5 w-44 rounded" />
+              <Skeleton className="h-4 w-14 rounded-full" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Skeleton className="size-5 rounded" />
+              <Skeleton className="size-5 rounded" />
+              <Skeleton className="size-5 rounded" />
+            </div>
+          </div>
+          <div className="space-y-2.5 p-3 font-mono text-xs">
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-12 rounded" />
+              <Skeleton className="h-3 w-44 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-14 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-20 rounded" />
+              <Skeleton className="h-3 w-40 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-12 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-14 rounded" />
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-10 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-18 rounded" />
+              <Skeleton className="h-3 w-28 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-12 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Compact Object Card Skeleton */}
+        <div className="bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs">
+          <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-3.5 w-6 rounded" />
+              <Skeleton className="h-3.5 w-8 rounded" />
+              <Skeleton className="h-3.5 w-40 rounded" />
+              <Skeleton className="h-4 w-14 rounded-full" />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Skeleton className="size-5 rounded" />
+              <Skeleton className="size-5 rounded" />
+              <Skeleton className="size-5 rounded" />
+            </div>
+          </div>
+          <div className="space-y-2.5 p-3 font-mono text-xs">
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-12 rounded" />
+              <Skeleton className="h-3 w-40 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-14 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-16 rounded" />
+              <Skeleton className="h-3 w-28 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-12 rounded-full" />
+            </div>
+            <div className="flex items-center gap-2 pl-2">
+              <Skeleton className="h-3 w-14 rounded" />
+              <Skeleton className="h-3 w-18 rounded" />
+              <Skeleton className="ml-auto h-3.5 w-10 rounded-full" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export const DocumentView = React.memo(function DocumentView({
   rows,
   table,
   page,
   pageSize,
   isReadOnly,
+  isTabActive = true,
+  isLoading = false,
   onEditRow,
   onDeleteRow,
   onSaveCell,
   onCloneRow,
   t,
 }: DocumentViewProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
   const [subView, setSubView] = useState<DocumentSubViewMode>("tree");
   const [expandedPathsByDoc, setExpandedPathsByDoc] = useState<
     Record<number, Set<string>>
   >({});
   const [copiedDocIdx, setCopiedDocIdx] = useState<number | null>(null);
+
+  // Virtualizer for smooth 60fps rendering of visible document cards
+  // eslint-disable-next-line react-hooks/incompatible-library, react/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => (subView === "json" ? 220 : 160),
+    overscan: 4,
+    initialRect: { width: 1000, height: 800 },
+  });
 
   // Active inline cell editing: { docIdx, path }
   const [editingCell, setEditingCell] = useState<{
@@ -268,6 +437,14 @@ export const DocumentView = React.memo(function DocumentView({
     return [pkKey, ...list];
   }, [flattenedRows, pkKey, subView]);
 
+  if (isTabActive === false) {
+    return <div className="flex-1" aria-hidden="true" />;
+  }
+
+  if (isLoading) {
+    return <DocumentViewSkeleton />;
+  }
+
   return (
     <div className="bg-background dark:bg-background flex flex-1 flex-col overflow-hidden">
       {/* Sub-Header Toolbar: Tri-Mode View Switcher + Expansion Controls */}
@@ -344,225 +521,288 @@ export const DocumentView = React.memo(function DocumentView({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 space-y-3 overflow-auto p-3">
+      <div ref={scrollContainerRef} className="flex-1 overflow-auto p-3">
+        {rows.length === 0 && (
+          <div className="text-muted-foreground flex h-36 items-center justify-center font-mono text-xs">
+            0 documents
+          </div>
+        )}
+
         {/* ========================================================================= */}
-        {/* SUBVIEW 1: RECURSIVE TREE VIEW (Compass Core View)                        */}
+        {/* SUBVIEW 1: RECURSIVE TREE VIEW (Compass Core View - Virtualized)           */}
         {/* ========================================================================= */}
-        {subView === "tree" &&
-          rows.map((row, globalIdx) => {
-            const rowNumber = page * pageSize + globalIdx + 1;
-            const pkVal = row[pkKey];
-            const pkType = detectBsonType(pkVal, pkKey);
-            const formattedPk = formatBsonValue(pkVal, pkType, pkKey);
-            const expandedPaths = getDocExpandedPaths(globalIdx, row);
+        {subView === "tree" && rows.length > 0 && (
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const globalIdx = virtualItem.index;
+              const row = rows[globalIdx];
+              if (!row) return null;
+              const rowNumber = page * pageSize + globalIdx + 1;
+              const pkVal = row[pkKey];
+              const pkType = detectBsonType(pkVal, pkKey);
+              const formattedPk = formatBsonValue(pkVal, pkType, pkKey);
+              const expandedPaths = getDocExpandedPaths(globalIdx, row);
 
-            const rootKeys = Object.keys(row).filter(
-              (k) => !k.startsWith("_pb_"),
-            );
+              const rootKeys = Object.keys(row).filter(
+                (k) => !k.startsWith("_pb_"),
+              );
 
-            return (
-              <div
-                key={globalIdx}
-                className="group bg-card/60 dark:bg-card/40 border-border hover:border-border/80 overflow-hidden rounded-lg border shadow-2xs transition-colors"
-              >
-                {/* Document Card Header */}
-                <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-muted-foreground w-6 shrink-0 text-right font-mono text-[11px] select-none">
-                      #{rowNumber}
-                    </span>
-                    <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
-                      {pkKey}:
-                    </span>
-                    <span className="text-warning dark:text-warning truncate font-mono text-[11px] font-semibold">
-                      {formattedPk.display}
-                    </span>
-                    <BsonBadge type={pkType} />
-                  </div>
+              return (
+                <div
+                  key={`${table.name}-${String(pkVal ?? globalIdx)}`}
+                  ref={virtualizer.measureElement}
+                  data-index={virtualItem.index}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualItem.start}px)`,
+                    paddingBottom: "12px",
+                  }}
+                >
+                  <div className="group bg-card/60 dark:bg-card/40 border-border hover:border-border/80 overflow-hidden rounded-lg border shadow-2xs transition-colors">
+                    {/* Document Card Header */}
+                    <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="text-muted-foreground w-6 shrink-0 text-right font-mono text-[11px] select-none">
+                          #{rowNumber}
+                        </span>
+                        <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
+                          {pkKey}:
+                        </span>
+                        <span className="text-warning dark:text-warning truncate font-mono text-[11px] font-semibold">
+                          {formattedPk.display}
+                        </span>
+                        <BsonBadge type={pkType} />
+                      </div>
 
-                  {/* Actions Toolbar */}
-                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => handleCopyDocJson(row, globalIdx)}
-                      title={t("datagrid.documentView.copyJson", "Copy JSON")}
-                      className="text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer rounded p-1"
-                    >
-                      {copiedDocIdx === globalIdx ? (
-                        <Check className="text-success size-3.5" />
-                      ) : (
-                        <Copy className="size-3.5" />
-                      )}
-                    </button>
+                      {/* Actions Toolbar */}
+                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyDocJson(row, globalIdx)}
+                          title={t(
+                            "datagrid.documentView.copyJson",
+                            "Copy JSON",
+                          )}
+                          className="text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer rounded p-1"
+                        >
+                          {copiedDocIdx === globalIdx ? (
+                            <Check className="text-success size-3.5" />
+                          ) : (
+                            <Copy className="size-3.5" />
+                          )}
+                        </button>
 
-                    {onCloneRow && !isReadOnly && (
-                      <button
-                        type="button"
-                        onClick={() => onCloneRow(row)}
-                        title="Clone Document (Generate New _id)"
-                        className="text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer rounded p-1"
-                      >
-                        <CopyPlus className="size-3.5" />
-                      </button>
-                    )}
+                        {onCloneRow && !isReadOnly && (
+                          <button
+                            type="button"
+                            onClick={() => onCloneRow(row)}
+                            title="Clone Document (Generate New _id)"
+                            className="text-muted-foreground hover:text-primary hover:bg-muted cursor-pointer rounded p-1"
+                          >
+                            <CopyPlus className="size-3.5" />
+                          </button>
+                        )}
 
-                    <button
-                      type="button"
-                      onClick={() => onEditRow(row)}
-                      disabled={isReadOnly}
-                      title={t("datagrid.editRecordTooltip", "Edit Record")}
-                      className={cn(
-                        "text-muted-foreground hover:text-success hover:bg-muted cursor-pointer rounded p-1",
-                        isReadOnly && "pointer-events-none opacity-40",
-                      )}
-                    >
-                      <Edit2 className="size-3.5" />
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => onEditRow(row)}
+                          disabled={isReadOnly}
+                          title={t("datagrid.editRecordTooltip", "Edit Record")}
+                          className={cn(
+                            "text-muted-foreground hover:text-success hover:bg-muted cursor-pointer rounded p-1",
+                            isReadOnly && "pointer-events-none opacity-40",
+                          )}
+                        >
+                          <Edit2 className="size-3.5" />
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={() => onDeleteRow(row)}
-                      disabled={isReadOnly}
-                      title={t("datagrid.deleteRecordTooltip", "Delete Record")}
-                      className={cn(
-                        "text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded p-1",
-                        isReadOnly && "pointer-events-none opacity-40",
-                      )}
-                    >
-                      <Trash2 className="size-3.5" />
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteRow(row)}
+                          disabled={isReadOnly}
+                          title={t(
+                            "datagrid.deleteRecordTooltip",
+                            "Delete Record",
+                          )}
+                          className={cn(
+                            "text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer rounded p-1",
+                            isReadOnly && "pointer-events-none opacity-40",
+                          )}
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Recursive Document Tree Fields */}
+                    <div className="py-1">
+                      {rootKeys.map((key) => {
+                        return (
+                          <DocumentTreeNode
+                            key={key}
+                            keyName={key}
+                            value={row[key]}
+                            path={key}
+                            depth={0}
+                            isReadOnly={isReadOnly}
+                            expandedPaths={expandedPaths}
+                            onToggleExpand={(p) =>
+                              togglePathExpand(globalIdx, p)
+                            }
+                            activeEditingPath={
+                              editingCell?.docIdx === globalIdx
+                                ? editingCell.path
+                                : null
+                            }
+                            onStartEdit={(p, val, typ) =>
+                              handleStartCellEdit(globalIdx, p, val, typ)
+                            }
+                            onSaveEdit={(p, val) =>
+                              handleSaveCellEdit(globalIdx, row, p, val)
+                            }
+                            onCancelEdit={() => setEditingCell(null)}
+                          />
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        )}
 
-                {/* Recursive Document Tree Fields */}
-                <div className="py-1">
-                  {rootKeys.map((key) => {
-                    return (
-                      <DocumentTreeNode
-                        key={key}
-                        keyName={key}
-                        value={row[key]}
-                        path={key}
-                        depth={0}
-                        isReadOnly={isReadOnly}
-                        expandedPaths={expandedPaths}
-                        onToggleExpand={(p) => togglePathExpand(globalIdx, p)}
-                        activeEditingPath={
-                          editingCell?.docIdx === globalIdx
-                            ? editingCell.path
-                            : null
-                        }
-                        onStartEdit={(p, val, typ) =>
-                          handleStartCellEdit(globalIdx, p, val, typ)
-                        }
-                        onSaveEdit={(p, val) =>
-                          handleSaveCellEdit(globalIdx, row, p, val)
-                        }
-                        onCancelEdit={() => setEditingCell(null)}
+        {/* ========================================================================= */}
+        {/* SUBVIEW 2: RAW JSON VIEW & EDITOR (Virtualized)                            */}
+        {/* ========================================================================= */}
+        {subView === "json" && rows.length > 0 && (
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualItem) => {
+              const globalIdx = virtualItem.index;
+              const row = rows[globalIdx];
+              if (!row) return null;
+              const rowNumber = page * pageSize + globalIdx + 1;
+              const pkVal = row[pkKey];
+              const cleanDoc = Object.fromEntries(
+                Object.entries(row).filter(([k]) => !k.startsWith("_pb_")),
+              );
+              const initialJson = JSON.stringify(cleanDoc, null, 2);
+              const currentJson = rawJsonDocs[globalIdx] ?? initialJson;
+              const isModified = currentJson !== initialJson;
+              const error = jsonErrors[globalIdx];
+
+              return (
+                <div
+                  key={`${table.name}-json-${String(pkVal ?? globalIdx)}`}
+                  ref={virtualizer.measureElement}
+                  data-index={virtualItem.index}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualItem.start}px)`,
+                    paddingBottom: "12px",
+                  }}
+                >
+                  <div className="group bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs">
+                    {/* JSON Card Header */}
+                    <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-muted-foreground font-mono text-[11px] select-none">
+                          #{rowNumber}
+                        </span>
+                        <span className="text-muted-foreground font-mono text-[11px]">
+                          {pkKey}:
+                        </span>
+                        <span className="text-warning font-mono text-[11px] font-semibold">
+                          {String(pkVal)}
+                        </span>
+                        {isModified && (
+                          <span className="border-warning/40 bg-warning/10 text-warning rounded border px-1.5 py-px font-mono text-[10px]">
+                            modified
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {isModified && (
+                          <button
+                            type="button"
+                            onClick={() => handleSaveJsonDoc(row, globalIdx)}
+                            className="bg-primary text-primary-foreground hover:bg-primary/90 flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 font-mono text-xs font-semibold"
+                          >
+                            <Save className="size-3" />
+                            <span>Save</span>
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleCopyDocJson(row, globalIdx)}
+                          title="Copy JSON"
+                          className="text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer rounded p-1"
+                        >
+                          {copiedDocIdx === globalIdx ? (
+                            <Check className="text-success size-3.5" />
+                          ) : (
+                            <Copy className="size-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* CodeMirror JSON Editor */}
+                    <div className="border-border/40 border-t font-mono text-xs">
+                      <CodeMirror
+                        value={currentJson}
+                        height="auto"
+                        extensions={[json()]}
+                        theme="dark"
+                        editable={!isReadOnly}
+                        onChange={(val) => {
+                          setRawJsonDocs((prev) => ({
+                            ...prev,
+                            [globalIdx]: val,
+                          }));
+                          if (jsonErrors[globalIdx]) {
+                            setJsonErrors((prev) => ({
+                              ...prev,
+                              [globalIdx]: null,
+                            }));
+                          }
+                        }}
+                        className="overflow-hidden"
                       />
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+                    </div>
 
-        {/* ========================================================================= */}
-        {/* SUBVIEW 2: RAW JSON VIEW & EDITOR                                         */}
-        {/* ========================================================================= */}
-        {subView === "json" &&
-          rows.map((row, globalIdx) => {
-            const rowNumber = page * pageSize + globalIdx + 1;
-            const pkVal = row[pkKey];
-            const cleanDoc = Object.fromEntries(
-              Object.entries(row).filter(([k]) => !k.startsWith("_pb_")),
-            );
-            const initialJson = JSON.stringify(cleanDoc, null, 2);
-            const currentJson = rawJsonDocs[globalIdx] ?? initialJson;
-            const isModified = currentJson !== initialJson;
-            const error = jsonErrors[globalIdx];
-
-            return (
-              <div
-                key={globalIdx}
-                className="group bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs"
-              >
-                {/* JSON Card Header */}
-                <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground font-mono text-[11px] select-none">
-                      #{rowNumber}
-                    </span>
-                    <span className="text-muted-foreground font-mono text-[11px]">
-                      {pkKey}:
-                    </span>
-                    <span className="text-warning font-mono text-[11px] font-semibold">
-                      {String(pkVal)}
-                    </span>
-                    {isModified && (
-                      <span className="border-warning/40 bg-warning/10 text-warning rounded border px-1.5 py-px font-mono text-[10px]">
-                        modified
-                      </span>
+                    {error && (
+                      <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-1.5 border-t px-3 py-1.5 font-mono text-xs">
+                        <AlertCircle className="size-3.5 shrink-0" />
+                        <span>{error}</span>
+                      </div>
                     )}
                   </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {isModified && (
-                      <button
-                        type="button"
-                        onClick={() => handleSaveJsonDoc(row, globalIdx)}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 font-mono text-xs font-semibold"
-                      >
-                        <Save className="size-3" />
-                        <span>Save</span>
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => handleCopyDocJson(row, globalIdx)}
-                      title="Copy JSON"
-                      className="text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer rounded p-1"
-                    >
-                      {copiedDocIdx === globalIdx ? (
-                        <Check className="text-success size-3.5" />
-                      ) : (
-                        <Copy className="size-3.5" />
-                      )}
-                    </button>
-                  </div>
                 </div>
-
-                {/* CodeMirror JSON Editor */}
-                <div className="border-border/40 border-t font-mono text-xs">
-                  <CodeMirror
-                    value={currentJson}
-                    height="auto"
-                    extensions={[json()]}
-                    theme="dark"
-                    editable={!isReadOnly}
-                    onChange={(val) => {
-                      setRawJsonDocs((prev) => ({ ...prev, [globalIdx]: val }));
-                      if (jsonErrors[globalIdx]) {
-                        setJsonErrors((prev) => ({
-                          ...prev,
-                          [globalIdx]: null,
-                        }));
-                      }
-                    }}
-                    className="overflow-hidden"
-                  />
-                </div>
-
-                {error && (
-                  <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-1.5 border-t px-3 py-1.5 font-mono text-xs">
-                    <AlertCircle className="size-3.5 shrink-0" />
-                    <span>{error}</span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* SUBVIEW 3: FLATTENED TABLE VIEW                                           */}

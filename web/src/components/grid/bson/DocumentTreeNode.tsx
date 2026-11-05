@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -27,7 +27,7 @@ interface DocumentTreeNodeProps {
   onCopyText?: (text: string) => void;
 }
 
-export function DocumentTreeNode({
+export const DocumentTreeNode = React.memo(function DocumentTreeNode({
   keyName,
   value,
   path,
@@ -277,4 +277,4 @@ export function DocumentTreeNode({
       )}
     </div>
   );
-}
+});
