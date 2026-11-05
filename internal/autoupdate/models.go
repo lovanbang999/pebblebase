@@ -16,6 +16,8 @@ type UpdateInfo struct {
 	Size           int64     `json:"size,omitempty"`
 	RequiresSig    bool      `json:"requiresSig"`
 	AssetFound     bool      `json:"assetFound"`
+	CanAutoUpdate  bool      `json:"canAutoUpdate"`
+	UpdateNotice   string    `json:"updateNotice,omitempty"`
 }
 
 // GitHubRelease represents the GitHub Releases API response structure.

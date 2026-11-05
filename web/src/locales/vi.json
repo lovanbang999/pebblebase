@@ -1286,6 +1286,8 @@
     "installSuccessDesc": "Phiên bản mới đã sẵn sàng. Khởi động lại Pebblebase để hoàn tất cập nhật.",
     "restartNow": "Khởi động lại Pebblebase ngay",
     "installFailedTitle": "Cập nhật thất bại",
+    "systemPackageNotice": "Ứng dụng được cài đặt trong thư mục hệ thống. Vui lòng cập nhật bằng trình quản lý gói hoặc tải gói cài đặt thủ công.",
+    "downloadReleasePackage": "Tải gói phát hành",
     "downloadManual": "Tải xuống thủ công từ GitHub",
     "retry": "Thử lại",
     "autoCheckStartup": "Tự động kiểm tra bản cập nhật khi khởi động",

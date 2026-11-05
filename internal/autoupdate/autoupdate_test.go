@@ -340,3 +340,76 @@ func TestApplyUpdate_SecurityGates(t *testing.T) {
 		}
 	}
 }
+
+func TestCheckForUpdate_IgnoresSha256ChecksumFiles(t *testing.T) {
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(GitHubRelease{
+			TagName: "v1.1.0",
+			Name:    "Release v1.1.0",
+			Assets: []GitHubAsset{
+				{
+					Name:               "pebblebase-linux-amd64.tar.gz",
+					BrowserDownloadURL: "https://github.com/downloads/pebblebase-linux-amd64.tar.gz",
+					Size:               19816350,
+				},
+				{
+					Name:               "pebblebase-linux-amd64.tar.gz.sha256",
+					BrowserDownloadURL: "https://github.com/downloads/pebblebase-linux-amd64.tar.gz.sha256",
+					Size:               96,
+				},
+			},
+		})
+	}))
+	defer mockServer.Close()
+
+	tempDir := t.TempDir()
+	svc := NewService("1.0.3", tempDir,
+		WithAPIBase(mockServer.URL),
+		WithRepo("lovanbang999", "pebblebase"),
+	)
+
+	info, err := svc.CheckForUpdate(context.Background(), true)
+	if err != nil {
+		t.Fatalf("CheckForUpdate failed: %v", err)
+	}
+
+	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
+		if !info.AssetFound {
+			t.Fatalf("expected AssetFound to be true")
+		}
+		if !strings.HasSuffix(info.AssetURL, ".tar.gz") {
+			t.Fatalf("expected AssetURL to point to .tar.gz, got: %s", info.AssetURL)
+		}
+		if info.Size != 19816350 {
+			t.Fatalf("expected Size to be 19816350, got: %d", info.Size)
+		}
+	}
+}
+
+func TestApplyUpdate_ReadOnlyTargetPreflight(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("skipping read-only directory test on Windows")
+	}
+
+	tempDir := t.TempDir()
+	readOnlyDir := filepath.Join(tempDir, "readonly")
+	if err := os.Mkdir(readOnlyDir, 0555); err != nil {
+		t.Fatalf("failed to create read-only dir: %v", err)
+	}
+	defer func() {
+		_ = os.Chmod(readOnlyDir, 0755)
+	}()
+
+	svc := NewService("1.0.0", tempDir, WithAllowInsecureHTTP(true))
+	targetBinary := filepath.Join(readOnlyDir, "pebblebase")
+	info := &UpdateInfo{
+		LatestVersion: "1.1.0",
+		AssetURL:      "https://example.com/asset.tar.gz",
+	}
+
+	err := svc.ApplyUpdate(context.Background(), targetBinary, info)
+	if err == nil || !strings.Contains(err.Error(), "permission denied") {
+		t.Fatalf("expected permission denied pre-flight error, got: %v", err)
+	}
+}
