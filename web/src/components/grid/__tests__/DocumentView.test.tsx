@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { DocumentView } from "../DocumentView";
+import { DocumentView, DocumentViewSkeleton } from "../DocumentView";
 import { detectBsonType, formatBsonValue } from "../bson/bsonTypes";
 import type { TableSchema } from "@/lib/types";
 
@@ -171,5 +171,56 @@ describe("DocumentView Component", () => {
     fireEvent.click(cloneBtn);
     expect(onCloneRow).toHaveBeenCalledTimes(1);
     expect(onCloneRow).toHaveBeenCalledWith(mockRows[0]);
+  });
+
+  it("skips rendering heavy document cards when isTabActive is false", () => {
+    const { container } = render(
+      <DocumentView
+        rows={mockRows}
+        table={mockTable}
+        extraColumns={[]}
+        page={0}
+        pageSize={10}
+        isReadOnly={false}
+        isTabActive={false}
+        onCloneRow={vi.fn()}
+        onEditRow={vi.fn()}
+        onDeleteRow={vi.fn()}
+        t={(k, opts) => opts?.defaultValue ?? k}
+      />,
+    );
+
+    // Tree/document cards must not be mounted when tab is inactive
+    expect(screen.queryByText("Tree")).not.toBeInTheDocument();
+    expect(screen.queryByText("username")).not.toBeInTheDocument();
+    expect(container.firstChild).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("renders DocumentViewSkeleton when isLoading is true", () => {
+    render(
+      <DocumentView
+        rows={mockRows}
+        table={mockTable}
+        extraColumns={[]}
+        page={0}
+        pageSize={10}
+        isReadOnly={false}
+        isLoading={true}
+        onCloneRow={vi.fn()}
+        onEditRow={vi.fn()}
+        onDeleteRow={vi.fn()}
+        t={(k, opts) => opts?.defaultValue ?? k}
+      />,
+    );
+
+    expect(screen.getByTestId("document-view-skeleton")).toBeInTheDocument();
+    expect(screen.queryByText("john_doe")).not.toBeInTheDocument();
+  });
+
+  it("renders DocumentViewSkeleton independently", () => {
+    render(<DocumentViewSkeleton className="custom-skeleton-class" />);
+    const skeleton = screen.getByTestId("document-view-skeleton");
+    expect(skeleton).toBeInTheDocument();
+    expect(skeleton).toHaveClass("custom-skeleton-class");
   });
 });

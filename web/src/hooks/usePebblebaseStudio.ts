@@ -244,6 +244,8 @@ export function usePebblebaseStudio({
             signal,
           ),
         enabled: schemaReady,
+        staleTime: 60_000,
+        gcTime: 5 * 60_000,
       };
     }),
   });

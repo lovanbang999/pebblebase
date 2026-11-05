@@ -3,10 +3,15 @@ import { AlertCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorBoundary } from "@/components/common";
 import { WorkspaceHome } from "@/components/common/WorkspaceHome";
 import { RedisCliConsole } from "@/components/redis/RedisCliConsole";
-import { DataGrid, EmptyTableScreen } from "@/components/grid";
+import {
+  DataGrid,
+  EmptyTableScreen,
+  DocumentViewSkeleton,
+} from "@/components/grid";
 import { canManageSettings, canManageUsers, type AuthUser } from "@/lib/auth";
 import { pushReferenceNavigation } from "@/lib/referenceNavigation";
 import {
@@ -386,7 +391,43 @@ export function StudioTabContent({
                   />
                 </Suspense>
               ) : !tableName || !tableSchema ? (
-                tableStatusByConnection[tab.connectionId]?.error ? (
+                tableStatusByConnection[tab.connectionId]?.isLoading ? (
+                  <div
+                    data-testid="table-workspace-skeleton"
+                    className="bg-background flex h-full w-full flex-col overflow-hidden"
+                  >
+                    {/* Header filter bar placeholder */}
+                    <div className="border-border bg-card/50 flex h-10 shrink-0 items-center justify-between border-b px-3">
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-48 rounded" />
+                        <Skeleton className="h-6 w-24 rounded" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Skeleton className="h-6 w-20 rounded" />
+                        <Skeleton className="h-6 w-16 rounded" />
+                      </div>
+                    </div>
+                    {/* Subview tabs placeholder */}
+                    <div className="border-border bg-card/30 flex h-8 shrink-0 items-center gap-2 border-b px-3">
+                      <Skeleton className="h-4 w-12 rounded" />
+                      <Skeleton className="h-4 w-14 rounded" />
+                      <Skeleton className="h-4 w-12 rounded" />
+                    </div>
+                    {/* Content skeleton */}
+                    <div className="flex-1 overflow-hidden">
+                      {connection.type === "mongodb" ? (
+                        <DocumentViewSkeleton />
+                      ) : (
+                        <div className="space-y-2 p-3">
+                          <Skeleton className="mb-2 h-8 w-full rounded" />
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                            <Skeleton key={i} className="h-8 w-full rounded" />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : tableStatusByConnection[tab.connectionId]?.error ? (
                   <div className="text-muted-foreground flex h-full flex-col items-center justify-center gap-2 p-8 text-center text-sm">
                     <span>
                       {t(
@@ -444,7 +485,8 @@ export function StudioTabContent({
                     rows={rowQuery?.data?.rows || []}
                     totalCount={rowQuery?.data?.total_count || 0}
                     isLoading={Boolean(
-                      rowQuery?.isLoading || rowQuery?.isFetching,
+                      rowQuery?.isLoading ||
+                      (!rowQuery?.data && rowQuery?.isFetching),
                     )}
                     page={state.page || 0}
                     pageSize={state.pageSize || DEFAULT_PAGE_SIZE}

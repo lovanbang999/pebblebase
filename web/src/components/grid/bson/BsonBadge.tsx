@@ -1,3 +1,4 @@
+import React from "react";
 import { cn } from "cn";
 import type { BsonType } from "./bsonTypes";
 
@@ -7,7 +8,11 @@ interface BsonBadgeProps {
   onClick?: () => void;
 }
 
-export function BsonBadge({ type, className, onClick }: BsonBadgeProps) {
+export const BsonBadge = React.memo(function BsonBadge({
+  type,
+  className,
+  onClick,
+}: BsonBadgeProps) {
   let styleClasses = "bg-muted text-muted-foreground border-border";
 
   switch (type) {
@@ -69,4 +74,4 @@ export function BsonBadge({ type, className, onClick }: BsonBadgeProps) {
       {type}
     </span>
   );
-}
+});

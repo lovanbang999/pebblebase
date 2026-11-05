@@ -182,7 +182,7 @@ interface DataGridProps {
   onCollationChange?: (collation: string) => void;
 }
 
-import { DocumentView } from "./DocumentView";
+import { DocumentView, DocumentViewSkeleton } from "./DocumentView";
 import {
   GridContextMenu,
   type ContextMenuState,
@@ -2815,106 +2815,110 @@ export function DataGrid({
                 </div>
               )}
               {isLoading || isRefreshing ? (
-                /* High-fidelity shadcn UI Table Skeleton */
-                <table
-                  aria-label={t("datagrid.rowsInTable", {
-                    table: table?.name,
-                    defaultValue: `Rows in ${table?.name ?? "table"}`,
-                  })}
-                  className="animate-in fade-in border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm duration-150"
-                >
-                  <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
-                    <TableRow>
-                      <TableHead className="border-border text-muted-foreground dark:border-border/80 w-12 px-3 py-2 font-mono text-xs font-medium not-last:border-r">
-                        #
-                      </TableHead>
-                      {table?.columns?.map((c) => (
-                        <TableHead
-                          key={c.name}
-                          className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
-                        >
-                          <div className="flex items-center gap-1.5 py-1">
-                            <Skeleton className="bg-muted/80 dark:bg-muted/80 size-3.5 shrink-0 rounded" />
-                            <span className="text-foreground font-mono text-xs font-semibold">
-                              {c.name}
-                            </span>
-                            <span className="text-muted-foreground font-mono text-[10px] font-normal">
-                              {c.type}
-                            </span>
-                          </div>
+                viewMode === "document" ? (
+                  <DocumentViewSkeleton />
+                ) : (
+                  /* High-fidelity shadcn UI Table Skeleton */
+                  <table
+                    aria-label={t("datagrid.rowsInTable", {
+                      table: table?.name,
+                      defaultValue: `Rows in ${table?.name ?? "table"}`,
+                    })}
+                    className="animate-in fade-in border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm duration-150"
+                  >
+                    <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
+                      <TableRow>
+                        <TableHead className="border-border text-muted-foreground dark:border-border/80 w-12 px-3 py-2 font-mono text-xs font-medium not-last:border-r">
+                          #
                         </TableHead>
-                      )) ??
-                        [1, 2, 3, 4, 5, 6].map((idx) => (
+                        {table?.columns?.map((c) => (
                           <TableHead
-                            key={idx}
-                            className="border-border dark:border-border/80 px-3 py-2 not-last:border-r"
+                            key={c.name}
+                            className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
                           >
-                            <Skeleton className="h-4 w-24 rounded" />
+                            <div className="flex items-center gap-1.5 py-1">
+                              <Skeleton className="bg-muted/80 dark:bg-muted/80 size-3.5 shrink-0 rounded" />
+                              <span className="text-foreground font-mono text-xs font-semibold">
+                                {c.name}
+                              </span>
+                              <span className="text-muted-foreground font-mono text-[10px] font-normal">
+                                {c.type}
+                              </span>
+                            </div>
                           </TableHead>
-                        ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody className="divide-border dark:divide-border/50 divide-y">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((rowIdx) => (
-                      <TableRow
-                        key={rowIdx}
-                        className="h-9.25 hover:bg-transparent"
-                      >
-                        <TableCell className="border-border/80 text-muted-foreground dark:border-border/40 w-12 px-3 py-2 font-mono text-xs not-last:border-r">
-                          <Skeleton className="bg-muted/70 dark:bg-muted/70 h-3 w-4 rounded" />
-                        </TableCell>
-                        {table?.columns?.map((c, cIdx) => {
-                          const isNumeric =
-                            /int|float|num|dec|serial|money/i.test(c.type);
-                          const isBool = /bool/i.test(c.type);
-                          const isDate = /date|time/i.test(c.type);
-                          const isPk = c.is_primary_key;
-
-                          return (
-                            <TableCell
-                              key={c.name}
-                              className="border-border/80 dark:border-border/40 px-3 py-2 whitespace-nowrap not-last:border-r"
+                        )) ??
+                          [1, 2, 3, 4, 5, 6].map((idx) => (
+                            <TableHead
+                              key={idx}
+                              className="border-border dark:border-border/80 px-3 py-2 not-last:border-r"
                             >
-                              {isPk ? (
-                                <div className="flex items-center gap-1.5">
-                                  <Skeleton className="bg-warning/40 dark:bg-warning/30 size-3 shrink-0 rounded-full" />
-                                  <Skeleton className="bg-muted dark:bg-muted h-3 w-8 rounded" />
-                                </div>
-                              ) : isBool ? (
-                                <Skeleton className="bg-success/20 dark:bg-success/15 h-4 w-12 rounded-full" />
-                              ) : isDate ? (
-                                <Skeleton className="bg-muted/80 dark:bg-muted/80 h-3 w-28 rounded" />
-                              ) : isNumeric ? (
-                                <Skeleton
-                                  className="bg-muted/80 dark:bg-muted/80 h-3 rounded"
-                                  style={{
-                                    width: `${32 + ((rowIdx * 17 + cIdx * 13) % 40)}px`,
-                                  }}
-                                />
-                              ) : (
-                                <Skeleton
-                                  className="bg-muted/90 dark:bg-muted/90 h-3 rounded"
-                                  style={{
-                                    width: `${55 + ((rowIdx * 23 + cIdx * 31) % 110)}px`,
-                                    maxWidth: "85%",
-                                  }}
-                                />
-                              )}
-                            </TableCell>
-                          );
-                        }) ??
-                          [1, 2, 3, 4, 5, 6].map((cIdx) => (
-                            <TableCell
-                              key={cIdx}
-                              className="border-border/80 dark:border-border/40 px-3 py-2 not-last:border-r"
-                            >
-                              <Skeleton className="h-3.5 w-24 rounded" />
-                            </TableCell>
+                              <Skeleton className="h-4 w-24 rounded" />
+                            </TableHead>
                           ))}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </table>
+                    </TableHeader>
+                    <TableBody className="divide-border dark:divide-border/50 divide-y">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((rowIdx) => (
+                        <TableRow
+                          key={rowIdx}
+                          className="h-9.25 hover:bg-transparent"
+                        >
+                          <TableCell className="border-border/80 text-muted-foreground dark:border-border/40 w-12 px-3 py-2 font-mono text-xs not-last:border-r">
+                            <Skeleton className="bg-muted/70 dark:bg-muted/70 h-3 w-4 rounded" />
+                          </TableCell>
+                          {table?.columns?.map((c, cIdx) => {
+                            const isNumeric =
+                              /int|float|num|dec|serial|money/i.test(c.type);
+                            const isBool = /bool/i.test(c.type);
+                            const isDate = /date|time/i.test(c.type);
+                            const isPk = c.is_primary_key;
+
+                            return (
+                              <TableCell
+                                key={c.name}
+                                className="border-border/80 dark:border-border/40 px-3 py-2 whitespace-nowrap not-last:border-r"
+                              >
+                                {isPk ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <Skeleton className="bg-warning/40 dark:bg-warning/30 size-3 shrink-0 rounded-full" />
+                                    <Skeleton className="bg-muted dark:bg-muted h-3 w-8 rounded" />
+                                  </div>
+                                ) : isBool ? (
+                                  <Skeleton className="bg-success/20 dark:bg-success/15 h-4 w-12 rounded-full" />
+                                ) : isDate ? (
+                                  <Skeleton className="bg-muted/80 dark:bg-muted/80 h-3 w-28 rounded" />
+                                ) : isNumeric ? (
+                                  <Skeleton
+                                    className="bg-muted/80 dark:bg-muted/80 h-3 rounded"
+                                    style={{
+                                      width: `${32 + ((rowIdx * 17 + cIdx * 13) % 40)}px`,
+                                    }}
+                                  />
+                                ) : (
+                                  <Skeleton
+                                    className="bg-muted/90 dark:bg-muted/90 h-3 rounded"
+                                    style={{
+                                      width: `${55 + ((rowIdx * 23 + cIdx * 31) % 110)}px`,
+                                      maxWidth: "85%",
+                                    }}
+                                  />
+                                )}
+                              </TableCell>
+                            );
+                          }) ??
+                            [1, 2, 3, 4, 5, 6].map((cIdx) => (
+                              <TableCell
+                                key={cIdx}
+                                className="border-border/80 dark:border-border/40 px-3 py-2 not-last:border-r"
+                              >
+                                <Skeleton className="h-3.5 w-24 rounded" />
+                              </TableCell>
+                            ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </table>
+                )
               ) : displayedRows.length === 0 ? (
                 /* Empty States */
                 <div className="flex flex-1 items-center justify-center p-8">
@@ -2968,6 +2972,7 @@ export function DataGrid({
                   page={page}
                   pageSize={pageSize}
                   isReadOnly={isReadOnly || !hasPrimaryKey}
+                  isTabActive={isTabActive}
                   onEditRow={onEditRow}
                   onDeleteRow={stageDeleteRow}
                   onSaveCell={async (row, columnName, value) =>
