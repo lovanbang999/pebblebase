@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { X, ChevronRight, ChevronLeft, Check, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { SPOTLIGHT_PADDING } from "./constants";
 import type { TourOverlayProps } from "./types";
 

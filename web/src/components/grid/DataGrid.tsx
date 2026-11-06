@@ -105,7 +105,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { ReferenceCell } from "./ReferenceCell";
 import { formatByteSize } from "./cell-inspector/cellContentTypeDetector";
 import { invalidateReferenceCache } from "@/lib/referenceCache";

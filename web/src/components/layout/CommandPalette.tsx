@@ -27,7 +27,7 @@ import {
   WORKSPACE_COMMANDS,
   type WorkspaceCommandId,
 } from "./workspaceCommands";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 export type CommandActionId = Extract<
   WorkspaceCommandId,

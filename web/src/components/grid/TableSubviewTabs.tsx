@@ -7,7 +7,7 @@ import {
   PieChart,
 } from "lucide-react";
 import type { DatabaseType, TableSchema } from "@/lib/types";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
 export type TableSubview = "data" | "schema" | "columns" | "indexes" | "ddl";

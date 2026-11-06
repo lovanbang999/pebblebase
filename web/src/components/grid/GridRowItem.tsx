@@ -1,7 +1,7 @@
 import { memo, type MouseEvent } from "react";
 import { flexRender, type Row } from "@tanstack/react-table";
 import { TableRow, TableCell } from "@/components/ui/table";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
 
 export interface GridRowItemProps {

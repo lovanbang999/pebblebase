@@ -7,7 +7,7 @@ import {
   Edit2,
   FileText,
 } from "lucide-react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { detectBsonType, formatBsonValue, type BsonType } from "./bsonTypes";
 import { BsonBadge } from "./BsonBadge";
 import { BsonCellEditor } from "../cell-inspector/BsonCellEditor";

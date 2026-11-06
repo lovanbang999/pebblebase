@@ -13,7 +13,7 @@ import {
   MinusCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import type { TableSchema, FilterOption } from "@/lib/types";
 
 export interface ContextMenuState {

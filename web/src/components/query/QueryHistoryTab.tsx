@@ -13,7 +13,7 @@ import {
 import type { QueryHistoryEntry } from "@/lib/types";
 import { fetchQueryHistory } from "@/lib/api";
 import { Input } from "@/components/ui/input";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { formatRelativeTime, queryPreview } from "./queryLibraryUtils";
 
 export interface QueryHistoryTabProps {

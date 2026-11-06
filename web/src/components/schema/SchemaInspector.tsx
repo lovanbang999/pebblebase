@@ -38,7 +38,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 interface EngineBadgeConfig {
   label: string;

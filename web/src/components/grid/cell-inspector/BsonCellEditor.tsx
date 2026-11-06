@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import { Check, X, Clock, AlertCircle } from "lucide-react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import type { BsonType } from "../bson/bsonTypes";
 
 interface BsonCellEditorProps {

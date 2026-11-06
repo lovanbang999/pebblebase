@@ -16,7 +16,7 @@ import {
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import type { TableSchema } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DocumentTreeNode } from "./bson/DocumentTreeNode";

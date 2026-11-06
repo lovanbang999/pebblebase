@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 interface EmptyTableScreenProps {
   connectionName?: string;

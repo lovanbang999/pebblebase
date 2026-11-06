@@ -9,7 +9,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import type { PipelineStageCardProps, StageConfig } from "./types";
 import { generateStageObject, getStageBadgeStyle } from "./utils";
 import { MatchStageEditor } from "./MatchStageEditor";

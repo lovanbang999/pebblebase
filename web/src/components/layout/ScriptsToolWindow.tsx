@@ -31,7 +31,7 @@ import {
   fetchSavedQueries,
 } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 interface ScriptsToolWindowProps {
   tabs: StudioTab[];

@@ -38,7 +38,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { QueryHistoryTab } from "./QueryHistoryTab";
 import {
   formatRelativeTime,

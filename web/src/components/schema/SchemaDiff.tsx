@@ -18,7 +18,7 @@ import {
 } from "@/lib/postgresSchemaDiff";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 interface SchemaDiffProps {
   connections: Connection[];
   activeConnectionId?: string | null;

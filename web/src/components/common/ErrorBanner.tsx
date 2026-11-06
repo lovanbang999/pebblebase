@@ -14,7 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { parseDbError } from "@/lib/dbErrorParser";
 
 interface ErrorBannerProps {

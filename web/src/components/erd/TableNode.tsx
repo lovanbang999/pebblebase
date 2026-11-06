@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Handle, Position, type NodeProps, type Node } from "@xyflow/react";
 import { Table, Key, Link2, ExternalLink, Sparkles } from "lucide-react";
 import type { TableSchema } from "../../lib/types";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import {
   ERD_NODE_WIDTH,
   ERD_NODE_ROW_HEIGHT,

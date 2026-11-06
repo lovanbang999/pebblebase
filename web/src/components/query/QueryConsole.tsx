@@ -130,7 +130,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 // --------------------------------------------------------------------------
 // MongoDB Completion Source Helper

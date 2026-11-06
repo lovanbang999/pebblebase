@@ -51,7 +51,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { emitOperationEvent } from "@/lib/operationEvents";
 
 interface MigrationRunnerProps {

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Loader2, Download, AlertCircle, FileCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import type { PipelineResultsPanelProps } from "./types";
 import { exportPipelineCSV } from "./utils";
 

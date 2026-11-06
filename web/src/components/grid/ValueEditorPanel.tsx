@@ -7,7 +7,7 @@ import { MarkdownViewer } from "./cell-inspector/MarkdownViewer";
 import { HtmlPreviewViewer } from "./cell-inspector/HtmlPreviewViewer";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import {
   VALUE_EDITOR_MAX_WIDTH,
   VALUE_EDITOR_MIN_WIDTH,

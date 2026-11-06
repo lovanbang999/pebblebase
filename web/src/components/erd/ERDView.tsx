@@ -20,7 +20,7 @@ import { toPng } from "html-to-image";
 import { useTranslation } from "react-i18next";
 import { Loader2, Info, RefreshCw, Copy, Check, Unplug } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { useSchemaMetadata } from "@/hooks/useSchemaMetadata";
 import { limitDiagram } from "@/lib/schemaMetadata";
 import type { ERDResponse, TableSchema } from "@/lib/types";
