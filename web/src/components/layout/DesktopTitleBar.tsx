@@ -18,6 +18,7 @@ import {
   Folder,
   GitCompare,
   History,
+  Menu,
   Minus,
   Moon,
   MoreHorizontal,
@@ -142,6 +143,13 @@ export default function DesktopTitleBar({
   const fontSize = useFontSizeStore((state) => state.fontSize);
   const [isMaximized, setIsMaximized] = useState(true);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [activeSubMenu, setActiveSubMenu] = useState<CommandMenu | null>(null);
+
+  useEffect(() => {
+    if (!openMenu) {
+      setActiveSubMenu(null);
+    }
+  }, [openMenu]);
   const rootRef = useRef<HTMLElement>(null);
   const accountCommandIds: WorkspaceCommandId[] = [
     "change_password",
@@ -489,10 +497,10 @@ export default function DesktopTitleBar({
           "--wails-draggable": isDesktop ? "drag" : "no-drag",
         } as React.CSSProperties
       }
-      className="bg-card border-border relative z-50 flex h-10 w-full shrink-0 items-center gap-2 border-b px-2 text-xs select-none"
+      className="bg-card border-border relative z-50 flex h-10 w-full shrink-0 items-center gap-1 border-b px-2 text-xs select-none"
     >
       <div
-        className="flex min-w-0 flex-1 items-center gap-1"
+        className="flex min-w-0 items-center gap-1"
         style={
           {
             WebkitAppRegion: isDesktop ? "drag" : "no-drag",
@@ -504,9 +512,92 @@ export default function DesktopTitleBar({
           alt="Pebblebase"
           className="mx-1 size-4 shrink-0"
         />
+        {/* Compact App Menu for narrow screens (< 1024px) */}
+        <div className="relative shrink-0 min-[1024px]:hidden">
+          <button
+            type="button"
+            aria-label={t("commands.applicationMenu", "Application menu")}
+            aria-haspopup="menu"
+            aria-expanded={openMenu === "app_menu"}
+            onClick={() =>
+              setOpenMenu(openMenu === "app_menu" ? null : "app_menu")
+            }
+            className={cn(
+              "text-muted-foreground hover:bg-accent hover:text-foreground flex size-7 items-center justify-center rounded-sm transition-colors",
+              openMenu === "app_menu" && "bg-accent text-foreground",
+            )}
+          >
+            <Menu className="size-4" />
+          </button>
+          {openMenu === "app_menu" &&
+            menuSurface(
+              "app_menu",
+              activeSubMenu ? (
+                <div className="w-56 space-y-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setActiveSubMenu(null)}
+                    className="text-muted-foreground hover:bg-accent hover:text-foreground flex h-7 w-full items-center gap-1.5 rounded px-2 text-xs font-semibold"
+                  >
+                    <ChevronLeft className="size-3" />
+                    <span>
+                      {t(
+                        `commands.menu.${activeSubMenu.toLowerCase()}`,
+                        activeSubMenu,
+                      )}
+                    </span>
+                  </button>
+                  <div className="border-border my-1 border-t" />
+                  <div
+                    onKeyDown={handleMenuKeyDown}
+                    className="max-h-72 space-y-0.5 overflow-y-auto"
+                  >
+                    {WORKSPACE_MENUS[activeSubMenu].map((item, index) => (
+                      <div key={`${item.id}-${index}`}>
+                        {index > 0 &&
+                          ((activeSubMenu === "File" &&
+                            [3, 5, 7].includes(index)) ||
+                            (activeSubMenu === "Edit" &&
+                              [2, 6].includes(index)) ||
+                            (activeSubMenu === "View" &&
+                              [3, 10].includes(index)) ||
+                            (activeSubMenu === "Navigate" &&
+                              [3, 5, 6, 8].includes(index)) ||
+                            (activeSubMenu === "Query" &&
+                              [3].includes(index)) ||
+                            (activeSubMenu === "Tools" &&
+                              [2, 5].includes(index)) ||
+                            (activeSubMenu === "Help" &&
+                              [2].includes(index))) && (
+                            <div className="border-border my-1 border-t" />
+                          )}
+                        {menuCommand(item.id)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div onKeyDown={handleMenuKeyDown} className="w-48 space-y-0.5">
+                  {MENUS.map((menuName) => (
+                    <button
+                      key={menuName}
+                      type="button"
+                      onClick={() => setActiveSubMenu(menuName)}
+                      className="hover:bg-accent flex h-7 w-full items-center justify-between rounded px-2 text-xs transition-colors"
+                    >
+                      <span>
+                        {t(`commands.menu.${menuName.toLowerCase()}`, menuName)}
+                      </span>
+                      <ChevronRight className="text-muted-foreground size-3" />
+                    </button>
+                  ))}
+                </div>
+              ),
+            )}
+        </div>
         <nav
           aria-label={t("commands.applicationMenu", "Application menu")}
-          className="hidden shrink-0 items-center gap-0.5 min-[768px]:flex"
+          className="hidden shrink-0 items-center gap-0.5 min-[1024px]:flex"
         >
           {MENUS.map((menuName) => (
             <div
@@ -565,7 +656,7 @@ export default function DesktopTitleBar({
             onClick={() =>
               setOpenMenu(openMenu === "connection" ? null : "connection")
             }
-            className="border-border bg-background hover:border-border/80 hover:bg-accent/50 flex h-7 max-w-64 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors max-[767px]:max-w-36"
+            className="border-border bg-background hover:border-border/80 hover:bg-accent/50 flex h-7 max-w-64 min-w-0 items-center gap-1.5 rounded-md border px-2 text-xs transition-colors max-[767px]:max-w-36 max-[480px]:max-w-24"
           >
             {activeConnection ? (
               <span className="bg-muted text-muted-foreground inline-grid h-4 min-w-5 shrink-0 place-items-center rounded-xs px-1 font-mono text-[9.5px] font-semibold">
@@ -630,7 +721,7 @@ export default function DesktopTitleBar({
         </div>
       </div>
 
-      <div className="absolute left-1/2 flex -translate-x-1/2 items-center gap-0.5 max-[767px]:hidden">
+      <div className="mx-auto hidden shrink-0 items-center gap-0.5 min-[1400px]:flex">
         <ToolbarButton
           label={label("navigate_back")}
           shortcut={WORKSPACE_COMMANDS.navigate_back.shortcut}
@@ -724,14 +815,14 @@ export default function DesktopTitleBar({
             className="hover:bg-accent flex h-7.5 items-center gap-1.5 rounded-md px-2 text-xs transition-colors"
           >
             <Settings2 className="size-4" />
-            <span className="max-w-24 truncate font-medium">
+            <span className="max-w-24 truncate font-medium max-[520px]:hidden">
               {user?.username || ""}
             </span>
           </button>
           {openMenu === "account" &&
             menuSurface("account", accountMenu(), "right")}
         </div>
-        <div className="relative min-[768px]:hidden">
+        <div className="relative min-[1400px]:hidden">
           <ToolbarButton
             label={t("commands.more", "More actions")}
             onClick={() =>

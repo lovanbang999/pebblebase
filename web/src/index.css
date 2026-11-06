@@ -501,6 +501,47 @@ input:autofill {
 [data-slot="sheet-content"] {
   overscroll-behavior: contain;
 }
+
+/* Keep the database workspace usable as the desktop window narrows. */
+@media (max-width: 1100px) {
+  [data-slot="sidebar"] {
+    width: min(var(--sidebar-width), 24vw);
+  }
+}
+
+@media (max-width: 767px) {
+  [data-slot="sidebar"] {
+    width: min(var(--sidebar-width), 30vw);
+  }
+
+  [data-studio-shell] [data-slot="sidebar-wrapper"] > nav {
+    width: 32px;
+  }
+}
+
+@media (max-width: 639px) {
+  [data-slot="sidebar"] {
+    width: min(180px, 38vw);
+  }
+
+  [data-studio-shell] [data-slot="sidebar-wrapper"] > nav {
+    width: 28px;
+  }
+
+  .database-explorer-toolbar {
+    scrollbar-width: none;
+  }
+
+  .database-explorer-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  [data-studio-shell] > header {
+    gap: 0.25rem;
+    padding-inline: 0.25rem;
+  }
+}
+
 button,
 [role="button"] {
   touch-action: none;

@@ -1,5 +1,5 @@
 import React, { lazy, Suspense } from "react";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
@@ -60,7 +60,13 @@ export interface StudioTabContentProps {
   tablesByConnection: Record<string, TableSchema[]>;
   tableStatusByConnection: Record<
     string,
-    { isLoading?: boolean; error?: unknown }
+    {
+      isLoading?: boolean;
+      isFetching?: boolean;
+      isError?: boolean;
+      isSuccess?: boolean;
+      error?: unknown;
+    }
   >;
   rowsByTabId: Record<
     string,
@@ -440,6 +446,9 @@ export function StudioTabContent({
                   <EmptyTableScreen
                     connectionName={connection.name}
                     hasTables={tabTables.length > 0}
+                    isReintrospecting={Boolean(
+                      tableStatusByConnection[tab.connectionId]?.isFetching,
+                    )}
                     onReintrospect={() =>
                       refreshConnectionTables(tab.connectionId)
                     }
@@ -464,10 +473,21 @@ export function StudioTabContent({
                       <Button
                         size="sm"
                         variant="outline"
+                        disabled={rowQuery.isFetching}
                         onClick={() => rowQuery.refetch?.()}
-                        className="border-destructive/40 text-destructive hover:bg-destructive/20 h-6 cursor-pointer text-[11px]"
+                        className="border-destructive/40 text-destructive hover:bg-destructive/20 h-6 cursor-pointer gap-1.5 text-[11px]"
                       >
-                        {t("common.retry", "Retry")}
+                        <RefreshCw
+                          className={cn(
+                            "size-3 shrink-0",
+                            rowQuery.isFetching && "animate-spin",
+                          )}
+                        />
+                        <span>
+                          {rowQuery.isFetching
+                            ? t("common.retrying", "Retrying...")
+                            : t("common.retry", "Retry")}
+                        </span>
                       </Button>
                     </div>
                   )}

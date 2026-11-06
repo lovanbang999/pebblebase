@@ -89,7 +89,7 @@ function TabsContent({
         aria-orientation="horizontal"
         ref={tabListRef}
         onKeyDown={handleKeyDown}
-        className="flex h-full items-center gap-1"
+        className="no-scrollbar flex h-full min-w-0 items-center gap-1 overflow-x-auto"
       >
         {tabItems
           .filter(
@@ -120,7 +120,7 @@ function TabsContent({
       </div>
       <span className="flex-1" />
       <div
-        className="text-muted-foreground min-w-0 truncate text-right font-mono text-[11px]"
+        className="text-muted-foreground max-w-[40%] min-w-0 shrink truncate text-right font-mono text-[11px]"
         title={`${connectionName || ""} · ${table.name}`}
       >
         {connectionName && <span>{connectionName} · </span>}

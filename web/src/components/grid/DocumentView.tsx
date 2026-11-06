@@ -448,7 +448,7 @@ export const DocumentView = React.memo(function DocumentView({
   return (
     <div className="bg-background dark:bg-background flex flex-1 flex-col overflow-hidden">
       {/* Sub-Header Toolbar: Tri-Mode View Switcher + Expansion Controls */}
-      <div className="border-border bg-card/60 dark:border-border dark:bg-card/40 flex h-10 shrink-0 items-center justify-between border-b px-3">
+      <div className="border-border bg-card/60 dark:border-border dark:bg-card/40 flex min-h-10 shrink-0 flex-wrap items-center justify-between gap-1.5 border-b px-3 py-1">
         <div className="border-border/80 bg-background/80 flex items-center gap-1 rounded-md border p-0.5">
           <button
             type="button"

@@ -65,7 +65,7 @@ export function StatusBar({
       )}
       <span
         role="status"
-        className="border-border min-w-0 truncate border-l pl-3"
+        className="border-border max-w-[35%] min-w-0 truncate border-l pl-3"
       >
         {status}
         {tableName ? ` · ${tableName}` : ""}
@@ -82,11 +82,15 @@ export function StatusBar({
           className="text-warning hover:text-warning/80 flex shrink-0 cursor-pointer items-center gap-1 font-medium transition-colors hover:underline focus-visible:outline-none"
         >
           <AlertTriangle aria-hidden="true" className="size-3 shrink-0" />
-          <span>{t("studio.defaultPassword", "Default password")}</span>
+          <span className="hidden sm:inline">
+            {t("studio.defaultPassword", "Default password")}
+          </span>
         </button>
       )}
       <span className="hidden shrink-0 sm:inline">UTF-8</span>
-      <span className="shrink-0 font-mono">v{packageJson.version}</span>
+      <span className="hidden shrink-0 font-mono sm:inline">
+        v{packageJson.version}
+      </span>
     </footer>
   );
 }

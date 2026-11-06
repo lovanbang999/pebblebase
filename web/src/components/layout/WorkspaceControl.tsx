@@ -102,7 +102,7 @@ export function WorkspaceControl({
               size="sm"
               variant="outline"
               disabled={!ready}
-              className="border-border bg-background hover:border-border/80 hover:bg-accent/50 h-7 max-w-56 gap-1.5 rounded-md px-2 text-xs transition-colors"
+              className="border-border bg-background hover:border-border/80 hover:bg-accent/50 h-7 max-w-56 min-w-0 gap-1.5 rounded-md px-2 text-xs transition-colors max-[767px]:max-w-36 max-[480px]:max-w-28"
             >
               <span
                 className="size-2.5 shrink-0 rounded-xs"
@@ -112,7 +112,7 @@ export function WorkspaceControl({
                     : active?.colour || "#5fb865",
                 }}
               />
-              <span className="truncate font-semibold">
+              <span className="min-w-0 truncate font-semibold">
                 {showAll
                   ? t("workspaces.allSources")
                   : (active?.name ?? t("workspaces.loading"))}

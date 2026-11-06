@@ -314,4 +314,72 @@ describe("DatabaseExplorer Tree Component", () => {
       expect(onDeleteConnection).toHaveBeenCalledWith("conn-prod-1");
     });
   });
+
+  describe("Connection error retry loading state", () => {
+    it("renders Retry button and transitions to spinning loading state when clicked", async () => {
+      const user = userEvent.setup();
+      let resolveRefresh: () => void = () => {};
+      const refreshPromise = new Promise<void>((resolve) => {
+        resolveRefresh = resolve;
+      });
+      const onRefreshConnection = vi.fn().mockReturnValue(refreshPromise);
+
+      renderWithProviders(
+        <DatabaseExplorer
+          {...defaultProps}
+          onRefreshConnection={onRefreshConnection}
+          // Expand the connection node so the error card is visible
+          expandedNodeIds={["connection:conn-prod-1"]}
+          statusByConnection={{
+            "conn-prod-1": {
+              isLoading: false,
+              isFetching: false,
+              isError: true,
+              isSuccess: false,
+              error: new Error(
+                "Dial tcp 127.0.0.1:5432: connect: connection refused",
+              ),
+            },
+            "conn-mssql-1": {
+              isLoading: false,
+              isFetching: false,
+              isError: false,
+              isSuccess: true,
+            },
+          }}
+        />,
+      );
+
+      // Verify connection error box is rendered
+      const errorBox = screen.getByTestId("connection-error-conn-prod-1");
+      expect(errorBox).toBeInTheDocument();
+
+      // Verify Retry button is enabled initially
+      const retryBtn = screen.getByRole("button", {
+        name: /^Retry$|^Thử lại$/i,
+      });
+      expect(retryBtn).toBeInTheDocument();
+      expect(retryBtn).toBeEnabled();
+
+      // Click Retry
+      await user.click(retryBtn);
+
+      // onRefreshConnection was called
+      expect(onRefreshConnection).toHaveBeenCalledTimes(1);
+      expect(onRefreshConnection).toHaveBeenCalledWith("conn-prod-1");
+
+      // Button is now in retrying state: disabled with spinner
+      expect(retryBtn).toBeDisabled();
+      expect(retryBtn).toHaveTextContent(/Retrying|Đang thử lại/i);
+      const spinner = retryBtn.querySelector(".animate-spin");
+      expect(spinner).toBeInTheDocument();
+
+      // Resolve refresh promise — button reverts
+      resolveRefresh();
+      await waitFor(() => {
+        expect(retryBtn).toBeEnabled();
+        expect(retryBtn).toHaveTextContent(/^Retry$|^Thử lại$/i);
+      });
+    });
+  });
 });

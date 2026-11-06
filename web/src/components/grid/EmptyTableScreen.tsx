@@ -1,18 +1,21 @@
-import { Layers } from "lucide-react";
+import { Layers, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "cn";
 
 interface EmptyTableScreenProps {
   connectionName?: string;
   hasTables: boolean;
+  isReintrospecting?: boolean;
   onReintrospect: () => void;
 }
 
 export function EmptyTableScreen({
   connectionName,
   hasTables,
+  isReintrospecting = false,
   onReintrospect,
 }: EmptyTableScreenProps) {
   const { t } = useTranslation();
@@ -43,10 +46,21 @@ export function EmptyTableScreen({
             type="button"
             variant="outline"
             size="sm"
+            disabled={isReintrospecting}
             onClick={onReintrospect}
-            className="text-xs"
+            className="gap-1.5 text-xs"
           >
-            {t("app.reintrospect")}
+            <RefreshCw
+              className={cn(
+                "size-3.5 shrink-0",
+                isReintrospecting && "animate-spin",
+              )}
+            />
+            <span>
+              {isReintrospecting
+                ? t("app.reintrospecting", "Re-introspecting Database...")
+                : t("app.reintrospect", "Re-introspect Database")}
+            </span>
           </Button>
         )}
       </div>
