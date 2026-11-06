@@ -13,7 +13,7 @@ export function GroupStageEditor({ config, onChange }: GroupStageEditorProps) {
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={5}
-        className="focus:ring-primary border-border bg-muted text-foreground dark:border-border dark:bg-background dark:text-foreground w-full rounded border p-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
+        className="focus:ring-primary border-border bg-muted text-foreground dark:bg-background w-full rounded border p-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
         placeholder='{ "_id": "$country", "count": { "$sum": 1 } }'
       />
     );
@@ -92,7 +92,7 @@ export function GroupStageEditor({ config, onChange }: GroupStageEditorProps) {
                   operator: e.target.value as GroupAccumulator["operator"],
                 })
               }
-              className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground h-7 rounded border px-2 font-mono text-xs"
+              className="border-border bg-background text-foreground dark:bg-card h-7 rounded border px-2 font-mono text-xs"
             >
               <option value="$sum">$sum</option>
               <option value="$avg">$avg</option>
@@ -126,7 +126,7 @@ export function GroupStageEditor({ config, onChange }: GroupStageEditorProps) {
           variant="ghost"
           size="sm"
           onClick={handleAddAccumulator}
-          className="text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
+          className="text-success hover:bg-success/10 dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
         >
           <Plus className="mr-1 size-3" />
           <span>{t("pipeline.add_accumulator")}</span>

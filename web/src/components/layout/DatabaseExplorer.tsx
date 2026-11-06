@@ -862,7 +862,7 @@ export function DatabaseExplorer({
                             "explorer.activeEditorConnection",
                             "Active editor connection",
                           )}
-                          className="bg-success/10 text-success dark:text-success rounded px-1 font-mono text-[8px] font-semibold"
+                          className="bg-success/10 text-success rounded px-1 font-mono text-[8px] font-semibold"
                         >
                           A
                         </span>
@@ -1523,7 +1523,7 @@ export function DatabaseExplorer({
                   setCopiedDeleteTarget(false);
                 }
               }}
-              className="bg-destructive hover:bg-destructive/90 dark:bg-destructive dark:hover:bg-destructive/90 cursor-pointer text-white shadow-xs"
+              className="bg-destructive hover:bg-destructive/90 cursor-pointer text-white shadow-xs"
             >
               {t("sidebar.deleteConnButton", "Delete connection")}
             </AlertDialogAction>

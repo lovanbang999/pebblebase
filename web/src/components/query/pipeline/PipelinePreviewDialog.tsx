@@ -28,7 +28,7 @@ export function PipelinePreviewDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border bg-background dark:border-border dark:bg-card max-w-2xl font-mono">
+      <DialogContent className="border-border bg-background dark:bg-card max-w-2xl font-mono">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
             <Eye className="text-success size-4" />

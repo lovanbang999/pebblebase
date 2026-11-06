@@ -119,13 +119,13 @@ export function TableDangerModal({
       open={isOpen}
       onOpenChange={(open) => !open && !isExecuting && onClose()}
     >
-      <AlertDialogContent className="border-border bg-background dark:border-border dark:bg-card max-w-md rounded-xl border p-5 shadow-2xl">
+      <AlertDialogContent className="border-border bg-background dark:bg-card max-w-md rounded-xl border p-5 shadow-2xl">
         <AlertDialogHeader>
           <AlertDialogMedia
             className={
               isTruncate
-                ? "border-warning/20 bg-warning/10 text-warning dark:text-warning rounded-xl border"
-                : "border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-xl border"
+                ? "border-warning/20 bg-warning/10 text-warning rounded-xl border"
+                : "border-destructive/20 bg-destructive/10 text-destructive rounded-xl border"
             }
           >
             {isTruncate ? (
@@ -135,13 +135,13 @@ export function TableDangerModal({
             )}
           </AlertDialogMedia>
 
-          <AlertDialogTitle className="text-foreground dark:text-foreground font-mono text-sm font-semibold">
+          <AlertDialogTitle className="text-foreground font-mono text-sm font-semibold">
             {isTruncate
               ? t("tableDanger.truncateTitle", { table: tableName })
               : t("tableDanger.dropTitle", { table: tableName })}
           </AlertDialogTitle>
 
-          <AlertDialogDescription className="text-muted-foreground dark:text-muted-foreground text-xs leading-relaxed">
+          <AlertDialogDescription className="text-muted-foreground text-xs leading-relaxed">
             {isTruncate
               ? t("tableDanger.truncateDesc", { table: tableName })
               : t("tableDanger.dropDesc", { table: tableName })}
@@ -149,7 +149,7 @@ export function TableDangerModal({
         </AlertDialogHeader>
 
         <div className="my-3 space-y-2">
-          <label className="text-muted-foreground dark:text-muted-foreground block font-mono text-[11px]">
+          <label className="text-muted-foreground block font-mono text-[11px]">
             {isTruncate
               ? t(
                   "tableDanger.truncateConfirmPrompt",
@@ -226,7 +226,7 @@ export function TableDangerModal({
             placeholder={t("tableDanger.typeToConfirmPlaceholder", {
               table: tableName,
             })}
-            className="focus-visible:ring-destructive/30 dark:focus-visible:ring-destructive/30 h-8 py-1.5 font-mono text-xs"
+            className="focus-visible:ring-destructive/30 h-8 py-1.5 font-mono text-xs"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter" && isConfirmed && !isExecuting) {
@@ -237,7 +237,7 @@ export function TableDangerModal({
           />
 
           {errorMsg && (
-            <div className="border-destructive/30 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 font-mono text-xs">
+            <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-md border p-2 font-mono text-xs">
               {errorMsg}
             </div>
           )}
@@ -259,8 +259,8 @@ export function TableDangerModal({
             onClick={handleExecute}
             className={`h-8 cursor-pointer font-mono text-xs ${
               isTruncate
-                ? "bg-warning hover:bg-warning dark:bg-warning dark:hover:bg-warning text-white disabled:opacity-40"
-                : "bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive text-white disabled:opacity-40"
+                ? "bg-warning hover:bg-warning text-white disabled:opacity-40"
+                : "bg-destructive hover:bg-destructive text-white disabled:opacity-40"
             }`}
           >
             {isExecuting ? (

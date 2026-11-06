@@ -373,7 +373,7 @@ export function CommandPalette({
         onKeyDown={handleKeyDown}
       >
         {/* Search Header Input */}
-        <div className="border-border dark:border-border flex items-center gap-3 border-b px-4 py-3">
+        <div className="border-border flex items-center gap-3 border-b px-4 py-3">
           <Search className="text-muted-foreground h-5 w-5 shrink-0" />
           <input
             ref={inputRef}
@@ -396,7 +396,7 @@ export function CommandPalette({
             )}
             className="text-foreground placeholder:text-muted-foreground flex-1 bg-transparent font-sans text-base focus:outline-none"
           />
-          <span className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted rounded border px-2 py-0.5 font-mono text-[11px] font-medium">
+          <span className="border-border bg-muted text-muted-foreground rounded border px-2 py-0.5 font-mono text-[11px] font-medium">
             ESC
           </span>
         </div>
@@ -449,7 +449,7 @@ export function CommandPalette({
                           "flex cursor-pointer items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors",
                           isSelected
                             ? "bg-primary/10 text-primary font-medium"
-                            : "text-foreground hover:bg-muted dark:text-foreground dark:hover:bg-muted/60",
+                            : "text-foreground hover:bg-muted dark:hover:bg-muted/60",
                         )}
                       >
                         <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -457,7 +457,7 @@ export function CommandPalette({
                             className={cn(
                               "h-4 w-4 shrink-0",
                               isSelected
-                                ? "text-primary dark:text-primary"
+                                ? "text-primary"
                                 : "text-muted-foreground",
                             )}
                           />
@@ -469,7 +469,7 @@ export function CommandPalette({
                           )}
                         </div>
                         {isSelected && (
-                          <span className="bg-primary/10 text-primary dark:bg-primary/60 dark:text-primary rounded px-1.5 py-0.5 font-mono text-[10px] font-medium">
+                          <span className="bg-primary/10 text-primary dark:bg-primary/60 rounded px-1.5 py-0.5 font-mono text-[10px] font-medium">
                             ↵ Enter
                           </span>
                         )}
@@ -483,14 +483,14 @@ export function CommandPalette({
         </div>
 
         {/* Footer info bar */}
-        <div className="border-border bg-card text-muted-foreground dark:border-border dark:bg-background/80 flex items-center justify-between border-t px-4 py-2 text-xs">
+        <div className="border-border bg-card text-muted-foreground dark:bg-background/80 flex items-center justify-between border-t px-4 py-2 text-xs">
           <div className="flex items-center gap-2">
             <span>{t("palette.navHint", "Navigation")}:</span>
-            <span className="bg-muted text-muted-foreground dark:bg-muted dark:text-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
+            <span className="bg-muted text-muted-foreground dark:text-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
               ↑↓
             </span>
             <span>{t("palette.selectHint", "Select")}:</span>
-            <span className="bg-muted text-muted-foreground dark:bg-muted dark:text-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
+            <span className="bg-muted text-muted-foreground dark:text-foreground rounded px-1.5 py-0.5 font-mono text-[10px]">
               ↵
             </span>
           </div>

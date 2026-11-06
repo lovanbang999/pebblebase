@@ -48,15 +48,15 @@ interface EngineBadgeConfig {
 const ENGINE_BADGES: Record<string, EngineBadgeConfig> = {
   postgres: {
     label: "PostgreSQL",
-    className: "border-primary/20 bg-primary/10 text-primary dark:text-primary",
+    className: "border-primary/20 bg-primary/10 text-primary",
   },
   mysql: {
     label: "MySQL",
-    className: "border-warning/20 bg-warning/10 text-warning dark:text-warning",
+    className: "border-warning/20 bg-warning/10 text-warning",
   },
   mongodb: {
     label: "MongoDB",
-    className: "border-primary/20 bg-success/10 text-success dark:text-success",
+    className: "border-primary/20 bg-success/10 text-success",
   },
   mssql: {
     label: "SQL Server",
@@ -65,12 +65,11 @@ const ENGINE_BADGES: Record<string, EngineBadgeConfig> = {
   },
   clickhouse: {
     label: "ClickHouse",
-    className: "border-warning/20 bg-warning/10 text-warning dark:text-warning",
+    className: "border-warning/20 bg-warning/10 text-warning",
   },
   redis: {
     label: "Redis",
-    className:
-      "border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive",
+    className: "border-destructive/20 bg-destructive/10 text-destructive",
   },
   sqlite: {
     label: "SQLite",
@@ -94,12 +93,12 @@ function EngineBadge({ engine }: { engine?: string }) {
 }
 
 const COLUMN_TYPE_CLASSES: Record<string, string> = {
-  int: "bg-success/10 text-success dark:bg-success/40 dark:text-success border-success/30 dark:border-success",
+  int: "bg-success/10 text-success dark:bg-success/40 border-success/30 dark:border-success",
   float:
-    "bg-success/10 text-success dark:bg-success/40 dark:text-success border-success/30 dark:border-success",
-  bool: "bg-warning/10 text-warning dark:bg-warning/40 dark:text-warning border-warning/30 dark:border-warning",
+    "bg-success/10 text-success dark:bg-success/40 border-success/30 dark:border-success",
+  bool: "bg-warning/10 text-warning dark:bg-warning/40 border-warning/30 dark:border-warning",
   datetime:
-    "bg-primary/10 text-primary dark:bg-primary/40 dark:text-primary border-primary/30 dark:border-primary",
+    "bg-primary/10 text-primary dark:bg-primary/40 border-primary/30 dark:border-primary",
   json: "bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300 border-pink-200 dark:border-pink-800",
 };
 
@@ -181,12 +180,12 @@ export function SchemaInspector({
   };
 
   return (
-    <div className="bg-card/50 text-foreground dark:bg-background dark:text-foreground flex-1 space-y-6 overflow-auto p-4 font-sans md:p-6">
+    <div className="bg-card/50 text-foreground dark:bg-background flex-1 space-y-6 overflow-auto p-4 font-sans md:p-6">
       {/* Legacy combined inspector header remains for non-workspace callers. */}
       {!view && (
-        <div className="border-border dark:border-border flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+        <div className="border-border flex flex-wrap items-center justify-between gap-3 border-b pb-3">
           <div className="flex items-center gap-3">
-            <div className="border-primary/20 bg-success/10 text-success dark:text-success rounded-lg border p-2">
+            <div className="border-primary/20 bg-success/10 text-success rounded-lg border p-2">
               <Database className="h-5 w-5" />
             </div>
             <div>
@@ -218,15 +217,15 @@ export function SchemaInspector({
           </div>
 
           {/* Sub-view Switcher */}
-          <div className="border-border/40 bg-muted/60 dark:border-border/40 dark:bg-muted/60 flex items-center rounded-lg border p-0.5">
+          <div className="border-border/40 bg-muted/60 flex items-center rounded-lg border p-0.5">
             <button
               type="button"
               onClick={() => setActiveSubTab("schema")}
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-xs font-medium transition-all",
                 activeSubTab === "schema"
-                  ? "bg-background text-foreground dark:bg-card dark:text-foreground font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
+                  ? "bg-background text-foreground dark:bg-card font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               <FileCode className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
@@ -238,11 +237,11 @@ export function SchemaInspector({
               className={cn(
                 "flex items-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-xs font-medium transition-all",
                 activeSubTab === "migration"
-                  ? "bg-background text-foreground dark:bg-card dark:text-foreground font-semibold shadow-xs"
-                  : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
+                  ? "bg-background text-foreground dark:bg-card font-semibold shadow-xs"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              <Rocket className="text-success dark:text-success h-3.5 w-3.5" />
+              <Rocket className="text-success h-3.5 w-3.5" />
               <span>{t("migration.tabMigration")}</span>
             </button>
           </div>
@@ -280,7 +279,7 @@ export function SchemaInspector({
                     variant="outline"
                     size="sm"
                     onClick={() => setIsSeedModalOpen(true)}
-                    className="border-primary/30 text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/40 h-8 cursor-pointer gap-1.5 px-2.5 font-mono text-xs"
+                    className="border-primary/30 text-success hover:bg-success/10 dark:hover:bg-success/40 h-8 cursor-pointer gap-1.5 px-2.5 font-mono text-xs"
                   >
                     <Sparkles className="text-success h-3.5 w-3.5" />
                     <span>{t("seed.title")}</span>
@@ -339,7 +338,7 @@ export function SchemaInspector({
       ) : (
         <>
           {error ? (
-            <div className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 dark:text-destructive flex items-center gap-2 rounded-lg border p-4 font-mono text-xs">
+            <div className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 flex items-center gap-2 rounded-lg border p-4 font-mono text-xs">
               <ShieldAlert className="h-4 w-4 shrink-0" />
               <span>
                 {t("schema.failedDdl", {
@@ -355,8 +354,8 @@ export function SchemaInspector({
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                  <Layers className="text-success dark:text-success h-4 w-4" />
-                  <h3 className="text-foreground dark:text-foreground font-mono text-xs font-semibold tracking-wider uppercase">
+                  <Layers className="text-success h-4 w-4" />
+                  <h3 className="text-foreground font-mono text-xs font-semibold tracking-wider uppercase">
                     {t("schema.columnsTitle")}
                   </h3>
                 </div>
@@ -374,9 +373,9 @@ export function SchemaInspector({
                 )}
               </div>
 
-              <div className="border-border bg-background dark:border-border dark:bg-card/50 overflow-hidden rounded-lg border shadow-2xs">
+              <div className="border-border bg-background dark:bg-card/50 overflow-hidden rounded-lg border shadow-2xs">
                 <Table>
-                  <TableHeader className="border-border bg-card dark:border-border dark:bg-card border-b">
+                  <TableHeader className="border-border bg-card border-b">
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="w-12 text-center font-mono text-xs">
                         #
@@ -438,7 +437,7 @@ export function SchemaInspector({
                             {col.is_primary_key ? (
                               <Badge
                                 variant="outline"
-                                className="border-warning/30 bg-warning/10 text-warning dark:text-warning text-[10px] font-bold uppercase"
+                                className="border-warning/30 bg-warning/10 text-warning text-[10px] font-bold uppercase"
                               >
                                 {t("schema.primary")}
                               </Badge>
@@ -448,7 +447,7 @@ export function SchemaInspector({
                           </TableCell>
                           <TableCell>
                             {col.nullable ? (
-                              <span className="text-success dark:text-success text-[11px] font-medium">
+                              <span className="text-success text-[11px] font-medium">
                                 {t("schema.yes")}
                               </span>
                             ) : (
@@ -459,7 +458,7 @@ export function SchemaInspector({
                           </TableCell>
                           <TableCell>
                             {col.default_value ? (
-                              <code className="bg-muted text-foreground dark:bg-muted dark:text-foreground rounded px-1.5 py-0.5 text-[11px]">
+                              <code className="bg-muted text-foreground rounded px-1.5 py-0.5 text-[11px]">
                                 {col.default_value}
                               </code>
                             ) : (
@@ -479,7 +478,7 @@ export function SchemaInspector({
                                     "",
                                   )
                                 }
-                                className="border-primary/30 bg-primary/10 text-primary dark:border-primary dark:bg-primary/40 dark:text-primary inline-flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[11px] hover:underline"
+                                className="border-primary/30 bg-primary/10 text-primary dark:border-primary dark:bg-primary/40 inline-flex cursor-pointer items-center gap-1 rounded border px-2 py-0.5 text-[11px] hover:underline"
                               >
                                 <span>{relation.to_table}</span>
                                 <ArrowRight className="h-3 w-3" />
@@ -521,26 +520,26 @@ export function SchemaInspector({
                 </details>
               )}
               <div className="flex items-center gap-2">
-                <Key className="text-warning dark:text-warning h-4 w-4" />
-                <h3 className="text-foreground dark:text-foreground font-mono text-xs font-semibold tracking-wider uppercase">
+                <Key className="text-warning h-4 w-4" />
+                <h3 className="text-foreground font-mono text-xs font-semibold tracking-wider uppercase">
                   {t("schema.indexesTitle")}
                 </h3>
               </div>
 
               {isLoading ? (
-                <div className="border-border bg-background dark:border-border dark:bg-card/40 space-y-2 rounded-lg border p-4">
+                <div className="border-border bg-background dark:bg-card/40 space-y-2 rounded-lg border p-4">
                   <Skeleton className="h-6 w-1/3" />
                   <Skeleton className="h-8 w-full" />
                   <Skeleton className="h-8 w-full" />
                 </div>
               ) : !data?.indexes || data.indexes.length === 0 ? (
-                <div className="border-border bg-background text-muted-foreground dark:border-border dark:bg-card/30 dark:text-muted-foreground rounded-lg border p-4 text-center font-mono text-xs">
+                <div className="border-border bg-background text-muted-foreground dark:bg-card/30 rounded-lg border p-4 text-center font-mono text-xs">
                   {t("schema.noIndexes")}
                 </div>
               ) : (
-                <div className="border-border bg-background dark:border-border dark:bg-card/50 overflow-hidden rounded-lg border shadow-2xs">
+                <div className="border-border bg-background dark:bg-card/50 overflow-hidden rounded-lg border shadow-2xs">
                   <Table>
-                    <TableHeader className="border-border bg-card dark:border-border dark:bg-card border-b">
+                    <TableHeader className="border-border bg-card border-b">
                       <TableRow className="hover:bg-transparent">
                         <TableHead className="font-mono text-xs">
                           {t("schema.idxName")}
@@ -569,14 +568,14 @@ export function SchemaInspector({
                             {idx.primary ? (
                               <Badge
                                 variant="outline"
-                                className="border-warning/30 bg-warning/10 text-warning dark:text-warning text-[10px] font-bold uppercase"
+                                className="border-warning/30 bg-warning/10 text-warning text-[10px] font-bold uppercase"
                               >
                                 {t("schema.primary")}
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground text-[10px]"
+                                className="border-border bg-muted text-muted-foreground text-[10px]"
                               >
                                 {t("schema.secondary")}
                               </Badge>
@@ -599,7 +598,7 @@ export function SchemaInspector({
                             {idx.unique ? (
                               <Badge
                                 variant="outline"
-                                className="border-primary/30 bg-success/10 text-success dark:text-success text-[10px] font-bold uppercase"
+                                className="border-primary/30 bg-success/10 text-success text-[10px] font-bold uppercase"
                               >
                                 {t("schema.unique")}
                               </Badge>
@@ -623,8 +622,8 @@ export function SchemaInspector({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FileCode className="text-primary dark:text-primary h-4 w-4" />
-                  <h3 className="text-foreground dark:text-foreground font-mono text-xs font-semibold tracking-wider uppercase">
+                  <FileCode className="text-primary h-4 w-4" />
+                  <h3 className="text-foreground font-mono text-xs font-semibold tracking-wider uppercase">
                     {t("schema.ddlTitle")}
                   </h3>
                 </div>
@@ -647,10 +646,10 @@ export function SchemaInspector({
                 )}
               </div>
 
-              <div className="border-border bg-background dark:border-border dark:bg-card overflow-hidden rounded-lg border shadow-sm">
+              <div className="border-border bg-background dark:bg-card overflow-hidden rounded-lg border shadow-sm">
                 {/* Editor Header Bar */}
-                <div className="border-border bg-muted/70 dark:border-border dark:bg-muted/60 flex h-9 items-center justify-between border-b px-3">
-                  <span className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-medium uppercase">
+                <div className="border-border bg-muted/70 dark:bg-muted/60 flex h-9 items-center justify-between border-b px-3">
+                  <span className="text-muted-foreground font-mono text-xs font-medium uppercase">
                     {data?.engine === "mongodb" ? "JSON Definition" : "SQL DDL"}
                   </span>
 
@@ -660,12 +659,12 @@ export function SchemaInspector({
                     size="sm"
                     onClick={handleCopy}
                     disabled={!data?.ddl}
-                    className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground h-6 gap-1 px-2 font-mono text-xs"
+                    className="text-muted-foreground hover:text-foreground h-6 gap-1 px-2 font-mono text-xs"
                   >
                     {copied ? (
                       <>
                         <Check className="text-success h-3 w-3" />
-                        <span className="text-success dark:text-success">
+                        <span className="text-success">
                           {t("schema.copied")}
                         </span>
                       </>

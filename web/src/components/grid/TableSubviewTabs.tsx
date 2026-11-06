@@ -82,7 +82,7 @@ function TabsContent({
     tabs[next]?.click();
   };
   return (
-    <div className="border-border bg-background dark:border-border dark:bg-background flex h-9 shrink-0 items-center gap-1 border-b px-3">
+    <div className="border-border bg-background flex h-9 shrink-0 items-center gap-1 border-b px-3">
       <div
         role="tablist"
         aria-label={t("datagrid.tableViews", "Table views")}

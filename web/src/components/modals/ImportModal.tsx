@@ -361,16 +361,16 @@ export function ImportModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="border-border bg-background dark:border-border dark:bg-card flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden rounded-2xl border p-0 font-sans shadow-2xl sm:max-w-2xl">
-        <DialogHeader className="border-border bg-card/50 dark:border-border dark:bg-card/30 shrink-0 border-b px-6 py-5">
+      <DialogContent className="border-border bg-background dark:bg-card flex max-h-[90vh] w-full flex-col gap-0 overflow-hidden rounded-2xl border p-0 font-sans shadow-2xl sm:max-w-2xl">
+        <DialogHeader className="border-border bg-card/50 dark:bg-card/30 shrink-0 border-b px-6 py-5">
           <div className="flex flex-col justify-between gap-4 pr-8 sm:flex-row sm:items-center">
             <div className="flex items-center gap-3">
               <div
                 className={cn(
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg shadow-xs",
                   activeTab === "export"
-                    ? "bg-primary/10 text-primary dark:text-primary"
-                    : "bg-success/10 text-success dark:text-success",
+                    ? "bg-primary/10 text-primary"
+                    : "bg-success/10 text-success",
                 )}
               >
                 {activeTab === "export" ? (
@@ -380,7 +380,7 @@ export function ImportModal({
                 )}
               </div>
               <div>
-                <DialogTitle className="text-foreground dark:text-foreground text-base font-semibold tracking-tight">
+                <DialogTitle className="text-foreground text-base font-semibold tracking-tight">
                   {activeTab === "export"
                     ? t("export.title", {
                         table: table.name,
@@ -388,7 +388,7 @@ export function ImportModal({
                       })
                     : t("datagrid.importModalTitle", { table: table.name })}
                 </DialogTitle>
-                <DialogDescription className="text-muted-foreground dark:text-muted-foreground mt-1 text-xs leading-relaxed">
+                <DialogDescription className="text-muted-foreground mt-1 text-xs leading-relaxed">
                   {activeTab === "export"
                     ? t("export.desc", {
                         table: table.name,
@@ -401,7 +401,7 @@ export function ImportModal({
             </div>
 
             {/* Mode Switcher */}
-            <div className="border-border bg-muted dark:border-border dark:bg-card flex shrink-0 items-center self-start rounded-lg border p-1 font-mono text-xs sm:self-center">
+            <div className="border-border bg-muted dark:bg-card flex shrink-0 items-center self-start rounded-lg border p-1 font-mono text-xs sm:self-center">
               <button
                 type="button"
                 disabled={isReadOnly}
@@ -416,7 +416,7 @@ export function ImportModal({
                   "rounded-md px-3 py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50",
                   activeTab === "import"
                     ? "bg-background text-foreground dark:bg-muted font-medium shadow-xs dark:text-white"
-                    : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {t("export.tabImport", { defaultValue: "Import CSV" })}
@@ -431,7 +431,7 @@ export function ImportModal({
                   "rounded-md px-3 py-1 transition-colors",
                   activeTab === "export"
                     ? "bg-background text-foreground dark:bg-muted font-medium shadow-xs dark:text-white"
-                    : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {t("export.tabExport", { defaultValue: "Export Data" })}
@@ -453,8 +453,8 @@ export function ImportModal({
           {activeTab === "export" ? (
             <div className="space-y-6">
               {exportSuccess && (
-                <Alert className="border-primary/50 bg-success/50 text-success dark:bg-success/20 dark:text-success px-4 py-3">
-                  <CheckCircle2 className="text-success dark:text-success h-4 w-4" />
+                <Alert className="border-primary/50 bg-success/50 text-success dark:bg-success/20 px-4 py-3">
+                  <CheckCircle2 className="text-success h-4 w-4" />
                   <AlertDescription className="ml-2 font-mono text-xs">
                     {exportDestination === "copy"
                       ? "Export copied to clipboard."
@@ -484,7 +484,7 @@ export function ImportModal({
                       setExportDestination("file");
                   }}
                 >
-                  <SelectTrigger className="border-border bg-card dark:border-border dark:bg-card/50 h-11 w-full font-mono text-xs">
+                  <SelectTrigger className="border-border bg-card dark:bg-card/50 h-11 w-full font-mono text-xs">
                     <SelectValue
                       placeholder={t("export.selectFormat", {
                         defaultValue: "Select format",
@@ -494,7 +494,7 @@ export function ImportModal({
                   <SelectContent className="font-mono text-xs">
                     <SelectItem value="csv">
                       <div className="flex items-center gap-2">
-                        <FileSpreadsheet className="text-success dark:text-success h-4 w-4" />
+                        <FileSpreadsheet className="text-success h-4 w-4" />
                         <span>
                           {t("export.format.csv", {
                             defaultValue: "CSV (.csv)",
@@ -552,7 +552,7 @@ export function ImportModal({
                     </SelectItem>
                     <SelectItem value="parquet">
                       <div className="flex items-center gap-2">
-                        <Database className="text-primary dark:text-primary h-4 w-4" />
+                        <Database className="text-primary h-4 w-4" />
                         <span>
                           {t("export.format.parquet", {
                             defaultValue: "Parquet (.parquet)",
@@ -630,12 +630,12 @@ export function ImportModal({
               </div>
 
               {/* Table Metrics & Estimated Size */}
-              <div className="border-border bg-card/50 dark:border-border dark:bg-card/30 space-y-3 rounded-xl border p-4">
+              <div className="border-border bg-card/50 dark:bg-card/30 space-y-3 rounded-xl border p-4">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground dark:text-muted-foreground font-mono">
+                  <span className="text-muted-foreground font-mono">
                     {t("export.totalRows", { defaultValue: "Total Records" })}:
                   </span>
-                  <span className="text-foreground dark:text-foreground font-mono font-medium">
+                  <span className="text-foreground font-mono font-medium">
                     {new Intl.NumberFormat().format(
                       tableStats?.total_rows ?? 0,
                     )}
@@ -643,20 +643,20 @@ export function ImportModal({
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground dark:text-muted-foreground font-mono">
+                  <span className="text-muted-foreground font-mono">
                     {t("export.estimatedSize", {
                       defaultValue: "Estimated File Size",
                     })}
                     :
                   </span>
-                  <span className="text-success dark:text-success font-mono font-medium">
+                  <span className="text-success font-mono font-medium">
                     {getEstimatedSize(exportFormat, tableStats)}
                   </span>
                 </div>
 
                 {filters && filters.length > 0 && (
-                  <div className="border-border dark:border-border flex items-center justify-between border-t pt-2 text-xs">
-                    <span className="text-muted-foreground dark:text-muted-foreground font-mono">
+                  <div className="border-border flex items-center justify-between border-t pt-2 text-xs">
+                    <span className="text-muted-foreground font-mono">
                       Active Filters:
                     </span>
                     <Badge variant="outline" className="font-mono text-[10px]">
@@ -669,13 +669,13 @@ export function ImportModal({
             </div>
           ) : successResult ? (
             <div className="flex flex-col items-center justify-center space-y-3 py-10 text-center">
-              <div className="bg-success/15 text-success dark:text-success flex h-14 w-14 items-center justify-center rounded-full shadow-xs">
+              <div className="bg-success/15 text-success flex h-14 w-14 items-center justify-center rounded-full shadow-xs">
                 <CheckCircle2 className="h-7 w-7" />
               </div>
-              <h3 className="text-foreground dark:text-foreground text-base font-semibold">
+              <h3 className="text-foreground text-base font-semibold">
                 {t("datagrid.importSuccessTitle")}
               </h3>
-              <p className="text-muted-foreground dark:text-muted-foreground max-w-md text-xs leading-relaxed">
+              <p className="text-muted-foreground max-w-md text-xs leading-relaxed">
                 {t("datagrid.importSuccessDesc", {
                   count: successResult.inserted_count,
                   duration: successResult.duration_ms,
@@ -695,7 +695,7 @@ export function ImportModal({
                     "flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-10 text-center transition-all duration-200",
                     isDragOver
                       ? "border-primary bg-success/5 dark:bg-success/10"
-                      : "border-border bg-card/50 hover:border-border dark:border-border dark:bg-card/30 dark:hover:border-border",
+                      : "border-border bg-card/50 hover:border-border dark:bg-card/30",
                   )}
                 >
                   <input
@@ -706,13 +706,13 @@ export function ImportModal({
                     className="hidden"
                     onChange={onFileInputChange}
                   />
-                  <div className="bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+                  <div className="bg-muted text-muted-foreground mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <UploadCloud className="h-6 w-6" />
                   </div>
-                  <p className="text-foreground dark:text-foreground text-sm font-medium">
+                  <p className="text-foreground text-sm font-medium">
                     {t("datagrid.selectOrDropCsv")}
                   </p>
-                  <p className="text-muted-foreground dark:text-muted-foreground mt-1 text-xs">
+                  <p className="text-muted-foreground mt-1 text-xs">
                     {t("datagrid.supportedFileFormat")}
                   </p>
                   <Button
@@ -730,13 +730,13 @@ export function ImportModal({
                 </div>
               ) : (
                 /* Selected File Banner */
-                <div className="border-border bg-card dark:border-border dark:bg-card/50 flex items-center justify-between rounded-lg border p-3">
+                <div className="border-border bg-card dark:bg-card/50 flex items-center justify-between rounded-lg border p-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="bg-success/10 text-success dark:text-success flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+                    <div className="bg-success/10 text-success flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
                       <FileText className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-foreground dark:text-foreground truncate text-xs font-medium">
+                      <p className="text-foreground truncate text-xs font-medium">
                         {file.name}
                       </p>
                       <p className="text-muted-foreground font-mono text-[11px]">
@@ -761,7 +761,7 @@ export function ImportModal({
               {file && csvHeaders.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-semibold tracking-wider uppercase">
+                    <h4 className="text-muted-foreground font-mono text-xs font-semibold tracking-wider uppercase">
                       {t("datagrid.columnMapping")}
                     </h4>
                     <span className="text-muted-foreground text-[11px]">
@@ -774,7 +774,7 @@ export function ImportModal({
                     </span>
                   </div>
 
-                  <div className="divide-border border-border bg-background dark:divide-border dark:border-border dark:bg-card/50 divide-y overflow-hidden rounded-xl border">
+                  <div className="divide-border border-border bg-background dark:bg-card/50 divide-y overflow-hidden rounded-xl border">
                     {csvHeaders.map((header) => {
                       const currentMapped = columnMappings[header] || "";
                       const targetCol = table.columns.find(
@@ -787,7 +787,7 @@ export function ImportModal({
                           className="flex items-center justify-between gap-4 p-3 text-xs"
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-2">
-                            <span className="text-foreground dark:text-foreground truncate font-mono font-medium">
+                            <span className="text-foreground truncate font-mono font-medium">
                               {header}
                             </span>
                             <ArrowRight className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
@@ -831,7 +831,7 @@ export function ImportModal({
                             {targetCol?.is_primary_key && (
                               <Badge
                                 variant="outline"
-                                className="border-warning/30 text-warning dark:text-warning shrink-0 px-1.5 py-0 font-mono text-[10px]"
+                                className="border-warning/30 text-warning shrink-0 px-1.5 py-0 font-mono text-[10px]"
                               >
                                 PK
                               </Badge>
@@ -860,7 +860,7 @@ export function ImportModal({
               {/* Data Preview Table */}
               {previewRows.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-semibold tracking-wider uppercase">
+                  <h4 className="text-muted-foreground font-mono text-xs font-semibold tracking-wider uppercase">
                     {t("datagrid.previewData")} · {csvRowCount} rows
                   </h4>
                   {validationErrors.length > 0 && (
@@ -877,30 +877,27 @@ export function ImportModal({
                       </AlertDescription>
                     </Alert>
                   )}
-                  <div className="border-border bg-card/50 dark:border-border dark:bg-card/30 overflow-x-auto rounded-xl border">
+                  <div className="border-border bg-card/50 dark:bg-card/30 overflow-x-auto rounded-xl border">
                     <table className="w-full border-collapse text-left font-mono text-xs">
                       <thead>
-                        <tr className="border-border bg-muted/70 dark:border-border dark:bg-card/80 border-b">
+                        <tr className="border-border bg-muted/70 dark:bg-card/80 border-b">
                           {csvHeaders.map((h, i) => (
                             <th
                               key={i}
-                              className="text-muted-foreground dark:text-muted-foreground px-3 py-2 font-medium whitespace-nowrap"
+                              className="text-muted-foreground px-3 py-2 font-medium whitespace-nowrap"
                             >
                               {h}
                             </th>
                           ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-border/60 dark:divide-border/60 divide-y">
+                      <tbody className="divide-border/60 divide-y">
                         {previewRows.map((row, rowIdx) => (
-                          <tr
-                            key={rowIdx}
-                            className="hover:bg-muted/50 dark:hover:bg-muted/50"
-                          >
+                          <tr key={rowIdx} className="hover:bg-muted/50">
                             {row.map((cell, cellIdx) => (
                               <td
                                 key={cellIdx}
-                                className="text-foreground dark:text-foreground max-w-40 truncate px-3 py-1.5 whitespace-nowrap"
+                                className="text-foreground max-w-40 truncate px-3 py-1.5 whitespace-nowrap"
                               >
                                 {cell || (
                                   <span className="text-muted-foreground italic">
@@ -927,7 +924,7 @@ export function ImportModal({
           )}
         </div>
 
-        <div className="border-border bg-card/50 dark:border-border dark:bg-card/30 flex shrink-0 items-center justify-end gap-3 border-t px-6 py-5">
+        <div className="border-border bg-card/50 dark:bg-card/30 flex shrink-0 items-center justify-end gap-3 border-t px-6 py-5">
           {activeTab === "export" ? (
             <>
               <Button

@@ -192,7 +192,7 @@ export const GridContextMenu = React.memo(function GridContextMenu({
           ? "text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20"
           : "text-foreground hover:bg-muted dark:hover:bg-muted/80",
         options?.disabled &&
-          "cursor-not-allowed opacity-50 hover:bg-transparent dark:hover:bg-transparent",
+          "cursor-not-allowed opacity-50 hover:bg-transparent",
       )}
     >
       <div className="flex min-w-0 items-center gap-2">

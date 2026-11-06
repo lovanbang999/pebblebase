@@ -16,10 +16,10 @@ export function StreamValueViewer({
 
   return (
     <div className="flex h-full flex-col space-y-3 font-mono text-xs">
-      <div className="border-border dark:border-border flex items-center justify-between border-b pb-2">
+      <div className="border-border flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-cyan-500" />
-          <span className="text-foreground dark:text-foreground font-semibold">
+          <span className="text-foreground font-semibold">
             {t("redis.streamViewer.title", {
               count: entries.length,
               total: length ?? entries.length,
@@ -31,13 +31,13 @@ export function StreamValueViewer({
         </Badge>
       </div>
 
-      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border">
+      <div className="border-border flex-1 overflow-auto rounded-md border">
         {entries.length === 0 ? (
           <div className="text-muted-foreground p-6 text-center">
             {t("redis.streamViewer.empty")}
           </div>
         ) : (
-          <div className="divide-border dark:divide-border divide-y">
+          <div className="divide-border divide-y">
             {entries.map((entry) => (
               <div
                 key={entry.id}

@@ -141,7 +141,7 @@ export function OfflineRecoveryBanner({
     <div
       role="alert"
       data-testid="offline-recovery-banner"
-      className="border-warning/30 bg-warning/15 text-warning dark:bg-warning/20 dark:text-warning animate-in fade-in slide-in-from-top-1 z-50 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2 font-mono text-xs shadow-xs"
+      className="border-warning/30 bg-warning/15 text-warning dark:bg-warning/20 animate-in fade-in slide-in-from-top-1 z-50 flex flex-wrap items-center justify-between gap-3 border-b px-4 py-2 font-mono text-xs shadow-xs"
     >
       <div className="flex min-w-0 items-center gap-2.5">
         <WifiOff className="h-4 w-4 shrink-0 animate-pulse text-amber-500" />
@@ -170,7 +170,7 @@ export function OfflineRecoveryBanner({
           data-testid="reconnect-network-btn"
           onClick={handleReconnect}
           disabled={isReconnecting}
-          className="border-warning/40 text-warning hover:bg-warning/20 dark:text-warning h-7 cursor-pointer gap-1.5 text-xs font-semibold shadow-xs"
+          className="border-warning/40 text-warning hover:bg-warning/20 h-7 cursor-pointer gap-1.5 text-xs font-semibold shadow-xs"
         >
           <RefreshCw
             className={`h-3 w-3 ${isReconnecting ? "animate-spin" : ""}`}

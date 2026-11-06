@@ -20,7 +20,7 @@ export function LookupStageEditor({
           value={config.from}
           onChange={(e) => onChange({ ...config, from: e.target.value })}
           placeholder="Foreign collection..."
-          className="border-border bg-muted text-foreground dark:border-border dark:bg-muted dark:text-foreground h-7 w-full rounded border px-2 font-mono text-xs"
+          className="border-border bg-muted text-foreground h-7 w-full rounded border px-2 font-mono text-xs"
         />
         <datalist id="lookup-tables-list">
           {tables.map((table) => (

@@ -259,12 +259,12 @@ export function ColumnAnalyticsDrawer({
       {/* Slide-over Drawer Panel */}
       <div
         data-testid="column-analytics-drawer"
-        className="animate-in slide-in-from-right border-border bg-background text-foreground dark:border-border dark:bg-background dark:text-foreground relative z-50 flex h-full w-full max-w-xl flex-col overflow-hidden border-l font-sans shadow-2xl duration-300"
+        className="animate-in slide-in-from-right border-border bg-background text-foreground relative z-50 flex h-full w-full max-w-xl flex-col overflow-hidden border-l font-sans shadow-2xl duration-300"
       >
         {/* Header */}
         <div className="border-border bg-card dark:border-border/80 dark:bg-card/50 flex shrink-0 items-start justify-between border-b px-5 py-4">
           <div className="flex items-start gap-3">
-            <div className="border-primary/20 bg-primary/10 text-primary dark:text-primary mt-0.5 rounded-lg border p-2">
+            <div className="border-primary/20 bg-primary/10 text-primary mt-0.5 rounded-lg border p-2">
               <BarChart3 className="h-5 w-5" />
             </div>
             <div>
@@ -276,7 +276,7 @@ export function ColumnAnalyticsDrawer({
                         <button
                           type="button"
                           title={t("analytics.switchColumn", "Switch Column")}
-                          className="group border-border bg-muted text-foreground hover:border-border hover:bg-muted dark:border-border/80 dark:bg-card dark:text-foreground dark:hover:border-border dark:hover:bg-muted flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-sm font-semibold transition-all"
+                          className="group border-border bg-muted text-foreground hover:border-border hover:bg-muted dark:border-border/80 dark:bg-card flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-sm font-semibold transition-all"
                         >
                           <span>{column.name}</span>
                           <ChevronDown className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 transition-transform" />

@@ -78,7 +78,7 @@ export function StringValueEditor({
 
   return (
     <div className="flex h-full flex-col space-y-3">
-      <div className="border-border dark:border-border flex items-center justify-between border-b pb-2">
+      <div className="border-border flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2">
           <Button
             size="sm"
@@ -126,7 +126,7 @@ export function StringValueEditor({
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="bg-primary dark:bg-primary hover:bg-success dark:hover:bg-success h-7 text-xs text-white"
+              className="bg-primary hover:bg-success h-7 text-xs text-white"
             >
               {saving ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
@@ -144,7 +144,7 @@ export function StringValueEditor({
       </div>
 
       {error && (
-        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive flex items-center gap-2 rounded-md border p-2 text-xs">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-2 rounded-md border p-2 text-xs">
           <AlertCircle className="h-4 w-4 shrink-0" />
           <span>{error}</span>
         </div>

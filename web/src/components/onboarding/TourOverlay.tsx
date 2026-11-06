@@ -48,7 +48,7 @@ export function TourOverlay({
         role="dialog"
         aria-modal="false"
         style={tooltipStyle}
-        className="animate-in fade-in zoom-in-95 border-border bg-background text-foreground dark:border-border dark:bg-card rounded-xl border p-4 shadow-2xl duration-200 select-none"
+        className="animate-in fade-in zoom-in-95 border-border bg-background text-foreground dark:bg-card rounded-xl border p-4 shadow-2xl duration-200 select-none"
       >
         {/* Header: step badge and skip button */}
         <div className="mb-2.5 flex items-center justify-between gap-2">

@@ -61,15 +61,15 @@ export function HtmlPreviewViewer({
   return (
     <div className="bg-background flex h-full flex-col overflow-hidden">
       {/* Sub-toolbar */}
-      <div className="border-border bg-card/70 dark:border-border dark:bg-card/50 flex items-center justify-between border-b px-3 py-2 text-xs">
-        <div className="border-border bg-background dark:border-border dark:bg-card inline-flex rounded-md border p-0.5 shadow-2xs">
+      <div className="border-border bg-card/70 dark:bg-card/50 flex items-center justify-between border-b px-3 py-2 text-xs">
+        <div className="border-border bg-background dark:bg-card inline-flex rounded-md border p-0.5 shadow-2xs">
           <button
             type="button"
             onClick={() => setViewMode("preview")}
             className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
               viewMode === "preview"
-                ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Eye className="h-3.5 w-3.5" />
@@ -80,8 +80,8 @@ export function HtmlPreviewViewer({
             onClick={() => setViewMode("source")}
             className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
               viewMode === "source"
-                ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Code className="h-3.5 w-3.5" />
@@ -95,14 +95,14 @@ export function HtmlPreviewViewer({
               type="button"
               onClick={handleRefresh}
               title={t("cellInspector.reloadPreview")}
-              className="border-border bg-background text-muted-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted flex items-center gap-1 rounded border px-2 py-1 text-[11px]"
+              className="border-border bg-background text-muted-foreground hover:bg-muted dark:bg-card dark:text-foreground flex items-center gap-1 rounded border px-2 py-1 text-[11px]"
             >
               <RefreshCw className="h-3 w-3" />
               <span>{t("cellInspector.reload")}</span>
             </button>
           )}
 
-          <div className="text-success dark:text-success flex items-center gap-1 text-[11px]">
+          <div className="text-success flex items-center gap-1 text-[11px]">
             <ShieldCheck className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">
               {t("cellInspector.sandboxedIframe")}
@@ -120,14 +120,14 @@ export function HtmlPreviewViewer({
             srcDoc={safeIframeDocument}
             // Strict sandbox: empty string disallows scripts, same-origin storage access, and popups
             sandbox=""
-            className="border-border bg-background dark:border-border h-full w-full rounded border shadow-inner"
+            className="border-border bg-background h-full w-full rounded border shadow-inner"
           />
         ) : (
           <textarea
             value={htmlCode}
             readOnly={isReadOnly}
             onChange={(e) => handleSourceChange(e.target.value)}
-            className="border-border bg-background text-foreground focus:border-border dark:border-border dark:bg-card dark:text-foreground dark:focus:border-border h-full w-full resize-none rounded border p-3 font-mono text-xs leading-relaxed outline-none"
+            className="border-border bg-background text-foreground focus:border-border dark:bg-card h-full w-full resize-none rounded border p-3 font-mono text-xs leading-relaxed outline-none"
             placeholder={t("cellInspector.htmlPlaceholder")}
           />
         )}

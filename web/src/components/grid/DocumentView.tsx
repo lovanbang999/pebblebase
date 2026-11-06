@@ -99,12 +99,12 @@ export function DocumentViewSkeleton({ className }: { className?: string }) {
     <div
       data-testid="document-view-skeleton"
       className={cn(
-        "bg-background dark:bg-background flex flex-1 flex-col overflow-hidden",
+        "bg-background flex flex-1 flex-col overflow-hidden",
         className,
       )}
     >
       {/* Sub-Header Toolbar Skeleton */}
-      <div className="border-border bg-card/60 dark:border-border dark:bg-card/40 flex h-10 shrink-0 items-center justify-between border-b px-3">
+      <div className="border-border bg-card/60 dark:bg-card/40 flex h-10 shrink-0 items-center justify-between border-b px-3">
         <div className="border-border/80 bg-background/80 flex items-center gap-1 rounded-md border p-0.5">
           <Skeleton className="h-6 w-14 rounded" />
           <Skeleton className="h-6 w-14 rounded" />
@@ -120,7 +120,7 @@ export function DocumentViewSkeleton({ className }: { className?: string }) {
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
         {/* Card 1: Rich Object Card Skeleton */}
         <div className="bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs">
-          <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+          <div className="border-border bg-muted/40 dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
             <div className="flex items-center gap-2">
               <Skeleton className="h-3.5 w-6 rounded" />
               <Skeleton className="h-3.5 w-8 rounded" />
@@ -170,7 +170,7 @@ export function DocumentViewSkeleton({ className }: { className?: string }) {
 
         {/* Card 2: Medium Object Card Skeleton */}
         <div className="bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs">
-          <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+          <div className="border-border bg-muted/40 dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
             <div className="flex items-center gap-2">
               <Skeleton className="h-3.5 w-6 rounded" />
               <Skeleton className="h-3.5 w-8 rounded" />
@@ -209,7 +209,7 @@ export function DocumentViewSkeleton({ className }: { className?: string }) {
 
         {/* Card 3: Compact Object Card Skeleton */}
         <div className="bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs">
-          <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+          <div className="border-border bg-muted/40 dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
             <div className="flex items-center gap-2">
               <Skeleton className="h-3.5 w-6 rounded" />
               <Skeleton className="h-3.5 w-8 rounded" />
@@ -446,9 +446,9 @@ export const DocumentView = React.memo(function DocumentView({
   }
 
   return (
-    <div className="bg-background dark:bg-background flex flex-1 flex-col overflow-hidden">
+    <div className="bg-background flex flex-1 flex-col overflow-hidden">
       {/* Sub-Header Toolbar: Tri-Mode View Switcher + Expansion Controls */}
-      <div className="border-border bg-card/60 dark:border-border dark:bg-card/40 flex min-h-10 shrink-0 flex-wrap items-center justify-between gap-1.5 border-b px-3 py-1">
+      <div className="border-border bg-card/60 dark:bg-card/40 flex min-h-10 shrink-0 flex-wrap items-center justify-between gap-1.5 border-b px-3 py-1">
         <div className="border-border/80 bg-background/80 flex items-center gap-1 rounded-md border p-0.5">
           <button
             type="button"
@@ -569,7 +569,7 @@ export const DocumentView = React.memo(function DocumentView({
                 >
                   <div className="group bg-card/60 dark:bg-card/40 border-border hover:border-border/80 overflow-hidden rounded-lg border shadow-2xs transition-colors">
                     {/* Document Card Header */}
-                    <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+                    <div className="border-border bg-muted/40 dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
                       <div className="flex min-w-0 items-center gap-2">
                         <span className="text-muted-foreground w-6 shrink-0 text-right font-mono text-[11px] select-none">
                           #{rowNumber}
@@ -577,7 +577,7 @@ export const DocumentView = React.memo(function DocumentView({
                         <span className="text-muted-foreground shrink-0 font-mono text-[11px]">
                           {pkKey}:
                         </span>
-                        <span className="text-warning dark:text-warning truncate font-mono text-[11px] font-semibold">
+                        <span className="text-warning truncate font-mono text-[11px] font-semibold">
                           {formattedPk.display}
                         </span>
                         <BsonBadge type={pkType} />
@@ -722,7 +722,7 @@ export const DocumentView = React.memo(function DocumentView({
                 >
                   <div className="group bg-card/60 dark:bg-card/40 border-border overflow-hidden rounded-lg border shadow-2xs">
                     {/* JSON Card Header */}
-                    <div className="border-border bg-muted/40 dark:border-border dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
+                    <div className="border-border bg-muted/40 dark:bg-muted/20 flex items-center justify-between border-b px-3 py-2">
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground font-mono text-[11px] select-none">
                           #{rowNumber}

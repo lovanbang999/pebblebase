@@ -430,7 +430,7 @@ function PlanTreeNode({
         style={{ paddingLeft: `${depth * 16}px` }}
       >
         {keyName && (
-          <span className="text-muted-foreground dark:text-muted-foreground shrink-0 font-medium">
+          <span className="text-muted-foreground shrink-0 font-medium">
             {keyName}:
           </span>
         )}
@@ -458,15 +458,13 @@ function PlanTreeNode({
         style={{ paddingLeft: `${depth * 16}px` }}
       >
         {isOpen ? (
-          <ChevronDown className="text-muted-foreground group-hover:text-foreground dark:group-hover:text-foreground h-3.5 w-3.5 shrink-0" />
+          <ChevronDown className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 shrink-0" />
         ) : (
-          <ChevronRight className="text-muted-foreground group-hover:text-foreground dark:group-hover:text-foreground h-3.5 w-3.5 shrink-0" />
+          <ChevronRight className="text-muted-foreground group-hover:text-foreground h-3.5 w-3.5 shrink-0" />
         )}
 
         {keyName && (
-          <span className="text-primary dark:text-primary shrink-0 font-medium">
-            {keyName}:
-          </span>
+          <span className="text-primary shrink-0 font-medium">{keyName}:</span>
         )}
 
         <span className="text-muted-foreground text-[11px]">
@@ -2045,9 +2043,9 @@ export function QueryConsole({
   }, [history, historySearch]);
 
   return (
-    <div className="bg-background dark:bg-background flex h-full flex-1 flex-col overflow-hidden select-text">
+    <div className="bg-background flex h-full flex-1 flex-col overflow-hidden select-text">
       {/* Top Header */}
-      <div className="border-border bg-background dark:border-border dark:bg-card/40 flex min-h-9 shrink-0 flex-wrap items-center justify-between gap-2 border-b px-3 py-1">
+      <div className="border-border bg-background dark:bg-card/40 flex min-h-9 shrink-0 flex-wrap items-center justify-between gap-2 border-b px-3 py-1">
         <div className="flex shrink-0 items-center gap-2">
           {onNavigateToTable && tables.length > 0 && (
             <Button
@@ -2055,7 +2053,7 @@ export function QueryConsole({
               variant="ghost"
               size="sm"
               onClick={() => onNavigateToTable(tables[0].name)}
-              className="text-muted-foreground hover:text-foreground dark:hover:text-foreground -ml-1 h-7 shrink-0 gap-1 font-mono text-xs"
+              className="text-muted-foreground hover:text-foreground -ml-1 h-7 shrink-0 gap-1 font-mono text-xs"
             >
               <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
               <span className="whitespace-nowrap">
@@ -2065,7 +2063,7 @@ export function QueryConsole({
           )}
 
           <div className="ml-1 flex shrink-0 items-center gap-1.5">
-            <Terminal className="text-success dark:text-success h-4 w-4 shrink-0" />
+            <Terminal className="text-success h-4 w-4 shrink-0" />
             <span className="text-foreground font-mono text-xs font-semibold whitespace-nowrap">
               {t("console.title")}
             </span>
@@ -2073,7 +2071,7 @@ export function QueryConsole({
 
           <Badge
             variant="outline"
-            className="border-primary/30 bg-success/10 text-success dark:text-success h-4 shrink-0 px-1.5 py-0 font-mono text-[10px] uppercase"
+            className="border-primary/30 bg-success/10 text-success h-4 shrink-0 px-1.5 py-0 font-mono text-[10px] uppercase"
           >
             {connection.type}
           </Badge>
@@ -2086,8 +2084,8 @@ export function QueryConsole({
                 className={cn(
                   "flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 font-mono text-xs transition-all",
                   activeMode === "console"
-                    ? "bg-background text-foreground dark:bg-card dark:text-foreground font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
+                    ? "bg-background text-foreground dark:bg-card font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <Terminal className="size-3" />
@@ -2099,8 +2097,8 @@ export function QueryConsole({
                 className={cn(
                   "flex cursor-pointer items-center gap-1 rounded px-2 py-0.5 font-mono text-xs transition-all",
                   activeMode === "pipeline"
-                    ? "bg-background text-success dark:bg-card dark:text-success font-semibold shadow-2xs"
-                    : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
+                    ? "bg-background text-success dark:bg-card font-semibold shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <Layers className="text-success size-3" />
@@ -2112,9 +2110,9 @@ export function QueryConsole({
           {connection.read_only && (
             <Badge
               variant="outline"
-              className="border-warning/40 bg-warning/10 text-warning dark:text-warning h-4 shrink-0 gap-1 px-1.5 py-0 font-mono text-[10px] uppercase"
+              className="border-warning/40 bg-warning/10 text-warning h-4 shrink-0 gap-1 px-1.5 py-0 font-mono text-[10px] uppercase"
             >
-              <ShieldAlert className="text-warning dark:text-warning h-2.5 w-2.5 shrink-0" />
+              <ShieldAlert className="text-warning h-2.5 w-2.5 shrink-0" />
               <span>{t("connection.readOnlyBadge")}</span>
             </Badge>
           )}
@@ -2130,7 +2128,7 @@ export function QueryConsole({
                   variant="outline"
                   size="sm"
                   title={t("console.sampleTemplates")}
-                  className="border-border text-muted-foreground dark:border-border dark:text-foreground h-7 shrink-0 gap-1 font-mono text-xs"
+                  className="border-border text-muted-foreground dark:text-foreground h-7 shrink-0 gap-1 font-mono text-xs"
                 >
                   <Sparkles className="text-warning h-3 w-3 shrink-0" />
                   <span className="hidden whitespace-nowrap xl:inline">
@@ -2160,14 +2158,14 @@ export function QueryConsole({
             size="sm"
             onClick={() => setIsHistoryOpen(true)}
             title={t("console.history")}
-            className="border-border text-muted-foreground dark:border-border dark:text-foreground h-7 shrink-0 gap-1 font-mono text-xs"
+            className="border-border text-muted-foreground dark:text-foreground h-7 shrink-0 gap-1 font-mono text-xs"
           >
             <History className="h-3 w-3 shrink-0" />
             <span className="hidden whitespace-nowrap sm:inline">
               {t("console.history")}
             </span>
             {history.length > 0 && (
-              <span className="bg-muted text-foreground dark:bg-muted dark:text-foreground inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-center font-sans text-[10px] leading-none font-semibold tabular-nums select-none">
+              <span className="bg-muted text-foreground inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-center font-sans text-[10px] leading-none font-semibold tabular-nums select-none">
                 {history.length}
               </span>
             )}
@@ -2183,7 +2181,7 @@ export function QueryConsole({
               setShowLimitWarning(false);
             }}
             title={t("console.clear")}
-            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground inline-flex h-7 shrink-0 items-center justify-center gap-1.5 font-mono text-xs"
+            className="text-muted-foreground hover:text-foreground inline-flex h-7 shrink-0 items-center justify-center gap-1.5 font-mono text-xs"
           >
             <Trash2 className="size-3.5 shrink-0" />
             <span className="hidden translate-y-px leading-none whitespace-nowrap md:inline">
@@ -2361,11 +2359,11 @@ export function QueryConsole({
             className={cn(
               "h-7 shrink-0 cursor-pointer gap-1.5 border text-xs font-semibold shadow-xs transition-all",
               isAiBarOpen
-                ? "border-primary/50 bg-primary/15 text-primary dark:border-primary/40 dark:bg-primary/20 dark:text-primary"
-                : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 dark:border-primary/30 dark:bg-primary/10 dark:text-primary dark:hover:bg-primary/20",
+                ? "border-primary/50 bg-primary/15 text-primary dark:border-primary/40 dark:bg-primary/20"
+                : "border-primary/30 bg-primary/5 text-primary hover:bg-primary/15 dark:bg-primary/10 dark:hover:bg-primary/20",
             )}
           >
-            <Sparkles className="text-primary dark:text-primary size-3.5" />
+            <Sparkles className="text-primary size-3.5" />
             <span className="whitespace-nowrap">{t("ai.askAi")}</span>
           </Button>
 
@@ -2434,14 +2432,14 @@ export function QueryConsole({
             className={cn(
               "h-7 shrink-0 gap-1.5 border text-xs font-semibold transition-all",
               isLibraryOpen
-                ? "border-primary/30 hover:bg-primary/25 bg-success/15 text-success dark:text-success"
-                : "border-border text-muted-foreground hover:bg-muted dark:border-border dark:text-muted-foreground dark:hover:bg-muted bg-transparent",
+                ? "border-primary/30 hover:bg-primary/25 bg-success/15 text-success"
+                : "border-border text-muted-foreground hover:bg-muted bg-transparent",
             )}
           >
             <BookOpen
               className={cn(
                 "h-3 w-3 shrink-0",
-                isLibraryOpen ? "text-success dark:text-success" : "",
+                isLibraryOpen ? "text-success" : "",
               )}
             />
             <span className="hidden whitespace-nowrap lg:inline">
@@ -2453,9 +2451,9 @@ export function QueryConsole({
 
       {/* Save toast — bottom-right floating */}
       {saveToast && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-xl">
+        <div className="animate-in fade-in slide-in-from-bottom-2 border-border bg-background text-foreground dark:bg-card fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-xl">
           <div className="border-primary/30 bg-success/15 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border">
-            <CheckCircle2 className="text-success dark:text-success h-3.5 w-3.5" />
+            <CheckCircle2 className="text-success h-3.5 w-3.5" />
           </div>
           <div>
             <p className="text-foreground">{t("savedQuery.saved")}</p>
@@ -2468,9 +2466,9 @@ export function QueryConsole({
 
       {/* AI feedback toast */}
       {aiToast && (
-        <div className="animate-in fade-in slide-in-from-bottom-2 border-primary/30 bg-background text-foreground dark:border-primary/40 dark:bg-card dark:text-foreground fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-xl">
+        <div className="animate-in fade-in slide-in-from-bottom-2 border-primary/30 bg-background text-foreground dark:border-primary/40 dark:bg-card fixed right-6 bottom-6 z-50 flex items-center gap-2.5 rounded-xl border px-4 py-2.5 text-xs font-semibold shadow-xl">
           <div className="border-primary/30 bg-primary/15 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border">
-            <Sparkles className="text-primary dark:text-primary h-3.5 w-3.5" />
+            <Sparkles className="text-primary h-3.5 w-3.5" />
           </div>
           <div>
             <p className="text-foreground">{aiToast}</p>
@@ -2480,8 +2478,8 @@ export function QueryConsole({
 
       {/* Read-Only Safety Notice */}
       {connection.read_only && (
-        <div className="border-warning/25 bg-warning/10 text-warning dark:bg-warning/15 dark:text-warning flex items-center gap-2 border-b px-3 py-1 font-mono text-[11px]">
-          <ShieldAlert className="text-warning dark:text-warning h-3 w-3 shrink-0" />
+        <div className="border-warning/25 bg-warning/10 text-warning dark:bg-warning/15 flex items-center gap-2 border-b px-3 py-1 font-mono text-[11px]">
+          <ShieldAlert className="text-warning h-3 w-3 shrink-0" />
           <span>{t("console.readOnlyWarn")}</span>
         </div>
       )}
@@ -2490,10 +2488,10 @@ export function QueryConsole({
       {showLimitWarning && (
         <div
           role="alert"
-          className="animate-in fade-in slide-in-from-top-1 border-warning/30 bg-warning/10 text-warning dark:bg-warning/15 dark:text-warning flex flex-wrap items-center justify-between gap-2 border-b px-3 py-1.5 font-mono text-xs"
+          className="animate-in fade-in slide-in-from-top-1 border-warning/30 bg-warning/10 text-warning dark:bg-warning/15 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-1.5 font-mono text-xs"
         >
           <div className="flex min-w-0 items-center gap-2">
-            <AlertTriangle className="text-warning dark:text-warning size-3.5 shrink-0" />
+            <AlertTriangle className="text-warning size-3.5 shrink-0" />
             <span className="leading-snug">{t("query.warn.no_limit")}</span>
           </div>
 
@@ -2504,7 +2502,7 @@ export function QueryConsole({
               size="sm"
               onClick={handleRunAnyway}
               disabled={isRunning}
-              className="border-warning/40 text-warning hover:bg-warning/20 dark:text-warning h-6 cursor-pointer bg-transparent text-[11px] font-medium"
+              className="border-warning/40 text-warning hover:bg-warning/20 h-6 cursor-pointer bg-transparent text-[11px] font-medium"
             >
               {t("query.warn.run_anyway")}
             </Button>
@@ -2520,7 +2518,7 @@ export function QueryConsole({
             <button
               type="button"
               onClick={() => setShowLimitWarning(false)}
-              className="text-warning/60 hover:bg-warning/15 hover:text-warning dark:text-warning/60 dark:hover:text-warning cursor-pointer rounded p-0.5 transition-colors"
+              className="text-warning/60 hover:bg-warning/15 hover:text-warning cursor-pointer rounded p-0.5 transition-colors"
               aria-label="Dismiss warning"
             >
               <X className="size-3.5" />
@@ -2545,7 +2543,7 @@ export function QueryConsole({
         {/* Editor + Results column */}
         <div className="relative flex flex-1 flex-col overflow-hidden">
           {/* Query Console Tab Bar */}
-          <div className="border-border bg-muted/90 dark:border-border dark:bg-card/90 flex h-8.5 shrink-0 items-center justify-between gap-1 overflow-x-auto border-b px-2 select-none">
+          <div className="border-border bg-muted/90 dark:bg-card/90 flex h-8.5 shrink-0 items-center justify-between gap-1 overflow-x-auto border-b px-2 select-none">
             <div className="no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto py-0.5">
               {tabs.map((tab) => {
                 const isActive =
@@ -2563,8 +2561,8 @@ export function QueryConsole({
                     className={cn(
                       "group relative flex h-7 cursor-pointer items-center gap-1.5 rounded-t border-x border-t px-2.5 font-mono text-xs transition-all",
                       isActive
-                        ? "border-x-border border-t-success bg-background text-foreground dark:border-x-border dark:bg-background dark:text-foreground z-1 border-t-2 font-medium shadow-2xs"
-                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/50 dark:hover:text-foreground border-t-2 border-transparent border-t-transparent bg-transparent",
+                        ? "border-x-border border-t-success bg-background text-foreground z-1 border-t-2 font-medium shadow-2xs"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border-t-2 border-transparent border-t-transparent bg-transparent",
                     )}
                     title={isEditing ? undefined : t("console.tab.rename")}
                   >
@@ -2583,7 +2581,7 @@ export function QueryConsole({
                         }}
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
-                        className="border-primary bg-muted text-foreground dark:bg-card dark:text-foreground h-4.5 w-24 rounded border px-1 py-0 font-mono text-xs outline-hidden"
+                        className="border-primary bg-muted text-foreground dark:bg-card h-4.5 w-24 rounded border px-1 py-0 font-mono text-xs outline-hidden"
                       />
                     ) : (
                       <span className="max-w-32 truncate select-none">
@@ -2606,7 +2604,7 @@ export function QueryConsole({
                       type="button"
                       onClick={(e) => handleRequestCloseTab(e, tab.id)}
                       className={cn(
-                        "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground ml-0.5 cursor-pointer rounded-sm p-0.5 transition-colors",
+                        "text-muted-foreground hover:bg-muted hover:text-foreground ml-0.5 cursor-pointer rounded-sm p-0.5 transition-colors",
                         isActive
                           ? "opacity-100"
                           : "opacity-0 group-hover:opacity-100",
@@ -2627,7 +2625,7 @@ export function QueryConsole({
                       <button
                         type="button"
                         onClick={handleNewTab}
-                        className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground ml-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors"
+                        className="text-muted-foreground hover:bg-muted hover:text-foreground ml-0.5 flex h-6 w-6 cursor-pointer items-center justify-center rounded transition-colors"
                       >
                         <Plus className="size-3.5" />
                       </button>
@@ -2646,8 +2644,8 @@ export function QueryConsole({
                   className={cn(
                     "group relative ml-1.5 flex h-7 cursor-pointer items-center gap-1.5 rounded-t border-x border-t px-2.5 font-mono text-xs transition-all",
                     activeMode === "pipeline"
-                      ? "border-x-border border-t-success bg-background text-success dark:border-x-border dark:bg-background dark:text-success z-1 border-t-2 font-semibold shadow-2xs"
-                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/50 dark:hover:text-foreground border-t-2 border-transparent border-t-transparent bg-transparent",
+                      ? "border-x-border border-t-success bg-background text-success z-1 border-t-2 font-semibold shadow-2xs"
+                      : "text-muted-foreground hover:bg-muted/50 hover:text-foreground border-t-2 border-transparent border-t-transparent bg-transparent",
                   )}
                   title={t("pipeline.title")}
                 >
@@ -2683,12 +2681,12 @@ export function QueryConsole({
                       <div className="bg-primary flex size-5 items-center justify-center rounded-md text-white shadow-2xs">
                         <Sparkles className="size-3" />
                       </div>
-                      <span className="text-primary dark:text-primary text-xs font-semibold">
+                      <span className="text-primary text-xs font-semibold">
                         {t("ai.askAi")}
                       </span>
                       <Badge
                         variant="outline"
-                        className="border-primary/40 bg-primary/10 text-primary dark:text-primary h-4 px-1 font-mono text-[9px] font-semibold uppercase"
+                        className="border-primary/40 bg-primary/10 text-primary h-4 px-1 font-mono text-[9px] font-semibold uppercase"
                       >
                         {connection.type}
                       </Badge>
@@ -2702,7 +2700,7 @@ export function QueryConsole({
                         setAiErrorNotice(null);
                       }}
                       title={t("ai.closeAiBar")}
-                      className="text-muted-foreground hover:text-foreground dark:hover:text-foreground size-5"
+                      className="text-muted-foreground hover:text-foreground size-5"
                     >
                       <X className="size-3.5" />
                     </Button>
@@ -2712,11 +2710,11 @@ export function QueryConsole({
                   {aiErrorNotice && (
                     <Alert
                       variant="destructive"
-                      className="border-destructive/30 bg-destructive/90 text-destructive dark:border-destructive/60 dark:bg-destructive/50 dark:text-destructive mb-2.5 py-1.5 text-xs"
+                      className="border-destructive/30 bg-destructive/90 text-destructive dark:border-destructive/60 dark:bg-destructive/50 mb-2.5 py-1.5 text-xs"
                     >
                       <div className="flex w-full items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 overflow-hidden">
-                          <AlertCircle className="text-destructive dark:text-destructive size-3.5 shrink-0" />
+                          <AlertCircle className="text-destructive size-3.5 shrink-0" />
                           <AlertDescription className="text-xs break-all">
                             {aiErrorNotice}
                           </AlertDescription>
@@ -2727,7 +2725,7 @@ export function QueryConsole({
                             size="sm"
                             variant="outline"
                             onClick={onOpenAISettings}
-                            className="border-destructive/30 bg-background text-destructive hover:bg-destructive/10 dark:border-destructive dark:bg-card dark:text-destructive dark:hover:bg-muted h-6 shrink-0 gap-1 text-[11px] font-medium shadow-2xs"
+                            className="border-destructive/30 bg-background text-destructive hover:bg-destructive/10 dark:border-destructive dark:bg-card dark:hover:bg-muted h-6 shrink-0 gap-1 text-[11px] font-medium shadow-2xs"
                           >
                             <Sparkles className="size-3" />
                             <span>{t("ai.openAiSettings")}</span>
@@ -2752,7 +2750,7 @@ export function QueryConsole({
                         }}
                         placeholder={t("ai.askAiPlaceholder")}
                         disabled={isGeneratingAi}
-                        className="border-primary/30 bg-background text-foreground placeholder:text-muted-foreground dark:border-primary/60 dark:bg-card/80 dark:text-foreground dark:placeholder:text-muted-foreground h-8 pr-8 text-xs shadow-2xs"
+                        className="border-primary/30 bg-background text-foreground placeholder:text-muted-foreground dark:border-primary/60 dark:bg-card/80 h-8 pr-8 text-xs shadow-2xs"
                       />
                       {aiPrompt && (
                         <button
@@ -2769,7 +2767,7 @@ export function QueryConsole({
                       size="sm"
                       onClick={() => handleGenerateQuery()}
                       disabled={isGeneratingAi || !aiPrompt.trim()}
-                      className="bg-primary hover:bg-primary dark:bg-primary dark:hover:bg-primary h-8 gap-1.5 text-xs font-semibold text-white shadow-2xs disabled:opacity-50"
+                      className="bg-primary hover:bg-primary h-8 gap-1.5 text-xs font-semibold text-white shadow-2xs disabled:opacity-50"
                     >
                       {isGeneratingAi ? (
                         <>
@@ -2809,7 +2807,7 @@ export function QueryConsole({
                           setAiPrompt(chip);
                           handleGenerateQuery(chip);
                         }}
-                        className="border-primary/20 bg-background/70 text-primary hover:border-primary/40 hover:bg-primary/10 dark:border-primary/30 dark:bg-card/60 dark:text-primary dark:hover:bg-primary/20 cursor-pointer rounded-md border px-2 py-0.5 text-[11px] transition-colors"
+                        className="border-primary/20 bg-background/70 text-primary hover:border-primary/40 hover:bg-primary/10 dark:border-primary/30 dark:bg-card/60 dark:hover:bg-primary/20 cursor-pointer rounded-md border px-2 py-0.5 text-[11px] transition-colors"
                       >
                         {chip}
                       </button>
@@ -2818,9 +2816,9 @@ export function QueryConsole({
 
                   {/* Generated Result Preview Card */}
                   {aiGeneratedResult && (
-                    <div className="border-primary/30 bg-background dark:border-primary/30 dark:bg-card/90 mt-3 rounded-lg border p-3 shadow-xs">
+                    <div className="border-primary/30 bg-background dark:bg-card/90 mt-3 rounded-lg border p-3 shadow-xs">
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="text-foreground dark:text-foreground text-[11px] font-semibold tracking-wider uppercase">
+                        <span className="text-foreground text-[11px] font-semibold tracking-wider uppercase">
                           {t("ai.explanationTitle")}
                         </span>
                         <div className="flex items-center gap-1.5">
@@ -2832,7 +2830,7 @@ export function QueryConsole({
                               handleQueryChange(aiGeneratedResult.query);
                               showAiToast(t("ai.fixApplied"));
                             }}
-                            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 dark:text-primary h-6 gap-1 text-[11px] font-medium"
+                            className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 h-6 gap-1 text-[11px] font-medium"
                           >
                             <Check className="size-3" />
                             <span>{t("ai.replace")}</span>
@@ -2848,7 +2846,7 @@ export function QueryConsole({
                               handleQueryChange(newQ);
                               showAiToast(t("ai.fixApplied"));
                             }}
-                            className="border-border text-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted h-6 gap-1 text-[11px] font-medium"
+                            className="border-border text-foreground hover:bg-muted h-6 gap-1 text-[11px] font-medium"
                           >
                             <Plus className="size-3" />
                             <span>{t("ai.insert")}</span>
@@ -2874,7 +2872,7 @@ export function QueryConsole({
                         </p>
                       )}
 
-                      <div className="border-border/80 bg-card text-foreground dark:border-border dark:bg-background dark:text-foreground rounded-md border p-2 font-mono text-xs select-all">
+                      <div className="border-border/80 bg-card text-foreground dark:border-border dark:bg-background rounded-md border p-2 font-mono text-xs select-all">
                         <code>{aiGeneratedResult.query}</code>
                       </div>
                     </div>
@@ -2886,7 +2884,7 @@ export function QueryConsole({
                   height: isResultsCollapsed ? "100%" : `${editorHeight}px`,
                 }}
                 className={cn(
-                  "border-border bg-card/50 dark:border-border dark:bg-background/80 shrink-0 overflow-hidden border-b transition-all duration-75",
+                  "border-border bg-card/50 dark:bg-background/80 shrink-0 overflow-hidden border-b transition-all duration-75",
                   isResultsCollapsed && "flex-1 border-b-0",
                 )}
               >
@@ -2974,17 +2972,17 @@ export function QueryConsole({
                       );
                   }}
                   className={cn(
-                    "group hover:bg-primary/40 dark:hover:bg-primary/50 bg-muted/80 dark:bg-muted/80 relative z-10 flex h-1 w-full shrink-0 cursor-row-resize items-center justify-center transition-colors select-none",
+                    "group hover:bg-primary/40 dark:hover:bg-primary/50 bg-muted/80 relative z-10 flex h-1 w-full shrink-0 cursor-row-resize items-center justify-center transition-colors select-none",
                     isDragging && "bg-primary/60",
                   )}
                   title="Drag up or down to resize editor and results panel"
                 >
-                  <div className="group-hover:bg-primary/90 bg-muted/80 dark:bg-muted/80 h-1 w-10 rounded-full transition-colors" />
+                  <div className="group-hover:bg-primary/90 bg-muted/80 h-1 w-10 rounded-full transition-colors" />
                 </div>
               )}
 
               {/* Execution Metrics & Results Status Bar */}
-              <div className="border-border bg-muted/70 text-muted-foreground dark:border-border dark:bg-card/60 dark:text-muted-foreground flex h-8 shrink-0 items-center justify-between border-b px-3 font-mono text-xs select-none">
+              <div className="border-border bg-muted/70 text-muted-foreground dark:bg-card/60 flex h-8 shrink-0 items-center justify-between border-b px-3 font-mono text-xs select-none">
                 <div className="flex items-center gap-3">
                   {/* Tab Selector: Results vs Execution Plan */}
                   <div className="bg-muted/70 dark:bg-muted/80 flex items-center gap-0.5 rounded-md p-0.5">
@@ -2994,13 +2992,13 @@ export function QueryConsole({
                       className={cn(
                         "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-0.5 font-sans text-[11px] font-medium transition-colors",
                         activeResultsTab === "results"
-                          ? "bg-background text-foreground dark:bg-muted dark:text-foreground shadow-xs"
-                          : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
+                          ? "bg-background text-foreground dark:bg-muted shadow-xs"
+                          : "text-muted-foreground hover:text-foreground",
                       )}
                     >
                       <span>{t("console.explain.results_tab", "Results")}</span>
                       {result && (
-                        <span className="py-0.2 bg-muted text-foreground dark:bg-muted/90 dark:text-foreground rounded px-1 font-mono text-[9px]">
+                        <span className="py-0.2 bg-muted text-foreground dark:bg-muted/90 rounded px-1 font-mono text-[9px]">
                           {result.is_mutation
                             ? result.rows_affected
                             : result.rows.length}
@@ -3014,11 +3012,11 @@ export function QueryConsole({
                       className={cn(
                         "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-0.5 font-sans text-[11px] font-medium transition-colors",
                         activeResultsTab === "plan"
-                          ? "bg-background text-foreground dark:bg-muted dark:text-foreground shadow-xs"
-                          : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
+                          ? "bg-background text-foreground dark:bg-muted shadow-xs"
+                          : "text-muted-foreground hover:text-foreground",
                       )}
                     >
-                      <FileSearch className="text-warning dark:text-warning h-3 w-3" />
+                      <FileSearch className="text-warning h-3 w-3" />
                       <span>{t("console.explain.plan", "Execution Plan")}</span>
                       {activeTab.explainResult && (
                         <span className="bg-warning h-1.5 w-1.5 rounded-full" />
@@ -3030,8 +3028,8 @@ export function QueryConsole({
                       className={cn(
                         "flex cursor-pointer items-center gap-1.5 rounded px-2.5 py-0.5 font-sans text-[11px] font-medium transition-colors",
                         activeResultsTab === "output"
-                          ? "bg-background text-foreground dark:bg-muted dark:text-foreground shadow-xs"
-                          : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
+                          ? "bg-background text-foreground dark:bg-muted shadow-xs"
+                          : "text-muted-foreground hover:text-foreground",
                       )}
                     >
                       <span>Output / Log</span>
@@ -3072,14 +3070,14 @@ export function QueryConsole({
                       {result && (
                         <>
                           <div
-                            className="text-success dark:text-success flex cursor-help items-center gap-1 font-semibold"
+                            className="text-success flex cursor-help items-center gap-1 font-semibold"
                             title={
                               result.round_trip_ms
                                 ? `Database query: ${formatLatency(result.execution_time_ms)}ms | Network round-trip: ${formatLatency(result.round_trip_ms)}ms`
                                 : `Database query: ${formatLatency(result.execution_time_ms)}ms`
                             }
                           >
-                            <Zap className="fill-success/20 text-success dark:text-success h-3 w-3" />
+                            <Zap className="fill-success/20 text-success h-3 w-3" />
                             <span>
                               {t("console.latency", {
                                 ms: formatLatency(result.execution_time_ms),
@@ -3092,7 +3090,7 @@ export function QueryConsole({
                           </span>
 
                           {result.is_mutation ? (
-                            <span className="text-warning dark:text-warning font-medium">
+                            <span className="text-warning font-medium">
                               {t("console.rowsAffected", {
                                 count: result.rows_affected,
                               })}
@@ -3117,7 +3115,7 @@ export function QueryConsole({
                       )}
 
                       {!result && !error && !isRunning && (
-                        <span className="text-muted-foreground dark:text-muted-foreground text-[11px] italic">
+                        <span className="text-muted-foreground text-[11px] italic">
                           {t("console.emptyPrompt")}
                         </span>
                       )}
@@ -3128,7 +3126,7 @@ export function QueryConsole({
                       {activeTab.explainResult && (
                         <>
                           <div className="text-foreground flex items-center gap-1.5">
-                            <Clock className="text-warning dark:text-warning h-3 w-3" />
+                            <Clock className="text-warning h-3 w-3" />
                             <span>
                               {activeTab.explainResult.execution_time_ms
                                 ? `${formatLatency(activeTab.explainResult.execution_time_ms)} ms`
@@ -3160,7 +3158,7 @@ export function QueryConsole({
                             value={resultFilter}
                             onChange={(e) => setResultFilter(e.target.value)}
                             placeholder={t("console.rowsFilter")}
-                            className="border-border bg-background dark:border-border dark:bg-background h-6 w-40 pr-2 pl-6 font-mono text-[11px]"
+                            className="border-border bg-background h-6 w-40 pr-2 pl-6 font-mono text-[11px]"
                           />
                         </div>
 
@@ -3170,7 +3168,7 @@ export function QueryConsole({
                           variant="outline"
                           size="sm"
                           onClick={handleCopyResults}
-                          className="border-border text-muted-foreground dark:border-border dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
+                          className="border-border text-muted-foreground dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
                         >
                           <Copy className="h-3 w-3" />
                           <span>Copy results</span>
@@ -3180,9 +3178,9 @@ export function QueryConsole({
                           variant="outline"
                           size="sm"
                           onClick={handleExportCSV}
-                          className="border-border text-muted-foreground dark:border-border dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
+                          className="border-border text-muted-foreground dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
                         >
-                          <FileSpreadsheet className="text-success dark:text-success h-3 w-3" />
+                          <FileSpreadsheet className="text-success h-3 w-3" />
                           <span>{t("console.exportResults")}</span>
                         </Button>
                       </>
@@ -3199,7 +3197,7 @@ export function QueryConsole({
                           onClick={() =>
                             setIsResultsCollapsed(!isResultsCollapsed)
                           }
-                          className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground h-6 w-6 cursor-pointer"
+                          className="text-muted-foreground hover:bg-muted hover:text-foreground h-6 w-6 cursor-pointer"
                         >
                           {isResultsCollapsed ? (
                             <ChevronUp className="h-3.5 w-3.5" />
@@ -3227,7 +3225,7 @@ export function QueryConsole({
                       {error && (
                         <Alert
                           variant="destructive"
-                          className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 dark:text-destructive"
+                          className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40"
                         >
                           <AlertCircle className="h-4 w-4 shrink-0" />
                           <div className="flex-1 space-y-2">
@@ -3246,7 +3244,7 @@ export function QueryConsole({
                                 variant="outline"
                                 onClick={handleFixWithAi}
                                 disabled={isFixingWithAi}
-                                className="border-destructive/30 bg-destructive/70 text-destructive hover:bg-destructive/10 dark:border-destructive dark:bg-destructive/40 dark:text-destructive dark:hover:bg-destructive/70 h-6.5 gap-1.5 text-[11px] font-semibold shadow-2xs"
+                                className="border-destructive/30 bg-destructive/70 text-destructive hover:bg-destructive/10 dark:border-destructive dark:bg-destructive/40 dark:hover:bg-destructive/70 h-6.5 gap-1.5 text-[11px] font-semibold shadow-2xs"
                               >
                                 {isFixingWithAi ? (
                                   <>
@@ -3255,7 +3253,7 @@ export function QueryConsole({
                                   </>
                                 ) : (
                                   <>
-                                    <Sparkles className="text-primary dark:text-primary size-3" />
+                                    <Sparkles className="text-primary size-3" />
                                     <span>{t("ai.fixWithAi")}</span>
                                   </>
                                 )}
@@ -3264,11 +3262,11 @@ export function QueryConsole({
 
                             {/* Render AI Fix Result */}
                             {aiFixedResult && (
-                              <div className="border-primary/30 bg-background text-foreground dark:border-primary/30 dark:bg-card dark:text-foreground mt-2 rounded-lg border p-3 shadow-xs">
+                              <div className="border-primary/30 bg-background text-foreground dark:bg-card mt-2 rounded-lg border p-3 shadow-xs">
                                 <div className="mb-1.5 flex items-center justify-between">
                                   <div className="flex items-center gap-1.5">
-                                    <Sparkles className="text-primary dark:text-primary size-3.5" />
-                                    <span className="text-primary dark:text-primary text-xs font-semibold">
+                                    <Sparkles className="text-primary size-3.5" />
+                                    <span className="text-primary text-xs font-semibold">
                                       {t("ai.fixWithAi")}
                                     </span>
                                   </div>
@@ -3281,7 +3279,7 @@ export function QueryConsole({
                                         handleQueryChange(aiFixedResult.query);
                                         showAiToast(t("ai.fixApplied"));
                                       }}
-                                      className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 dark:text-primary h-6 gap-1 text-[11px] font-medium"
+                                      className="border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 h-6 gap-1 text-[11px] font-medium"
                                     >
                                       <Check className="size-3" />
                                       <span>{t("ai.applyFix")}</span>
@@ -3305,7 +3303,7 @@ export function QueryConsole({
                                     {aiFixedResult.explanation}
                                   </p>
                                 )}
-                                <div className="border-border bg-card dark:border-border dark:bg-background rounded-md border p-2 font-mono text-xs select-all">
+                                <div className="border-border bg-card dark:bg-background rounded-md border p-2 font-mono text-xs select-all">
                                   <code>{aiFixedResult.query}</code>
                                 </div>
                               </div>
@@ -3316,8 +3314,8 @@ export function QueryConsole({
 
                       {/* Mutation Success Notice */}
                       {result?.is_mutation && !error && (
-                        <Alert className="border-success/30 bg-success/10 text-success dark:border-success dark:bg-success/40 dark:text-success">
-                          <CheckCircle2 className="text-success dark:text-success h-4 w-4" />
+                        <Alert className="border-success/30 bg-success/10 text-success dark:border-success dark:bg-success/40">
+                          <CheckCircle2 className="text-success h-4 w-4" />
                           <AlertDescription className="font-mono text-xs">
                             {t("console.mutationSuccess")} (
                             {t("console.rowsAffected", {
@@ -3334,10 +3332,10 @@ export function QueryConsole({
                         displayedRows.length > 0 && (
                           <div
                             ref={resultsContainerRef}
-                            className="border-border bg-background dark:border-border dark:bg-card/40 max-h-[calc(100vh-380px)] min-h-40 overflow-auto rounded-lg border"
+                            className="border-border bg-background dark:bg-card/40 max-h-[calc(100vh-380px)] min-h-40 overflow-auto rounded-lg border"
                           >
                             <Table className="studio-data-table w-full border-collapse text-left">
-                              <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
+                              <TableHeader className="border-border bg-card sticky top-0 z-10 border-b">
                                 <TableRow>
                                   <TableHead className="text-muted-foreground h-7 w-12 text-center font-mono text-xs">
                                     #
@@ -3358,7 +3356,7 @@ export function QueryConsole({
                                               },
                                         )
                                       }
-                                      className="border-border/50 text-foreground dark:border-border/50 dark:text-foreground cursor-pointer border-r px-2.5 py-1 font-mono text-xs font-semibold last:border-r-0"
+                                      className="border-border/50 text-foreground cursor-pointer border-r px-2.5 py-1 font-mono text-xs font-semibold last:border-r-0"
                                     >
                                       {col}
                                       {sortState?.column === col
@@ -3401,7 +3399,7 @@ export function QueryConsole({
                                             ref={rowVirtualizer.measureElement}
                                             className="border-border hover:bg-card/80 dark:border-border/60 dark:hover:bg-muted/40 border-b transition-colors"
                                           >
-                                            <TableCell className="bg-card/30 text-muted-foreground dark:bg-card/30 text-center font-mono text-xs select-none">
+                                            <TableCell className="bg-card/30 text-muted-foreground text-center font-mono text-xs select-none">
                                               {idx + 1}
                                             </TableCell>
                                             {result.columns.map((col) => {
@@ -3425,7 +3423,7 @@ export function QueryConsole({
                                                 >
                                                   {val === null ||
                                                   val === undefined ? (
-                                                    <span className="text-muted-foreground dark:text-muted-foreground italic">
+                                                    <span className="text-muted-foreground italic">
                                                       NULL
                                                     </span>
                                                   ) : typeof val ===
@@ -3436,14 +3434,14 @@ export function QueryConsole({
                                                         "px-1 py-0 font-mono text-[10px] font-medium",
                                                         val
                                                           ? "border-primary/30 bg-success/10 text-success"
-                                                          : "bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground",
+                                                          : "bg-muted text-muted-foreground",
                                                       )}
                                                     >
                                                       {String(val)}
                                                     </Badge>
                                                   ) : typeof val ===
                                                     "object" ? (
-                                                    <span className="text-warning dark:text-warning">
+                                                    <span className="text-warning">
                                                       {JSON.stringify(val)}
                                                     </span>
                                                   ) : (
@@ -3517,7 +3515,7 @@ export function QueryConsole({
                       {error && (
                         <Alert
                           variant="destructive"
-                          className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 dark:text-destructive"
+                          className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40"
                         >
                           <AlertCircle className="h-4 w-4" />
                           <AlertDescription className="font-mono text-xs whitespace-pre-wrap">
@@ -3531,8 +3529,8 @@ export function QueryConsole({
                           {/* Metric Summary Cards */}
                           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
                             {/* Estimated Rows */}
-                            <div className="border-border bg-background/70 dark:border-border dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
-                              <div className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
+                            <div className="border-border bg-background/70 dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
+                              <div className="text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                                 {t("console.explain.estimated_rows")}
                               </div>
                               <div className="text-foreground mt-1 font-mono text-base font-bold">
@@ -3544,8 +3542,8 @@ export function QueryConsole({
                             </div>
 
                             {/* Actual Rows */}
-                            <div className="border-border bg-background/70 dark:border-border dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
-                              <div className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
+                            <div className="border-border bg-background/70 dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
+                              <div className="text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                                 {t("console.explain.actual_rows")}
                               </div>
                               <div className="text-foreground mt-1 font-mono text-base font-bold">
@@ -3557,11 +3555,11 @@ export function QueryConsole({
                             </div>
 
                             {/* Execution Time */}
-                            <div className="border-border bg-background/70 dark:border-border dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
-                              <div className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
+                            <div className="border-border bg-background/70 dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
+                              <div className="text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                                 {t("console.explain.execution_time")}
                               </div>
-                              <div className="text-success dark:text-success mt-1 font-mono text-base font-bold">
+                              <div className="text-success mt-1 font-mono text-base font-bold">
                                 {activeTab.explainResult.execution_time_ms
                                   ? `${formatLatency(activeTab.explainResult.execution_time_ms)} ms`
                                   : "—"}
@@ -3569,15 +3567,15 @@ export function QueryConsole({
                             </div>
 
                             {/* Index Used */}
-                            <div className="border-border bg-background/70 dark:border-border dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
-                              <div className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
+                            <div className="border-border bg-background/70 dark:bg-card/60 rounded-lg border p-2.5 shadow-xs">
+                              <div className="text-muted-foreground font-mono text-[10px] font-semibold tracking-wider uppercase">
                                 {t("console.explain.index_used")}
                               </div>
                               <div className="mt-1 flex items-center gap-1.5 truncate">
                                 {activeTab.explainResult.index_used ? (
                                   <Badge
                                     variant="outline"
-                                    className="border-primary/30 bg-success/10 text-success dark:text-success max-w-full truncate font-mono text-[11px] font-semibold"
+                                    className="border-primary/30 bg-success/10 text-success max-w-full truncate font-mono text-[11px] font-semibold"
                                     title={activeTab.explainResult.index_used}
                                   >
                                     {activeTab.explainResult.index_used}
@@ -3585,7 +3583,7 @@ export function QueryConsole({
                                 ) : (
                                   <Badge
                                     variant="outline"
-                                    className="border-warning/30 bg-warning/10 text-warning dark:text-warning truncate font-mono text-[11px] font-medium"
+                                    className="border-warning/30 bg-warning/10 text-warning truncate font-mono text-[11px] font-medium"
                                   >
                                     {t("console.explain.no_index")}
                                   </Badge>
@@ -3595,16 +3593,16 @@ export function QueryConsole({
                           </div>
 
                           {/* Execution Plan Tree Container */}
-                          <div className="border-border bg-background dark:border-border dark:bg-background/60 overflow-hidden rounded-lg border shadow-xs">
-                            <div className="border-border bg-card dark:border-border dark:bg-card flex items-center justify-between border-b px-3 py-2">
+                          <div className="border-border bg-background dark:bg-background/60 overflow-hidden rounded-lg border shadow-xs">
+                            <div className="border-border bg-card flex items-center justify-between border-b px-3 py-2">
                               <div className="flex items-center gap-2">
-                                <FileSearch className="text-warning dark:text-warning h-3.5 w-3.5" />
+                                <FileSearch className="text-warning h-3.5 w-3.5" />
                                 <span className="text-foreground font-mono text-xs font-semibold">
                                   {t("console.explain.plan")}
                                 </span>
                                 <Badge
                                   variant="secondary"
-                                  className="bg-muted text-muted-foreground dark:bg-muted dark:text-foreground px-1.5 py-0 font-mono text-[10px] uppercase"
+                                  className="bg-muted text-muted-foreground dark:text-foreground px-1.5 py-0 font-mono text-[10px] uppercase"
                                 >
                                   {activeTab.explainResult.format}
                                 </Badge>
@@ -3616,7 +3614,7 @@ export function QueryConsole({
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setPlanExpandAll(true)}
-                                  className="border-border text-muted-foreground dark:border-border dark:text-muted-foreground h-6 px-2 font-mono text-[11px]"
+                                  className="border-border text-muted-foreground h-6 px-2 font-mono text-[11px]"
                                 >
                                   {t("console.explain.expand_all")}
                                 </Button>
@@ -3625,7 +3623,7 @@ export function QueryConsole({
                                   variant="outline"
                                   size="sm"
                                   onClick={() => setPlanExpandAll(false)}
-                                  className="border-border text-muted-foreground dark:border-border dark:text-muted-foreground h-6 px-2 font-mono text-[11px]"
+                                  className="border-border text-muted-foreground h-6 px-2 font-mono text-[11px]"
                                 >
                                   {t("console.explain.collapse_all")}
                                 </Button>
@@ -3635,7 +3633,7 @@ export function QueryConsole({
                                   size="sm"
                                   onClick={handleOptimizeWithAi}
                                   disabled={isOptimizingWithAi}
-                                  className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 dark:text-primary h-6 gap-1 px-2 font-mono text-[11px]"
+                                  className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/20 h-6 gap-1 px-2 font-mono text-[11px]"
                                 >
                                   {isOptimizingWithAi ? (
                                     <>
@@ -3644,7 +3642,7 @@ export function QueryConsole({
                                     </>
                                   ) : (
                                     <>
-                                      <Sparkles className="text-primary dark:text-primary size-3" />
+                                      <Sparkles className="text-primary size-3" />
                                       <span>{t("ai.optimizeWithAi")}</span>
                                     </>
                                   )}
@@ -3654,7 +3652,7 @@ export function QueryConsole({
                                   variant="outline"
                                   size="sm"
                                   onClick={handleCopyPlan}
-                                  className="border-border text-muted-foreground dark:border-border dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
+                                  className="border-border text-muted-foreground dark:text-foreground h-6 gap-1 px-2 font-mono text-[11px]"
                                 >
                                   {copiedPlan ? (
                                     <>
@@ -3677,8 +3675,8 @@ export function QueryConsole({
                             {aiOptimizationResult && (
                               <div className="border-primary/20 bg-primary/5 dark:border-primary/30 dark:bg-primary/20 border-b p-3">
                                 <div className="mb-1 flex items-center gap-1.5">
-                                  <Sparkles className="text-primary dark:text-primary size-3.5" />
-                                  <span className="text-primary dark:text-primary text-xs font-semibold">
+                                  <Sparkles className="text-primary size-3.5" />
+                                  <span className="text-primary text-xs font-semibold">
                                     {t("ai.optimizeWithAi")}
                                   </span>
                                 </div>
@@ -3691,7 +3689,7 @@ export function QueryConsole({
                                 {aiOptimizationResult.indexes &&
                                   aiOptimizationResult.indexes.length > 0 && (
                                     <div className="mt-2.5 space-y-1.5">
-                                      <span className="text-muted-foreground dark:text-muted-foreground text-[11px] font-semibold uppercase">
+                                      <span className="text-muted-foreground text-[11px] font-semibold uppercase">
                                         {t("ai.suggestedIndexes")}
                                       </span>
                                       {aiOptimizationResult.indexes.map(
@@ -3700,7 +3698,7 @@ export function QueryConsole({
                                             key={i}
                                             className="border-primary/20 bg-background dark:border-primary/30 dark:bg-card flex items-center justify-between gap-2 rounded-md border p-2 font-mono text-xs"
                                           >
-                                            <code className="text-primary dark:text-primary">
+                                            <code className="text-primary">
                                               {idx}
                                             </code>
                                             <Button
@@ -3746,7 +3744,7 @@ export function QueryConsole({
                         </div>
                       ) : (
                         /* Empty State: No Execution Plan Yet */
-                        <div className="border-border dark:border-border flex h-56 flex-col items-center justify-center rounded-lg border border-dashed p-6 text-center">
+                        <div className="border-border flex h-56 flex-col items-center justify-center rounded-lg border border-dashed p-6 text-center">
                           <FileSearch className="text-muted-foreground mb-2.5 h-9 w-9 opacity-60" />
                           <h3 className="text-foreground text-sm font-semibold">
                             {t(
@@ -3874,7 +3872,7 @@ export function QueryConsole({
         open={Boolean(closingTabId)}
         onOpenChange={(open) => !open && setClosingTabId(null)}
       >
-        <DialogContent className="border-border bg-background dark:border-border dark:bg-background rounded-xl border shadow-xl sm:max-w-md">
+        <DialogContent className="border-border bg-background rounded-xl border shadow-xl sm:max-w-md">
           <DialogHeader>
             <div className="flex items-center gap-2">
               <AlertTriangle className="text-warning h-4 w-4 shrink-0" />
@@ -3882,7 +3880,7 @@ export function QueryConsole({
                 {t("console.tab.close")}
               </DialogTitle>
             </div>
-            <DialogDescription className="text-muted-foreground dark:text-muted-foreground pt-2 text-xs">
+            <DialogDescription className="text-muted-foreground pt-2 text-xs">
               {transactionStates[closingTabId ?? ""]?.sessionId
                 ? t("console.transaction.closeWarning")
                 : t("console.tab.unsaved_warning")}
@@ -3979,12 +3977,12 @@ export function QueryConsole({
 
       {/* Save Query Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-        <DialogContent className="border-border bg-background text-foreground dark:border-border dark:bg-background dark:text-foreground max-w-sm overflow-hidden rounded-xl border p-0 shadow-2xl">
+        <DialogContent className="border-border bg-background text-foreground max-w-sm overflow-hidden rounded-xl border p-0 shadow-2xl">
           {/* Dialog header with gradient */}
-          <div className="border-border bg-card/75 dark:border-border dark:bg-card/50 border-b px-5 pt-5 pb-4">
+          <div className="border-border bg-card/75 dark:bg-card/50 border-b px-5 pt-5 pb-4">
             <div className="mb-1 flex items-center gap-3">
               <div className="border-primary/30 bg-success/15 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border">
-                <Save className="text-success dark:text-success h-4 w-4" />
+                <Save className="text-success h-4 w-4" />
               </div>
               <div>
                 <DialogTitle className="text-foreground text-sm leading-tight font-semibold">
@@ -3997,7 +3995,7 @@ export function QueryConsole({
             </div>
 
             {/* SQL snippet preview */}
-            <div className="border-border bg-muted/80 text-muted-foreground dark:border-border dark:bg-card dark:text-muted-foreground mt-3 truncate rounded-md border px-2.5 py-2 font-mono text-[10px]">
+            <div className="border-border bg-muted/80 text-muted-foreground dark:bg-card mt-3 truncate rounded-md border px-2.5 py-2 font-mono text-[10px]">
               {query.trim().split("\n")[0]?.slice(0, 60) ?? ""}
               {(query.trim().split("\n")[0]?.length ?? 0) > 60 ? "…" : ""}
             </div>
@@ -4006,14 +4004,14 @@ export function QueryConsole({
           <div className="space-y-4 px-5 py-4">
             {/* Title field */}
             <div className="space-y-1.5">
-              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 {t("savedQuery.title")} <span className="text-red-500">*</span>
               </label>
               <Input
                 value={saveTitle}
                 onChange={(e) => setSaveTitle(e.target.value)}
                 placeholder={t("savedQuery.titlePlaceholder")}
-                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground text-sm focus-visible:ring-1"
+                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:bg-card text-sm focus-visible:ring-1"
                 onKeyDown={(e) => e.key === "Enter" && handleSaveQuery()}
                 autoFocus
               />
@@ -4021,27 +4019,27 @@ export function QueryConsole({
 
             {/* Folder field */}
             <div className="space-y-1.5">
-              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 {t("savedQuery.folder")}
               </label>
               <Input
                 value={saveFolder}
                 onChange={(e) => setSaveFolder(e.target.value)}
                 placeholder={t("savedQuery.folderPlaceholder")}
-                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground text-sm focus-visible:ring-1"
+                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:bg-card text-sm focus-visible:ring-1"
               />
             </div>
 
             {/* Tags field */}
             <div className="space-y-1.5">
-              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+              <label className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
                 {t("savedQuery.tags")}
               </label>
               <Input
                 value={saveTags}
                 onChange={(e) => setSaveTags(e.target.value)}
                 placeholder={t("savedQuery.tagsPlaceholder")}
-                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground text-sm focus-visible:ring-1"
+                className="focus-visible:border-primary focus-visible:ring-primary/40 border-border bg-background text-foreground placeholder:text-muted-foreground dark:bg-card text-sm focus-visible:ring-1"
               />
               <p className="text-muted-foreground text-[9px]">
                 Separate multiple tags with commas
@@ -4055,8 +4053,8 @@ export function QueryConsole({
               className={cn(
                 "flex w-full items-center gap-2.5 rounded-lg border px-3 py-2 text-left transition-all",
                 saveIsFavorite
-                  ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
-                  : "border-border bg-card/50 text-muted-foreground hover:bg-muted hover:text-foreground dark:border-border dark:bg-card/50 dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground",
+                  ? "border-warning/30 bg-warning/10 text-warning"
+                  : "border-border bg-card/50 text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               <Star
@@ -4075,12 +4073,12 @@ export function QueryConsole({
           </div>
 
           {/* Footer */}
-          <div className="border-border bg-card/50 dark:border-border dark:bg-card/50 flex justify-end gap-2 border-t px-5 py-3.5">
+          <div className="border-border bg-card/50 flex justify-end gap-2 border-t px-5 py-3.5">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsSaveDialogOpen(false)}
-              className="border-border text-foreground hover:bg-muted dark:border-border dark:text-foreground dark:hover:bg-muted text-xs"
+              className="border-border text-foreground hover:bg-muted text-xs"
             >
               {t("savedQuery.cancel")}
             </Button>
@@ -4099,10 +4097,10 @@ export function QueryConsole({
 
       {/* History Dialog */}
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <DialogContent className="border-border bg-background dark:border-border dark:bg-background flex max-h-[85vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
-          <DialogHeader className="border-border bg-card dark:border-border dark:bg-card/50 flex flex-row items-center justify-between space-y-0 border-b py-3 pr-12 pl-5">
+        <DialogContent className="border-border bg-background flex max-h-[85vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
+          <DialogHeader className="border-border bg-card dark:bg-card/50 flex flex-row items-center justify-between space-y-0 border-b py-3 pr-12 pl-5">
             <div className="flex items-center gap-2">
-              <Clock className="text-success dark:text-success h-4 w-4" />
+              <Clock className="text-success h-4 w-4" />
               <DialogTitle className="text-foreground text-sm font-semibold">
                 {t("console.historyTitle")}
               </DialogTitle>
@@ -4130,7 +4128,7 @@ export function QueryConsole({
             )}
           </DialogHeader>
 
-          <div className="border-border bg-card/50 dark:border-border dark:bg-card/30 border-b p-3">
+          <div className="border-border bg-card/50 dark:bg-card/30 border-b p-3">
             <div className="relative flex items-center">
               <Search className="text-muted-foreground pointer-events-none absolute left-2.5 h-3.5 w-3.5" />
               <Input
@@ -4163,7 +4161,7 @@ export function QueryConsole({
               filteredHistory.map((item) => (
                 <div
                   key={item.id}
-                  className="group hover:border-primary/40 border-border bg-card/60 dark:border-border dark:bg-card/40 flex items-start justify-between gap-3 rounded-lg border p-3 shadow-xs transition-all"
+                  className="group hover:border-primary/40 border-border bg-card/60 dark:bg-card/40 flex items-start justify-between gap-3 rounded-lg border p-3 shadow-xs transition-all"
                 >
                   <div className="min-w-0 flex-1">
                     <pre
@@ -4180,7 +4178,7 @@ export function QueryConsole({
                           setIsHistoryOpen(false);
                         }
                       }}
-                      className="border-border/60 bg-muted/70 text-foreground dark:border-border/60 dark:bg-background/60 dark:text-foreground line-clamp-3 cursor-pointer rounded border p-2 font-mono text-xs break-all whitespace-pre-wrap"
+                      className="border-border/60 bg-muted/70 text-foreground dark:bg-background/60 line-clamp-3 cursor-pointer rounded border p-2 font-mono text-xs break-all whitespace-pre-wrap"
                     >
                       {item.query}
                     </pre>
@@ -4195,7 +4193,7 @@ export function QueryConsole({
                               ? `Query: ${formatLatency(item.execution_time_ms)}ms | Total: ${formatLatency(item.round_trip_ms)}ms`
                               : `Query execution: ${formatLatency(item.execution_time_ms)}ms`
                           }
-                          className="border-primary/30 bg-success/10 text-success dark:text-success h-4 cursor-help gap-0.5 px-1.5 py-0 font-mono text-[10px]"
+                          className="border-primary/30 bg-success/10 text-success h-4 cursor-help gap-0.5 px-1.5 py-0 font-mono text-[10px]"
                         >
                           <Zap className="h-2.5 w-2.5 fill-current" />
                           <span>{formatLatency(item.execution_time_ms)}ms</span>
@@ -4204,7 +4202,7 @@ export function QueryConsole({
                       {item.row_count !== undefined && !item.error && (
                         <Badge
                           variant="outline"
-                          className="border-border text-muted-foreground dark:border-border dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px]"
+                          className="border-border text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px]"
                         >
                           {item.row_count} rows
                         </Badge>
@@ -4217,7 +4215,7 @@ export function QueryConsole({
                       {item.error && (
                         <Badge
                           variant="outline"
-                          className="border-destructive/30 bg-destructive/10 text-destructive dark:text-destructive h-4 gap-0.5 px-1.5 py-0 font-mono text-[10px]"
+                          className="border-destructive/30 bg-destructive/10 text-destructive h-4 gap-0.5 px-1.5 py-0 font-mono text-[10px]"
                         >
                           <AlertCircle className="h-2.5 w-2.5" />
                           <span>{item.error}</span>
@@ -4233,7 +4231,7 @@ export function QueryConsole({
                       size="icon-xs"
                       onClick={() => handleCopyHistory(item.id, item.query)}
                       title={t("console.copyQuery")}
-                      className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-7 w-7"
+                      className="text-muted-foreground hover:text-foreground h-7 w-7"
                     >
                       {copiedHistoryId === item.id ? (
                         <Check className="text-success h-3.5 w-3.5" />
@@ -4249,7 +4247,7 @@ export function QueryConsole({
                         handleQueryChange(item.query);
                         setIsHistoryOpen(false);
                       }}
-                      className="hover:bg-primary/20 border-border bg-success/10 text-success dark:border-border dark:text-success h-7 gap-1 px-2.5 font-mono text-xs"
+                      className="hover:bg-primary/20 border-border bg-success/10 text-success h-7 gap-1 px-2.5 font-mono text-xs"
                     >
                       <Terminal className="h-3 w-3" />
                       <span>{t("console.useQuery")}</span>

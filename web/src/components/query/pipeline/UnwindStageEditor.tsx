@@ -22,7 +22,7 @@ export function UnwindStageEditor({
         />
       </div>
 
-      <label className="text-muted-foreground dark:text-muted-foreground flex cursor-pointer items-center gap-2 font-mono text-xs select-none">
+      <label className="text-muted-foreground flex cursor-pointer items-center gap-2 font-mono text-xs select-none">
         <input
           type="checkbox"
           checked={config.preserveNullAndEmptyArrays}
@@ -32,7 +32,7 @@ export function UnwindStageEditor({
               preserveNullAndEmptyArrays: e.target.checked,
             })
           }
-          className="focus:ring-primary border-border text-success dark:border-border rounded"
+          className="focus:ring-primary border-border text-success rounded"
         />
         <span>{t("pipeline.unwind_preserve")}</span>
       </label>

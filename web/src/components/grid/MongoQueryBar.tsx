@@ -192,7 +192,7 @@ export function MongoQueryBar({
   };
 
   return (
-    <div className="border-border bg-card/70 dark:border-border dark:bg-card/40 flex flex-col border-b text-xs">
+    <div className="border-border bg-card/70 dark:bg-card/40 flex flex-col border-b text-xs">
       {/* Primary Query Bar Line */}
       <div className="flex min-h-11 flex-wrap items-center gap-2 px-3 py-1.5">
         {/* Mongo Filter Input */}

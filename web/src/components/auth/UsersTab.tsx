@@ -41,10 +41,10 @@ export function UsersTab({
     <div className="space-y-4">
       <div className="flex items-center justify-between pb-1">
         <div>
-          <h3 className="text-foreground dark:text-foreground text-sm font-semibold">
+          <h3 className="text-foreground text-sm font-semibold">
             {t("auth.workspaceAccounts")}
           </h3>
-          <p className="text-muted-foreground dark:text-muted-foreground text-xs">
+          <p className="text-muted-foreground text-xs">
             {t("auth.workspaceAccountsDesc")}
           </p>
         </div>
@@ -59,35 +59,33 @@ export function UsersTab({
       </div>
 
       {loading ? (
-        <div className="text-muted-foreground dark:text-muted-foreground flex items-center justify-center gap-2 py-16 text-xs">
-          <RefreshCw className="text-primary dark:text-primary size-4 animate-spin" />
+        <div className="text-muted-foreground flex items-center justify-center gap-2 py-16 text-xs">
+          <RefreshCw className="text-primary size-4 animate-spin" />
           {t("auth.loadingAccounts")}
         </div>
       ) : users.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Users className="text-muted-foreground dark:text-muted-foreground mb-2 size-8" />
-          <p className="text-muted-foreground dark:text-muted-foreground text-sm">
-            {t("auth.noUsers")}
-          </p>
+          <Users className="text-muted-foreground mb-2 size-8" />
+          <p className="text-muted-foreground text-sm">{t("auth.noUsers")}</p>
         </div>
       ) : (
         <div className="border-border bg-background dark:border-border/80 dark:bg-card/30 overflow-hidden rounded-xl border shadow-xs">
           <Table>
             <TableHeader className="bg-card/80 dark:bg-card/60">
-              <TableRow className="border-border dark:border-border border-b hover:bg-transparent">
-                <TableHead className="text-muted-foreground dark:text-muted-foreground pl-4 text-xs font-medium">
+              <TableRow className="border-border border-b hover:bg-transparent">
+                <TableHead className="text-muted-foreground pl-4 text-xs font-medium">
                   {t("auth.user")}
                 </TableHead>
-                <TableHead className="text-muted-foreground dark:text-muted-foreground text-xs font-medium">
+                <TableHead className="text-muted-foreground text-xs font-medium">
                   {t("auth.role")}
                 </TableHead>
                 <TableHead className="text-muted-foreground text-xs font-medium">
                   {t("auth.accountStatus", "Status")}
                 </TableHead>
-                <TableHead className="text-muted-foreground dark:text-muted-foreground text-xs font-medium">
+                <TableHead className="text-muted-foreground text-xs font-medium">
                   {t("auth.createdAt")}
                 </TableHead>
-                <TableHead className="text-muted-foreground dark:text-muted-foreground pr-4 text-right text-xs font-medium">
+                <TableHead className="text-muted-foreground pr-4 text-right text-xs font-medium">
                   {t("auth.actions")}
                 </TableHead>
               </TableRow>
@@ -108,17 +106,17 @@ export function UsersTab({
                   >
                     <TableCell className="py-3 pl-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="border-primary/25 bg-primary/15 text-primary dark:text-primary flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">
+                        <div className="border-primary/25 bg-primary/15 text-primary flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold">
                           {u.username.slice(0, 2).toUpperCase()}
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-foreground dark:text-foreground text-sm font-medium">
+                          <span className="text-foreground text-sm font-medium">
                             {u.username}
                           </span>
                           {isSelf && (
                             <Badge
                               variant="outline"
-                              className="border-primary/30 bg-primary/10 text-primary dark:text-primary px-1.5 py-0 text-[10px]"
+                              className="border-primary/30 bg-primary/10 text-primary px-1.5 py-0 text-[10px]"
                             >
                               {t("auth.you")}
                             </Badge>
@@ -164,7 +162,7 @@ export function UsersTab({
                           : t("auth.inactive", "Inactive")}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground dark:text-muted-foreground py-3 font-mono text-xs">
+                    <TableCell className="text-muted-foreground py-3 font-mono text-xs">
                       {new Date(u.created_at).toLocaleDateString(undefined, {
                         year: "numeric",
                         month: "short",
@@ -178,7 +176,7 @@ export function UsersTab({
                           size="icon-sm"
                           onClick={() => onSelectResetPasswordUser(u.id)}
                           title={t("auth.resetPassword")}
-                          className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground cursor-pointer"
+                          className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
                         >
                           <KeyRound className="size-3.5" />
                         </Button>
@@ -195,7 +193,7 @@ export function UsersTab({
                                 ? t("auth.deactivateUser", "Deactivate user")
                                 : t("auth.activateUser", "Activate user")
                             }
-                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:text-destructive cursor-pointer"
+                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                           >
                             {u.active ? (
                               <UserX className="size-3.5" />

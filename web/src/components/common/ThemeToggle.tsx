@@ -67,7 +67,7 @@ export function ThemeToggle({
             {currentTheme === "dark" ? (
               <Sun className="text-warning size-3.5" />
             ) : (
-              <Moon className="text-primary dark:text-primary size-3.5" />
+              <Moon className="text-primary size-3.5" />
             )}
           </Button>
         }

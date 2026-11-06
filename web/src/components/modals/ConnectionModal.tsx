@@ -313,14 +313,14 @@ export function ConnectionModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border bg-background dark:border-border dark:bg-card flex max-h-[90vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
+      <DialogContent className="border-border bg-background dark:bg-card flex max-h-[90vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
         <form
           onSubmit={handleSubmit}
           className="flex max-h-[90vh] flex-col overflow-hidden"
         >
           {/* Header */}
-          <DialogHeader className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/50 flex shrink-0 flex-row items-center gap-3 space-y-0 border-b px-5 py-4">
-            <div className="border-primary/30 bg-success/10 text-success dark:bg-success/15 dark:text-success shrink-0 rounded-lg border p-2">
+          <DialogHeader className="border-border/80 bg-card/70 dark:bg-card/50 flex shrink-0 flex-row items-center gap-3 space-y-0 border-b px-5 py-4">
+            <div className="border-primary/30 bg-success/10 text-success dark:bg-success/15 shrink-0 rounded-lg border p-2">
               {editData ? (
                 <Database className="h-4 w-4" />
               ) : cloneData ? (
@@ -331,7 +331,7 @@ export function ConnectionModal({
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <DialogTitle className="text-foreground dark:text-foreground text-sm font-semibold">
+                <DialogTitle className="text-foreground text-sm font-semibold">
                   {editData
                     ? t("connection.editTitle", "Edit connection")
                     : cloneData
@@ -341,7 +341,7 @@ export function ConnectionModal({
                 {(cloneData || editData) && (
                   <Badge
                     variant="outline"
-                    className="border-primary/40 bg-success/10 text-success dark:bg-success/15 dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] uppercase"
+                    className="border-primary/40 bg-success/10 text-success dark:bg-success/15 h-4 px-1.5 py-0 font-mono text-[10px] uppercase"
                   >
                     {editData
                       ? t("connection.editTitle", "Editing")
@@ -349,7 +349,7 @@ export function ConnectionModal({
                   </Badge>
                 )}
               </div>
-              <DialogDescription className="text-muted-foreground dark:text-muted-foreground text-xs">
+              <DialogDescription className="text-muted-foreground text-xs">
                 {editData
                   ? t("connection.editDescription", {
                       name: editData.name,
@@ -367,10 +367,10 @@ export function ConnectionModal({
             {/* Step 1: Database Engine Selector */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-muted-foreground dark:text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   {t("connection.driver")}
                 </label>
-                <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[11px]">
+                <span className="text-muted-foreground font-mono text-[11px]">
                   {t("connection.selectDriverHelp")}
                 </span>
               </div>
@@ -385,13 +385,13 @@ export function ConnectionModal({
               >
                 <SelectTrigger
                   disabled={Boolean(editData)}
-                  className="focus:border-primary/70 focus:ring-primary/20 border-border/90 bg-card/60 hover:border-border hover:bg-muted/70 dark:border-border dark:bg-card/60 dark:hover:border-border dark:hover:bg-muted h-13 min-h-13 w-full cursor-pointer justify-between rounded-xl border px-3 py-2 text-left shadow-2xs transition-all focus:ring-2 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible"
+                  className="focus:border-primary/70 focus:ring-primary/20 border-border/90 bg-card/60 hover:border-border hover:bg-muted/70 dark:border-border dark:hover:bg-muted h-13 min-h-13 w-full cursor-pointer justify-between rounded-xl border px-3 py-2 text-left shadow-2xs transition-all focus:ring-2 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible"
                 >
                   <SelectValue className="flex w-full min-w-0 flex-1 items-center overflow-visible">
                     {() => (
                       <div className="mr-2 flex w-full items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2.5">
-                          <div className="border-border/80 bg-muted dark:border-border/80 dark:bg-muted flex size-8.5 shrink-0 items-center justify-center rounded-lg border p-1 shadow-2xs">
+                          <div className="border-border/80 bg-muted flex size-8.5 shrink-0 items-center justify-center rounded-lg border p-1 shadow-2xs">
                             <DatabaseEngineIcon
                               type={currentEngine.type}
                               className="size-5"
@@ -399,23 +399,23 @@ export function ConnectionModal({
                           </div>
                           <div className="flex flex-col text-left">
                             <div className="flex items-center gap-2">
-                              <span className="text-foreground dark:text-foreground text-sm font-semibold">
+                              <span className="text-foreground text-sm font-semibold">
                                 {currentEngine.name}
                               </span>
                               <Badge
                                 variant="outline"
-                                className="border-border/90 bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                                className="border-border/90 bg-muted text-muted-foreground dark:border-border h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                               >
                                 {currentEngine.tag}
                               </Badge>
                             </div>
-                            <span className="text-muted-foreground dark:text-muted-foreground text-xs">
+                            <span className="text-muted-foreground text-xs">
                               {currentEngine.category}
                             </span>
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5">
-                          <span className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-medium">
+                          <span className="text-muted-foreground font-mono text-xs font-medium">
                             :{currentEngine.defaultPort}
                           </span>
                         </div>
@@ -427,7 +427,7 @@ export function ConnectionModal({
                 <SelectContent
                   side="bottom"
                   align="start"
-                  className="border-border bg-background dark:border-border dark:bg-card z-50 max-h-80 w-(--anchor-width) min-w-90 rounded-xl border p-1.5 shadow-xl"
+                  className="border-border bg-background dark:bg-card z-50 max-h-80 w-(--anchor-width) min-w-90 rounded-xl border p-1.5 shadow-xl"
                 >
                   {ENGINE_CATEGORIES.filter((c) => c.key !== "all").map(
                     (cat, idx) => {
@@ -440,7 +440,7 @@ export function ConnectionModal({
                           {idx > 0 && (
                             <SelectSeparator className="border-border dark:border-border/60 my-1" />
                           )}
-                          <SelectLabel className="text-muted-foreground dark:text-muted-foreground px-2.5 pt-2 pb-1 font-mono text-[10px] font-semibold tracking-wider uppercase">
+                          <SelectLabel className="text-muted-foreground px-2.5 pt-2 pb-1 font-mono text-[10px] font-semibold tracking-wider uppercase">
                             {t(cat.labelKey, cat.fallbackLabel)}
                           </SelectLabel>
                           {engines.map((engine) => (
@@ -451,17 +451,17 @@ export function ConnectionModal({
                             >
                               <div className="flex w-full items-center justify-between gap-3">
                                 <div className="flex min-w-0 items-center gap-2.5">
-                                  <div className="border-border/80 bg-muted dark:border-border/80 dark:bg-muted flex size-8 shrink-0 items-center justify-center rounded-lg border p-1 shadow-2xs">
+                                  <div className="border-border/80 bg-muted flex size-8 shrink-0 items-center justify-center rounded-lg border p-1 shadow-2xs">
                                     <DatabaseEngineIcon
                                       type={engine.type}
                                       className="size-4.5"
                                     />
                                   </div>
                                   <div className="flex flex-col truncate text-left">
-                                    <span className="text-foreground dark:text-foreground text-xs font-semibold">
+                                    <span className="text-foreground text-xs font-semibold">
                                       {engine.name}
                                     </span>
-                                    <span className="text-muted-foreground dark:text-muted-foreground truncate text-[11px]">
+                                    <span className="text-muted-foreground truncate text-[11px]">
                                       {engine.category}
                                     </span>
                                   </div>
@@ -469,11 +469,11 @@ export function ConnectionModal({
                                 <div className="flex shrink-0 items-center gap-2">
                                   <Badge
                                     variant="outline"
-                                    className="border-border/90 bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                                    className="border-border/90 bg-muted text-muted-foreground dark:border-border h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                                   >
                                     {engine.tag}
                                   </Badge>
-                                  <span className="text-muted-foreground dark:text-muted-foreground font-mono text-xs font-medium">
+                                  <span className="text-muted-foreground font-mono text-xs font-medium">
                                     :{engine.defaultPort}
                                   </span>
                                 </div>
@@ -491,10 +491,10 @@ export function ConnectionModal({
             {/* Environment Picker */}
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-muted-foreground dark:text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                   {t("connection.envTier")}
                 </label>
-                <span className="text-muted-foreground dark:text-muted-foreground text-[11px]">
+                <span className="text-muted-foreground text-[11px]">
                   {t("connection.envTierHelp")}
                 </span>
               </div>
@@ -505,7 +505,7 @@ export function ConnectionModal({
                 }
                 className="w-full"
               >
-                <TabsList className="border-border bg-muted/60 dark:border-border grid h-10 w-full grid-cols-4 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
+                <TabsList className="border-border bg-muted/60 grid h-10 w-full grid-cols-4 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
                   {ENVIRONMENTS.map((env) => (
                     <TabsTrigger
                       key={env.key}
@@ -547,7 +547,7 @@ export function ConnectionModal({
                         ),
                       );
                     }}
-                    className="text-success hover:bg-success/10 hover:text-success dark:text-success dark:hover:bg-success/40 dark:hover:text-success h-5 px-1.5 font-mono text-[10px]"
+                    className="text-success hover:bg-success/10 hover:text-success dark:hover:bg-success/40 h-5 px-1.5 font-mono text-[10px]"
                   >
                     {t("connection.resetAutoName")}
                   </Button>
@@ -563,7 +563,7 @@ export function ConnectionModal({
                 }}
                 placeholder="e.g. Analytics DB (PostgreSQL - staging)"
                 required
-                className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
               />
             </div>
 
@@ -573,7 +573,7 @@ export function ConnectionModal({
               onValueChange={(val) => setMode(val as "form" | "url")}
               className="w-full"
             >
-              <TabsList className="border-border bg-muted/60 dark:border-border grid h-10 w-full grid-cols-2 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
+              <TabsList className="border-border bg-muted/60 grid h-10 w-full grid-cols-2 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
                 <TabsTrigger
                   value="form"
                   className="data-active:border-border dark:data-active:border-border/80 data-active:bg-background dark:data-active:bg-card/90 data-active:text-foreground gap-2 border-transparent py-0.5 text-xs font-medium transition-all data-active:shadow-xs"
@@ -602,7 +602,7 @@ export function ConnectionModal({
                       >
                         {t("connection.filepath")}
                       </label>
-                      <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px]">
+                      <span className="text-muted-foreground font-mono text-[10px]">
                         .db / .sqlite / .sqlite3
                       </span>
                     </div>
@@ -613,9 +613,9 @@ export function ConnectionModal({
                       onChange={(e) => handleFilepathChange(e.target.value)}
                       required
                       placeholder="/absolute/path/to/database.db or ./app.db"
-                      className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                      className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
                     />
-                    <p className="text-muted-foreground dark:text-muted-foreground mt-1.5 text-[11px] leading-normal">
+                    <p className="text-muted-foreground mt-1.5 text-[11px] leading-normal">
                       {t("connection.sqliteFilePathHelp")}
                     </p>
                   </div>
@@ -626,7 +626,7 @@ export function ConnectionModal({
                     <div className="col-span-2">
                       <label
                         htmlFor="connection-host"
-                        className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
+                        className="text-muted-foreground mb-1 block text-xs"
                       >
                         {t("connection.hostAddress")}
                       </label>
@@ -637,13 +637,13 @@ export function ConnectionModal({
                         onChange={(e) => setHost(e.target.value)}
                         required
                         placeholder="localhost"
-                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                        className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
                       />
                     </div>
                     <div>
                       <label
                         htmlFor="connection-port"
-                        className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
+                        className="text-muted-foreground mb-1 block text-xs"
                       >
                         {t("connection.port")}
                       </label>
@@ -654,7 +654,7 @@ export function ConnectionModal({
                         onChange={(e) => setPort(e.target.value)}
                         required
                         placeholder="5432"
-                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                        className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
                       />
                     </div>
                   </div>
@@ -664,11 +664,11 @@ export function ConnectionModal({
                       <div className="mb-1 flex items-center justify-between">
                         <label
                           htmlFor="connection-database"
-                          className="text-muted-foreground dark:text-muted-foreground text-xs"
+                          className="text-muted-foreground text-xs"
                         >
                           {t("connection.database")}
                         </label>
-                        <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[10px]">
+                        <span className="text-muted-foreground font-mono text-[10px]">
                           {t("connection.targetSchema")}
                         </span>
                       </div>
@@ -679,7 +679,7 @@ export function ConnectionModal({
                         onChange={(e) => handleDbNameChange(e.target.value)}
                         required
                         placeholder="database_name"
-                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                        className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
                       />
                     </div>
                   )}
@@ -695,7 +695,7 @@ export function ConnectionModal({
                       />
                       <label
                         htmlFor="windowsAuth"
-                        className="text-muted-foreground dark:text-muted-foreground cursor-pointer text-xs select-none"
+                        className="text-muted-foreground cursor-pointer text-xs select-none"
                       >
                         {t(
                           "connection.windowsAuth",
@@ -710,7 +710,7 @@ export function ConnectionModal({
                       <div>
                         <label
                           htmlFor="connection-user"
-                          className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
+                          className="text-muted-foreground mb-1 block text-xs"
                         >
                           {t("connection.user")}
                         </label>
@@ -728,13 +728,13 @@ export function ConnectionModal({
                                   ? "default"
                                   : "username"
                           }
-                          className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                          className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
                         />
                       </div>
                       <div>
                         <label
                           htmlFor="connection-password"
-                          className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
+                          className="text-muted-foreground mb-1 block text-xs"
                         >
                           {t("connection.password")}
                         </label>
@@ -753,7 +753,7 @@ export function ConnectionModal({
                                 ? t("connection.optionalPassword")
                                 : "••••••••"
                           }
-                          className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                          className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
                         />
                       </div>
                     </div>
@@ -764,7 +764,7 @@ export function ConnectionModal({
               <div>
                 <label
                   htmlFor="connection-rawURL"
-                  className="text-muted-foreground dark:text-muted-foreground mb-1 block text-xs"
+                  className="text-muted-foreground mb-1 block text-xs"
                 >
                   {t("connection.rawUrl")}
                 </label>
@@ -789,7 +789,7 @@ export function ConnectionModal({
                                 ? "clickhouse://default:password@localhost:9000/default"
                                 : "file:/path/to/database.db"
                   }
-                  className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground resize-none font-mono text-xs"
+                  className="border-border bg-background text-foreground dark:bg-card/60 resize-none font-mono text-xs"
                 />
                 {editData && mode === "url" && !rawURL && (
                   <p className="text-muted-foreground mt-1 text-[11px]">
@@ -809,22 +809,22 @@ export function ConnectionModal({
                   htmlFor="savePassword"
                   className="flex flex-1 cursor-pointer items-start gap-2.5 pr-3"
                 >
-                  <div className="border-border/80 bg-muted text-muted-foreground dark:border-border/80 dark:bg-muted dark:text-muted-foreground shrink-0 rounded-lg border p-1.5 shadow-2xs">
+                  <div className="border-border/80 bg-muted text-muted-foreground shrink-0 rounded-lg border p-1.5 shadow-2xs">
                     <Lock className="size-4" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground dark:text-foreground text-xs font-semibold">
+                      <span className="text-foreground text-xs font-semibold">
                         {t("connection.savePasswordSecurely")}
                       </span>
                       <Badge
                         variant="outline"
-                        className="border-primary/40 bg-success/10 text-success dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                        className="border-primary/40 bg-success/10 text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                       >
                         AES-256
                       </Badge>
                     </div>
-                    <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px] leading-normal">
+                    <p className="text-muted-foreground mt-0.5 text-[11px] leading-normal">
                       {t("connection.savePasswordDesc")}
                     </p>
                   </div>
@@ -835,7 +835,7 @@ export function ConnectionModal({
                   onCheckedChange={(checked) =>
                     setSavePassword(Boolean(checked))
                   }
-                  className="data-checked:border-primary data-checked:bg-primary dark:data-checked:border-primary dark:data-checked:bg-success mt-0.5"
+                  className="data-checked:border-primary data-checked:bg-primary dark:data-checked:bg-success mt-0.5"
                 />
               </div>
             )}
@@ -846,22 +846,22 @@ export function ConnectionModal({
                 htmlFor="readOnlyMode"
                 className="flex flex-1 cursor-pointer items-start gap-2.5 pr-3"
               >
-                <div className="border-warning/30 bg-warning/10 text-warning dark:border-warning/40 dark:bg-warning/20 dark:text-warning shrink-0 rounded-lg border p-1.5 shadow-2xs">
+                <div className="border-warning/30 bg-warning/10 text-warning dark:border-warning/40 dark:bg-warning/20 shrink-0 rounded-lg border p-1.5 shadow-2xs">
                   <Shield className="size-4" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-foreground dark:text-foreground text-xs font-semibold">
+                    <span className="text-foreground text-xs font-semibold">
                       {t("connection.readOnly")}
                     </span>
                     <Badge
                       variant="outline"
-                      className="border-warning/40 bg-warning/10 text-warning dark:text-warning h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                      className="border-warning/40 bg-warning/10 text-warning h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                     >
                       {t("connection.readOnlyBadge")}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px] leading-normal">
+                  <p className="text-muted-foreground mt-0.5 text-[11px] leading-normal">
                     {t("connection.readOnlyHelp")}
                   </p>
                 </div>
@@ -870,7 +870,7 @@ export function ConnectionModal({
                 id="readOnlyMode"
                 checked={readOnly}
                 onCheckedChange={(checked) => setReadOnly(Boolean(checked))}
-                className="data-checked:border-warning data-checked:bg-warning dark:data-checked:border-warning dark:data-checked:bg-warning mt-0.5"
+                className="data-checked:border-warning data-checked:bg-warning mt-0.5"
               />
             </div>
 
@@ -879,15 +879,15 @@ export function ConnectionModal({
               <Alert
                 className={`text-xs ${
                   testResult.ok
-                    ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30 dark:text-success"
-                    : "border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive"
+                    ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30"
+                    : "border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30"
                 }`}
                 variant={testResult.ok ? "default" : "destructive"}
               >
                 {testResult.ok ? (
-                  <CheckCircle2 className="text-success dark:text-success h-4 w-4 shrink-0" />
+                  <CheckCircle2 className="text-success h-4 w-4 shrink-0" />
                 ) : (
-                  <AlertCircle className="text-destructive dark:text-destructive h-4 w-4 shrink-0" />
+                  <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
                 )}
                 <AlertDescription className="font-mono text-xs break-all">
                   {testResult.message}
@@ -898,9 +898,9 @@ export function ConnectionModal({
             {submitError && (
               <Alert
                 variant="destructive"
-                className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive text-xs"
+                className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 text-xs"
               >
-                <AlertCircle className="text-destructive dark:text-destructive h-4 w-4 shrink-0" />
+                <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
                 <AlertDescription className="font-mono text-xs break-all">
                   {submitError}
                 </AlertDescription>
@@ -909,14 +909,14 @@ export function ConnectionModal({
           </div>
 
           {/* Actions */}
-          <DialogFooter className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/50 m-0 flex shrink-0 items-center justify-between rounded-none border-t px-5 py-3 sm:flex-row sm:justify-between">
+          <DialogFooter className="border-border/80 bg-card/70 dark:bg-card/50 m-0 flex shrink-0 items-center justify-between rounded-none border-t px-5 py-3 sm:flex-row sm:justify-between">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleTest}
               disabled={testing || submitting}
-              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card/60 dark:text-muted-foreground dark:hover:bg-muted gap-1.5 text-xs font-medium"
+              className="border-border bg-background text-foreground hover:bg-muted dark:bg-card/60 dark:text-muted-foreground gap-1.5 text-xs font-medium"
             >
               {testing ? (
                 <>
@@ -925,7 +925,7 @@ export function ConnectionModal({
                 </>
               ) : (
                 <>
-                  <Radio className="text-muted-foreground dark:text-muted-foreground h-3.5 w-3.5" />
+                  <Radio className="text-muted-foreground h-3.5 w-3.5" />
                   {t("connection.testConnection")}
                 </>
               )}
@@ -938,7 +938,7 @@ export function ConnectionModal({
                 size="sm"
                 onClick={onClose}
                 disabled={submitting}
-                className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground text-xs"
+                className="text-muted-foreground hover:text-foreground text-xs"
               >
                 {t("rowModal.cancel")}
               </Button>

@@ -213,7 +213,7 @@ export function AIAssistantPanel({
               )}
         </p>
         {connection?.type === "redis" && (
-          <p className="border-warning/30 bg-warning/10 text-warning dark:border-warning dark:bg-warning/30 dark:text-warning rounded border p-2 text-xs">
+          <p className="border-warning/30 bg-warning/10 text-warning dark:border-warning dark:bg-warning/30 rounded border p-2 text-xs">
             {t(
               "operations.aiUnsupportedRedis",
               "Query generation is unavailable for Redis command workflows.",

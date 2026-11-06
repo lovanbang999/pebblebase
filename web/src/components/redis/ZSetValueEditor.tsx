@@ -125,7 +125,7 @@ export function ZSetValueEditor({
   return (
     <div className="flex h-full flex-col space-y-3">
       {/* Header controls */}
-      <div className="border-border dark:border-border flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+      <div className="border-border flex flex-wrap items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
           <div className="relative w-56">
             <Search className="text-muted-foreground absolute top-2 left-2.5 h-3.5 w-3.5" />
@@ -144,7 +144,7 @@ export function ZSetValueEditor({
             size="sm"
             variant="ghost"
             onClick={() => setSortDesc(!sortDesc)}
-            className="text-muted-foreground dark:text-muted-foreground h-7 text-xs"
+            className="text-muted-foreground h-7 text-xs"
           >
             <ArrowUpDown className="mr-1 h-3 w-3" />
             {sortDesc
@@ -166,7 +166,7 @@ export function ZSetValueEditor({
       </div>
 
       {error && (
-        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-md border p-2 text-xs">
           {error}
         </div>
       )}
@@ -213,9 +213,9 @@ export function ZSetValueEditor({
       )}
 
       {/* ZSet table */}
-      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border">
+      <div className="border-border flex-1 overflow-auto rounded-md border">
         <table className="w-full text-left text-xs">
-          <thead className="border-border bg-card text-muted-foreground dark:border-border dark:bg-card sticky top-0 border-b font-medium">
+          <thead className="border-border bg-card text-muted-foreground sticky top-0 border-b font-medium">
             <tr>
               <th className="w-16 px-3 py-2 font-mono text-[11px]">
                 {t("redis.zsetEditor.thRank")}
@@ -233,7 +233,7 @@ export function ZSetValueEditor({
               )}
             </tr>
           </thead>
-          <tbody className="divide-border dark:divide-border divide-y font-mono">
+          <tbody className="divide-border divide-y font-mono">
             {sortedList.length === 0 ? (
               <tr>
                 <td
@@ -279,16 +279,14 @@ export function ZSetValueEditor({
                     ) : (
                       <span
                         onDoubleClick={() => handleStartEdit(m)}
-                        className="bg-destructive/10 text-destructive dark:bg-destructive/40 dark:text-destructive rounded px-1.5 py-0.5 font-semibold"
+                        className="bg-destructive/10 text-destructive dark:bg-destructive/40 rounded px-1.5 py-0.5 font-semibold"
                         title={t("redis.zsetEditor.doubleClickScoreTip")}
                       >
                         {m.score}
                       </span>
                     )}
                   </td>
-                  <td className="text-foreground dark:text-foreground px-3 py-2">
-                    {m.member}
-                  </td>
+                  <td className="text-foreground px-3 py-2">{m.member}</td>
                   {!isReadOnly && (
                     <td className="px-3 py-2 text-right">
                       <Button

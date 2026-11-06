@@ -48,11 +48,11 @@ interface RedisKeyBrowserProps {
 }
 
 const TYPE_COLORS: Record<string, string> = {
-  string: "bg-success/10 text-success dark:text-success border-primary/20",
-  hash: "bg-primary/10 text-primary dark:text-primary border-primary/20",
-  list: "bg-primary/10 text-primary dark:text-primary border-primary/20",
-  set: "bg-warning/10 text-warning dark:text-warning border-warning/20",
-  zset: "bg-destructive/10 text-destructive dark:text-destructive border-destructive/20",
+  string: "bg-success/10 text-success border-primary/20",
+  hash: "bg-primary/10 text-primary border-primary/20",
+  list: "bg-primary/10 text-primary border-primary/20",
+  set: "bg-warning/10 text-warning border-warning/20",
+  zset: "bg-destructive/10 text-destructive border-destructive/20",
   stream: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20",
   none: "bg-muted/10 text-muted-foreground border-border/20",
 };
@@ -243,7 +243,7 @@ export function RedisKeyBrowser({
   return (
     <div className="bg-background dark:bg-card flex h-full flex-col overflow-hidden">
       {/* Top Bar / Toolbar */}
-      <div className="border-border dark:border-border flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-2.5">
+      <div className="border-border flex flex-wrap items-center justify-between gap-2.5 border-b px-4 py-2.5">
         <div className="flex flex-wrap items-center gap-2">
           {/* Pattern Search Form */}
           <form onSubmit={handleSearchSubmit} className="relative w-64">
@@ -324,7 +324,7 @@ export function RedisKeyBrowser({
             <Button
               size="sm"
               onClick={() => setIsAddKeyOpen(true)}
-              className="bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive h-7 text-xs text-white"
+              className="bg-destructive hover:bg-destructive h-7 text-xs text-white"
             >
               <Plus className="mr-1 h-3.5 w-3.5" />
               {t("redis.newKey")}
@@ -334,7 +334,7 @@ export function RedisKeyBrowser({
       </div>
 
       {error && (
-        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive border-b px-4 py-2 text-xs">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive border-b px-4 py-2 text-xs">
           {error}
         </div>
       )}
@@ -342,8 +342,8 @@ export function RedisKeyBrowser({
       {/* Main Split View: Left Keys List + Right Value Editor */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Pane: Keys List */}
-        <div className="border-border dark:border-border flex w-96 flex-col border-r">
-          <div className="border-border bg-card/60 text-muted-foreground dark:border-border dark:bg-card/60 flex items-center justify-between border-b px-3 py-1.5 text-[11px] font-medium">
+        <div className="border-border flex w-96 flex-col border-r">
+          <div className="border-border bg-card/60 text-muted-foreground flex items-center justify-between border-b px-3 py-1.5 text-[11px] font-medium">
             <span>
               {t("redis.loadedKeys", { count: keys.length })}{" "}
               {nextCursor !== 0 && t("redis.hasMore")}
@@ -355,7 +355,7 @@ export function RedisKeyBrowser({
             )}
           </div>
 
-          <div className="divide-border dark:divide-border flex-1 divide-y overflow-y-auto">
+          <div className="divide-border flex-1 divide-y overflow-y-auto">
             {keys.length === 0 ? (
               <div className="text-muted-foreground p-8 text-center text-xs">
                 {loadingKeys ? t("redis.scanning") : t("redis.noKeysMatched")}
@@ -386,8 +386,8 @@ export function RedisKeyBrowser({
                         <span
                           className={`truncate font-mono text-xs ${
                             isSelected
-                              ? "text-destructive dark:text-destructive font-semibold"
-                              : "text-foreground dark:text-foreground"
+                              ? "text-destructive font-semibold"
+                              : "text-foreground"
                           }`}
                           title={k.key}
                         >
@@ -450,7 +450,7 @@ export function RedisKeyBrowser({
 
           {/* Pagination controls for SCAN */}
           {nextCursor !== 0 && (
-            <div className="border-border dark:border-border border-t p-2">
+            <div className="border-border border-t p-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -490,7 +490,7 @@ export function RedisKeyBrowser({
           ) : (
             <div className="flex h-full flex-col space-y-4 overflow-hidden">
               {/* Key Header Card */}
-              <div className="border-border bg-card/70 dark:border-border dark:bg-card/60 rounded-lg border p-3">
+              <div className="border-border bg-card/70 dark:bg-card/60 rounded-lg border p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-1 items-center gap-2">
                     {isRenaming ? (
@@ -523,7 +523,7 @@ export function RedisKeyBrowser({
                       </div>
                     ) : (
                       <>
-                        <span className="text-foreground dark:text-foreground font-mono text-sm font-bold">
+                        <span className="text-foreground font-mono text-sm font-bold">
                           {keyDetail.key}
                         </span>
                         <Button

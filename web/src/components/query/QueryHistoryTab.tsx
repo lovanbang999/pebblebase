@@ -76,20 +76,20 @@ export function QueryHistoryTab({
   return (
     <div className="flex h-full flex-col">
       {/* Search */}
-      <div className="border-border/80 dark:border-border/80 border-b px-2.5 py-2">
+      <div className="border-border/80 border-b px-2.5 py-2">
         <div className="relative">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("savedQuery.history.searchPlaceholder")}
-            className="focus-visible:border-primary focus-visible:ring-primary/30 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card/90 dark:text-foreground dark:placeholder:text-muted-foreground h-7.5 rounded-md pl-8 text-xs shadow-2xs transition-all focus-visible:ring-1"
+            className="focus-visible:border-primary focus-visible:ring-primary/30 border-border bg-background text-foreground placeholder:text-muted-foreground dark:bg-card/90 h-7.5 rounded-md pl-8 text-xs shadow-2xs transition-all focus-visible:ring-1"
           />
           {search && (
             <button
               type="button"
               onClick={() => setSearch("")}
-              className="text-muted-foreground hover:text-foreground dark:hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer"
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer"
             >
               <span className="text-[10px]">✕</span>
             </button>
@@ -99,7 +99,7 @@ export function QueryHistoryTab({
 
       {/* Count badge */}
       {!loading && entries.length > 0 && (
-        <div className="border-border/80 dark:border-border/80 border-b px-3 py-1.5">
+        <div className="border-border/80 border-b px-3 py-1.5">
           <span className="text-muted-foreground font-mono text-[10px]">
             {total} {total === 1 ? "entry" : "entries"}
             {search && ` matching "${search}"`}
@@ -118,8 +118,8 @@ export function QueryHistoryTab({
 
         {!loading && entries.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-4 py-10 text-center select-none">
-            <div className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-card/70 dark:text-muted-foreground flex h-12 w-12 items-center justify-center rounded-2xl border">
-              <History className="text-success/70 dark:text-success/70 h-6 w-6" />
+            <div className="border-border bg-muted text-muted-foreground dark:bg-card/70 flex h-12 w-12 items-center justify-center rounded-2xl border">
+              <History className="text-success/70 h-6 w-6" />
             </div>
             <div className="space-y-1">
               <p className="text-foreground text-xs font-semibold">
@@ -148,7 +148,7 @@ export function QueryHistoryTab({
             >
               {/* SQL preview row */}
               <div className="flex min-w-0 items-start gap-1.5">
-                <Terminal className="text-success/70 dark:text-success/70 mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <Terminal className="text-success/70 mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <span className="text-foreground block truncate font-mono text-[11px] leading-tight">
                     {queryPreview(entry.detail)}
@@ -163,7 +163,7 @@ export function QueryHistoryTab({
                       e.stopPropagation();
                       copyEntry(entry);
                     }}
-                    className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground rounded p-1 transition-colors"
+                    className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted rounded p-1 transition-colors"
                     title={t("savedQuery.copyQuery")}
                   >
                     {copiedId === entry.id ? (
@@ -178,7 +178,7 @@ export function QueryHistoryTab({
                       e.stopPropagation();
                       onLoadQuery(entry.detail);
                     }}
-                    className="text-muted-foreground hover:bg-muted/60 hover:text-success dark:hover:bg-muted dark:hover:text-success rounded p-1 transition-colors"
+                    className="text-muted-foreground hover:bg-muted/60 hover:text-success dark:hover:bg-muted rounded p-1 transition-colors"
                     title={t("savedQuery.history.load")}
                   >
                     <BookOpen className="h-3 w-3" />

@@ -85,10 +85,10 @@ export function ChangePasswordTab({
   return (
     <div className="mx-auto max-w-md space-y-6 py-2">
       <div className="space-y-1">
-        <h3 className="text-foreground dark:text-foreground text-sm font-semibold">
+        <h3 className="text-foreground text-sm font-semibold">
           {t("auth.changePassword")}
         </h3>
-        <p className="text-muted-foreground dark:text-muted-foreground text-xs">
+        <p className="text-muted-foreground text-xs">
           {t("auth.changePasswordSubDesc")}
         </p>
       </div>
@@ -107,7 +107,7 @@ export function ChangePasswordTab({
                 }
               }}
             >
-              <SelectTrigger className="border-border bg-card text-foreground focus:ring-primary dark:border-border/60 dark:bg-card/70 dark:text-foreground h-9 w-full cursor-pointer font-sans text-xs">
+              <SelectTrigger className="border-border bg-card text-foreground focus:ring-primary dark:border-border/60 dark:bg-card/70 h-9 w-full cursor-pointer font-sans text-xs">
                 <SelectValue placeholder={t("auth.selectTargetAccount")}>
                   {(val) => {
                     if (!val || val === "self") {
@@ -125,7 +125,7 @@ export function ChangePasswordTab({
               <SelectContent
                 side="bottom"
                 align="start"
-                className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground z-50 max-h-56 shadow-md"
+                className="border-border bg-background text-foreground dark:bg-card z-50 max-h-56 shadow-md"
               >
                 <SelectItem
                   value="self"
@@ -137,8 +137,8 @@ export function ChangePasswordTab({
                       : "Current User"
                   }
                 >
-                  <div className="text-foreground dark:text-foreground flex items-center gap-2">
-                    <User className="text-primary dark:text-primary size-3.5" />
+                  <div className="text-foreground flex items-center gap-2">
+                    <User className="text-primary size-3.5" />
                     <span>
                       {currentUser
                         ? t("auth.currentUserSelf", {
@@ -156,9 +156,9 @@ export function ChangePasswordTab({
                       value={u.id}
                       label={`${u.username} (${u.role})`}
                     >
-                      <div className="text-foreground dark:text-foreground flex items-center gap-2">
+                      <div className="text-foreground flex items-center gap-2">
                         {u.role === "admin" ? (
-                          <Shield className="text-primary dark:text-primary size-3.5" />
+                          <Shield className="text-primary size-3.5" />
                         ) : (
                           <Eye className="text-muted-foreground size-3.5" />
                         )}
@@ -206,18 +206,18 @@ export function ChangePasswordTab({
         {pwError && (
           <Alert
             variant="destructive"
-            className="border-destructive/25 bg-destructive/10 text-destructive dark:text-destructive px-3 py-2.5"
+            className="border-destructive/25 bg-destructive/10 text-destructive px-3 py-2.5"
           >
-            <AlertCircle className="text-destructive dark:text-destructive size-4" />
-            <AlertDescription className="text-destructive dark:text-destructive text-xs">
+            <AlertCircle className="text-destructive size-4" />
+            <AlertDescription className="text-destructive text-xs">
               {pwError}
             </AlertDescription>
           </Alert>
         )}
         {pwSuccess && (
-          <Alert className="border-primary/25 bg-success/10 text-success dark:text-success px-3 py-2.5">
-            <CheckCircle2 className="text-success dark:text-success size-4" />
-            <AlertDescription className="text-success dark:text-success text-xs">
+          <Alert className="border-primary/25 bg-success/10 text-success px-3 py-2.5">
+            <CheckCircle2 className="text-success size-4" />
+            <AlertDescription className="text-success text-xs">
               {pwSuccess}
             </AlertDescription>
           </Alert>

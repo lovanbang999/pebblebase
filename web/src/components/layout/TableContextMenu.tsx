@@ -161,8 +161,8 @@ export function TableContextMenu({
       className="animate-in fade-in-50 zoom-in-95 wails-no-drag bg-popover text-popover-foreground border-border fixed z-50 min-w-56 overflow-hidden rounded-md border p-1 font-mono text-xs shadow-lg duration-100"
     >
       {/* Table Name Header */}
-      <div className="border-border/80 dark:border-border/80 flex items-center gap-2 border-b px-2.5 py-1.5">
-        <TableIcon className="text-success dark:text-success size-3.5 shrink-0" />
+      <div className="border-border/80 flex items-center gap-2 border-b px-2.5 py-1.5">
+        <TableIcon className="text-success size-3.5 shrink-0" />
         <span className="text-foreground truncate font-semibold">
           {tableName}
         </span>
@@ -210,13 +210,13 @@ export function TableContextMenu({
         </button>
       </div>
 
-      <div className="bg-muted/80 dark:bg-muted/80 h-px" />
+      <div className="bg-muted/80 h-px" />
 
       {/* SQL and document query shortcuts are not applicable to Redis keys. */}
       {engine !== "redis" && (
         <>
           <div className="py-1">
-            <div className="text-muted-foreground dark:text-muted-foreground px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
+            <div className="text-muted-foreground px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase">
               {t("sidebar.tableMenu.queryMenu")}
             </div>
             <button
@@ -228,7 +228,7 @@ export function TableContextMenu({
               }}
               className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
             >
-              <Terminal className="text-success dark:text-success size-3.5" />
+              <Terminal className="text-success size-3.5" />
               <span>{t("sidebar.tableMenu.selectTop100")}</span>
             </button>
             <button
@@ -240,7 +240,7 @@ export function TableContextMenu({
               }}
               className="hover:bg-muted dark:hover:bg-muted/70 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors"
             >
-              <Hash className="text-primary dark:text-primary size-3.5" />
+              <Hash className="text-primary size-3.5" />
               <span>{t("sidebar.tableMenu.selectCount")}</span>
             </button>
             <button
@@ -256,7 +256,7 @@ export function TableContextMenu({
               <span>{t("sidebar.tableMenu.insertTemplate")}</span>
             </button>
           </div>
-          <div className="bg-muted/80 dark:bg-muted/80 h-px" />
+          <div className="bg-muted/80 h-px" />
         </>
       )}
 
@@ -331,7 +331,7 @@ export function TableContextMenu({
 
       {canImport && (
         <>
-          <div className="bg-muted/80 dark:bg-muted/80 h-px" />
+          <div className="bg-muted/80 h-px" />
           <div className="py-1">
             <button
               role="menuitem"
@@ -357,7 +357,7 @@ export function TableContextMenu({
         </>
       )}
 
-      <div className="bg-muted/80 dark:bg-muted/80 h-px" />
+      <div className="bg-muted/80 h-px" />
 
       {/* Pin & Danger Zone */}
       <div className="py-1">
@@ -402,7 +402,7 @@ export function TableContextMenu({
             onDangerAction("truncate");
             onClose();
           }}
-          className="text-warning hover:bg-warning/10 dark:text-warning dark:hover:bg-warning/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+          className="text-warning hover:bg-warning/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45"
         >
           <AlertTriangle className="size-3.5" />
           <span>{t("sidebar.tableMenu.truncateTable")}</span>
@@ -426,7 +426,7 @@ export function TableContextMenu({
             onDangerAction("drop");
             onClose();
           }}
-          className="text-destructive hover:bg-destructive/10 dark:text-destructive dark:hover:bg-destructive/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45"
+          className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45"
         >
           <Trash2 className="size-3.5" />
           <span>{t("sidebar.tableMenu.dropTable")}</span>

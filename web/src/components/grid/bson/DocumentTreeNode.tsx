@@ -172,9 +172,7 @@ export const DocumentTreeNode = React.memo(function DocumentTreeNode({
           <span
             className={cn(
               "shrink-0 font-mono text-[11px] font-medium",
-              isPk
-                ? "text-warning dark:text-warning font-semibold"
-                : "text-muted-foreground dark:text-muted-foreground",
+              isPk ? "text-warning font-semibold" : "text-muted-foreground",
             )}
           >
             {keyName}

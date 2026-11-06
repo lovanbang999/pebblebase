@@ -112,7 +112,7 @@ export function TableFilterBar({
   }
 
   return (
-    <div className="border-border bg-card/80 dark:border-border dark:bg-card/30 flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5">
+    <div className="border-border bg-card/80 dark:bg-card/30 flex min-h-11 shrink-0 flex-wrap items-center gap-2 border-b px-3 py-1.5">
       <div className="relative w-44 shrink-0">
         <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2 size-3.5 -translate-y-1/2" />
         <Input
@@ -140,7 +140,7 @@ export function TableFilterBar({
       </span>
       <form
         onSubmit={onAddFilter}
-        className="border-border bg-background dark:bg-background flex items-center gap-1 rounded-md border px-1.5 py-1"
+        className="border-border bg-background flex items-center gap-1 rounded-md border px-1.5 py-1"
       >
         <Filter className="text-primary ml-1 size-3.5" />
         <span className="text-muted-foreground px-1 font-mono text-[10px] font-semibold tracking-wide uppercase">
@@ -239,7 +239,7 @@ export function TableFilterBar({
           {t("datagrid.clearAll")}
         </Button>
       )}
-      <div className="border-border bg-background dark:bg-background flex items-center gap-1 rounded-md border px-1.5 py-1">
+      <div className="border-border bg-background flex items-center gap-1 rounded-md border px-1.5 py-1">
         <span className="text-muted-foreground px-1 font-mono text-[10px] font-semibold tracking-wide uppercase">
           ORDER BY
         </span>

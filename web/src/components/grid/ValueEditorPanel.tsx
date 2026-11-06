@@ -125,7 +125,7 @@ export function ValueEditorPanel({
           className="text-muted-foreground absolute size-3"
         />
       </div>
-      <header className="border-border dark:border-border flex h-10 shrink-0 items-center gap-2 border-b px-3">
+      <header className="border-border flex h-10 shrink-0 items-center gap-2 border-b px-3">
         <div className="min-w-0 flex-1">
           <div className="truncate font-mono text-xs font-semibold">
             {columnName}
@@ -179,10 +179,10 @@ export function ValueEditorPanel({
               setIsNull(value === null || value === undefined);
             }
           }}
-          className="border-border bg-background focus-visible:ring-primary dark:border-border min-h-36 w-full resize-y rounded-md border p-2 font-mono text-xs outline-none focus-visible:ring-2"
+          className="border-border bg-background focus-visible:ring-primary min-h-36 w-full resize-y rounded-md border p-2 font-mono text-xs outline-none focus-visible:ring-2"
         />
         {analysis.type === "json" && preview !== null && (
-          <div className="border-border dark:border-border min-h-28 overflow-auto rounded-md border p-2">
+          <div className="border-border min-h-28 overflow-auto rounded-md border p-2">
             <JsonTreeViewer
               initialValue={preview}
               rawString={draft}
@@ -204,7 +204,7 @@ export function ValueEditorPanel({
           {analysis.formattedSize}
         </div>
       </div>
-      <footer className="border-border dark:border-border flex shrink-0 justify-end border-t p-2">
+      <footer className="border-border flex shrink-0 justify-end border-t p-2">
         <Button size="sm" disabled={isReadOnly} onClick={apply}>
           <Save className="mr-1.5 size-3.5" />
           {t("datagrid.stageValue", "Stage value")}

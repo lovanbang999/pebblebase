@@ -66,22 +66,22 @@ export function ErrorBanner({
   return (
     <div
       role="alert"
-      className="border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/40 dark:text-destructive shrink-0 border-b shadow-xs"
+      className="border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/40 shrink-0 border-b shadow-xs"
     >
       {/* Primary Bar */}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 text-xs">
         {/* Left: Diagnostic Summary */}
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {parsed?.isConnectionError ? (
-            <Unplug className="text-destructive dark:text-destructive size-4 shrink-0" />
+            <Unplug className="text-destructive size-4 shrink-0" />
           ) : (
-            <AlertCircle className="text-destructive dark:text-destructive size-4 shrink-0" />
+            <AlertCircle className="text-destructive size-4 shrink-0" />
           )}
 
           {/* Diagnostic Badge */}
           <Badge
             variant="outline"
-            className="border-destructive/35 bg-destructive/15 text-destructive dark:text-destructive h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
+            className="border-destructive/35 bg-destructive/15 text-destructive h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
           >
             {categoryTitle}
           </Badge>
@@ -90,7 +90,7 @@ export function ErrorBanner({
           {parsed?.host && (
             <Badge
               variant="outline"
-              className="border-destructive/25 bg-destructive/10 text-destructive dark:text-destructive hidden h-4.5 shrink-0 items-center gap-1 px-1.5 py-0 font-mono text-[10px] sm:flex"
+              className="border-destructive/25 bg-destructive/10 text-destructive hidden h-4.5 shrink-0 items-center gap-1 px-1.5 py-0 font-mono text-[10px] sm:flex"
             >
               <Server className="size-2.5" />
               <span>
@@ -101,7 +101,7 @@ export function ErrorBanner({
           )}
 
           {/* Context Name & Summary */}
-          <span className="text-destructive dark:text-destructive min-w-0 text-sm wrap-break-word">
+          <span className="text-destructive min-w-0 text-sm wrap-break-word">
             {activeConnectionName && (
               <strong className="font-semibold">
                 {activeConnectionName}:{" "}
@@ -119,7 +119,7 @@ export function ErrorBanner({
             variant="ghost"
             size="xs"
             onClick={() => setIsExpanded((prev) => !prev)}
-            className="text-destructive hover:bg-destructive/15 hover:text-destructive dark:text-destructive dark:hover:bg-destructive/20 dark:hover:text-destructive h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
+            className="text-destructive hover:bg-destructive/15 hover:text-destructive dark:hover:bg-destructive/20 h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
           >
             <span>
               {isExpanded
@@ -140,7 +140,7 @@ export function ErrorBanner({
               variant="outline"
               size="xs"
               onClick={onEditConnection}
-              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:border-destructive/40 dark:bg-card/60 dark:text-destructive dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
+              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:bg-card/60 dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
             >
               <SlidersHorizontal className="size-3" />
               <span>{t("diagnostics.editConnection", "Edit")}</span>
@@ -155,7 +155,7 @@ export function ErrorBanner({
               size="xs"
               onClick={onRetry}
               disabled={isRetrying}
-              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:border-destructive/40 dark:bg-card/60 dark:text-destructive dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2.5 font-mono text-[11px] font-semibold transition-colors disabled:opacity-50"
+              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:bg-card/60 dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2.5 font-mono text-[11px] font-semibold transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 className={cn("size-3", isRetrying && "animate-spin")}
@@ -175,7 +175,7 @@ export function ErrorBanner({
             size="xs"
             onClick={onDismiss}
             aria-label={t("app.dismiss", "Dismiss")}
-            className="text-destructive hover:bg-destructive/20 hover:text-destructive dark:text-destructive dark:hover:text-destructive size-6 cursor-pointer rounded-full p-0"
+            className="text-destructive hover:bg-destructive/20 hover:text-destructive size-6 cursor-pointer rounded-full p-0"
           >
             <X className="size-3.5" />
           </Button>
@@ -189,7 +189,7 @@ export function ErrorBanner({
             {/* Suggested Solution */}
             {suggestionText && (
               <div className="flex-1 space-y-1">
-                <p className="text-destructive dark:text-destructive font-mono text-[10px] font-semibold tracking-wider uppercase">
+                <p className="text-destructive font-mono text-[10px] font-semibold tracking-wider uppercase">
                   ⚡{" "}
                   {t("diagnostics.suggestedSolution", "Suggested Resolution")}
                 </p>
@@ -206,12 +206,12 @@ export function ErrorBanner({
                 variant="outline"
                 size="xs"
                 onClick={handleCopyError}
-                className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2 font-mono text-[10px]"
+                className="border-border bg-background text-foreground hover:bg-muted dark:bg-card dark:text-muted-foreground h-6 cursor-pointer gap-1 px-2 font-mono text-[10px]"
               >
                 {isCopied ? (
                   <>
                     <Check className="text-success size-3" />
-                    <span className="text-success dark:text-success">
+                    <span className="text-success">
                       {t("common.copied", "Copied!")}
                     </span>
                   </>
@@ -228,7 +228,7 @@ export function ErrorBanner({
           </div>
 
           {/* Raw Error Codebox */}
-          <div className="border-destructive/20 bg-background/70 text-destructive dark:bg-card/60 dark:text-destructive mt-2.5 max-h-28 overflow-y-auto rounded-md border p-2.5 font-mono text-[11px] leading-relaxed select-text">
+          <div className="border-destructive/20 bg-background/70 text-destructive dark:bg-card/60 mt-2.5 max-h-28 overflow-y-auto rounded-md border p-2.5 font-mono text-[11px] leading-relaxed select-text">
             {message}
           </div>
         </div>

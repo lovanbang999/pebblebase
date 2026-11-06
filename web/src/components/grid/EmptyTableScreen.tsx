@@ -22,11 +22,11 @@ export function EmptyTableScreen({
 
   return (
     <div className="bg-card/50 dark:bg-background flex h-full flex-1 flex-col overflow-hidden">
-      <div className="border-border bg-background dark:border-border dark:bg-card/30 flex h-11 items-center gap-2.5 border-b px-3">
-        <SidebarTrigger className="text-muted-foreground hover:text-foreground dark:hover:text-foreground -ml-1 cursor-pointer" />
+      <div className="border-border bg-background dark:bg-card/30 flex h-11 items-center gap-2.5 border-b px-3">
+        <SidebarTrigger className="text-muted-foreground hover:text-foreground -ml-1 cursor-pointer" />
         <Separator
           orientation="vertical"
-          className="bg-muted dark:bg-muted h-4 self-center"
+          className="bg-muted h-4 self-center"
         />
         <span className="text-muted-foreground font-mono text-xs font-medium">
           {connectionName}

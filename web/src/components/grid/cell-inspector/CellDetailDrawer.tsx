@@ -157,9 +157,9 @@ export function CellDetailDrawer({
           {t("cellInspector.title", "Cell Detail Inspector")}
         </SheetTitle>
         {/* Top Header */}
-        <div className="border-border bg-card dark:border-border dark:bg-card/60 flex shrink-0 items-center justify-between border-b px-3 py-2">
+        <div className="border-border bg-card dark:bg-card/60 flex shrink-0 items-center justify-between border-b px-3 py-2">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="border-primary/20 bg-primary/10 text-primary dark:text-primary flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border">
+            <div className="border-primary/20 bg-primary/10 text-primary flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border">
               <FileCode className="h-5 w-5" />
             </div>
             <div className="min-w-0">
@@ -168,11 +168,11 @@ export function CellDetailDrawer({
                   {columnName}
                 </span>
                 {columnType && (
-                  <span className="bg-muted/80 text-muted-foreground dark:bg-muted dark:text-muted-foreground rounded px-1.5 py-0.5 font-mono text-[10px] uppercase">
+                  <span className="bg-muted/80 text-muted-foreground dark:bg-muted rounded px-1.5 py-0.5 font-mono text-[10px] uppercase">
                     {columnType}
                   </span>
                 )}
-                <span className="bg-primary/10 text-primary dark:bg-primary/40 dark:text-primary rounded px-1.5 py-0.5 font-mono text-[10px] font-medium">
+                <span className="bg-primary/10 text-primary dark:bg-primary/40 rounded px-1.5 py-0.5 font-mono text-[10px] font-medium">
                   {analysis.formattedSize}
                 </span>
               </div>
@@ -193,8 +193,8 @@ export function CellDetailDrawer({
                 title={t("cellInspector.saveTooltip")}
                 className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
                   isModified
-                    ? "bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 text-white shadow-sm"
-                    : "bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground cursor-not-allowed"
+                    ? "bg-primary hover:bg-primary/90 text-white shadow-sm"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
                 }`}
               >
                 {isSaving ? (
@@ -216,12 +216,12 @@ export function CellDetailDrawer({
               type="button"
               onClick={handleCopy}
               title={t("cellInspector.copyTooltip")}
-              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs"
+              className="border-border bg-background text-foreground hover:bg-muted dark:bg-card flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs"
             >
               {isCopied ? (
                 <>
                   <Check className="text-success h-3.5 w-3.5" />
-                  <span className="text-success dark:text-success">
+                  <span className="text-success">
                     {t("cellInspector.copied")}
                   </span>
                 </>
@@ -241,7 +241,7 @@ export function CellDetailDrawer({
                   ? t("cellInspector.collapseDrawer")
                   : t("cellInspector.expandDrawer")
               }
-              className="border-border bg-background text-muted-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted rounded-md border p-1.5"
+              className="border-border bg-background text-muted-foreground hover:bg-muted dark:bg-card dark:text-foreground rounded-md border p-1.5"
             >
               {isWide ? (
                 <Minimize2 className="h-3.5 w-3.5" />
@@ -256,7 +256,7 @@ export function CellDetailDrawer({
               onClick={onClose}
               aria-label={t("cellInspector.closeTooltip")}
               title={t("cellInspector.closeTooltip")}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground rounded-md p-1.5"
+              className="text-muted-foreground hover:bg-muted hover:text-foreground rounded-md p-1.5"
             >
               <X className="h-4 w-4" />
             </button>
@@ -265,9 +265,9 @@ export function CellDetailDrawer({
 
         {/* Large Payload Warning Banner */}
         {analysis.isLargePayload && !isForceParsed && (
-          <div className="border-warning/20 bg-warning/10 text-warning dark:text-warning flex items-center justify-between border-b px-4 py-2 text-xs">
+          <div className="border-warning/20 bg-warning/10 text-warning flex items-center justify-between border-b px-4 py-2 text-xs">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="text-warning dark:text-warning h-4 w-4 shrink-0" />
+              <AlertTriangle className="text-warning h-4 w-4 shrink-0" />
               <span>
                 {t("cellInspector.largePayloadWarning", {
                   size: analysis.formattedSize,
@@ -285,21 +285,21 @@ export function CellDetailDrawer({
         )}
 
         {saveError && (
-          <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive flex items-center gap-2 border-b px-4 py-2 text-xs">
+          <div className="border-destructive/20 bg-destructive/10 text-destructive flex items-center gap-2 border-b px-4 py-2 text-xs">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{saveError}</span>
           </div>
         )}
 
         {/* Tabs Bar */}
-        <div className="border-border bg-muted/80 dark:border-border dark:bg-card/40 flex items-center gap-1 border-b px-4 py-1.5">
+        <div className="border-border bg-muted/80 dark:bg-card/40 flex items-center gap-1 border-b px-4 py-1.5">
           <button
             type="button"
             onClick={() => setActiveTab("json")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               activeTab === "json"
-                ? "bg-background text-primary dark:bg-muted dark:text-primary shadow-2xs"
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                ? "bg-background text-primary dark:bg-muted shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Code className="h-3.5 w-3.5" />
@@ -314,8 +314,8 @@ export function CellDetailDrawer({
             onClick={() => setActiveTab("markdown")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               activeTab === "markdown"
-                ? "bg-background text-primary dark:bg-muted dark:text-primary shadow-2xs"
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                ? "bg-background text-primary dark:bg-muted shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <FileText className="h-3.5 w-3.5" />
@@ -330,8 +330,8 @@ export function CellDetailDrawer({
             onClick={() => setActiveTab("html")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               activeTab === "html"
-                ? "bg-background text-primary dark:bg-muted dark:text-primary shadow-2xs"
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                ? "bg-background text-primary dark:bg-muted shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Globe className="h-3.5 w-3.5" />
@@ -346,8 +346,8 @@ export function CellDetailDrawer({
             onClick={() => setActiveTab("text")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               activeTab === "text"
-                ? "bg-background text-primary dark:bg-muted dark:text-primary shadow-2xs"
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                ? "bg-background text-primary dark:bg-muted shadow-2xs"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <FileCode className="h-3.5 w-3.5" />
@@ -388,7 +388,7 @@ export function CellDetailDrawer({
                 value={editedValue}
                 readOnly={isReadOnly}
                 onChange={(e) => setEditedValue(e.target.value)}
-                className="border-border bg-background text-foreground focus:border-border dark:border-border dark:bg-card dark:text-foreground dark:focus:border-border h-full w-full resize-none rounded-lg border p-3 font-mono text-xs leading-relaxed outline-none"
+                className="border-border bg-background text-foreground focus:border-border dark:bg-card h-full w-full resize-none rounded-lg border p-3 font-mono text-xs leading-relaxed outline-none"
                 placeholder={t("cellInspector.textPlaceholder")}
               />
             </div>
@@ -396,7 +396,7 @@ export function CellDetailDrawer({
         </div>
 
         {/* Footer info bar */}
-        <div className="border-border bg-card text-muted-foreground dark:border-border dark:bg-card/60 dark:text-muted-foreground flex h-7 shrink-0 items-center justify-between border-t px-4 font-mono text-[11px]">
+        <div className="border-border bg-card text-muted-foreground dark:bg-card/60 flex h-7 shrink-0 items-center justify-between border-t px-4 font-mono text-[11px]">
           <div className="flex items-center gap-3">
             <span>
               {t("cellInspector.charCount", {
@@ -406,7 +406,7 @@ export function CellDetailDrawer({
             <span>•</span>
             <span>{analysis.formattedSize}</span>
             {isModified && (
-              <span className="text-warning dark:text-warning font-semibold">
+              <span className="text-warning font-semibold">
                 • {t("cellInspector.unsavedChanges")}
               </span>
             )}

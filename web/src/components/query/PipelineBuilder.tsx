@@ -269,7 +269,7 @@ export function PipelineBuilder({
   return (
     <div className="bg-card dark:bg-background flex h-full flex-1 flex-col overflow-hidden font-sans">
       {/* Top Action Bar */}
-      <div className="border-border bg-background dark:border-border dark:bg-card/50 flex h-12 shrink-0 items-center justify-between gap-3 border-b px-4">
+      <div className="border-border bg-background dark:bg-card/50 flex h-12 shrink-0 items-center justify-between gap-3 border-b px-4">
         <div className="flex min-w-0 items-center gap-3">
           {/* Collection Selector */}
           <div className="flex items-center gap-1.5 font-mono text-xs">
@@ -282,7 +282,7 @@ export function PipelineBuilder({
                 value={collection}
                 onChange={(e) => setCollection(e.target.value)}
                 placeholder={t("pipeline.select_collection")}
-                className="focus:ring-primary border-border bg-muted text-foreground dark:border-border dark:bg-muted dark:text-foreground h-7 w-44 rounded-md border px-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
+                className="focus:ring-primary border-border bg-muted text-foreground h-7 w-44 rounded-md border px-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
               />
               <datalist id="mongo-collections-list">
                 {tables.map((tbl) => (
@@ -302,7 +302,7 @@ export function PipelineBuilder({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="border-primary/40 hover:bg-primary/10 text-success dark:text-success h-7 cursor-pointer gap-1.5 text-xs font-semibold"
+                  className="border-primary/40 hover:bg-primary/10 text-success h-7 cursor-pointer gap-1.5 text-xs font-semibold"
                 >
                   <Plus className="size-3.5" />
                   <span>{t("pipeline.stage.add")}</span>
@@ -379,7 +379,7 @@ export function PipelineBuilder({
             variant="ghost"
             size="sm"
             onClick={handleLoadCheckpointSample}
-            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-7 gap-1.5 font-mono text-xs"
+            className="text-muted-foreground hover:text-foreground h-7 gap-1.5 font-mono text-xs"
             title={t("pipeline.load_sample")}
           >
             <Sparkles className="text-warning size-3.5" />
@@ -409,7 +409,7 @@ export function PipelineBuilder({
             variant="outline"
             size="sm"
             onClick={() => setIsPreviewOpen(true)}
-            className="border-border text-foreground dark:border-border dark:text-foreground h-7 cursor-pointer gap-1.5 font-mono text-xs"
+            className="border-border text-foreground h-7 cursor-pointer gap-1.5 font-mono text-xs"
           >
             <Eye className="text-primary size-3.5" />
             <span>{t("pipeline.preview_json")}</span>
@@ -440,7 +440,7 @@ export function PipelineBuilder({
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden md:flex-row">
         {/* Left / Top: Stage Cards List */}
-        <div className="border-border dark:border-border flex flex-1 flex-col space-y-3 overflow-y-auto border-r p-4">
+        <div className="border-border flex flex-1 flex-col space-y-3 overflow-y-auto border-r p-4">
           {stages.length === 0 ? (
             <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center p-8 text-center">
               <Layers className="text-success mb-3 size-10 opacity-30" />

@@ -73,7 +73,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
         "border-border border shadow-sm transition-[border-color,opacity] duration-150",
         selected || isHighlighted
           ? "border-primary ring-primary ring-1"
-          : "hover:border-border dark:hover:border-border hover:shadow-md",
+          : "hover:border-border hover:shadow-md",
         isDimmed && "opacity-25 transition-opacity duration-150",
       )}
     >
@@ -84,24 +84,24 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
             type="target"
             position={Position.Left}
             id="target"
-            className="group-hover:bg-primary! dark:group-hover:bg-primary! bg-muted! dark:border-border! dark:bg-muted! h-3.5! w-3.5! border-2! border-white! opacity-0! transition-opacity group-hover:opacity-100!"
+            className="group-hover:bg-primary! bg-muted! dark:border-border! h-3.5! w-3.5! border-2! border-white! opacity-0! transition-opacity group-hover:opacity-100!"
             style={{ top: ERD_NODE_HEADER_HEIGHT / 2 }}
           />
           <Handle
             type="source"
             position={Position.Right}
             id="source"
-            className="group-hover:bg-primary! dark:group-hover:bg-primary! bg-muted! dark:border-border! dark:bg-muted! h-3.5! w-3.5! border-2! border-white! opacity-0! transition-opacity group-hover:opacity-100!"
+            className="group-hover:bg-primary! bg-muted! dark:border-border! h-3.5! w-3.5! border-2! border-white! opacity-0! transition-opacity group-hover:opacity-100!"
             style={{ top: ERD_NODE_HEADER_HEIGHT / 2 }}
           />
 
           {/* Header */}
           <div
             style={{ height: ERD_NODE_HEADER_HEIGHT }}
-            className="border-border/90 bg-muted/80 dark:border-border dark:bg-muted/80 flex cursor-grab items-center justify-between border-b px-2.5 active:cursor-grabbing"
+            className="border-border/90 bg-muted/80 dark:border-border flex cursor-grab items-center justify-between border-b px-2.5 active:cursor-grabbing"
           >
             <div className="flex min-w-0 items-center gap-1.5 leading-none">
-              <div className="text-primary dark:text-primary border-border bg-background dark:border-border dark:bg-card flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-md border shadow-2xs">
+              <div className="text-primary border-border bg-background dark:bg-card flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-md border shadow-2xs">
                 <Table className="h-3.5 w-3.5" />
               </div>
               <span
@@ -113,7 +113,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
             </div>
 
             <div className="nodrag flex shrink-0 items-center gap-1.5">
-              <span className="border-border/80 bg-muted/80 text-foreground dark:border-border dark:bg-muted dark:text-foreground rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold">
+              <span className="border-border/80 bg-muted/80 text-foreground dark:border-border dark:bg-muted rounded border px-1.5 py-0.5 font-mono text-[10px] font-semibold">
                 {table.columns.length}
               </span>
 
@@ -129,7 +129,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                           onGenerateJoinQuery(table.name);
                         }}
                         aria-label={t("erd.generateJoinConsole")}
-                        className="nodrag hover:text-primary dark:hover:text-primary text-muted-foreground hover:bg-muted/70 dark:text-muted-foreground dark:hover:bg-muted cursor-pointer rounded-md p-1.5 transition-colors"
+                        className="nodrag hover:text-primary text-muted-foreground hover:bg-muted/70 dark:hover:bg-muted cursor-pointer rounded-md p-1.5 transition-colors"
                       >
                         <Sparkles className="h-3.5 w-3.5" />
                       </button>
@@ -152,7 +152,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                         onOpenTable?.(table.name);
                       }}
                       aria-label={t("erd.openTable")}
-                      className="nodrag text-muted-foreground hover:bg-muted/70 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground cursor-pointer rounded-md p-1.5 transition-colors"
+                      className="nodrag text-muted-foreground hover:bg-muted/70 hover:text-foreground dark:hover:bg-muted cursor-pointer rounded-md p-1.5 transition-colors"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </button>
@@ -184,7 +184,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                     "relative flex items-center justify-between px-2.5 leading-none transition-colors",
                     "hover:bg-card dark:hover:bg-muted/40 cursor-crosshair",
                     isColHighlighted &&
-                      "bg-accent ring-primary/50 dark:bg-accent ring-1 ring-inset",
+                      "bg-accent ring-primary/50 ring-1 ring-inset",
                   )}
                 >
                   {/* Column-Specific Connection Handles */}
@@ -192,20 +192,20 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                     type="target"
                     position={Position.Left}
                     id={`${col.name}-target`}
-                    className="group-hover:bg-primary! dark:group-hover:bg-primary! bg-muted! dark:border-border! dark:bg-muted! left-0! h-3.5! w-3.5! -translate-x-1/2! border-2! border-white! opacity-0! transition-opacity group-hover:opacity-100!"
+                    className="group-hover:bg-primary! bg-muted! dark:border-border! left-0! h-3.5! w-3.5! -translate-x-1/2! border-2! border-white! opacity-0! transition-opacity group-hover:opacity-100!"
                   />
                   <Handle
                     type="source"
                     position={Position.Right}
                     id={`${col.name}-source`}
-                    className="group-hover:bg-primary! dark:group-hover:bg-primary! bg-muted! dark:border-border! dark:bg-muted! right-0! h-3.5! w-3.5! translate-x-1/2! border-2! border-white! opacity-0! transition-opacity group-hover:opacity-100!"
+                    className="group-hover:bg-primary! bg-muted! dark:border-border! right-0! h-3.5! w-3.5! translate-x-1/2! border-2! border-white! opacity-0! transition-opacity group-hover:opacity-100!"
                   />
 
                   {/* Column Name & Key Badges */}
                   <div className="flex min-w-0 items-center gap-1.5 pr-2 leading-none">
                     {isPK ? (
                       <span
-                        className="border-warning/30 bg-warning/90 text-warning dark:border-warning/80 dark:bg-warning/40 dark:text-warning inline-flex shrink-0 items-center justify-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[9px] leading-none font-bold shadow-2xs"
+                        className="border-warning/30 bg-warning/90 text-warning dark:border-warning/80 dark:bg-warning/40 inline-flex shrink-0 items-center justify-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[9px] leading-none font-bold shadow-2xs"
                         title={t("datagrid.primaryKey")}
                       >
                         <Key className="h-3.5 w-3.5 shrink-0 translate-y-0.5" />
@@ -220,7 +220,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                         <span className="translate-y-0.5">FK</span>
                       </span>
                     ) : (
-                      <span className="text-muted-foreground dark:text-muted-foreground w-4 translate-y-0.5 text-center font-mono text-[12px] leading-none select-none">
+                      <span className="text-muted-foreground w-4 translate-y-0.5 text-center font-mono text-[12px] leading-none select-none">
                         ·
                       </span>
                     )}
@@ -230,9 +230,8 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                         "translate-y-0.5 truncate text-[12px] leading-none",
                         isPK
                           ? "text-foreground font-semibold dark:text-white"
-                          : "text-foreground dark:text-foreground font-medium",
-                        isColHighlighted &&
-                          "text-primary dark:text-primary font-bold",
+                          : "text-foreground font-medium",
+                        isColHighlighted && "text-primary font-bold",
                       )}
                       title={col.name}
                     >
@@ -253,7 +252,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
                     </span>
                     {col.nullable && (
                       <span
-                        className="bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground translate-y-0.5 rounded px-1 py-0.5 font-mono text-[9px] leading-none"
+                        className="bg-muted text-muted-foreground translate-y-0.5 rounded px-1 py-0.5 font-mono text-[9px] leading-none"
                         title={t("rowModal.nullable")}
                       >
                         ?
@@ -266,7 +265,7 @@ function TableNodeComponent({ data, selected }: NodeProps<TableNodeType>) {
 
             {/* Compact Mode Notice */}
             {compactMode && hiddenCount > 0 && (
-              <div className="border-border bg-card/70 text-muted-foreground dark:border-border/60 dark:bg-card/50 dark:text-muted-foreground flex h-6.5 items-center justify-center border-t px-2.5 text-center text-[11px] italic">
+              <div className="border-border bg-card/70 text-muted-foreground dark:border-border/60 dark:bg-card/50 flex h-6.5 items-center justify-center border-t px-2.5 text-center text-[11px] italic">
                 {t("erd.columnsHidden", { count: hiddenCount })}
               </div>
             )}
