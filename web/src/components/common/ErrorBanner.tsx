@@ -160,7 +160,11 @@ export function ErrorBanner({
               <RefreshCw
                 className={cn("size-3", isRetrying && "animate-spin")}
               />
-              <span>{t("common.retry", "Retry")}</span>
+              <span>
+                {isRetrying
+                  ? t("common.retrying", "Retrying...")
+                  : t("common.retry", "Retry")}
+              </span>
             </Button>
           )}
 

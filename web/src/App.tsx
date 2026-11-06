@@ -1278,7 +1278,7 @@ function PebblebaseStudio() {
         } as React.CSSProperties
       }
       data-studio-shell
-      className="bg-background text-foreground flex h-dvh w-screen flex-col overflow-hidden font-sans transition-colors"
+      className="bg-background text-foreground flex h-dvh w-full min-w-0 flex-col overflow-hidden font-sans transition-colors"
     >
       <DesktopTitleBar
         theme={theme}

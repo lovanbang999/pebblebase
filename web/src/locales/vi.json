@@ -594,6 +594,7 @@
     "error": "Lỗi",
     "loading": "Đang tải...",
     "retry": "Thử lại",
+    "retrying": "Đang thử lại...",
     "copy": "Sao chép",
     "copied": "Đã sao chép!",
     "close": "Đóng",
@@ -625,6 +626,7 @@
     "selectTablePrompt": "Chọn một bảng từ thanh bên để xem các bản ghi",
     "noTablesFound": "Không tìm thấy bảng nào trong public schema",
     "reintrospect": "Introspect lại Database",
+    "reintrospecting": "Đang kiểm tra lại Database...",
     "deleteRecordTitle": "Xóa bản ghi",
     "deleteRecordConfirm": "Bạn có chắc chắn muốn xóa vĩnh viễn bản ghi này khỏi \"{{table}}\" không? Thao tác này không thể hoàn tác."
   },
@@ -1291,6 +1293,7 @@
     "downloadReleasePackage": "Tải gói phát hành",
     "downloadManual": "Tải xuống thủ công từ GitHub",
     "retry": "Thử lại",
+    "retrying": "Đang thử lại...",
     "autoCheckStartup": "Tự động kiểm tra bản cập nhật khi khởi động",
     "updateNow": "Cập nhật ngay",
     "checkNow": "Kiểm tra ngay",

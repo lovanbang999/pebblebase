@@ -743,7 +743,11 @@ function ERDCanvas({
               <RefreshCw
                 className={cn("size-3.5", loading && "animate-spin")}
               />
-              <span>{t("erd.retryConnection", "Retry Connection")}</span>
+              <span>
+                {loading
+                  ? t("common.retrying", "Retrying...")
+                  : t("erd.retryConnection", "Retry Connection")}
+              </span>
             </Button>
           </div>
         </div>

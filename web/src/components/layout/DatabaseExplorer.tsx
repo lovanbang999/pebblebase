@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ChevronDown,
@@ -213,6 +213,26 @@ export function DatabaseExplorer({
     action: "truncate" | "drop";
   } | null>(null);
   const [actionMessage, setActionMessage] = useState("");
+  const [retryingConnIds, setRetryingConnIds] = useState<
+    Record<string, boolean>
+  >({});
+
+  const handleRefreshConnection = useCallback(
+    async (connectionId: string) => {
+      setRetryingConnIds((prev) => ({ ...prev, [connectionId]: true }));
+      try {
+        await onRefreshConnection(connectionId);
+      } finally {
+        setRetryingConnIds((prev) => {
+          if (!prev[connectionId]) return prev;
+          const next = { ...prev };
+          delete next[connectionId];
+          return next;
+        });
+      }
+    },
+    [onRefreshConnection],
+  );
   const [pinnedByConnection, setPinnedByConnection] = useState<
     Record<string, string[]>
   >(() => {
@@ -619,7 +639,7 @@ export function DatabaseExplorer({
           <PanelLeftClose className="size-3.5" />
         </Button>
       </div>
-      <div className="border-sidebar-border flex items-center gap-1 border-b p-2">
+      <div className="database-explorer-toolbar border-sidebar-border flex min-w-0 items-center gap-1 overflow-x-auto border-b p-2">
         <div className="relative min-w-0 flex-1">
           <Search
             aria-hidden="true"
@@ -702,18 +722,22 @@ export function DatabaseExplorer({
           )}
           disabled={
             !selectedConnection ||
-            statusByConnection[selectedConnection.id]?.isFetching
+            Boolean(
+              retryingConnIds[selectedConnection.id] ||
+              statusByConnection[selectedConnection.id]?.isFetching,
+            )
           }
           onClick={() =>
             selectedConnection &&
-            void onRefreshConnection(selectedConnection.id)
+            void handleRefreshConnection(selectedConnection.id)
           }
         >
           <RefreshCw
             className={cn(
               "size-3.5",
               selectedConnection &&
-                statusByConnection[selectedConnection.id]?.isFetching &&
+                (retryingConnIds[selectedConnection.id] ||
+                  statusByConnection[selectedConnection.id]?.isFetching) &&
                 "animate-spin",
             )}
           />
@@ -755,6 +779,12 @@ export function DatabaseExplorer({
           const environment = connection?.environment || "local";
           const envStyle = ENV_STYLES[environment] || ENV_STYLES.local;
           const status = node.status;
+          const isConnRetrying = Boolean(
+            connection &&
+            (retryingConnIds[connection.id] ||
+              status?.isFetching ||
+              status?.isLoading),
+          );
           return (
             <div key={node.id}>
               <div
@@ -878,7 +908,7 @@ export function DatabaseExplorer({
                       >
                         {connection.type.toUpperCase()}
                       </Badge>
-                      {status?.isLoading || status?.isFetching ? (
+                      {isConnRetrying ? (
                         <LoaderCircle className="text-muted-foreground size-3 shrink-0 animate-spin" />
                       ) : status?.isError ? (
                         <Unplug className="text-destructive size-3 shrink-0" />
@@ -953,7 +983,10 @@ export function DatabaseExplorer({
               {node.kind === "connection" &&
                 node.expanded &&
                 status?.isError && (
-                  <div className="border-destructive/30 bg-destructive/5 my-1 mr-1 ml-7 rounded border px-2 py-2 text-[11px]">
+                  <div
+                    data-testid={`connection-error-${connection?.id}`}
+                    className="border-destructive/30 bg-destructive/5 my-1 mr-1 ml-7 rounded border px-2 py-2 text-[11px]"
+                  >
                     <div className="text-destructive flex items-center gap-1.5 font-medium">
                       <Unplug className="size-3" />
                       {t("sidebar.connectionFailed", "Connection failed")}
@@ -983,21 +1016,38 @@ export function DatabaseExplorer({
                         </button>
                       )}
                     </details>
-                    <div className="mt-1.5 flex gap-2">
-                      <button
+                    <div className="mt-2 flex items-center gap-2">
+                      <Button
                         type="button"
-                        className="text-primary underline-offset-2 hover:underline"
-                        onClick={() => void onRefreshConnection(connection!.id)}
+                        size="xs"
+                        variant="outline"
+                        disabled={isConnRetrying}
+                        className="h-6 gap-1.5 px-2.5 text-[11px] font-medium"
+                        onClick={() =>
+                          void handleRefreshConnection(connection!.id)
+                        }
                       >
-                        {t("common.retry", "Retry")}
-                      </button>
-                      <button
+                        <RefreshCw
+                          className={cn(
+                            "size-3 shrink-0",
+                            isConnRetrying && "animate-spin",
+                          )}
+                        />
+                        <span>
+                          {isConnRetrying
+                            ? t("common.retrying", "Retrying...")
+                            : t("common.retry", "Retry")}
+                        </span>
+                      </Button>
+                      <Button
                         type="button"
-                        className="text-muted-foreground underline-offset-2 hover:underline"
+                        size="xs"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-foreground h-6 px-2 text-[11px]"
                         onClick={() => onEditConnection(connection!)}
                       >
                         {t("connection.editTitle", "Edit connection")}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -1211,16 +1261,35 @@ export function DatabaseExplorer({
               <button
                 type="button"
                 role="menuitem"
-                className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs"
+                disabled={Boolean(
+                  nodeMenu.node.connection &&
+                  (retryingConnIds[nodeMenu.node.connection.id] ||
+                    statusByConnection[nodeMenu.node.connection.id]
+                      ?.isFetching),
+                )}
+                className="hover:bg-accent flex h-7 w-full items-center gap-2 rounded px-2 text-left text-xs disabled:cursor-not-allowed disabled:opacity-45"
                 onClick={() => {
-                  void onRefreshConnection(nodeMenu.node.connection!.id);
+                  void handleRefreshConnection(nodeMenu.node.connection!.id);
                   setNodeMenu(null);
                 }}
               >
-                <RefreshCw className="size-3.5" />
-                {nodeMenu.node.status?.isError
-                  ? t("sidebar.connect", "Connect")
-                  : t("explorer.reconnect", "Reconnect")}
+                <RefreshCw
+                  className={cn(
+                    "size-3.5",
+                    nodeMenu.node.connection &&
+                      (retryingConnIds[nodeMenu.node.connection.id] ||
+                        statusByConnection[nodeMenu.node.connection.id]
+                          ?.isFetching) &&
+                      "animate-spin",
+                  )}
+                />
+                {nodeMenu.node.connection &&
+                (retryingConnIds[nodeMenu.node.connection.id] ||
+                  statusByConnection[nodeMenu.node.connection.id]?.isFetching)
+                  ? t("common.retrying", "Retrying...")
+                  : nodeMenu.node.status?.isError
+                    ? t("sidebar.connect", "Connect")
+                    : t("explorer.reconnect", "Reconnect")}
               </button>
               {canManageConnections && (
                 <>
@@ -1474,7 +1543,7 @@ export function DatabaseExplorer({
           onClose={() => setDangerModal(null)}
           onSuccess={(message) => {
             setActionMessage(message);
-            void onRefreshConnection(dangerModal.connectionId);
+            void handleRefreshConnection(dangerModal.connectionId);
           }}
         />
       )}
