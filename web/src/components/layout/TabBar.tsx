@@ -29,7 +29,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 interface TabBarProps {
   tabs: StudioTab[];
@@ -326,7 +326,7 @@ export function TabBar({
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
                 ? "text-primary"
-                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
+                : "text-muted-foreground group-hover:text-muted-foreground",
             )}
           />
         );
@@ -337,7 +337,7 @@ export function TabBar({
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
                 ? "text-primary"
-                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
+                : "text-muted-foreground group-hover:text-muted-foreground",
             )}
           />
         );
@@ -348,7 +348,7 @@ export function TabBar({
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
                 ? "text-primary"
-                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
+                : "text-muted-foreground group-hover:text-muted-foreground",
             )}
           />
         );
@@ -359,7 +359,7 @@ export function TabBar({
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
                 ? "text-primary"
-                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
+                : "text-muted-foreground group-hover:text-muted-foreground",
             )}
           />
         );
@@ -370,7 +370,7 @@ export function TabBar({
               "h-3.5 w-3.5 shrink-0 transition-colors",
               isActive
                 ? "text-cyan-600 dark:text-cyan-400"
-                : "text-muted-foreground group-hover:text-muted-foreground dark:group-hover:text-muted-foreground",
+                : "text-muted-foreground group-hover:text-muted-foreground",
             )}
           />
         );
@@ -382,10 +382,10 @@ export function TabBar({
   if (tabs.length === 0) {
     return (
       <div
-        className="wails-drag border-border bg-muted/80 dark:border-border dark:bg-card/70 relative z-20 flex h-8 shrink-0 items-center justify-between border-b px-3 select-none"
+        className="wails-drag border-border bg-muted/80 dark:bg-card/70 relative z-20 flex h-8 shrink-0 items-center justify-between border-b px-3 select-none"
         style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
       >
-        <span className="text-muted-foreground dark:text-muted-foreground pointer-events-none font-sans text-xs select-none">
+        <span className="text-muted-foreground pointer-events-none font-sans text-xs select-none">
           {t("tabs.noTabsOpen")}
         </span>
         <Tooltip>
@@ -397,7 +397,7 @@ export function TabBar({
                 size="icon-xs"
                 onClick={onNewQueryTab}
                 aria-label={t("tabs.newQueryTab")}
-                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 dark:hover:text-foreground h-7 w-7 shrink-0 rounded-md"
+                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 h-7 w-7 shrink-0 rounded-md"
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -412,13 +412,13 @@ export function TabBar({
 
   return (
     <div
-      className="wails-drag border-border bg-muted/80 dark:border-border dark:bg-card/70 relative z-20 flex h-8.5 shrink-0 items-center overflow-hidden border-b px-2 select-none"
+      className="wails-drag border-border bg-muted/80 dark:bg-card/70 relative z-20 flex h-8.5 shrink-0 items-center overflow-hidden border-b px-2 select-none"
       style={{ WebkitAppRegion: "drag" } as React.CSSProperties}
     >
       {/* Left Scroll Button when overflowing */}
       {canScrollLeft && (
         <div className="relative z-30 flex shrink-0 items-center">
-          <div className="from-background via-background/90 dark:from-background dark:via-background/90 pointer-events-none absolute top-0 bottom-0 left-0 -ml-2 w-8 bg-linear-to-r to-transparent" />
+          <div className="from-background via-background/90 pointer-events-none absolute top-0 bottom-0 left-0 -ml-2 w-8 bg-linear-to-r to-transparent" />
           <Tooltip>
             <TooltipTrigger
               render={
@@ -430,7 +430,7 @@ export function TabBar({
                     e.stopPropagation();
                     handleScrollBy("left");
                   }}
-                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:border-border dark:bg-muted/95 dark:text-foreground dark:hover:text-foreground relative z-10 ml-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
+                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:bg-muted/95 dark:text-foreground relative z-10 ml-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
                   style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -478,10 +478,10 @@ export function TabBar({
                 className={cn(
                   "group wails-no-drag relative flex h-full max-w-50 shrink-0 cursor-pointer items-center gap-2 rounded-t-md border-t-0 border-b-2 px-3 font-sans text-xs transition-colors duration-150 select-none",
                   isActive
-                    ? "border-b-primary border-border bg-background text-foreground dark:border-border dark:bg-background dark:text-foreground border-x font-medium"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/40 dark:hover:text-foreground border-x border-transparent border-b-transparent",
+                    ? "border-b-primary border-border bg-background text-foreground border-x font-medium"
+                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:hover:bg-muted/40 border-x border-transparent border-b-transparent",
                   isDragging &&
-                    "border-border dark:border-border scale-[0.98] border-dashed opacity-50",
+                    "border-border scale-[0.98] border-dashed opacity-50",
                 )}
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
@@ -524,7 +524,7 @@ export function TabBar({
                           onCloseTab(tab.id);
                         }}
                         className={cn(
-                          "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded transition-opacity",
+                          "text-muted-foreground hover:bg-muted hover:text-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded transition-opacity",
                           isActive
                             ? "opacity-100"
                             : "opacity-0 group-hover:opacity-100",
@@ -562,7 +562,7 @@ export function TabBar({
                 draggable={false}
                 onDragStart={(e) => e.stopPropagation()}
                 onClick={() => onNewQueryTab()}
-                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 dark:hover:text-foreground ml-1 h-7 w-7 shrink-0 cursor-pointer rounded-md"
+                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 ml-1 h-7 w-7 shrink-0 cursor-pointer rounded-md"
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -576,7 +576,7 @@ export function TabBar({
       {/* Right Scroll Button when overflowing */}
       {canScrollRight && (
         <div className="relative z-30 flex shrink-0 items-center">
-          <div className="from-background via-background/90 dark:from-background dark:via-background/90 pointer-events-none absolute top-0 right-0 bottom-0 -mr-2 w-8 bg-linear-to-l to-transparent" />
+          <div className="from-background via-background/90 pointer-events-none absolute top-0 right-0 bottom-0 -mr-2 w-8 bg-linear-to-l to-transparent" />
           <Tooltip>
             <TooltipTrigger
               render={
@@ -588,7 +588,7 @@ export function TabBar({
                     e.stopPropagation();
                     handleScrollBy("right");
                   }}
-                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:border-border dark:bg-muted/95 dark:text-foreground dark:hover:text-foreground relative z-10 mr-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
+                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:bg-muted/95 dark:text-foreground relative z-10 mr-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
                   style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -613,7 +613,7 @@ export function TabBar({
               WebkitAppRegion: "no-drag",
             } as React.CSSProperties
           }
-          className="animate-in fade-in-50 zoom-in-95 wails-no-drag border-border bg-background text-foreground dark:border-border dark:bg-background dark:text-foreground fixed z-50 min-w-42.5 rounded-lg border p-1 font-mono text-xs shadow-xl duration-100"
+          className="animate-in fade-in-50 zoom-in-95 wails-no-drag border-border bg-background text-foreground fixed z-50 min-w-42.5 rounded-lg border p-1 font-mono text-xs shadow-xl duration-100"
         >
           <button
             type="button"
@@ -621,7 +621,7 @@ export function TabBar({
               onCloseTab(contextMenu.tabId);
               setContextMenu(null);
             }}
-            className="hover:bg-muted dark:hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors"
+            className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors"
           >
             <X className="text-muted-foreground h-3.5 w-3.5" />
             <span>{t("tabs.close")}</span>
@@ -634,7 +634,7 @@ export function TabBar({
               setContextMenu(null);
             }}
             disabled={tabs.length <= 1}
-            className="hover:bg-muted dark:hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors disabled:pointer-events-none disabled:opacity-40"
+            className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors disabled:pointer-events-none disabled:opacity-40"
           >
             <Layers className="text-muted-foreground h-3.5 w-3.5" />
             <span>{t("tabs.closeOthers")}</span>
@@ -646,13 +646,13 @@ export function TabBar({
               onCloseTabsToRight(contextMenu.tabId);
               setContextMenu(null);
             }}
-            className="hover:bg-muted dark:hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors"
+            className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left transition-colors"
           >
             <ArrowRight className="text-muted-foreground h-3.5 w-3.5" />
             <span>{t("tabs.closeToRight")}</span>
           </button>
 
-          <div className="bg-muted dark:bg-muted my-1 h-px" />
+          <div className="bg-muted my-1 h-px" />
 
           <button
             type="button"

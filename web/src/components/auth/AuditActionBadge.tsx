@@ -20,7 +20,7 @@ export function AuditActionBadge({ action }: AuditActionBadgeProps) {
       return (
         <Badge
           variant="secondary"
-          className="border-primary/20 dark:border-primary/25 bg-success/10 text-success dark:bg-success/15 dark:text-success border font-mono text-[10px]"
+          className="border-primary/20 dark:border-primary/25 bg-success/10 text-success dark:bg-success/15 border font-mono text-[10px]"
         >
           connection_create
         </Badge>
@@ -29,7 +29,7 @@ export function AuditActionBadge({ action }: AuditActionBadgeProps) {
       return (
         <Badge
           variant="secondary"
-          className="border-warning/20 bg-warning/10 text-warning dark:border-warning/25 dark:bg-warning/15 dark:text-warning border font-mono text-[10px]"
+          className="border-warning/20 bg-warning/10 text-warning dark:border-warning/25 dark:bg-warning/15 border font-mono text-[10px]"
         >
           query_execute
         </Badge>
@@ -38,7 +38,7 @@ export function AuditActionBadge({ action }: AuditActionBadgeProps) {
       return (
         <Badge
           variant="secondary"
-          className="border-primary/20 bg-primary/10 text-primary dark:border-primary/25 dark:bg-primary/15 dark:text-primary border font-mono text-[10px]"
+          className="border-primary/20 bg-primary/10 text-primary dark:border-primary/25 dark:bg-primary/15 border font-mono text-[10px]"
         >
           row_mutate
         </Badge>
@@ -47,7 +47,7 @@ export function AuditActionBadge({ action }: AuditActionBadgeProps) {
       return (
         <Badge
           variant="secondary"
-          className="border-destructive/20 bg-destructive/10 text-destructive dark:border-destructive/25 dark:bg-destructive/15 dark:text-destructive border font-mono text-[10px]"
+          className="border-destructive/20 bg-destructive/10 text-destructive dark:border-destructive/25 dark:bg-destructive/15 border font-mono text-[10px]"
         >
           schema_change
         </Badge>

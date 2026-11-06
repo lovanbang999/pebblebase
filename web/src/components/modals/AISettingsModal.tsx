@@ -281,29 +281,29 @@ export function AISettingsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border bg-background dark:border-border dark:bg-card flex max-h-[90vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
+      <DialogContent className="border-border bg-background dark:bg-card flex max-h-[90vh] flex-col overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-xl">
         <form
           onSubmit={handleSubmit}
           className="flex max-h-[90vh] flex-col overflow-hidden"
         >
           {/* Header */}
-          <DialogHeader className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/50 flex shrink-0 flex-row items-center gap-3 space-y-0 border-b px-5 py-4">
-            <div className="border-primary/30 bg-primary/10 text-primary dark:bg-primary/15 dark:text-primary shrink-0 rounded-lg border p-2">
+          <DialogHeader className="border-border/80 bg-card/70 dark:bg-card/50 flex shrink-0 flex-row items-center gap-3 space-y-0 border-b px-5 py-4">
+            <div className="border-primary/30 bg-primary/10 text-primary dark:bg-primary/15 shrink-0 rounded-lg border p-2">
               <Sparkles className="size-4.5" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <DialogTitle className="text-foreground dark:text-foreground text-sm font-semibold">
+                <DialogTitle className="text-foreground text-sm font-semibold">
                   {t("ai.settingsTitle")}
                 </DialogTitle>
                 <Badge
                   variant="outline"
-                  className="border-primary/40 bg-primary/10 text-primary dark:text-primary h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                  className="border-primary/40 bg-primary/10 text-primary h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                 >
                   {t("ai.byoKeyBadge")}
                 </Badge>
               </div>
-              <DialogDescription className="text-muted-foreground dark:text-muted-foreground text-xs">
+              <DialogDescription className="text-muted-foreground text-xs">
                 {t("ai.settingsSubtitle")}
               </DialogDescription>
             </div>
@@ -320,10 +320,10 @@ export function AISettingsModal({
                 {/* Provider Selector Cards */}
                 <div>
                   <div className="mb-2 flex items-center justify-between">
-                    <label className="text-muted-foreground dark:text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+                    <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                       {t("ai.selectProvider")}
                     </label>
-                    <span className="text-muted-foreground dark:text-muted-foreground text-[11px]">
+                    <span className="text-muted-foreground text-[11px]">
                       {t("ai.selectProviderHelp")}
                     </span>
                   </div>
@@ -339,30 +339,30 @@ export function AISettingsModal({
                           className={`flex cursor-pointer flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
                             isSelected
                               ? "border-primary/50 bg-primary/5 ring-primary/30 dark:bg-primary/10 shadow-2xs ring-1"
-                              : "border-border/90 bg-card/60 hover:border-border hover:bg-muted/70 dark:border-border dark:bg-card/60 dark:hover:border-border"
+                              : "border-border/90 bg-card/60 hover:border-border hover:bg-muted/70 dark:border-border"
                           }`}
                         >
                           <div className="flex w-full items-center justify-between">
-                            <span className="text-foreground dark:text-foreground text-xs font-semibold">
+                            <span className="text-foreground text-xs font-semibold">
                               {p.name}
                             </span>
                             {p.id === "ollama" ? (
                               <Badge
                                 variant="outline"
-                                className="border-primary/40 bg-success/10 text-success dark:text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
+                                className="border-primary/40 bg-success/10 text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
                               >
                                 {t("ai.offlineBadge")}
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
+                                className="border-border bg-muted text-muted-foreground h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
                               >
                                 {t("ai.cloudBadge")}
                               </Badge>
                             )}
                           </div>
-                          <span className="text-muted-foreground dark:text-muted-foreground mt-1 font-mono text-[10px]">
+                          <span className="text-muted-foreground mt-1 font-mono text-[10px]">
                             {p.default_model}
                           </span>
                         </button>
@@ -380,7 +380,7 @@ export function AISettingsModal({
                     <button
                       type="button"
                       onClick={() => setIsCustomModel(!isCustomModel)}
-                      className="text-primary hover:text-primary dark:text-primary dark:hover:text-primary cursor-pointer font-mono text-[11px]"
+                      className="text-primary hover:text-primary cursor-pointer font-mono text-[11px]"
                     >
                       {isCustomModel
                         ? t("ai.recommendedModels")
@@ -395,17 +395,17 @@ export function AISettingsModal({
                       onChange={(e) => setModel(e.target.value)}
                       placeholder={t("ai.modelPlaceholder")}
                       required
-                      className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                      className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
                     />
                   ) : (
                     <Select
                       value={model}
                       onValueChange={(val) => setModel(val ?? "")}
                     >
-                      <SelectTrigger className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground h-9 w-full rounded-lg border px-3 font-mono text-xs shadow-2xs">
+                      <SelectTrigger className="border-border bg-background text-foreground dark:bg-card/60 h-9 w-full rounded-lg border px-3 font-mono text-xs shadow-2xs">
                         <SelectValue placeholder={t("ai.modelPlaceholder")} />
                       </SelectTrigger>
-                      <SelectContent className="border-border bg-background dark:border-border dark:bg-card z-50 rounded-lg border p-1 shadow-lg">
+                      <SelectContent className="border-border bg-background dark:bg-card z-50 rounded-lg border p-1 shadow-lg">
                         {currentProviderInfo.models.map((m) => (
                           <SelectItem
                             key={m}
@@ -443,10 +443,10 @@ export function AISettingsModal({
                     onChange={(e) => setBaseURL(e.target.value)}
                     placeholder={t("ai.endpointUrlPlaceholder")}
                     required
-                    className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
+                    className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
                   />
                   {provider === "ollama" && (
-                    <p className="text-muted-foreground dark:text-muted-foreground mt-1 text-[11px] leading-normal">
+                    <p className="text-muted-foreground mt-1 text-[11px] leading-normal">
                       {t("ai.ollamaNotice")}
                     </p>
                   )}
@@ -462,7 +462,7 @@ export function AISettingsModal({
                         </label>
                         <Badge
                           variant="outline"
-                          className="border-primary/40 bg-success/10 text-success dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                          className="border-primary/40 bg-success/10 text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                         >
                           {t("ai.keyEncryptedBadge")}
                         </Badge>
@@ -488,7 +488,7 @@ export function AISettingsModal({
                             ? t("ai.keySavedMasked", { mask: keyMask })
                             : t("ai.apiKeyPlaceholder")
                         }
-                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground pr-9 font-mono text-xs"
+                        className="border-border bg-background text-foreground dark:bg-card/60 pr-9 font-mono text-xs"
                       />
                       <button
                         type="button"
@@ -503,19 +503,19 @@ export function AISettingsModal({
                       </button>
                     </div>
 
-                    <p className="text-muted-foreground dark:text-muted-foreground mt-1 flex items-center gap-1 text-[11px] leading-normal">
-                      <ShieldCheck className="text-success dark:text-success size-3.5 shrink-0" />
+                    <p className="text-muted-foreground mt-1 flex items-center gap-1 text-[11px] leading-normal">
+                      <ShieldCheck className="text-success size-3.5 shrink-0" />
                       <span>{t("ai.keyEncryptedHelp")}</span>
                     </p>
                   </div>
                 ) : (
                   <div className="border-primary/30 dark:border-primary/25 bg-success/5 dark:bg-success/10 flex items-start gap-2.5 rounded-xl border p-3">
-                    <Server className="text-success dark:text-success mt-0.5 size-4" />
+                    <Server className="text-success mt-0.5 size-4" />
                     <div>
-                      <span className="text-foreground dark:text-foreground text-xs font-semibold">
+                      <span className="text-foreground text-xs font-semibold">
                         {t("ai.keyNotRequired")}
                       </span>
-                      <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px]">
+                      <p className="text-muted-foreground mt-0.5 text-[11px]">
                         {t("ai.ollamaNotice")}
                       </p>
                     </div>
@@ -526,14 +526,14 @@ export function AISettingsModal({
                 <div className="border-border/90 bg-card/60 dark:border-border dark:bg-card/40 rounded-xl border p-3 shadow-2xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-foreground dark:text-foreground text-xs font-semibold">
+                      <span className="text-foreground text-xs font-semibold">
                         {t("ai.temperature")}
                       </span>
-                      <p className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-[11px]">
+                      <p className="text-muted-foreground mt-0.5 text-[11px]">
                         {t("ai.temperatureHelp")}
                       </p>
                     </div>
-                    <div className="text-primary dark:text-primary flex items-center gap-1.5 font-mono text-xs font-semibold">
+                    <div className="text-primary flex items-center gap-1.5 font-mono text-xs font-semibold">
                       <span>{temperature.toFixed(1)}</span>
                     </div>
                   </div>
@@ -544,7 +544,7 @@ export function AISettingsModal({
                     step="0.1"
                     value={temperature}
                     onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                    className="bg-muted accent-primary dark:bg-muted dark:accent-primary mt-2.5 h-1.5 w-full cursor-pointer appearance-none rounded-lg"
+                    className="bg-muted accent-primary mt-2.5 h-1.5 w-full cursor-pointer appearance-none rounded-lg"
                   />
                 </div>
 
@@ -553,15 +553,15 @@ export function AISettingsModal({
                   <Alert
                     className={`text-xs ${
                       testResult.ok
-                        ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30 dark:text-success"
-                        : "border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive"
+                        ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30"
+                        : "border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30"
                     }`}
                     variant={testResult.ok ? "default" : "destructive"}
                   >
                     {testResult.ok ? (
-                      <CheckCircle2 className="text-success dark:text-success size-4 shrink-0" />
+                      <CheckCircle2 className="text-success size-4 shrink-0" />
                     ) : (
-                      <AlertCircle className="text-destructive dark:text-destructive size-4 shrink-0" />
+                      <AlertCircle className="text-destructive size-4 shrink-0" />
                     )}
                     <AlertDescription className="text-xs break-all">
                       {testResult.message}
@@ -572,9 +572,9 @@ export function AISettingsModal({
                 {error && (
                   <Alert
                     variant="destructive"
-                    className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 dark:text-destructive text-xs"
+                    className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 text-xs"
                   >
-                    <AlertCircle className="text-destructive dark:text-destructive size-4 shrink-0" />
+                    <AlertCircle className="text-destructive size-4 shrink-0" />
                     <AlertDescription className="text-xs break-all">
                       {error}
                     </AlertDescription>
@@ -582,8 +582,8 @@ export function AISettingsModal({
                 )}
 
                 {saveSuccess && (
-                  <Alert className="border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30 dark:text-success text-xs">
-                    <CheckCircle2 className="text-success dark:text-success size-4 shrink-0" />
+                  <Alert className="border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30 text-xs">
+                    <CheckCircle2 className="text-success size-4 shrink-0" />
                     <AlertDescription className="text-xs">
                       {t("ai.saveSuccess")}
                     </AlertDescription>
@@ -594,14 +594,14 @@ export function AISettingsModal({
           </div>
 
           {/* Actions Footer */}
-          <DialogFooter className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/50 m-0 flex shrink-0 items-center justify-between rounded-none border-t px-5 py-3 sm:flex-row sm:justify-between">
+          <DialogFooter className="border-border/80 bg-card/70 dark:bg-card/50 m-0 flex shrink-0 items-center justify-between rounded-none border-t px-5 py-3 sm:flex-row sm:justify-between">
             <Button
               type="button"
               variant="outline"
               size="sm"
               onClick={handleTest}
               disabled={testing || saving || loading}
-              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card/60 dark:text-muted-foreground dark:hover:bg-muted gap-1.5 text-xs font-medium"
+              className="border-border bg-background text-foreground hover:bg-muted dark:bg-card/60 dark:text-muted-foreground gap-1.5 text-xs font-medium"
             >
               {testing ? (
                 <>
@@ -610,7 +610,7 @@ export function AISettingsModal({
                 </>
               ) : (
                 <>
-                  <Radio className="text-muted-foreground dark:text-muted-foreground size-3.5" />
+                  <Radio className="text-muted-foreground size-3.5" />
                   {t("ai.testConnection")}
                 </>
               )}
@@ -623,7 +623,7 @@ export function AISettingsModal({
                 size="sm"
                 onClick={onClose}
                 disabled={saving}
-                className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground text-xs"
+                className="text-muted-foreground hover:text-foreground text-xs"
               >
                 {t("rowModal.cancel")}
               </Button>
@@ -631,7 +631,7 @@ export function AISettingsModal({
                 type="submit"
                 size="sm"
                 disabled={saving || testing || loading}
-                className="bg-primary hover:bg-primary dark:bg-primary dark:hover:bg-primary gap-1.5 text-xs font-medium text-white"
+                className="bg-primary hover:bg-primary gap-1.5 text-xs font-medium text-white"
               >
                 {saving ? (
                   <>

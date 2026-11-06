@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowUpRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { type ClickHouseComplexKind } from "@/lib/clickhouse";
 
 export type { ClickHouseComplexKind };
@@ -88,7 +88,7 @@ export function ClickHouseComplexCell({
       >
         <Badge
           variant="outline"
-          className="border-primary/30 dark:border-primary/30 bg-success/10 text-success dark:bg-success/15 dark:text-success h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
+          className="border-primary/30 bg-success/10 text-success dark:bg-success/15 h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
         >
           <span className="font-bold tracking-tighter">[&thinsp;]</span>
           <span>{count}</span>
@@ -98,7 +98,7 @@ export function ClickHouseComplexCell({
           {previewItems.map((item, idx) => (
             <span
               key={idx}
-              className="bg-muted text-foreground dark:bg-muted dark:text-foreground inline-block max-w-25 truncate rounded px-1 py-0.5 text-[11px]"
+              className="bg-muted text-foreground inline-block max-w-25 truncate rounded px-1 py-0.5 text-[11px]"
             >
               {typeof item === "object" ? JSON.stringify(item) : String(item)}
             </span>
@@ -109,7 +109,7 @@ export function ClickHouseComplexCell({
             </span>
           )}
           {count === 0 && (
-            <span className="text-muted-foreground dark:text-muted-foreground text-[11px] italic">
+            <span className="text-muted-foreground text-[11px] italic">
               {t("datagrid.complexTypes.empty")}
             </span>
           )}
@@ -123,7 +123,7 @@ export function ClickHouseComplexCell({
               onOpenDetail();
             }}
             className={cn(
-              "hover:bg-primary/20 text-muted-foreground hover:text-success dark:hover:text-success shrink-0 rounded p-0.5 transition-opacity",
+              "hover:bg-primary/20 text-muted-foreground hover:text-success shrink-0 rounded p-0.5 transition-opacity",
               isHovered ? "opacity-100" : "opacity-0",
             )}
             title={t("datagrid.complexTypes.inspectArray")}
@@ -157,7 +157,7 @@ export function ClickHouseComplexCell({
       >
         <Badge
           variant="outline"
-          className="border-primary/30 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/15 dark:text-primary h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
+          className="border-primary/30 bg-primary/10 text-primary dark:bg-primary/15 h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
         >
           <span className="font-bold tracking-tighter">
             &#123;&thinsp;&#125;
@@ -169,11 +169,9 @@ export function ClickHouseComplexCell({
           {previewEntries.map(([k, v], idx) => (
             <span
               key={idx}
-              className="bg-primary/10 text-primary dark:bg-primary/40 dark:text-primary inline-flex max-w-30 items-center gap-0.5 truncate rounded px-1 py-0.5 text-[11px]"
+              className="bg-primary/10 text-primary dark:bg-primary/40 inline-flex max-w-30 items-center gap-0.5 truncate rounded px-1 py-0.5 text-[11px]"
             >
-              <span className="text-primary dark:text-primary font-medium">
-                {k}:
-              </span>
+              <span className="text-primary font-medium">{k}:</span>
               <span className="truncate">
                 {typeof v === "object" ? JSON.stringify(v) : String(v)}
               </span>
@@ -185,7 +183,7 @@ export function ClickHouseComplexCell({
             </span>
           )}
           {count === 0 && (
-            <span className="text-muted-foreground dark:text-muted-foreground text-[11px] italic">
+            <span className="text-muted-foreground text-[11px] italic">
               {t("datagrid.complexTypes.empty")}
             </span>
           )}
@@ -199,7 +197,7 @@ export function ClickHouseComplexCell({
               onOpenDetail();
             }}
             className={cn(
-              "text-muted-foreground hover:bg-primary/20 hover:text-primary dark:hover:text-primary shrink-0 rounded p-0.5 transition-opacity",
+              "text-muted-foreground hover:bg-primary/20 hover:text-primary shrink-0 rounded p-0.5 transition-opacity",
               isHovered ? "opacity-100" : "opacity-0",
             )}
             title={t("datagrid.complexTypes.inspectMap")}
@@ -233,7 +231,7 @@ export function ClickHouseComplexCell({
     >
       <Badge
         variant="outline"
-        className="border-warning/30 bg-warning/10 text-warning dark:border-warning/30 dark:bg-warning/15 dark:text-warning h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
+        className="border-warning/30 bg-warning/10 text-warning dark:bg-warning/15 h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
       >
         <span className="font-bold tracking-tighter">(&thinsp;)</span>
         <span>{count}</span>
@@ -243,7 +241,7 @@ export function ClickHouseComplexCell({
         {previewItems.map((item, idx) => (
           <span
             key={idx}
-            className="bg-warning/10 text-warning dark:bg-warning/40 dark:text-warning inline-block max-w-22.5 truncate rounded px-1 py-0.5 text-[11px]"
+            className="bg-warning/10 text-warning dark:bg-warning/40 inline-block max-w-22.5 truncate rounded px-1 py-0.5 text-[11px]"
           >
             {typeof item === "object" ? JSON.stringify(item) : String(item)}
           </span>
@@ -263,7 +261,7 @@ export function ClickHouseComplexCell({
             onOpenDetail();
           }}
           className={cn(
-            "text-muted-foreground hover:bg-warning/20 hover:text-warning dark:hover:text-warning shrink-0 rounded p-0.5 transition-opacity",
+            "text-muted-foreground hover:bg-warning/20 hover:text-warning shrink-0 rounded p-0.5 transition-opacity",
             isHovered ? "opacity-100" : "opacity-0",
           )}
           title={t("datagrid.complexTypes.inspectTuple")}

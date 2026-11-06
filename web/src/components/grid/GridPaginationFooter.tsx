@@ -33,7 +33,7 @@ export const GridPaginationFooter = React.memo(function GridPaginationFooter({
   t,
 }: GridPaginationFooterProps) {
   return (
-    <div className="border-border bg-card/80 text-muted-foreground dark:border-border dark:bg-card/40 dark:text-muted-foreground flex h-8 min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 font-sans text-xs sm:px-4">
+    <div className="border-border bg-card/80 text-muted-foreground dark:bg-card/40 flex h-8 min-w-0 shrink-0 items-center justify-between gap-2 border-t px-3 font-sans text-xs sm:px-4">
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <span className="truncate">
           {totalCount === 0

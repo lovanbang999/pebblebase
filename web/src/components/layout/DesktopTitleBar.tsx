@@ -50,7 +50,7 @@ import {
   type WorkspaceCommandId,
 } from "./workspaceCommands";
 import packageJson from "../../../package.json";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 interface DesktopTitleBarProps {
   workspaceControl?: ReactNode;

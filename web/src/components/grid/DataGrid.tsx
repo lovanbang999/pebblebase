@@ -105,7 +105,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { ReferenceCell } from "./ReferenceCell";
 import { formatByteSize } from "./cell-inspector/cellContentTypeDetector";
 import { invalidateReferenceCache } from "@/lib/referenceCache";
@@ -1414,7 +1414,7 @@ export function DataGrid({
                     placeholder={t("grid.column.search.placeholder", {
                       column: col.name,
                     })}
-                    className="border-primary/80 focus:ring-primary dark:border-primary/80 bg-background text-foreground placeholder:text-muted-foreground dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground h-6 w-full rounded border py-0.5 pr-6 pl-7 font-mono text-xs shadow-sm focus:ring-1 focus:outline-none"
+                    className="border-primary/80 focus:ring-primary bg-background text-foreground placeholder:text-muted-foreground dark:bg-card h-6 w-full rounded border py-0.5 pr-6 pl-7 font-mono text-xs shadow-sm focus:ring-1 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -1423,7 +1423,7 @@ export function DataGrid({
                       e.stopPropagation();
                       handleClearColumnSearch(col.name);
                     }}
-                    className="text-muted-foreground hover:bg-muted hover:text-destructive dark:hover:bg-muted dark:hover:text-destructive absolute right-1 cursor-pointer rounded p-0.5 transition-colors"
+                    className="text-muted-foreground hover:bg-muted hover:text-destructive absolute right-1 cursor-pointer rounded p-0.5 transition-colors"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -1462,19 +1462,19 @@ export function DataGrid({
                     <Layers className="h-3 w-3 shrink-0 text-sky-400" />
                   </span>
                 )}
-                <span className="text-foreground dark:text-foreground truncate font-mono text-xs font-semibold">
+                <span className="text-foreground truncate font-mono text-xs font-semibold">
                   {col.name}
                 </span>
                 <Badge
                   variant="outline"
-                  className="border-border/60 bg-muted/60 text-muted-foreground dark:bg-muted/80 dark:text-muted-foreground h-4 px-1 py-0 font-mono text-[10px] font-normal dark:border-transparent"
+                  className="border-border/60 bg-muted/60 text-muted-foreground dark:bg-muted/80 h-4 px-1 py-0 font-mono text-[10px] font-normal dark:border-transparent"
                 >
                   {col.type}
                 </Badge>
                 {hasActiveFilter && (
                   <Badge
                     variant="outline"
-                    className="border-primary/30 bg-success/10 text-success dark:text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium"
+                    className="border-primary/30 bg-success/10 text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium"
                     title={`contains: ${activeSearchVal}`}
                   >
                     🔍
@@ -1490,8 +1490,8 @@ export function DataGrid({
                   className={cn(
                     "cursor-pointer rounded p-1 transition-all focus:outline-none",
                     hasActiveFilter
-                      ? "bg-success/10 text-success dark:text-success opacity-100"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground opacity-0 group-hover:opacity-100",
+                      ? "bg-success/10 text-success opacity-100"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground opacity-0 group-hover:opacity-100",
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -1503,12 +1503,12 @@ export function DataGrid({
                 </button>
 
                 {/* Sort indicator */}
-                <div className="text-muted-foreground group-hover:text-foreground dark:group-hover:text-foreground">
+                <div className="text-muted-foreground group-hover:text-foreground">
                   {isSorted ? (
                     sortDesc ? (
-                      <ArrowDown className="text-success dark:text-success h-3 w-3" />
+                      <ArrowDown className="text-success h-3 w-3" />
                     ) : (
-                      <ArrowUp className="text-success dark:text-success h-3 w-3" />
+                      <ArrowUp className="text-success h-3 w-3" />
                     )
                   ) : (
                     <ArrowUpDown className="h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -1522,7 +1522,7 @@ export function DataGrid({
                       <button
                         type="button"
                         title={t("analytics.columnMenu")}
-                        className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground cursor-pointer rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 focus:outline-none data-popup-open:opacity-100"
+                        className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer rounded p-1 opacity-0 transition-opacity group-hover:opacity-100 focus:outline-none data-popup-open:opacity-100"
                         onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
                       >
@@ -1532,19 +1532,19 @@ export function DataGrid({
                   />
                   <DropdownMenuContent
                     align="end"
-                    className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground z-50 w-48 border p-1 shadow-xl"
+                    className="border-border bg-background text-foreground dark:bg-card z-50 w-48 border p-1 shadow-xl"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenuItem
-                      className="text-primary hover:bg-primary/10 hover:text-primary dark:text-primary dark:hover:bg-primary/15 dark:hover:text-primary flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => setAnalyticsColumn(col)}
                     >
-                      <BarChart3 className="text-primary dark:text-primary h-3.5 w-3.5 shrink-0" />
+                      <BarChart3 className="text-primary h-3.5 w-3.5 shrink-0" />
                       <span>{t("analytics.openAnalytics")}</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => handleOpenColumnSearch(col.name)}
                     >
                       <Search className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
@@ -1555,10 +1555,10 @@ export function DataGrid({
                       </span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuSeparator className="bg-muted dark:bg-muted my-1" />
+                    <DropdownMenuSeparator className="bg-muted my-1" />
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => onSortChange(col.name, false)}
                     >
                       <ArrowUp className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
@@ -1566,7 +1566,7 @@ export function DataGrid({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => onSortChange(col.name, true)}
                     >
                       <ArrowDown className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
@@ -1575,18 +1575,18 @@ export function DataGrid({
 
                     {isSorted && (
                       <DropdownMenuItem
-                        className="text-warning hover:bg-warning/10 hover:text-warning dark:text-warning/90 dark:hover:bg-warning/10 dark:hover:text-warning flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                        className="text-warning hover:bg-warning/10 hover:text-warning dark:text-warning/90 flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                         onClick={() => onSortChange("", false)}
                       >
-                        <RotateCcw className="text-warning dark:text-warning h-3.5 w-3.5 shrink-0" />
+                        <RotateCcw className="text-warning h-3.5 w-3.5 shrink-0" />
                         <span>{t("analytics.clearSort")}</span>
                       </DropdownMenuItem>
                     )}
 
-                    <DropdownMenuSeparator className="bg-muted dark:bg-muted my-1" />
+                    <DropdownMenuSeparator className="bg-muted my-1" />
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => {
                         setFilterCol(col.name);
                       }}
@@ -1596,7 +1596,7 @@ export function DataGrid({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => {
                         navigator.clipboard.writeText(col.name);
                         setCopiedCol(col.name);
@@ -1778,7 +1778,7 @@ export function DataGrid({
                       });
                       setValueEditorOpen(true);
                     }}
-                    className="border-warning/40 bg-warning/15 text-warning hover:bg-warning/25 dark:border-warning/50 dark:bg-warning/25 dark:text-warning inline-flex cursor-pointer items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] font-semibold shadow-2xs transition-colors"
+                    className="border-warning/40 bg-warning/15 text-warning hover:bg-warning/25 dark:border-warning/50 dark:bg-warning/25 inline-flex cursor-pointer items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] font-semibold shadow-2xs transition-colors"
                     title={t(
                       "grid.largeCell.inspect",
                       "Click to inspect large payload",
@@ -1876,8 +1876,8 @@ export function DataGrid({
                   variant={boolVal ? "default" : "secondary"}
                   className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
                     boolVal
-                      ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 dark:text-success border"
-                      : "border-border bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground border dark:border-transparent"
+                      ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 border"
+                      : "border-border bg-muted text-muted-foreground border dark:border-transparent"
                   }`}
                 >
                   {String(boolVal)}
@@ -1888,7 +1888,7 @@ export function DataGrid({
             if (col.type === "binary") {
               return (
                 <div className="text-foreground flex items-center gap-1.5 font-mono text-xs">
-                  <span className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground inline-flex shrink-0 items-center rounded border px-1 py-0 font-mono text-[9px] font-semibold uppercase select-none">
+                  <span className="border-border bg-muted text-muted-foreground inline-flex shrink-0 items-center rounded border px-1 py-0 font-mono text-[9px] font-semibold uppercase select-none">
                     BIN
                   </span>
                   <span className="max-w-xs truncate">{String(val)}</span>
@@ -1898,7 +1898,7 @@ export function DataGrid({
 
             if (col.type === "uuid") {
               return (
-                <span className="text-foreground dark:text-foreground block truncate font-mono text-xs select-all">
+                <span className="text-foreground block truncate font-mono text-xs select-all">
                   {String(val)}
                 </span>
               );
@@ -1961,7 +1961,7 @@ export function DataGrid({
               : strVal;
 
             return (
-              <span className="text-foreground dark:text-foreground block truncate font-mono text-xs">
+              <span className="text-foreground block truncate font-mono text-xs">
                 {cleanStr}
               </span>
             );
@@ -2027,7 +2027,7 @@ export function DataGrid({
                     placeholder={t("grid.column.search.placeholder", {
                       column: extraColName,
                     })}
-                    className="border-warning/80 bg-background text-foreground placeholder:text-muted-foreground focus:ring-warning dark:border-warning/80 dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground h-6 w-full rounded border py-0.5 pr-6 pl-7 font-mono text-xs shadow-sm focus:ring-1 focus:outline-none"
+                    className="border-warning/80 bg-background text-foreground placeholder:text-muted-foreground focus:ring-warning dark:bg-card h-6 w-full rounded border py-0.5 pr-6 pl-7 font-mono text-xs shadow-sm focus:ring-1 focus:outline-none"
                   />
                   <button
                     type="button"
@@ -2036,7 +2036,7 @@ export function DataGrid({
                       e.stopPropagation();
                       handleClearColumnSearch(extraColName);
                     }}
-                    className="text-muted-foreground hover:bg-muted hover:text-destructive dark:hover:bg-muted dark:hover:text-destructive absolute right-1 cursor-pointer rounded p-0.5 transition-colors"
+                    className="text-muted-foreground hover:bg-muted hover:text-destructive absolute right-1 cursor-pointer rounded p-0.5 transition-colors"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -2093,7 +2093,7 @@ export function DataGrid({
                     "cursor-pointer rounded p-1 transition-all focus:outline-none",
                     hasActiveFilter
                       ? "bg-warning/10 text-warning opacity-100"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground opacity-0 group-hover:opacity-100",
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground opacity-0 group-hover:opacity-100",
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -2144,8 +2144,8 @@ export function DataGrid({
                 variant={val ? "default" : "secondary"}
                 className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
                   val
-                    ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 dark:text-success border"
-                    : "border-border bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground border dark:border-transparent"
+                    ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 border"
+                    : "border-border bg-muted text-muted-foreground border dark:border-transparent"
                 }`}
               >
                 {String(val)}
@@ -2163,7 +2163,7 @@ export function DataGrid({
             );
           }
           return (
-            <span className="text-foreground dark:text-foreground block truncate font-mono text-xs">
+            <span className="text-foreground block truncate font-mono text-xs">
               {String(val)}
             </span>
           );
@@ -2754,7 +2754,7 @@ export function DataGrid({
         />
       )}
       {showStats && activeSubView === "data" && (
-        <div className="border-border bg-card/50 dark:border-border shrink-0 border-b">
+        <div className="border-border bg-card/50 shrink-0 border-b">
           <QuickStatsBar
             table={table}
             stats={tableStats}
@@ -2809,7 +2809,7 @@ export function DataGrid({
               {draftSubmitError && (
                 <div
                   role="alert"
-                  className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/30 dark:text-destructive m-2 shrink-0 rounded border px-3 py-2 text-xs"
+                  className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/30 m-2 shrink-0 rounded border px-3 py-2 text-xs"
                 >
                   {draftSubmitError}
                 </div>
@@ -2824,9 +2824,9 @@ export function DataGrid({
                       table: table?.name,
                       defaultValue: `Rows in ${table?.name ?? "table"}`,
                     })}
-                    className="animate-in fade-in border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm duration-150"
+                    className="animate-in fade-in border-border w-full caption-bottom border-collapse border-b text-left text-sm duration-150"
                   >
-                    <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
+                    <TableHeader className="border-border bg-card sticky top-0 z-10 border-b">
                       <TableRow>
                         <TableHead className="border-border text-muted-foreground dark:border-border/80 w-12 px-3 py-2 font-mono text-xs font-medium not-last:border-r">
                           #
@@ -2834,10 +2834,10 @@ export function DataGrid({
                         {table?.columns?.map((c) => (
                           <TableHead
                             key={c.name}
-                            className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
+                            className="border-border text-muted-foreground dark:border-border/80 h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
                           >
                             <div className="flex items-center gap-1.5 py-1">
-                              <Skeleton className="bg-muted/80 dark:bg-muted/80 size-3.5 shrink-0 rounded" />
+                              <Skeleton className="bg-muted/80 size-3.5 shrink-0 rounded" />
                               <span className="text-foreground font-mono text-xs font-semibold">
                                 {c.name}
                               </span>
@@ -2864,7 +2864,7 @@ export function DataGrid({
                           className="h-9.25 hover:bg-transparent"
                         >
                           <TableCell className="border-border/80 text-muted-foreground dark:border-border/40 w-12 px-3 py-2 font-mono text-xs not-last:border-r">
-                            <Skeleton className="bg-muted/70 dark:bg-muted/70 h-3 w-4 rounded" />
+                            <Skeleton className="bg-muted/70 h-3 w-4 rounded" />
                           </TableCell>
                           {table?.columns?.map((c, cIdx) => {
                             const isNumeric =
@@ -2881,22 +2881,22 @@ export function DataGrid({
                                 {isPk ? (
                                   <div className="flex items-center gap-1.5">
                                     <Skeleton className="bg-warning/40 dark:bg-warning/30 size-3 shrink-0 rounded-full" />
-                                    <Skeleton className="bg-muted dark:bg-muted h-3 w-8 rounded" />
+                                    <Skeleton className="bg-muted h-3 w-8 rounded" />
                                   </div>
                                 ) : isBool ? (
                                   <Skeleton className="bg-success/20 dark:bg-success/15 h-4 w-12 rounded-full" />
                                 ) : isDate ? (
-                                  <Skeleton className="bg-muted/80 dark:bg-muted/80 h-3 w-28 rounded" />
+                                  <Skeleton className="bg-muted/80 h-3 w-28 rounded" />
                                 ) : isNumeric ? (
                                   <Skeleton
-                                    className="bg-muted/80 dark:bg-muted/80 h-3 rounded"
+                                    className="bg-muted/80 h-3 rounded"
                                     style={{
                                       width: `${32 + ((rowIdx * 17 + cIdx * 13) % 40)}px`,
                                     }}
                                   />
                                 ) : (
                                   <Skeleton
-                                    className="bg-muted/90 dark:bg-muted/90 h-3 rounded"
+                                    className="bg-muted/90 h-3 rounded"
                                     style={{
                                       width: `${55 + ((rowIdx * 23 + cIdx * 31) % 110)}px`,
                                       maxWidth: "85%",
@@ -3000,16 +3000,16 @@ export function DataGrid({
                     table: table?.name,
                     defaultValue: `Rows in ${table?.name ?? "table"}`,
                   })}
-                  className="studio-data-table border-border dark:border-border w-full caption-bottom border-collapse border-b text-left text-sm"
+                  className="studio-data-table border-border w-full caption-bottom border-collapse border-b text-left text-sm"
                 >
-                  <TableHeader className="border-border bg-card dark:border-border dark:bg-card sticky top-0 z-10 border-b">
+                  <TableHeader className="border-border bg-card sticky top-0 z-10 border-b">
                     {reactTable.getHeaderGroups().map((headerGroup) => (
                       <TableRow key={headerGroup.id}>
                         {headerGroup.headers.map((header) => (
                           <TableHead
                             key={header.id}
                             style={{ width: header.getSize() }}
-                            className="border-border text-muted-foreground dark:border-border/80 dark:text-muted-foreground relative h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
+                            className="border-border text-muted-foreground dark:border-border/80 relative h-auto px-2.5 py-1 text-xs font-medium whitespace-nowrap not-last:border-r"
                           >
                             {flexRender(
                               header.column.columnDef.header,

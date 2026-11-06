@@ -16,7 +16,7 @@ export function ProjectStageEditor({
         value={config.rawJson}
         onChange={(e) => onChange({ ...config, rawJson: e.target.value })}
         rows={4}
-        className="focus:ring-primary border-border bg-muted text-foreground dark:border-border dark:bg-background dark:text-foreground w-full rounded border p-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
+        className="focus:ring-primary border-border bg-muted text-foreground dark:bg-background w-full rounded border p-2 font-mono text-xs focus:ring-1 focus:outline-hidden"
         placeholder='{ "_id": 0, "name": 1 }'
       />
     );
@@ -74,7 +74,7 @@ export function ProjectStageEditor({
                 mode: e.target.value as ProjectFieldRule["mode"],
               })
             }
-            className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground h-7 rounded border px-2 font-mono text-xs"
+            className="border-border bg-background text-foreground dark:bg-card h-7 rounded border px-2 font-mono text-xs"
           >
             <option value="include">{t("pipeline.mode_include")}</option>
             <option value="exclude">{t("pipeline.mode_exclude")}</option>
@@ -104,7 +104,7 @@ export function ProjectStageEditor({
         variant="ghost"
         size="sm"
         onClick={handleAddField}
-        className="text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
+        className="text-success hover:bg-success/10 dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
       >
         <Plus className="mr-1 size-3" />
         <span>{t("pipeline.add_project_field")}</span>

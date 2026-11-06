@@ -150,7 +150,7 @@ export function LoginScreen() {
                     {t("auth.password")}
                   </label>
                   {capsLockOn && (
-                    <span className="text-warning dark:text-warning flex items-center gap-1 text-[10px] font-medium">
+                    <span className="text-warning flex items-center gap-1 text-[10px] font-medium">
                       <AlertCircle className="h-3 w-3" />
                       {t("auth.capsLockOn")}
                     </span>

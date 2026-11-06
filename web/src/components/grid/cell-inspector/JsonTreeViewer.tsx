@@ -35,17 +35,11 @@ interface TreeNodeProps {
 
 function renderValueBadge(val: unknown) {
   if (val === null) {
-    return (
-      <span className="text-muted-foreground dark:text-muted-foreground font-mono italic">
-        null
-      </span>
-    );
+    return <span className="text-muted-foreground font-mono italic">null</span>;
   }
   if (val === undefined) {
     return (
-      <span className="text-muted-foreground dark:text-muted-foreground font-mono italic">
-        undefined
-      </span>
+      <span className="text-muted-foreground font-mono italic">undefined</span>
     );
   }
   if (typeof val === "boolean") {
@@ -53,8 +47,8 @@ function renderValueBadge(val: unknown) {
       <span
         className={
           val
-            ? "text-success dark:text-success font-mono font-medium"
-            : "text-destructive dark:text-destructive font-mono font-medium"
+            ? "text-success font-mono font-medium"
+            : "text-destructive font-mono font-medium"
         }
       >
         {String(val)}
@@ -63,17 +57,11 @@ function renderValueBadge(val: unknown) {
   }
   if (typeof val === "number") {
     return (
-      <span className="text-warning dark:text-warning font-mono font-medium">
-        {String(val)}
-      </span>
+      <span className="text-warning font-mono font-medium">{String(val)}</span>
     );
   }
   if (typeof val === "string") {
-    return (
-      <span className="text-success dark:text-success font-mono">
-        &quot;{val}&quot;
-      </span>
-    );
+    return <span className="text-success font-mono">&quot;{val}&quot;</span>;
   }
   return (
     <span className="text-muted-foreground dark:text-foreground font-mono">
@@ -129,7 +117,7 @@ function TreeNode({
                 : `Expand ${keyName || "root"}`
             }
             onClick={() => onToggleExpand(path)}
-            className="text-muted-foreground hover:text-foreground focus-visible:ring-primary dark:text-muted-foreground dark:hover:text-foreground flex h-4 w-4 shrink-0 items-center justify-center rounded focus-visible:ring-2"
+            className="text-muted-foreground hover:text-foreground focus-visible:ring-primary flex h-4 w-4 shrink-0 items-center justify-center rounded focus-visible:ring-2"
           >
             {isExpanded ? (
               <ChevronDown className="h-3.5 w-3.5" />
@@ -148,7 +136,7 @@ function TreeNode({
         {isObject ? (
           <span
             onClick={() => onToggleExpand(path)}
-            className="text-muted-foreground dark:text-muted-foreground cursor-pointer hover:underline"
+            className="text-muted-foreground cursor-pointer hover:underline"
           >
             {isArray ? `Array(${keys.length}) [` : `Object {${keys.length}}`}
             {!isExpanded && (isArray ? " ... ]" : " ... }")}
@@ -167,7 +155,7 @@ function TreeNode({
               e.stopPropagation();
               onCopyPath(path);
             }}
-            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary dark:hover:bg-muted dark:hover:text-foreground rounded p-1 focus-visible:ring-2"
+            className="text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-primary rounded p-1 focus-visible:ring-2"
           >
             <Copy className="h-3 w-3" />
           </button>
@@ -314,16 +302,16 @@ export function JsonTreeViewer({
       className="bg-background flex h-full flex-col overflow-hidden"
     >
       {/* Sub-toolbar */}
-      <div className="border-border bg-card/70 dark:border-border dark:bg-card/50 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 text-xs">
+      <div className="border-border bg-card/70 dark:bg-card/50 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2 text-xs">
         <div className="flex items-center gap-1.5">
-          <div className="border-border bg-background dark:border-border dark:bg-card inline-flex rounded-md border p-0.5 shadow-2xs">
+          <div className="border-border bg-background dark:bg-card inline-flex rounded-md border p-0.5 shadow-2xs">
             <button
               type="button"
               onClick={() => setViewMode("tree")}
               className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
                 viewMode === "tree"
-                  ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
-                  : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <ListTree className="h-3.5 w-3.5" />
@@ -334,8 +322,8 @@ export function JsonTreeViewer({
               onClick={() => setViewMode("code")}
               className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
                 viewMode === "code"
-                  ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
-                  : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <Code2 className="h-3.5 w-3.5" />
@@ -349,7 +337,7 @@ export function JsonTreeViewer({
                 type="button"
                 onClick={handleExpandAll}
                 title={t("cellInspector.expandAll")}
-                className="text-muted-foreground hover:bg-muted hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground rounded p-1"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
               >
                 <Maximize2 className="h-3.5 w-3.5" />
               </button>
@@ -357,7 +345,7 @@ export function JsonTreeViewer({
                 type="button"
                 onClick={handleCollapseAll}
                 title={t("cellInspector.collapseAll")}
-                className="text-muted-foreground hover:bg-muted hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground rounded p-1"
+                className="text-muted-foreground hover:bg-muted hover:text-foreground rounded p-1"
               >
                 <Minimize2 className="h-3.5 w-3.5" />
               </button>
@@ -373,7 +361,7 @@ export function JsonTreeViewer({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t("cellInspector.searchJsonPlaceholder")}
-              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-border dark:border-border dark:bg-card dark:text-foreground dark:focus:border-border h-7 w-44 rounded-md border pr-2 pl-8 text-xs outline-none"
+              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-border dark:bg-card h-7 w-44 rounded-md border pr-2 pl-8 text-xs outline-none"
             />
           </div>
         ) : (
@@ -381,14 +369,14 @@ export function JsonTreeViewer({
             <button
               type="button"
               onClick={handleFormatCode}
-              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted rounded border px-2 py-1 font-mono text-[11px] font-medium"
+              className="border-border bg-background text-foreground hover:bg-muted dark:bg-card rounded border px-2 py-1 font-mono text-[11px] font-medium"
             >
               {t("cellInspector.formatJson")}
             </button>
             <button
               type="button"
               onClick={handleMinifyCode}
-              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted rounded border px-2 py-1 font-mono text-[11px] font-medium"
+              className="border-border bg-background text-foreground hover:bg-muted dark:bg-card rounded border px-2 py-1 font-mono text-[11px] font-medium"
             >
               {t("cellInspector.minify")}
             </button>
@@ -397,14 +385,14 @@ export function JsonTreeViewer({
       </div>
 
       {copiedPath && (
-        <div className="border-primary/20 bg-success/10 text-success dark:text-success flex items-center gap-1.5 border-b px-3 py-1 font-mono text-[11px]">
+        <div className="border-primary/20 bg-success/10 text-success flex items-center gap-1.5 border-b px-3 py-1 font-mono text-[11px]">
           <Check className="h-3 w-3" />
           <span>{t("cellInspector.copiedPath", { path: copiedPath })}</span>
         </div>
       )}
 
       {syntaxError && viewMode === "code" && (
-        <div className="border-warning/20 bg-warning/10 text-warning dark:text-warning flex items-center gap-1.5 border-b px-3 py-1 text-[11px]">
+        <div className="border-warning/20 bg-warning/10 text-warning flex items-center gap-1.5 border-b px-3 py-1 text-[11px]">
           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
           <span className="truncate">{syntaxError}</span>
         </div>

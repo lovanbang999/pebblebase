@@ -135,9 +135,9 @@ export function AddKeyModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border bg-background dark:border-border dark:bg-card max-w-md">
+      <DialogContent className="border-border bg-background dark:bg-card max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 text-base">
+          <DialogTitle className="text-foreground flex items-center gap-2 text-base">
             <KeyRound className="text-destructive h-4 w-4" />
             {t("redis.createKey.title")}
           </DialogTitle>
@@ -145,7 +145,7 @@ export function AddKeyModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           {error && (
-            <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2.5 text-xs">
+            <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-md border p-2.5 text-xs">
               {error}
             </div>
           )}
@@ -259,7 +259,7 @@ export function AddKeyModal({
               type="submit"
               size="sm"
               disabled={loading}
-              className="bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive text-white"
+              className="bg-destructive hover:bg-destructive text-white"
             >
               {loading ? (
                 <>

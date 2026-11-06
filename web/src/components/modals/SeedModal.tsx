@@ -24,7 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 interface SeedModalProps {
   isOpen: boolean;
@@ -106,25 +106,25 @@ export function SeedModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border bg-background dark:border-border dark:bg-card flex max-h-[90vh] w-[92vw] max-w-3xl flex-col overflow-hidden rounded-xl border p-0 shadow-2xl">
+      <DialogContent className="border-border bg-background dark:bg-card flex max-h-[90vh] w-[92vw] max-w-3xl flex-col overflow-hidden rounded-xl border p-0 shadow-2xl">
         {/* Header */}
-        <DialogHeader className="border-border bg-card/50 dark:border-border dark:bg-card/30 border-b p-4 md:p-5">
+        <DialogHeader className="border-border bg-card/50 dark:bg-card/30 border-b p-4 md:p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="border-primary/20 bg-success/10 text-success dark:text-success rounded-lg border p-2">
+              <div className="border-primary/20 bg-success/10 text-success rounded-lg border p-2">
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 font-mono text-base font-bold tracking-tight">
+                <DialogTitle className="text-foreground flex items-center gap-2 font-mono text-base font-bold tracking-tight">
                   <span>{t("seed.title")}</span>
                   <Badge
                     variant="outline"
-                    className="border-primary/20 bg-success/10 text-success dark:text-success font-mono text-[11px]"
+                    className="border-primary/20 bg-success/10 text-success font-mono text-[11px]"
                   >
                     {tableName}
                   </Badge>
                 </DialogTitle>
-                <DialogDescription className="text-muted-foreground dark:text-muted-foreground mt-0.5 text-xs">
+                <DialogDescription className="text-muted-foreground mt-0.5 text-xs">
                   {t("seed.description")}
                 </DialogDescription>
               </div>
@@ -135,7 +135,7 @@ export function SeedModal({
         {/* Content Body */}
         <div className="flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
           {/* Controls bar */}
-          <div className="border-border bg-card/60 dark:border-border dark:bg-card/40 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
+          <div className="border-border bg-card/60 dark:bg-card/40 flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3">
             <div className="flex items-center gap-2">
               <label
                 htmlFor="seed-count"
@@ -162,7 +162,7 @@ export function SeedModal({
                 }}
                 className="h-8 w-24 font-mono text-xs"
               />
-              <span className="text-muted-foreground dark:text-muted-foreground font-mono text-[11px]">
+              <span className="text-muted-foreground font-mono text-[11px]">
                 {t("seed.countHelp")}
               </span>
             </div>
@@ -185,7 +185,7 @@ export function SeedModal({
 
           {/* Error notice */}
           {error && (
-            <div className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 dark:text-destructive flex items-center gap-2 rounded-lg border p-3 font-mono text-xs">
+            <div className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive dark:bg-destructive/40 flex items-center gap-2 rounded-lg border p-3 font-mono text-xs">
               <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -195,9 +195,9 @@ export function SeedModal({
           {seedResult && (
             <div className="space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="text-muted-foreground dark:text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
+                <div className="text-muted-foreground flex items-center gap-1.5 font-mono text-xs">
                   <Layers className="text-success h-3.5 w-3.5 shrink-0" />
-                  <span className="text-foreground dark:text-foreground font-semibold">
+                  <span className="text-foreground font-semibold">
                     {t("seed.tablesIncluded")}
                   </span>
                   <div className="flex flex-wrap items-center gap-1">
@@ -211,8 +211,8 @@ export function SeedModal({
                           className={cn(
                             "h-4 px-1.5 py-0 font-mono text-[10px]",
                             tbl === tableName
-                              ? "border-primary/30 bg-success/15 text-success dark:text-success font-bold"
-                              : "border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground",
+                              ? "border-primary/30 bg-success/15 text-success font-bold"
+                              : "border-border bg-muted text-muted-foreground",
                           )}
                         >
                           {tbl}
@@ -233,7 +233,7 @@ export function SeedModal({
               </div>
 
               {/* CodeMirror preview */}
-              <div className="border-border dark:border-border overflow-hidden rounded-lg border text-xs shadow-inner">
+              <div className="border-border overflow-hidden rounded-lg border text-xs shadow-inner">
                 <CodeMirror
                   value={seedResult.sql}
                   height="340px"
@@ -254,7 +254,7 @@ export function SeedModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="border-border bg-card/50 dark:border-border dark:bg-card/30 flex items-center justify-between gap-2 border-t p-3 md:p-4">
+        <div className="border-border bg-card/50 dark:bg-card/30 flex items-center justify-between gap-2 border-t p-3 md:p-4">
           <Button
             type="button"
             variant="outline"
@@ -274,7 +274,7 @@ export function SeedModal({
               disabled={!seedResult?.sql}
               className={cn(
                 "h-8 cursor-pointer gap-1.5 px-3 font-mono text-xs transition-colors",
-                copied && "border-primary text-success dark:text-success",
+                copied && "border-primary text-success",
               )}
             >
               {copied ? (

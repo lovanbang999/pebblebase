@@ -271,9 +271,9 @@ export function RedisPubSubMonitor({
                 variant="outline"
                 className={
                   isConnected
-                    ? "border-primary/30 bg-success/10 text-success dark:text-success"
+                    ? "border-primary/30 bg-success/10 text-success"
                     : isConnecting
-                      ? "border-warning/30 bg-warning/10 text-warning dark:text-warning"
+                      ? "border-warning/30 bg-warning/10 text-warning"
                       : "border-muted-foreground/30 bg-muted/40 text-muted-foreground"
                 }
               >
@@ -400,7 +400,7 @@ export function RedisPubSubMonitor({
             <Badge
               key={`pat-${pat}`}
               variant="secondary"
-              className="border-primary/20 bg-primary/10 text-primary dark:text-primary flex items-center gap-1.5 border px-2 py-0.5 font-mono text-xs"
+              className="border-primary/20 bg-primary/10 text-primary flex items-center gap-1.5 border px-2 py-0.5 font-mono text-xs"
             >
               <span>pattern:{pat}</span>
               <button
@@ -514,7 +514,7 @@ export function RedisPubSubMonitor({
                         {msg.pattern && (
                           <Badge
                             variant="outline"
-                            className="border-primary/30 bg-primary/10 text-primary dark:text-primary font-mono text-[10px]"
+                            className="border-primary/30 bg-primary/10 text-primary font-mono text-[10px]"
                           >
                             pat:{msg.pattern}
                           </Badge>
@@ -547,7 +547,7 @@ export function RedisPubSubMonitor({
                     {/* Payload content */}
                     <div className="bg-muted/40 text-foreground overflow-x-auto rounded p-2.5 text-xs leading-relaxed break-all whitespace-pre-wrap">
                       {isJson ? (
-                        <pre className="text-success dark:text-success font-mono text-xs">
+                        <pre className="text-success font-mono text-xs">
                           {formatJsonString(msg.payload)}
                         </pre>
                       ) : (
@@ -616,7 +616,7 @@ export function RedisPubSubMonitor({
               <div
                 className={`flex items-start gap-2 rounded-md border p-2.5 text-xs ${
                   publishFeedback.type === "success"
-                    ? "border-primary/20 bg-success/10 text-success dark:text-success"
+                    ? "border-primary/20 bg-success/10 text-success"
                     : "bg-destructive/10 text-destructive border-destructive/20"
                 }`}
               >

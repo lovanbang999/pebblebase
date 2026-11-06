@@ -292,17 +292,17 @@ export function generateStageObject(
 export function getStageBadgeStyle(type: StageType): string {
   switch (type) {
     case "$match":
-      return "bg-warning/10 text-warning dark:text-warning border-warning/30";
+      return "bg-warning/10 text-warning border-warning/30";
     case "$group":
-      return "bg-success/10 text-success dark:text-success border-primary/30";
+      return "bg-success/10 text-success border-primary/30";
     case "$sort":
       return "bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/30";
     case "$limit":
-      return "bg-primary/10 text-primary dark:text-primary border-primary/30";
+      return "bg-primary/10 text-primary border-primary/30";
     case "$project":
-      return "bg-primary/10 text-primary dark:text-primary border-primary/30";
+      return "bg-primary/10 text-primary border-primary/30";
     case "$lookup":
-      return "bg-destructive/10 text-destructive dark:text-destructive border-destructive/30";
+      return "bg-destructive/10 text-destructive border-destructive/30";
     case "$unwind":
       return "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/30";
     case "$facet":

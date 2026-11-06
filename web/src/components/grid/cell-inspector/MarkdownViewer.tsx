@@ -79,7 +79,7 @@ export function MarkdownViewer({
         parts.push(
           <code
             key={keyIdx++}
-            className="bg-muted dark:bg-muted rounded px-1.5 py-0.5 font-mono text-[11px] text-pink-600 dark:text-pink-400"
+            className="bg-muted rounded px-1.5 py-0.5 font-mono text-[11px] text-pink-600 dark:text-pink-400"
           >
             {token.slice(1, -1)}
           </code>,
@@ -92,10 +92,7 @@ export function MarkdownViewer({
         );
       } else if (token.startsWith("*") && token.endsWith("*")) {
         parts.push(
-          <em
-            key={keyIdx++}
-            className="text-foreground dark:text-foreground italic"
-          >
+          <em key={keyIdx++} className="text-foreground italic">
             {token.slice(1, -1)}
           </em>,
         );
@@ -121,7 +118,7 @@ export function MarkdownViewer({
             parts.push(
               <span
                 key={keyIdx++}
-                className="text-muted-foreground dark:text-muted-foreground"
+                className="text-muted-foreground"
                 title="Unsafe link disabled"
               >
                 {titleMatch[1]}
@@ -167,7 +164,7 @@ export function MarkdownViewer({
           elements.push(
             <div
               key={blockIdx}
-              className="group border-border bg-code dark:border-border my-3 overflow-hidden rounded-lg border font-mono text-xs"
+              className="group border-border bg-code my-3 overflow-hidden rounded-lg border font-mono text-xs"
             >
               <div className="border-border bg-code/80 text-muted-foreground flex items-center justify-between border-b px-3 py-1.5">
                 <span className="text-[11px] tracking-wider uppercase">
@@ -227,7 +224,7 @@ export function MarkdownViewer({
             key={keyIdx++}
             className="border-border my-3 overflow-x-auto rounded-lg border"
           >
-            <table className="divide-border dark:divide-border min-w-full divide-y text-left text-xs">
+            <table className="divide-border min-w-full divide-y text-left text-xs">
               <thead className="bg-card">
                 <tr>
                   {headers.map((h, hIdx) => (
@@ -240,7 +237,7 @@ export function MarkdownViewer({
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-border bg-background dark:divide-border/60 dark:bg-background divide-y">
+              <tbody className="divide-border bg-background dark:divide-border/60 divide-y">
                 {bodyRows.map((row, rIdx) => (
                   <tr
                     key={rIdx}
@@ -265,7 +262,7 @@ export function MarkdownViewer({
         elements.push(
           <h1
             key={keyIdx++}
-            className="border-border text-foreground dark:border-border dark:text-foreground mt-4 mb-2 border-b pb-1 text-lg font-bold"
+            className="border-border text-foreground mt-4 mb-2 border-b pb-1 text-lg font-bold"
           >
             {renderInline(line.slice(2))}
           </h1>,
@@ -300,7 +297,7 @@ export function MarkdownViewer({
         elements.push(
           <blockquote
             key={keyIdx++}
-            className="border-primary bg-primary/50 text-foreground dark:bg-primary/20 dark:text-foreground my-2 border-l-4 py-1 pl-3 text-xs italic"
+            className="border-primary bg-primary/50 text-foreground dark:bg-primary/20 my-2 border-l-4 py-1 pl-3 text-xs italic"
           >
             {renderInline(line.slice(2))}
           </blockquote>,
@@ -369,15 +366,15 @@ export function MarkdownViewer({
   return (
     <div className="bg-background flex h-full flex-col overflow-hidden">
       {/* Sub-toolbar */}
-      <div className="border-border bg-card/70 dark:border-border dark:bg-card/50 flex items-center justify-between border-b px-3 py-2 text-xs">
-        <div className="border-border bg-background dark:border-border dark:bg-card inline-flex rounded-md border p-0.5 shadow-2xs">
+      <div className="border-border bg-card/70 dark:bg-card/50 flex items-center justify-between border-b px-3 py-2 text-xs">
+        <div className="border-border bg-background dark:bg-card inline-flex rounded-md border p-0.5 shadow-2xs">
           <button
             type="button"
             onClick={() => setViewMode("preview")}
             className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
               viewMode === "preview"
-                ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Eye className="h-3.5 w-3.5" />
@@ -388,8 +385,8 @@ export function MarkdownViewer({
             onClick={() => setViewMode("raw")}
             className={`flex items-center gap-1 rounded px-2 py-1 font-medium transition-colors ${
               viewMode === "raw"
-                ? "bg-muted text-foreground dark:bg-muted dark:text-foreground"
-                : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Edit3 className="h-3.5 w-3.5" />
@@ -409,7 +406,7 @@ export function MarkdownViewer({
             value={rawText}
             readOnly={isReadOnly}
             onChange={(e) => handleRawChange(e.target.value)}
-            className="border-border bg-background text-foreground focus:border-border dark:border-border dark:bg-card dark:text-foreground dark:focus:border-border h-full w-full resize-none rounded border p-3 font-mono text-xs leading-relaxed outline-none"
+            className="border-border bg-background text-foreground focus:border-border dark:bg-card h-full w-full resize-none rounded border p-3 font-mono text-xs leading-relaxed outline-none"
             placeholder={t("cellInspector.markdownPlaceholder")}
           />
         )}

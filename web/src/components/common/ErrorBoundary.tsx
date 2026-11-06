@@ -31,20 +31,20 @@ function ErrorFallbackView({
 
   return (
     <div className="bg-card/60 dark:bg-card flex h-full w-full flex-1 flex-col items-center justify-center p-6 text-center select-none">
-      <div className="border-border bg-background dark:border-border dark:bg-card w-full max-w-md space-y-4 rounded-2xl border p-6 shadow-xl">
-        <div className="border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive mx-auto flex size-12 items-center justify-center rounded-full border">
+      <div className="border-border bg-background dark:bg-card w-full max-w-md space-y-4 rounded-2xl border p-6 shadow-xl">
+        <div className="border-destructive/30 bg-destructive/10 text-destructive dark:bg-destructive/20 mx-auto flex size-12 items-center justify-center rounded-full border">
           <AlertTriangle className="size-6" />
         </div>
 
         <div className="space-y-1">
-          <h3 className="text-foreground dark:text-foreground text-base font-semibold">
+          <h3 className="text-foreground text-base font-semibold">
             {fallbackTitle ||
               t(
                 "errorBoundary.defaultTitle",
                 "Something went wrong in this view",
               )}
           </h3>
-          <p className="text-muted-foreground dark:text-muted-foreground font-mono text-xs leading-relaxed wrap-break-word">
+          <p className="text-muted-foreground font-mono text-xs leading-relaxed wrap-break-word">
             {errorMessage ||
               fallbackMessage ||
               t(

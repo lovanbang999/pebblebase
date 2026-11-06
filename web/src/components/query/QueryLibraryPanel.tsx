@@ -38,7 +38,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { QueryHistoryTab } from "./QueryHistoryTab";
 import {
   formatRelativeTime,
@@ -271,7 +271,7 @@ export function QueryLibraryPanel({
               {q.title}
             </span>
             {q.folder && (
-              <span className="py-0.2 border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted/80 dark:text-foreground inline-flex shrink-0 items-center gap-1 rounded border px-1 font-mono text-[9px]">
+              <span className="py-0.2 border-border bg-muted text-muted-foreground dark:bg-muted/80 dark:text-foreground inline-flex shrink-0 items-center gap-1 rounded border px-1 font-mono text-[9px]">
                 <Folder className="text-muted-foreground h-2.5 w-2.5" />
                 {q.folder}
               </span>
@@ -308,7 +308,7 @@ export function QueryLibraryPanel({
               e.stopPropagation();
               copyQuery(q);
             }}
-            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground rounded p-1 transition-colors"
+            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted rounded p-1 transition-colors"
             title={t("savedQuery.copyQuery")}
           >
             {copiedId === q.id ? (
@@ -323,7 +323,7 @@ export function QueryLibraryPanel({
               e.stopPropagation();
               handleContextMenu(e, q);
             }}
-            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground rounded p-1 transition-colors"
+            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted rounded p-1 transition-colors"
             title="More options"
           >
             <MoreHorizontal className="h-3 w-3" />
@@ -381,8 +381,8 @@ export function QueryLibraryPanel({
         accent === "yellow"
           ? "text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300"
           : accent === "emerald"
-            ? "text-success hover:text-success dark:text-success dark:hover:text-success"
-            : "text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground",
+            ? "text-success hover:text-success"
+            : "text-muted-foreground hover:text-foreground",
       )}
     >
       {open ? (
@@ -402,7 +402,7 @@ export function QueryLibraryPanel({
           accent === "yellow"
             ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
             : accent === "emerald"
-              ? "bg-success/15 text-success dark:text-success"
+              ? "bg-success/15 text-success"
               : "bg-muted/70 text-muted-foreground dark:bg-muted dark:text-foreground",
         )}
       >
@@ -413,12 +413,12 @@ export function QueryLibraryPanel({
 
   // --------------------------------------------------------------------------
   return (
-    <div className="bg-card/50 text-foreground dark:bg-background/70 dark:text-foreground flex h-full flex-col">
+    <div className="bg-card/50 text-foreground dark:bg-background/70 flex h-full flex-col">
       {/* Header */}
-      <div className="border-border bg-background/80 dark:border-border dark:bg-card/60 relative border-b px-3 pt-3 pb-2.5">
+      <div className="border-border bg-background/80 dark:bg-card/60 relative border-b px-3 pt-3 pb-2.5">
         <div className="flex items-center gap-2">
           <div className="border-primary/25 bg-success/10 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border">
-            <Library className="text-success dark:text-success h-3.5 w-3.5" />
+            <Library className="text-success h-3.5 w-3.5" />
           </div>
           <div className="min-w-0 flex-1">
             <span className="text-foreground block text-xs font-semibold tracking-tight">
@@ -433,23 +433,23 @@ export function QueryLibraryPanel({
             </span>
           </div>
           {loading && activeTab === "library" && (
-            <Loader2 className="text-success dark:text-success h-3.5 w-3.5 shrink-0 animate-spin" />
+            <Loader2 className="text-success h-3.5 w-3.5 shrink-0 animate-spin" />
           )}
         </div>
 
         {/* Tab Switcher - Segmented Control */}
-        <div className="border-border bg-muted/90 dark:border-border dark:bg-card mt-2.5 flex rounded-lg border p-0.5">
+        <div className="border-border bg-muted/90 dark:bg-card mt-2.5 flex rounded-lg border p-0.5">
           <button
             type="button"
             onClick={() => setActiveTab("library")}
             className={cn(
               "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-medium transition-all",
               activeTab === "library"
-                ? "bg-background text-foreground dark:bg-muted dark:text-foreground font-semibold shadow-xs"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/50 dark:hover:text-foreground",
+                ? "bg-background text-foreground dark:bg-muted font-semibold shadow-xs"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             )}
           >
-            <Library className="text-success dark:text-success h-3.5 w-3.5" />
+            <Library className="text-success h-3.5 w-3.5" />
             <span>{t("savedQuery.tabs.library")}</span>
           </button>
           <button
@@ -458,8 +458,8 @@ export function QueryLibraryPanel({
             className={cn(
               "flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md py-1.5 text-[11px] font-medium transition-all",
               activeTab === "history"
-                ? "bg-background text-foreground dark:bg-muted dark:text-foreground font-semibold shadow-xs"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted/50 dark:hover:text-foreground",
+                ? "bg-background text-foreground dark:bg-muted font-semibold shadow-xs"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
             )}
           >
             <History className="h-3.5 w-3.5" />
@@ -477,20 +477,20 @@ export function QueryLibraryPanel({
       ) : (
         <>
           {/* Search */}
-          <div className="border-border/80 dark:border-border/80 border-b px-2.5 py-2">
+          <div className="border-border/80 border-b px-2.5 py-2">
             <div className="relative">
               <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2" />
               <Input
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={t("savedQuery.search")}
-                className="focus-visible:border-primary focus-visible:ring-primary/30 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card/90 dark:text-foreground dark:placeholder:text-muted-foreground h-7.5 rounded-md pl-8 text-xs shadow-2xs transition-all focus-visible:ring-1"
+                className="focus-visible:border-primary focus-visible:ring-primary/30 border-border bg-background text-foreground placeholder:text-muted-foreground dark:bg-card/90 h-7.5 rounded-md pl-8 text-xs shadow-2xs transition-all focus-visible:ring-1"
               />
               {searchTerm && (
                 <button
                   type="button"
                   onClick={() => setSearchTerm("")}
-                  className="text-muted-foreground hover:text-foreground dark:hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer"
+                  className="text-muted-foreground hover:text-foreground absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer"
                 >
                   <span className="text-[10px]">✕</span>
                 </button>
@@ -500,7 +500,7 @@ export function QueryLibraryPanel({
 
           {/* Folder & Tag filter chips */}
           {(allFolders.length > 0 || allTags.length > 0) && (
-            <div className="border-border/80 dark:border-border/80 flex flex-col gap-1.5 border-b px-2.5 py-2">
+            <div className="border-border/80 flex flex-col gap-1.5 border-b px-2.5 py-2">
               {/* Folder filter dropdown / chips */}
               {allFolders.length > 0 && (
                 <div className="no-scrollbar flex items-center gap-1 overflow-x-auto py-0.5">
@@ -513,8 +513,8 @@ export function QueryLibraryPanel({
                     className={cn(
                       "shrink-0 cursor-pointer rounded border px-2 py-0.5 font-mono text-[9px] transition-all",
                       activeFolderFilter === "__all__"
-                        ? "border-primary/40 bg-success/15 text-success dark:text-success font-semibold shadow-2xs"
-                        : "border-border bg-background text-muted-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted/60",
+                        ? "border-primary/40 bg-success/15 text-success font-semibold shadow-2xs"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted dark:bg-card dark:hover:bg-muted/60",
                     )}
                   >
                     All
@@ -531,8 +531,8 @@ export function QueryLibraryPanel({
                       className={cn(
                         "shrink-0 cursor-pointer rounded border px-2 py-0.5 font-mono text-[9px] transition-all",
                         activeFolderFilter === fName
-                          ? "border-primary/40 bg-success/15 text-success dark:text-success font-semibold shadow-2xs"
-                          : "border-border bg-background text-muted-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted/60",
+                          ? "border-primary/40 bg-success/15 text-success font-semibold shadow-2xs"
+                          : "border-border bg-background text-muted-foreground hover:bg-muted dark:bg-card dark:hover:bg-muted/60",
                       )}
                     >
                       {fName}
@@ -553,8 +553,8 @@ export function QueryLibraryPanel({
                     className={cn(
                       "shrink-0 cursor-pointer rounded-full border px-2 py-0.5 text-[9px] font-medium transition-all",
                       activeTagFilter === "__all__"
-                        ? "border-primary/40 bg-success/15 text-success dark:text-success font-semibold shadow-2xs"
-                        : "border-border bg-background text-muted-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted/60",
+                        ? "border-primary/40 bg-success/15 text-success font-semibold shadow-2xs"
+                        : "border-border bg-background text-muted-foreground hover:bg-muted dark:bg-card dark:hover:bg-muted/60",
                     )}
                   >
                     All
@@ -575,7 +575,7 @@ export function QueryLibraryPanel({
                               getTagColor(tag),
                               "font-semibold shadow-2xs ring-1 ring-current/30",
                             )
-                          : "border-border bg-background text-muted-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted/60",
+                          : "border-border bg-background text-muted-foreground hover:bg-muted dark:bg-card dark:hover:bg-muted/60",
                       )}
                     >
                       #{tag}
@@ -592,9 +592,9 @@ export function QueryLibraryPanel({
               <div className="flex h-full flex-col items-center justify-center gap-3 px-4 py-10 text-center select-none">
                 <div className="relative">
                   <div className="border-primary/25 bg-success/10 dark:bg-success/15 flex h-12 w-12 items-center justify-center rounded-2xl border">
-                    <Library className="text-success dark:text-success h-6 w-6" />
+                    <Library className="text-success h-6 w-6" />
                   </div>
-                  <div className="border-border bg-background dark:border-border dark:bg-card absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border shadow-2xs">
+                  <div className="border-border bg-background dark:bg-card absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border shadow-2xs">
                     <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-500" />
                   </div>
                 </div>
@@ -633,7 +633,7 @@ export function QueryLibraryPanel({
             )}
 
             {favorites.length > 0 && nonFavorites.length > 0 && (
-              <div className="bg-muted/80 dark:bg-muted/80 mx-3 my-1 h-px" />
+              <div className="bg-muted/80 mx-3 my-1 h-px" />
             )}
 
             {/* Collapsible Folder Tree */}
@@ -668,7 +668,7 @@ export function QueryLibraryPanel({
                             className={
                               isUncategorized
                                 ? ""
-                                : "border-border dark:border-border ml-3 border-l pl-2"
+                                : "border-border ml-3 border-l pl-2"
                             }
                           >
                             {folderQueries.map(renderQueryItem)}
@@ -690,10 +690,10 @@ export function QueryLibraryPanel({
       {contextMenu && (
         <div
           ref={contextRef}
-          className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground fixed z-100 min-w-44 overflow-hidden rounded-xl border py-1 shadow-xl"
+          className="border-border bg-background text-foreground dark:bg-card fixed z-100 min-w-44 overflow-hidden rounded-xl border py-1 shadow-xl"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
-          <div className="border-border dark:border-border mb-1 border-b px-3 py-1.5">
+          <div className="border-border mb-1 border-b px-3 py-1.5">
             <p className="text-muted-foreground truncate text-[10px] font-semibold">
               {contextMenu.query.title}
             </p>
@@ -701,9 +701,7 @@ export function QueryLibraryPanel({
 
           {[
             {
-              icon: (
-                <BookOpen className="text-success dark:text-success h-3.5 w-3.5" />
-              ),
+              icon: <BookOpen className="text-success h-3.5 w-3.5" />,
               label: t("savedQuery.loadQuery"),
               onClick: () => {
                 onLoadQuery(contextMenu.query.query);
@@ -738,7 +736,7 @@ export function QueryLibraryPanel({
               key={i}
               type="button"
               onClick={item.onClick}
-              className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted/80 dark:hover:text-foreground flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-[12px] transition-colors"
+              className="text-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted/80 flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-[12px] transition-colors"
             >
               {item.icon}
               {item.label}
@@ -753,7 +751,7 @@ export function QueryLibraryPanel({
               setDeleteTarget(contextMenu.query);
               setContextMenu(null);
             }}
-            className="text-destructive hover:bg-destructive/10 dark:text-destructive dark:hover:bg-destructive/40 flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-[12px] transition-colors"
+            className="text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/40 flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-[12px] transition-colors"
           >
             <Trash2 className="h-3.5 w-3.5" />
             {t("savedQuery.deleteQuery")}
@@ -763,7 +761,7 @@ export function QueryLibraryPanel({
 
       {/* Delete Dialog */}
       <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
-        <DialogContent className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground max-w-sm">
+        <DialogContent className="border-border bg-background text-foreground dark:bg-card max-w-sm">
           <DialogHeader>
             <div className="mb-1 flex items-center gap-2.5">
               <div className="border-destructive/25 bg-destructive/15 flex h-8 w-8 items-center justify-center rounded-full border">
@@ -785,7 +783,7 @@ export function QueryLibraryPanel({
               variant="ghost"
               size="sm"
               onClick={() => setDeleteTarget(null)}
-              className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted text-xs"
+              className="text-muted-foreground hover:bg-muted text-xs"
             >
               {t("savedQuery.cancel")}
             </Button>
@@ -804,11 +802,11 @@ export function QueryLibraryPanel({
 
       {/* Edit Dialog */}
       <Dialog open={!!editTarget} onOpenChange={() => setEditTarget(null)}>
-        <DialogContent className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground max-w-sm">
+        <DialogContent className="border-border bg-background text-foreground dark:bg-card max-w-sm">
           <DialogHeader>
             <div className="mb-1 flex items-center gap-2.5">
               <div className="border-primary/25 bg-success/15 flex h-8 w-8 items-center justify-center rounded-full border">
-                <Edit2 className="text-success dark:text-success h-4 w-4" />
+                <Edit2 className="text-success h-4 w-4" />
               </div>
               <DialogTitle className="text-foreground text-sm">
                 {t("savedQuery.editQuery")}
@@ -817,40 +815,40 @@ export function QueryLibraryPanel({
           </DialogHeader>
           <div className="mt-1 space-y-4">
             <div className="space-y-1.5">
-              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 {t("savedQuery.title")}
               </label>
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="focus-visible:ring-primary/50 border-border bg-card text-foreground dark:border-border dark:bg-background/60 dark:text-foreground text-sm focus-visible:ring-1"
+                className="focus-visible:ring-primary/50 border-border bg-card text-foreground dark:bg-background/60 text-sm focus-visible:ring-1"
                 onKeyDown={(e) => e.key === "Enter" && saveEdit()}
               />
             </div>
 
             {/* Folder Input */}
             <div className="space-y-1.5">
-              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 {t("savedQuery.folder", "Folder")}
               </label>
               <Input
                 value={editFolder}
                 onChange={(e) => setEditFolder(e.target.value)}
                 placeholder={t("savedQuery.folderPlaceholder")}
-                className="focus-visible:ring-primary/50 border-border bg-card text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-background/60 dark:text-foreground dark:placeholder:text-muted-foreground font-mono text-sm focus-visible:ring-1"
+                className="focus-visible:ring-primary/50 border-border bg-card text-foreground placeholder:text-muted-foreground dark:bg-background/60 font-mono text-sm focus-visible:ring-1"
               />
             </div>
 
             {/* Tags Input with Autocomplete Chips */}
             <div className="space-y-1.5">
-              <label className="text-muted-foreground dark:text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
+              <label className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 {t("savedQuery.tags")}
               </label>
               <Input
                 value={editTags}
                 onChange={(e) => setEditTags(e.target.value)}
                 placeholder={t("savedQuery.tagsPlaceholder")}
-                className="focus-visible:ring-primary/50 border-border bg-card text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-background/60 dark:text-foreground dark:placeholder:text-muted-foreground font-mono text-sm focus-visible:ring-1"
+                className="focus-visible:ring-primary/50 border-border bg-card text-foreground placeholder:text-muted-foreground dark:bg-background/60 font-mono text-sm focus-visible:ring-1"
               />
               <p className="text-muted-foreground text-[9px]">
                 Separate tags with commas
@@ -879,8 +877,8 @@ export function QueryLibraryPanel({
                         className={cn(
                           "cursor-pointer rounded border px-1.5 py-0.5 font-mono text-[9px] transition-all",
                           isSelected
-                            ? "border-primary/40 bg-success/15 text-success dark:text-success font-semibold"
-                            : "border-border bg-muted text-muted-foreground hover:bg-muted/60 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted",
+                            ? "border-primary/40 bg-success/15 text-success font-semibold"
+                            : "border-border bg-muted text-muted-foreground hover:bg-muted/60 dark:bg-card dark:hover:bg-muted",
                         )}
                       >
                         +#{tName}
@@ -897,7 +895,7 @@ export function QueryLibraryPanel({
               variant="ghost"
               size="sm"
               onClick={() => setEditTarget(null)}
-              className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted text-xs"
+              className="text-muted-foreground hover:bg-muted text-xs"
             >
               {t("savedQuery.cancel")}
             </Button>

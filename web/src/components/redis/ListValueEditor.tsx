@@ -99,7 +99,7 @@ export function ListValueEditor({
     <div className="flex h-full flex-col space-y-3">
       {/* Header push input */}
       {!isReadOnly && (
-        <div className="border-border dark:border-border flex items-center gap-2 border-b pb-2">
+        <div className="border-border flex items-center gap-2 border-b pb-2">
           <Input
             placeholder={t("redis.listEditor.newElementPlaceholder")}
             value={pushValue}
@@ -130,7 +130,7 @@ export function ListValueEditor({
       )}
 
       {error && (
-        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-md border p-2 text-xs">
           {error}
         </div>
       )}
@@ -145,8 +145,8 @@ export function ListValueEditor({
       </div>
 
       {/* List items */}
-      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border font-mono text-xs">
-        <div className="divide-border dark:divide-border divide-y">
+      <div className="border-border flex-1 overflow-auto rounded-md border font-mono text-xs">
+        <div className="divide-border divide-y">
           {items.length === 0 ? (
             <div className="text-muted-foreground p-6 text-center">
               {t("redis.listEditor.empty")}
@@ -202,7 +202,7 @@ export function ListValueEditor({
                           setEditVal(item);
                         }
                       }}
-                      className="text-foreground dark:text-foreground flex-1 truncate"
+                      className="text-foreground flex-1 truncate"
                       title={item}
                     >
                       {item}
@@ -219,7 +219,7 @@ export function ListValueEditor({
                         setEditingIdx(idx);
                         setEditVal(item);
                       }}
-                      className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-6 w-6 p-0"
+                      className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
                     >
                       <Edit2 className="h-3 w-3" />
                     </Button>

@@ -20,7 +20,7 @@ export function TableExecutionFooter({
   t,
 }: TableExecutionFooterProps) {
   return (
-    <footer className="border-border bg-card/80 text-muted-foreground dark:border-border dark:bg-card/40 flex min-h-7 shrink-0 items-center gap-3 border-t px-3 py-1 text-[11px]">
+    <footer className="border-border bg-card/80 text-muted-foreground dark:bg-card/40 flex min-h-7 shrink-0 items-center gap-3 border-t px-3 py-1 text-[11px]">
       <span>
         {from === 0
           ? t("datagrid.zeroRows", "0 rows")

@@ -58,7 +58,7 @@ export function WelcomeModal({
           {WELCOME_FEATURES.map(({ icon: Icon, titleKey, descKey }) => (
             <div
               key={titleKey}
-              className="group border-border/70 bg-card/70 hover:border-border dark:border-border/70 dark:bg-muted/40 dark:hover:border-border/80 flex items-start gap-3 rounded-xl border p-3.5 transition-all duration-150"
+              className="group border-border/70 bg-card/70 hover:border-border dark:bg-muted/40 dark:hover:border-border/80 flex items-start gap-3 rounded-xl border p-3.5 transition-all duration-150"
             >
               <div className="group-hover:border-primary/30 border-border/60 bg-muted text-muted-foreground group-hover:text-success dark:border-border/50 shrink-0 rounded-lg border p-2 transition-colors">
                 <Icon className="size-4" />

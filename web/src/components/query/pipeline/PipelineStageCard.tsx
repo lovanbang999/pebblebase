@@ -9,7 +9,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import type { PipelineStageCardProps, StageConfig } from "./types";
 import { generateStageObject, getStageBadgeStyle } from "./utils";
 import { MatchStageEditor } from "./MatchStageEditor";
@@ -79,17 +79,17 @@ export function PipelineStageCard({
         "group bg-background dark:bg-card relative rounded-lg border shadow-2xs transition-all",
         stageItem.enabled
           ? "border-border"
-          : "border-border/50 bg-card dark:border-border/50 dark:bg-card/40 opacity-60",
+          : "border-border/50 bg-card dark:bg-card/40 opacity-60",
         draggedIndex === index && "ring-primary opacity-40 ring-2",
       )}
     >
       {/* Card Header */}
-      <div className="border-border bg-card/50 dark:border-border/80 dark:bg-card/50 flex items-center justify-between rounded-t-lg border-b px-3 py-2">
+      <div className="border-border bg-card/50 dark:border-border/80 flex items-center justify-between rounded-t-lg border-b px-3 py-2">
         <div className="flex items-center gap-2">
           {/* Drag Handle */}
           <button
             type="button"
-            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground cursor-grab rounded p-0.5 active:cursor-grabbing"
+            className="text-muted-foreground hover:text-foreground cursor-grab rounded p-0.5 active:cursor-grabbing"
             title={t("pipeline.stage.drag_handle")}
           >
             <GripVertical className="size-4" />
@@ -124,7 +124,7 @@ export function PipelineStageCard({
             <button
               type="button"
               onClick={handleToggleMode}
-              className="border-border text-muted-foreground hover:text-foreground dark:border-border dark:hover:text-foreground flex h-6 cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[10px]"
+              className="border-border text-muted-foreground hover:text-foreground flex h-6 cursor-pointer items-center gap-1 rounded border px-1.5 font-mono text-[10px]"
               title={
                 stageItem.stage.config.mode === "visual"
                   ? t("pipeline.raw_mode")
@@ -147,8 +147,8 @@ export function PipelineStageCard({
             className={cn(
               "cursor-pointer rounded p-1 transition-colors",
               stageItem.enabled
-                ? "text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/30"
-                : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
+                ? "text-success hover:bg-success/10 dark:hover:bg-success/30"
+                : "text-muted-foreground hover:text-foreground",
             )}
             title={t("pipeline.stage.toggle_enable")}
           >
@@ -160,7 +160,7 @@ export function PipelineStageCard({
             type="button"
             disabled={isFirst}
             onClick={() => onMove(index, "up")}
-            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground cursor-pointer p-1 disabled:opacity-20"
+            className="text-muted-foreground hover:text-foreground cursor-pointer p-1 disabled:opacity-20"
             title={t("pipeline.stage.move_up")}
           >
             <ArrowUp className="size-3.5" />
@@ -171,7 +171,7 @@ export function PipelineStageCard({
             type="button"
             disabled={isLast}
             onClick={() => onMove(index, "down")}
-            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground cursor-pointer p-1 disabled:opacity-20"
+            className="text-muted-foreground hover:text-foreground cursor-pointer p-1 disabled:opacity-20"
             title={t("pipeline.stage.move_down")}
           >
             <ArrowDown className="size-3.5" />
@@ -181,7 +181,7 @@ export function PipelineStageCard({
           <button
             type="button"
             onClick={() => onDuplicate(index)}
-            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground cursor-pointer p-1"
+            className="text-muted-foreground hover:text-foreground cursor-pointer p-1"
             title={t("pipeline.stage.duplicate")}
           >
             <Copy className="size-3.5" />

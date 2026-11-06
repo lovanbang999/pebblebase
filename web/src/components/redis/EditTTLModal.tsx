@@ -62,9 +62,9 @@ export function EditTTLModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border bg-background dark:border-border dark:bg-card max-w-sm">
+      <DialogContent className="border-border bg-background dark:bg-card max-w-sm">
         <DialogHeader>
-          <DialogTitle className="text-foreground dark:text-foreground flex items-center gap-2 text-sm">
+          <DialogTitle className="text-foreground flex items-center gap-2 text-sm">
             <Clock className="text-warning h-4 w-4" />
             {t("redis.editTtlModal.title")}
           </DialogTitle>
@@ -72,16 +72,16 @@ export function EditTTLModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 pt-1">
           {error && (
-            <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
+            <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-md border p-2 text-xs">
               {error}
             </div>
           )}
 
-          <div className="border-border bg-card dark:border-border dark:bg-card rounded border p-2.5 font-mono text-xs">
+          <div className="border-border bg-card rounded border p-2.5 font-mono text-xs">
             <div className="text-muted-foreground text-[10px]">
               {t("redis.editTtlModal.targetKey")}
             </div>
-            <div className="text-foreground dark:text-foreground truncate font-semibold">
+            <div className="text-foreground truncate font-semibold">
               {keyName}
             </div>
           </div>

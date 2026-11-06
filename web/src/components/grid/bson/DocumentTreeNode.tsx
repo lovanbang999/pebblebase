@@ -7,7 +7,7 @@ import {
   Edit2,
   FileText,
 } from "lucide-react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { detectBsonType, formatBsonValue, type BsonType } from "./bsonTypes";
 import { BsonBadge } from "./BsonBadge";
 import { BsonCellEditor } from "../cell-inspector/BsonCellEditor";
@@ -172,9 +172,7 @@ export const DocumentTreeNode = React.memo(function DocumentTreeNode({
           <span
             className={cn(
               "shrink-0 font-mono text-[11px] font-medium",
-              isPk
-                ? "text-warning dark:text-warning font-semibold"
-                : "text-muted-foreground dark:text-muted-foreground",
+              isPk ? "text-warning font-semibold" : "text-muted-foreground",
             )}
           >
             {keyName}

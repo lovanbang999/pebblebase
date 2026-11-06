@@ -56,10 +56,10 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
   return (
     <div className="mx-auto max-w-md space-y-6 py-2">
       <div className="space-y-1">
-        <h3 className="text-foreground dark:text-foreground text-sm font-semibold">
+        <h3 className="text-foreground text-sm font-semibold">
           {t("auth.registerNewUser")}
         </h3>
-        <p className="text-muted-foreground dark:text-muted-foreground text-xs">
+        <p className="text-muted-foreground text-xs">
           {t("auth.registerNewUserDesc")}
         </p>
       </div>
@@ -70,7 +70,7 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
             {t("auth.username")}
           </label>
           <div className="relative">
-            <User className="text-muted-foreground dark:text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+            <User className="text-muted-foreground absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
             <Input
               type="text"
               value={newUsername}
@@ -78,7 +78,7 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
               placeholder="e.g. dev_analyst"
               required
               minLength={2}
-              className="border-border bg-card text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 dark:border-border/60 dark:bg-card/70 dark:text-foreground dark:placeholder:text-muted-foreground h-9 py-2 pl-8.5 text-sm"
+              className="border-border bg-card text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 dark:border-border/60 dark:bg-card/70 h-9 py-2 pl-8.5 text-sm"
             />
           </div>
         </div>
@@ -104,19 +104,19 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
               }
             }}
           >
-            <SelectTrigger className="border-border bg-card text-foreground focus:ring-primary dark:border-border/60 dark:bg-card/70 dark:text-foreground h-9 w-full cursor-pointer font-sans text-xs">
+            <SelectTrigger className="border-border bg-card text-foreground focus:ring-primary dark:border-border/60 dark:bg-card/70 h-9 w-full cursor-pointer font-sans text-xs">
               <SelectValue placeholder={t("auth.role")} />
             </SelectTrigger>
             <SelectContent
               side="bottom"
               align="start"
-              className="border-border bg-background text-foreground dark:border-border dark:bg-card dark:text-foreground z-50 shadow-md"
+              className="border-border bg-background text-foreground dark:bg-card z-50 shadow-md"
             >
               <SelectItem
                 value="viewer"
                 label={`${t("auth.role.viewer")} (${t("auth.readOnly")})`}
               >
-                <div className="text-foreground dark:text-foreground flex items-center gap-2">
+                <div className="text-foreground flex items-center gap-2">
                   <Eye className="text-muted-foreground size-3.5" />
                   <span>
                     {t("auth.role.viewer")} ({t("auth.readOnly")})
@@ -127,8 +127,8 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
                 value="admin"
                 label={`${t("auth.role.admin")} (${t("auth.fullAccess")})`}
               >
-                <div className="text-foreground dark:text-foreground flex items-center gap-2">
-                  <Shield className="text-primary dark:text-primary size-3.5" />
+                <div className="text-foreground flex items-center gap-2">
+                  <Shield className="text-primary size-3.5" />
                   <span>
                     {t("auth.role.admin")} ({t("auth.fullAccess")})
                   </span>
@@ -145,7 +145,7 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
               </SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-muted-foreground dark:text-muted-foreground text-[11px]">
+          <p className="text-muted-foreground text-[11px]">
             {t("auth.viewerPermissionNote")}
           </p>
         </div>
@@ -153,18 +153,18 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
         {createError && (
           <Alert
             variant="destructive"
-            className="border-destructive/25 bg-destructive/10 text-destructive dark:text-destructive px-3 py-2.5"
+            className="border-destructive/25 bg-destructive/10 text-destructive px-3 py-2.5"
           >
-            <AlertCircle className="text-destructive dark:text-destructive size-4" />
-            <AlertDescription className="text-destructive dark:text-destructive text-xs">
+            <AlertCircle className="text-destructive size-4" />
+            <AlertDescription className="text-destructive text-xs">
               {createError}
             </AlertDescription>
           </Alert>
         )}
         {createSuccess && (
-          <Alert className="border-primary/25 bg-success/10 text-success dark:text-success px-3 py-2.5">
-            <CheckCircle2 className="text-success dark:text-success size-4" />
-            <AlertDescription className="text-success dark:text-success text-xs">
+          <Alert className="border-primary/25 bg-success/10 text-success px-3 py-2.5">
+            <CheckCircle2 className="text-success size-4" />
+            <AlertDescription className="text-success text-xs">
               {createSuccess}
             </AlertDescription>
           </Alert>

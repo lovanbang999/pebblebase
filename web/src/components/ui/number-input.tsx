@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Plus, Minus } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 export interface NumberInputProps extends Omit<
   React.ComponentProps<typeof Input>,

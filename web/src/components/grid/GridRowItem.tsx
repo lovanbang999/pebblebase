@@ -1,7 +1,7 @@
 import { memo, type MouseEvent } from "react";
 import { flexRender, type Row } from "@tanstack/react-table";
 import { TableRow, TableCell } from "@/components/ui/table";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
 
 export interface GridRowItemProps {
@@ -118,7 +118,7 @@ export const GridRowItem = memo(function GridRowItem({
               onCellClick(e, virtualIndex, colId);
             }}
             className={cn(
-              "group/cell border-border/80 text-foreground dark:border-border/40 dark:text-foreground relative max-w-sm truncate px-2.5 py-1 font-mono text-xs whitespace-nowrap transition-all outline-none not-last:border-r",
+              "group/cell border-border/80 text-foreground dark:border-border/40 relative max-w-sm truncate px-2.5 py-1 font-mono text-xs whitespace-nowrap transition-all outline-none not-last:border-r",
               numericColumnNames.includes(colId) &&
                 "text-right tabular-nums [&>div]:justify-end",
               row.original._pb_draft_changed_columns?.includes(colId) &&

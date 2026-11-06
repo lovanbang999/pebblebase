@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Loader2, Download, AlertCircle, FileCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import type { PipelineResultsPanelProps } from "./types";
 import { exportPipelineCSV } from "./utils";
 
@@ -41,16 +41,16 @@ export function PipelineResultsPanel({
   };
 
   return (
-    <div className="border-border bg-background dark:border-border dark:bg-background flex w-full flex-col overflow-hidden border-t md:w-1/2 md:border-t-0 md:border-l">
+    <div className="border-border bg-background flex w-full flex-col overflow-hidden border-t md:w-1/2 md:border-t-0 md:border-l">
       {/* Results Header */}
-      <div className="border-border bg-card/70 dark:border-border dark:bg-card/60 flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
+      <div className="border-border bg-card/70 dark:bg-card/60 flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
         <div className="flex items-center gap-2">
           <span className="text-foreground text-xs font-semibold">
             {t("pipeline.results")}
           </span>
           {results && (
             <div className="text-muted-foreground flex items-center gap-1.5 font-mono text-[11px]">
-              <span className="bg-success/10 text-success dark:text-success rounded px-1.5 py-0.5 font-semibold">
+              <span className="bg-success/10 text-success rounded px-1.5 py-0.5 font-semibold">
                 {results.rows.length} docs
               </span>
               <span>•</span>
@@ -67,16 +67,16 @@ export function PipelineResultsPanel({
                 value={resultsFilter}
                 onChange={(e) => setResultsFilter(e.target.value)}
                 placeholder="Filter results..."
-                className="border-border bg-muted text-foreground dark:border-border dark:bg-muted dark:text-foreground h-6 w-28 rounded border px-1.5 font-mono text-[11px]"
+                className="border-border bg-muted text-foreground h-6 w-28 rounded border px-1.5 font-mono text-[11px]"
               />
-              <div className="border-border bg-muted dark:border-border dark:bg-muted flex items-center rounded border p-0.5">
+              <div className="border-border bg-muted flex items-center rounded border p-0.5">
                 <button
                   type="button"
                   onClick={() => setActiveResultsView("table")}
                   className={cn(
                     "cursor-pointer rounded px-1.5 py-0.5 font-mono text-[10px]",
                     activeResultsView === "table"
-                      ? "bg-background text-foreground dark:bg-card dark:text-foreground font-medium shadow-2xs"
+                      ? "bg-background text-foreground dark:bg-card font-medium shadow-2xs"
                       : "text-muted-foreground",
                   )}
                 >
@@ -88,7 +88,7 @@ export function PipelineResultsPanel({
                   className={cn(
                     "cursor-pointer rounded px-1.5 py-0.5 font-mono text-[10px]",
                     activeResultsView === "json"
-                      ? "bg-background text-foreground dark:bg-card dark:text-foreground font-medium shadow-2xs"
+                      ? "bg-background text-foreground dark:bg-card font-medium shadow-2xs"
                       : "text-muted-foreground",
                   )}
                 >
@@ -100,7 +100,7 @@ export function PipelineResultsPanel({
                 variant="ghost"
                 size="sm"
                 onClick={handleExport}
-                className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-6 px-1.5 font-mono text-[11px]"
+                className="text-muted-foreground hover:text-foreground h-6 px-1.5 font-mono text-[11px]"
                 title="Export to CSV"
               >
                 <Download className="size-3" />
@@ -138,7 +138,7 @@ export function PipelineResultsPanel({
           ) : (
             <div className="border-border overflow-x-auto rounded-md border">
               <table className="w-full text-left font-mono text-xs">
-                <thead className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-card/80 dark:text-muted-foreground border-b select-none">
+                <thead className="border-border bg-muted text-muted-foreground dark:bg-card/80 border-b select-none">
                   <tr>
                     <th className="text-muted-foreground w-10 px-2.5 py-1.5 text-center text-[10px]">
                       #
@@ -175,7 +175,7 @@ export function PipelineResultsPanel({
                                 null
                               </span>
                             ) : isObj ? (
-                              <span className="bg-muted text-muted-foreground dark:bg-muted dark:text-foreground rounded px-1.5 py-0.5 text-[11px]">
+                              <span className="bg-muted text-muted-foreground dark:text-foreground rounded px-1.5 py-0.5 text-[11px]">
                                 {JSON.stringify(val)}
                               </span>
                             ) : (

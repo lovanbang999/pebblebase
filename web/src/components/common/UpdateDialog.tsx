@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -75,7 +75,7 @@ function formatReleaseLine(text: string) {
           key={`pr-${match.index}`}
           type="button"
           onClick={() => openExternalUrl(url)}
-          className="py-0.2 text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/40 inline-flex cursor-pointer items-center gap-0.5 rounded px-1 font-mono text-[11px] font-medium hover:underline"
+          className="py-0.2 text-success hover:bg-success/10 dark:hover:bg-success/40 inline-flex cursor-pointer items-center gap-0.5 rounded px-1 font-mono text-[11px] font-medium hover:underline"
         >
           #{prNum}
           <ExternalLink className="inline h-2.5 w-2.5 opacity-70" />
@@ -85,7 +85,7 @@ function formatReleaseLine(text: string) {
       parts.push(
         <span
           key={`user-${match.index}`}
-          className="text-foreground dark:text-foreground font-medium"
+          className="text-foreground font-medium"
         >
           {match[3]}
         </span>,
@@ -119,7 +119,7 @@ function ReleaseNotesViewer({ notes }: { notes: string }) {
           return (
             <div
               key={`h-${idx}`}
-              className="text-foreground dark:text-foreground flex items-center gap-1.5 pt-1 pb-0.5 font-semibold"
+              className="text-foreground flex items-center gap-1.5 pt-1 pb-0.5 font-semibold"
             >
               <Sparkles className="text-success h-3 w-3 shrink-0" />
               <span>{title}</span>
@@ -133,14 +133,14 @@ function ReleaseNotesViewer({ notes }: { notes: string }) {
           return (
             <div
               key={`fc-${idx}`}
-              className="border-border/70 text-muted-foreground dark:border-border/70 dark:text-muted-foreground mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]"
+              className="border-border/70 text-muted-foreground mt-2.5 flex items-center justify-between border-t pt-2 text-[11px]"
             >
               <span>Full Release Changelog</span>
               {urlMatch ? (
                 <button
                   type="button"
                   onClick={() => openExternalUrl(urlMatch[1])}
-                  className="text-success hover:text-success dark:text-success inline-flex cursor-pointer items-center gap-1 font-medium hover:underline"
+                  className="text-success hover:text-success inline-flex cursor-pointer items-center gap-1 font-medium hover:underline"
                 >
                   View on GitHub
                   <ExternalLink className="h-3 w-3" />
@@ -158,7 +158,7 @@ function ReleaseNotesViewer({ notes }: { notes: string }) {
           return (
             <div
               key={`li-${idx}`}
-              className="text-muted-foreground dark:text-muted-foreground flex items-start gap-2"
+              className="text-muted-foreground flex items-start gap-2"
             >
               <span className="bg-success mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" />
               <div className="min-w-0 flex-1 leading-relaxed wrap-break-word">
@@ -171,7 +171,7 @@ function ReleaseNotesViewer({ notes }: { notes: string }) {
         return (
           <p
             key={`p-${idx}`}
-            className="text-muted-foreground dark:text-muted-foreground leading-relaxed wrap-break-word"
+            className="text-muted-foreground leading-relaxed wrap-break-word"
           >
             {trimmed}
           </p>
@@ -258,11 +258,11 @@ export default function UpdateDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="border-border/90 bg-background text-foreground dark:border-border/90 dark:bg-card dark:text-foreground w-full overflow-hidden rounded-2xl p-6 shadow-2xl sm:max-w-130">
+      <DialogContent className="border-border/90 bg-background text-foreground dark:bg-card w-full overflow-hidden rounded-2xl p-6 shadow-2xl sm:max-w-130">
         {/* Header */}
         <DialogHeader className="space-y-1.5 pb-1">
           <div className="flex items-center gap-3">
-            <div className="border-primary/20 bg-success/10 text-success dark:bg-success/10 dark:text-success relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-xs">
+            <div className="border-primary/20 bg-success/10 text-success relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border shadow-xs">
               <Download className="h-5 w-5" />
               {hasUpdate && (
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
@@ -272,7 +272,7 @@ export default function UpdateDialog({
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <DialogTitle className="text-foreground dark:text-foreground text-base font-semibold tracking-tight">
+              <DialogTitle className="text-foreground text-base font-semibold tracking-tight">
                 {hasUpdate
                   ? t("updates.updateAvailableTitle", {
                       version: updateInfo?.latestVersion,
@@ -280,7 +280,7 @@ export default function UpdateDialog({
                     })
                   : t("updates.dialogTitle", "Software Updates")}
               </DialogTitle>
-              <DialogDescription className="text-muted-foreground dark:text-muted-foreground text-xs">
+              <DialogDescription className="text-muted-foreground text-xs">
                 {hasUpdate
                   ? t("updates.updateAvailableSubtitle", {
                       current:
@@ -299,16 +299,16 @@ export default function UpdateDialog({
         {/* Content body */}
         <div className="min-w-0 space-y-4 py-1 text-sm">
           {/* Version status card */}
-          <div className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/60 min-w-0 rounded-xl border p-3.5 shadow-xs">
+          <div className="border-border/80 bg-card/70 dark:bg-card/60 min-w-0 rounded-xl border p-3.5 shadow-xs">
             <div className="flex items-center justify-between gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-1.5 font-mono text-xs">
-                  <span className="text-muted-foreground dark:text-muted-foreground font-sans text-[11px]">
+                  <span className="text-muted-foreground font-sans text-[11px]">
                     {t("updates.installedVersion", "Installed:")}
                   </span>
                   <Badge
                     variant="outline"
-                    className="border-border bg-background text-foreground dark:border-border dark:bg-muted dark:text-muted-foreground px-2 py-0.5 font-mono text-xs"
+                    className="border-border bg-background text-foreground dark:bg-muted dark:text-muted-foreground px-2 py-0.5 font-mono text-xs"
                   >
                     v{updateInfo?.currentVersion || packageJson.version}
                   </Badge>
@@ -318,7 +318,7 @@ export default function UpdateDialog({
                   <>
                     <ArrowRight className="text-muted-foreground h-3 w-3 shrink-0" />
                     <div className="flex items-center gap-1.5 font-mono text-xs">
-                      <span className="text-muted-foreground dark:text-muted-foreground font-sans text-[11px]">
+                      <span className="text-muted-foreground font-sans text-[11px]">
                         {t("updates.newVersion", "New:")}
                       </span>
                       <Badge className="border-primary bg-primary px-2 py-0.5 font-mono text-xs font-semibold text-white shadow-xs">
@@ -330,14 +330,14 @@ export default function UpdateDialog({
               </div>
 
               {hasUpdate ? (
-                <Badge className="border-primary/30 bg-success/15 text-success dark:text-success shrink-0 gap-1 border px-2.5 py-0.5 text-[11px] font-medium">
+                <Badge className="border-primary/30 bg-success/15 text-success shrink-0 gap-1 border px-2.5 py-0.5 text-[11px] font-medium">
                   <Sparkles className="text-success h-3 w-3" />
                   {t("updates.updateAvailable", "Update Ready")}
                 </Badge>
               ) : (
                 <Badge
                   variant="secondary"
-                  className="border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/40 dark:text-success shrink-0 gap-1 border px-2.5 py-0.5 text-[11px]"
+                  className="border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/40 shrink-0 gap-1 border px-2.5 py-0.5 text-[11px]"
                 >
                   <CheckCircle2 className="h-3 w-3" />
                   {t("updates.upToDate", "Up to Date")}
@@ -347,7 +347,7 @@ export default function UpdateDialog({
 
             {/* Metadata badges (size, date, signature) */}
             {hasUpdate && (
-              <div className="border-border/60 text-muted-foreground dark:border-border/60 dark:text-muted-foreground mt-2.5 flex flex-wrap items-center gap-3.5 border-t pt-2 text-[11px]">
+              <div className="border-border/60 text-muted-foreground mt-2.5 flex flex-wrap items-center gap-3.5 border-t pt-2 text-[11px]">
                 {formattedSize && (
                   <span className="inline-flex items-center gap-1">
                     <HardDrive className="text-muted-foreground h-3 w-3" />~
@@ -367,7 +367,7 @@ export default function UpdateDialog({
                     )}
                   </span>
                 )}
-                <span className="text-success dark:text-success inline-flex items-center gap-1">
+                <span className="text-success inline-flex items-center gap-1">
                   <ShieldCheck className="h-3 w-3" />
                   Verified GitHub Release
                 </span>
@@ -377,7 +377,7 @@ export default function UpdateDialog({
 
           {/* System Package Notice if binary is in non-writable system directory */}
           {hasUpdate && updateInfo?.canAutoUpdate === false && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-950/20 dark:text-amber-300">
+            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-300">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <div className="flex-1 space-y-1">
                 <p className="font-medium">
@@ -408,7 +408,7 @@ export default function UpdateDialog({
                   v{updateInfo.latestVersion}
                 </span>
               </div>
-              <div className="border-border/80 bg-card/50 dark:border-border/80 dark:bg-card/70 max-h-40 min-w-0 overflow-x-hidden overflow-y-auto rounded-xl border p-3.5 shadow-inner">
+              <div className="border-border/80 bg-card/50 dark:bg-card/70 max-h-40 min-w-0 overflow-x-hidden overflow-y-auto rounded-xl border p-3.5 shadow-inner">
                 <ReleaseNotesViewer notes={updateInfo.releaseNotes} />
               </div>
             </div>
@@ -440,19 +440,19 @@ export default function UpdateDialog({
 
           {/* Ready to Restart Box */}
           {isReadyToRestart && (
-            <div className="animate-in fade-in border-success/80 bg-success/80 text-success dark:border-success/80 dark:bg-success/40 dark:text-success space-y-3 rounded-xl border p-3.5 text-xs duration-200">
+            <div className="animate-in fade-in border-success/80 bg-success/80 text-success dark:bg-success/40 space-y-3 rounded-xl border p-3.5 text-xs duration-200">
               <div className="flex items-center gap-2.5">
-                <div className="bg-success/20 text-success dark:text-success flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+                <div className="bg-success/20 text-success flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-success dark:text-success font-semibold">
+                  <p className="text-success font-semibold">
                     {t(
                       "updates.installSuccessTitle",
                       "Update successfully installed!",
                     )}
                   </p>
-                  <p className="text-success/80 dark:text-success/80 mt-0.5 text-[11px]">
+                  <p className="text-success/80 mt-0.5 text-[11px]">
                     {t(
                       "updates.installSuccessDesc",
                       "Restart Pebblebase Studio now to launch v",
@@ -516,7 +516,7 @@ export default function UpdateDialog({
           )}
 
           {/* Auto-check setting toggle card */}
-          <div className="border-border/60 bg-card/50 dark:border-border/60 dark:bg-card/40 flex items-center justify-between rounded-xl border px-3.5 py-2.5">
+          <div className="border-border/60 bg-card/50 dark:bg-card/40 flex items-center justify-between rounded-xl border px-3.5 py-2.5">
             <div className="flex items-center space-x-2.5">
               <Checkbox
                 id="pb-auto-check"
@@ -536,7 +536,7 @@ export default function UpdateDialog({
                 )}
               </label>
             </div>
-            <span className="text-muted-foreground dark:text-muted-foreground flex items-center gap-1 text-[11px]">
+            <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
               <SlidersHorizontal className="h-3 w-3" />
               Stable
             </span>
@@ -544,13 +544,13 @@ export default function UpdateDialog({
         </div>
 
         {/* Footer Actions */}
-        <div className="border-border/80 bg-card/70 dark:border-border/80 dark:bg-card/60 -mx-6 -mb-6 flex items-center justify-between border-t px-6 py-3.5">
+        <div className="border-border/80 bg-card/70 dark:bg-card/60 -mx-6 -mb-6 flex items-center justify-between border-t px-6 py-3.5">
           <Button
             variant="ghost"
             size="sm"
             onClick={onRefresh}
             disabled={isLoading || isUpdating}
-            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground h-8.5 cursor-pointer gap-1.5 px-2.5 text-xs font-medium"
+            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted h-8.5 cursor-pointer gap-1.5 px-2.5 text-xs font-medium"
           >
             <RefreshCw
               className={cn("h-3.5 w-3.5", isLoading && "animate-spin")}
@@ -566,7 +566,7 @@ export default function UpdateDialog({
               size="sm"
               onClick={onClose}
               disabled={isUpdating}
-              className="text-foreground hover:bg-muted dark:border-border dark:text-muted-foreground dark:hover:bg-muted h-8.5 cursor-pointer px-3.5 text-xs font-medium"
+              className="text-foreground hover:bg-muted dark:border-border dark:text-muted-foreground h-8.5 cursor-pointer px-3.5 text-xs font-medium"
             >
               {hasUpdate
                 ? t("updates.remindLater", "Remind Me Later")

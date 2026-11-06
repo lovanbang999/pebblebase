@@ -116,7 +116,7 @@ export function TableActionToolbar({
   onRevertDrafts,
 }: TableActionToolbarProps) {
   return (
-    <div className="border-border bg-background dark:border-border dark:bg-background flex min-h-10 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-1">
+    <div className="border-border bg-background flex min-h-10 shrink-0 flex-wrap items-center gap-1 border-b px-2 py-1">
       {onFindEverywhere && (
         <Button
           type="button"

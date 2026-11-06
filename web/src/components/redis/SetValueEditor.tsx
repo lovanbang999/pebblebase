@@ -75,7 +75,7 @@ export function SetValueEditor({
   return (
     <div className="flex h-full flex-col space-y-3">
       {/* Search and Add Header */}
-      <div className="border-border dark:border-border flex flex-wrap items-center justify-between gap-2 border-b pb-2">
+      <div className="border-border flex flex-wrap items-center justify-between gap-2 border-b pb-2">
         <div className="flex items-center gap-2">
           <div className="relative w-56">
             <Search className="text-muted-foreground absolute top-2 left-2.5 h-3.5 w-3.5" />
@@ -121,14 +121,14 @@ export function SetValueEditor({
       </div>
 
       {error && (
-        <div className="border-destructive/20 bg-destructive/10 text-destructive dark:text-destructive rounded-md border p-2 text-xs">
+        <div className="border-destructive/20 bg-destructive/10 text-destructive rounded-md border p-2 text-xs">
           {error}
         </div>
       )}
 
       {/* Members list */}
-      <div className="border-border dark:border-border flex-1 overflow-auto rounded-md border font-mono text-xs">
-        <div className="divide-border dark:divide-border divide-y">
+      <div className="border-border flex-1 overflow-auto rounded-md border font-mono text-xs">
+        <div className="divide-border divide-y">
           {filteredMembers.length === 0 ? (
             <div className="text-muted-foreground p-6 text-center">
               {t("redis.setEditor.empty")}
@@ -139,10 +139,7 @@ export function SetValueEditor({
                 key={m}
                 className="group hover:bg-card dark:hover:bg-muted flex items-center justify-between px-3 py-2"
               >
-                <span
-                  className="text-foreground dark:text-foreground truncate"
-                  title={m}
-                >
+                <span className="text-foreground truncate" title={m}>
                   {m}
                 </span>
 
