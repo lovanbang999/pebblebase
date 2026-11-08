@@ -247,4 +247,102 @@ describe("ConnectionModal Component", () => {
       });
     });
   });
+
+  describe("Driver selection & database-specific behavior", () => {
+    it("updates default port when switching driver", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ConnectionModal {...defaultProps} />);
+
+      const portInput = document.getElementById(
+        "connection-port",
+      ) as HTMLInputElement;
+      expect(portInput.value).toBe("5432");
+
+      const selectTrigger = document.querySelector(
+        '[data-slot="select-trigger"]',
+      ) as HTMLElement;
+      await user.click(selectTrigger);
+
+      const mysqlOption = await screen.findByRole("option", {
+        name: /MySQL/i,
+      });
+      await user.click(mysqlOption);
+
+      expect(portInput.value).toBe("3306");
+    });
+
+    it("displays the expected connection URL placeholder for the active driver", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ConnectionModal {...defaultProps} />);
+
+      const urlTab = screen.getByRole("tab", {
+        name: /Connection URL|URL kết nối/i,
+      });
+      await user.click(urlTab);
+
+      const textarea = document.getElementById(
+        "connection-rawURL",
+      ) as HTMLTextAreaElement;
+      expect(textarea).toBeInTheDocument();
+      expect(textarea.placeholder).toContain(
+        "postgres://pebble:pebble@localhost:5432/pebble_test",
+      );
+    });
+
+    it("toggles user and password fields when Windows Authentication is checked for MSSQL", async () => {
+      const user = userEvent.setup();
+      const mssqlProps = {
+        ...defaultProps,
+        cloneData: {
+          id: "conn-mssql-1",
+          type: "mssql" as const,
+          host: "sql.local",
+          port: "1433",
+          user: "sa",
+          db_name: "master",
+          save_password: true,
+          created_at: "2026-01-01T00:00:00Z",
+          name: "MSSQL Server",
+        },
+      };
+      renderWithProviders(<ConnectionModal {...mssqlProps} />);
+
+      expect(document.getElementById("connection-user")).toBeInTheDocument();
+      expect(
+        document.getElementById("connection-password"),
+      ).toBeInTheDocument();
+
+      const windowsAuthCheckbox = document.getElementById(
+        "windowsAuth",
+      ) as HTMLInputElement;
+      expect(windowsAuthCheckbox).toBeInTheDocument();
+      expect(windowsAuthCheckbox.checked).toBe(false);
+
+      await user.click(windowsAuthCheckbox);
+      expect(windowsAuthCheckbox.checked).toBe(true);
+
+      expect(document.getElementById("connection-user")).toBeNull();
+      expect(document.getElementById("connection-password")).toBeNull();
+    });
+
+    it("prevents form submission when required host input is empty", async () => {
+      const user = userEvent.setup();
+      const onSubmit = vi.fn().mockResolvedValue({});
+      renderWithProviders(
+        <ConnectionModal {...defaultProps} onSubmit={onSubmit} />,
+      );
+
+      const hostInput = document.getElementById(
+        "connection-host",
+      ) as HTMLInputElement;
+      await user.clear(hostInput);
+
+      const submitButton = screen.getByRole("button", {
+        name: /Save Connection|Lưu kết nối/i,
+      });
+      await user.click(submitButton);
+
+      expect(onSubmit).not.toHaveBeenCalled();
+    });
+  });
 });
