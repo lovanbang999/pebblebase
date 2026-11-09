@@ -16,3 +16,4 @@ Pebblebase Studio có thể được tùy chỉnh linh hoạt thông qua các bi
 | `PEBBLEBASE_AUTH_ENABLED` | `true` | Bật hoặc tắt màn hình đăng nhập xác thực người dùng. |
 | `SESSION_SECRET` | *(ngẫu nhiên)* | Khóa bí mật dùng để ký token phiên JWT. |
 | `APP_ENV` | `production` | Chế độ môi trường (`development` hoặc `production`). |
+| `PEBBLEBASE_DISABLE_UPDATE_CHECK` | `false` | Vô hiệu hóa kiểm tra cập nhật tự động và thủ công (dành cho CI/CD, kiểm thử E2E hoặc môi trường offline). |

@@ -126,11 +126,20 @@ func (s *Service) loadSettings() {
 	}
 }
 
+func updateCheckDisabled() bool {
+	v := os.Getenv("PEBBLEBASE_DISABLE_UPDATE_CHECK")
+	return v == "1" || strings.EqualFold(v, "true")
+}
+
 // GetSettings returns current update settings.
 func (s *Service) GetSettings() UpdateSettings {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.settings
+	settings := s.settings
+	if updateCheckDisabled() {
+		settings.CheckOnStartup = false
+	}
+	return settings
 }
 
 // SaveSettings updates user preferences.
@@ -163,6 +172,14 @@ func (s *Service) CheckForUpdate(ctx context.Context, force bool) (*UpdateInfo, 
 	repo := s.repoName
 	apiBase := s.apiBaseURL
 	s.mu.RUnlock()
+
+	if updateCheckDisabled() {
+		return &UpdateInfo{
+			CurrentVersion: currentVer,
+			LatestVersion:  currentVer,
+			HasUpdate:      false,
+		}, nil
+	}
 
 	if !settings.CheckOnStartup && !force {
 		return &UpdateInfo{

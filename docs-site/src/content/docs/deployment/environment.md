@@ -16,3 +16,4 @@ Pebblebase Studio is configured via environment variables.
 | `PEBBLEBASE_AUTH_ENABLED` | `true` | Enables or disables authentication screen. |
 | `SESSION_SECRET` | *(random)* | Key used to sign session JWTs. |
 | `APP_ENV` | `production` | Environment mode (`development` or `production`). |
+| `PEBBLEBASE_DISABLE_UPDATE_CHECK` | `false` | Disables automated and manual update checks (intended for CI/CD, tests, or offline environments). |

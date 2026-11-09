@@ -37,10 +37,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "rm -rf /tmp/pb_e2e_data && cd .. && DATA_DIR=/tmp/pb_e2e_data PORT=8080 PEBBLEBASE_JWT_SECRET=pebblebase-jwt-secret-for-e2e-testing-32b ./pebblebase",
+    command:
+      "rm -rf /tmp/pb_e2e_data && cd .. && DATA_DIR=/tmp/pb_e2e_data PORT=8080 PEBBLEBASE_JWT_SECRET=pebblebase-jwt-secret-for-e2e-testing-32b PEBBLEBASE_DISABLE_UPDATE_CHECK=true ./pebblebase",
     url: "http://localhost:8080/health",
     reuseExistingServer: false,
     timeout: 60000,
   },
 });
-
