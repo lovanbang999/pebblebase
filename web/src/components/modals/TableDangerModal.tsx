@@ -226,7 +226,7 @@ export function TableDangerModal({
             placeholder={t("tableDanger.typeToConfirmPlaceholder", {
               table: tableName,
             })}
-            className="focus-visible:ring-destructive/30 h-8 py-1.5 font-mono text-xs"
+            className="focus-visible:ring-destructive/30 dark:focus-visible:ring-destructive/30 h-8 py-1.5 font-mono text-xs"
             autoFocus
             onKeyDown={(e) => {
               if (e.key === "Enter" && isConfirmed && !isExecuting) {
@@ -259,8 +259,8 @@ export function TableDangerModal({
             onClick={handleExecute}
             className={`h-8 cursor-pointer font-mono text-xs ${
               isTruncate
-                ? "bg-warning hover:bg-warning text-white disabled:opacity-40"
-                : "bg-destructive hover:bg-destructive text-white disabled:opacity-40"
+                ? "bg-warning hover:bg-warning dark:bg-warning dark:hover:bg-warning text-white disabled:opacity-40"
+                : "bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive text-white disabled:opacity-40"
             }`}
           >
             {isExecuting ? (

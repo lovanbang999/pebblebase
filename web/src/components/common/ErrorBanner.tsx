@@ -81,7 +81,7 @@ export function ErrorBanner({
           {/* Diagnostic Badge */}
           <Badge
             variant="outline"
-            className="border-destructive/35 bg-destructive/15 text-destructive h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
+            className="border-destructive/35 bg-destructive/15 text-destructive dark:text-destructive h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
           >
             {categoryTitle}
           </Badge>
@@ -90,7 +90,7 @@ export function ErrorBanner({
           {parsed?.host && (
             <Badge
               variant="outline"
-              className="border-destructive/25 bg-destructive/10 text-destructive hidden h-4.5 shrink-0 items-center gap-1 px-1.5 py-0 font-mono text-[10px] sm:flex"
+              className="border-destructive/25 bg-destructive/10 text-destructive dark:text-destructive hidden h-4.5 shrink-0 items-center gap-1 px-1.5 py-0 font-mono text-[10px] sm:flex"
             >
               <Server className="size-2.5" />
               <span>
@@ -119,7 +119,7 @@ export function ErrorBanner({
             variant="ghost"
             size="xs"
             onClick={() => setIsExpanded((prev) => !prev)}
-            className="text-destructive hover:bg-destructive/15 hover:text-destructive dark:hover:bg-destructive/20 h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
+            className="text-destructive hover:bg-destructive/15 hover:text-destructive dark:text-destructive dark:hover:bg-destructive/20 dark:hover:text-destructive h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
           >
             <span>
               {isExpanded
@@ -140,7 +140,7 @@ export function ErrorBanner({
               variant="outline"
               size="xs"
               onClick={onEditConnection}
-              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:bg-card/60 dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
+              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:border-destructive/40 dark:bg-card/60 dark:text-destructive dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2 font-mono text-[11px]"
             >
               <SlidersHorizontal className="size-3" />
               <span>{t("diagnostics.editConnection", "Edit")}</span>
@@ -155,7 +155,7 @@ export function ErrorBanner({
               size="xs"
               onClick={onRetry}
               disabled={isRetrying}
-              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:bg-card/60 dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2.5 font-mono text-[11px] font-semibold transition-colors disabled:opacity-50"
+              className="border-destructive/40 bg-background/60 text-destructive hover:bg-background dark:border-destructive/40 dark:bg-card/60 dark:text-destructive dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2.5 font-mono text-[11px] font-semibold transition-colors disabled:opacity-50"
             >
               <RefreshCw
                 className={cn("size-3", isRetrying && "animate-spin")}
@@ -175,7 +175,7 @@ export function ErrorBanner({
             size="xs"
             onClick={onDismiss}
             aria-label={t("app.dismiss", "Dismiss")}
-            className="text-destructive hover:bg-destructive/20 hover:text-destructive size-6 cursor-pointer rounded-full p-0"
+            className="text-destructive hover:bg-destructive/20 hover:text-destructive dark:text-destructive dark:hover:text-destructive size-6 cursor-pointer rounded-full p-0"
           >
             <X className="size-3.5" />
           </Button>
@@ -206,7 +206,7 @@ export function ErrorBanner({
                 variant="outline"
                 size="xs"
                 onClick={handleCopyError}
-                className="border-border bg-background text-foreground hover:bg-muted dark:bg-card dark:text-muted-foreground h-6 cursor-pointer gap-1 px-2 font-mono text-[10px]"
+                className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted h-6 cursor-pointer gap-1 px-2 font-mono text-[10px]"
               >
                 {isCopied ? (
                   <>

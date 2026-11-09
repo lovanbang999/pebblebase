@@ -1467,14 +1467,14 @@ export function DataGrid({
                 </span>
                 <Badge
                   variant="outline"
-                  className="border-border/60 bg-muted/60 text-muted-foreground dark:bg-muted/80 h-4 px-1 py-0 font-mono text-[10px] font-normal dark:border-transparent"
+                  className="border-border/60 bg-muted/60 text-muted-foreground dark:bg-muted/80 dark:text-muted-foreground h-4 px-1 py-0 font-mono text-[10px] font-normal dark:border-transparent"
                 >
                   {col.type}
                 </Badge>
                 {hasActiveFilter && (
                   <Badge
                     variant="outline"
-                    className="border-primary/30 bg-success/10 text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium"
+                    className="border-primary/30 bg-success/10 text-success dark:text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium"
                     title={`contains: ${activeSearchVal}`}
                   >
                     🔍
@@ -1536,7 +1536,7 @@ export function DataGrid({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenuItem
-                      className="text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/15 flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-primary hover:bg-primary/10 hover:text-primary dark:text-primary dark:hover:bg-primary/15 dark:hover:text-primary flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => setAnalyticsColumn(col)}
                     >
                       <BarChart3 className="text-primary h-3.5 w-3.5 shrink-0" />
@@ -1544,7 +1544,7 @@ export function DataGrid({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => handleOpenColumnSearch(col.name)}
                     >
                       <Search className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
@@ -1558,7 +1558,7 @@ export function DataGrid({
                     <DropdownMenuSeparator className="bg-muted my-1" />
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => onSortChange(col.name, false)}
                     >
                       <ArrowUp className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
@@ -1566,7 +1566,7 @@ export function DataGrid({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => onSortChange(col.name, true)}
                     >
                       <ArrowDown className="text-muted-foreground h-3.5 w-3.5 shrink-0" />
@@ -1575,7 +1575,7 @@ export function DataGrid({
 
                     {isSorted && (
                       <DropdownMenuItem
-                        className="text-warning hover:bg-warning/10 hover:text-warning dark:text-warning/90 flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                        className="text-warning hover:bg-warning/10 hover:text-warning dark:text-warning/90 dark:hover:bg-warning/10 dark:hover:text-warning flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                         onClick={() => onSortChange("", false)}
                       >
                         <RotateCcw className="text-warning h-3.5 w-3.5 shrink-0" />
@@ -1586,7 +1586,7 @@ export function DataGrid({
                     <DropdownMenuSeparator className="bg-muted my-1" />
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => {
                         setFilterCol(col.name);
                       }}
@@ -1596,7 +1596,7 @@ export function DataGrid({
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
-                      className="text-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
+                      className="text-foreground hover:bg-muted hover:text-foreground dark:text-foreground dark:hover:bg-muted dark:hover:text-foreground flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs"
                       onClick={() => {
                         navigator.clipboard.writeText(col.name);
                         setCopiedCol(col.name);
@@ -1876,8 +1876,8 @@ export function DataGrid({
                   variant={boolVal ? "default" : "secondary"}
                   className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
                     boolVal
-                      ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 border"
-                      : "border-border bg-muted text-muted-foreground border dark:border-transparent"
+                      ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 dark:text-success border"
+                      : "border-border bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground border dark:border-transparent"
                   }`}
                 >
                   {String(boolVal)}
@@ -2144,8 +2144,8 @@ export function DataGrid({
                 variant={val ? "default" : "secondary"}
                 className={`h-4 px-1.5 py-0 font-mono text-[10px] font-medium ${
                   val
-                    ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 border"
-                    : "border-border bg-muted text-muted-foreground border dark:border-transparent"
+                    ? "border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/60 dark:text-success border"
+                    : "border-border bg-muted text-muted-foreground dark:bg-muted dark:text-muted-foreground border dark:border-transparent"
                 }`}
               >
                 {String(val)}

@@ -119,7 +119,7 @@ export function SeedModal({
                   <span>{t("seed.title")}</span>
                   <Badge
                     variant="outline"
-                    className="border-primary/20 bg-success/10 text-success font-mono text-[11px]"
+                    className="border-primary/20 bg-success/10 text-success dark:text-success font-mono text-[11px]"
                   >
                     {tableName}
                   </Badge>
@@ -211,8 +211,8 @@ export function SeedModal({
                           className={cn(
                             "h-4 px-1.5 py-0 font-mono text-[10px]",
                             tbl === tableName
-                              ? "border-primary/30 bg-success/15 text-success font-bold"
-                              : "border-border bg-muted text-muted-foreground",
+                              ? "border-primary/30 bg-success/15 text-success dark:text-success font-bold"
+                              : "border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground",
                           )}
                         >
                           {tbl}
@@ -274,7 +274,7 @@ export function SeedModal({
               disabled={!seedResult?.sql}
               className={cn(
                 "h-8 cursor-pointer gap-1.5 px-3 font-mono text-xs transition-colors",
-                copied && "border-primary text-success",
+                copied && "border-primary text-success dark:text-success",
               )}
             >
               {copied ? (

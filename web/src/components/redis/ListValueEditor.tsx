@@ -219,7 +219,7 @@ export function ListValueEditor({
                         setEditingIdx(idx);
                         setEditVal(item);
                       }}
-                      className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
+                      className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-6 w-6 p-0"
                     >
                       <Edit2 className="h-3 w-3" />
                     </Button>

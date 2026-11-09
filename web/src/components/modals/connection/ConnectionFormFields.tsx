@@ -54,7 +54,7 @@ export function ConnectionFormFields({
               onChange={(e) => setHost(e.target.value)}
               required
               placeholder="localhost"
-              className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+              className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
             />
           </FormField>
         </div>
@@ -70,7 +70,7 @@ export function ConnectionFormFields({
               onChange={(e) => setPort(e.target.value)}
               required
               placeholder="5432"
-              className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+              className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
             />
           </FormField>
         </div>
@@ -93,7 +93,7 @@ export function ConnectionFormFields({
             onChange={(e) => onDbNameChange(e.target.value)}
             required
             placeholder="database_name"
-            className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+            className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
           />
         </FormField>
       )}
@@ -139,7 +139,7 @@ export function ConnectionFormFields({
                       ? "default"
                       : "username"
               }
-              className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+              className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
             />
           </FormField>
           <FormField
@@ -161,7 +161,7 @@ export function ConnectionFormFields({
                     ? t("connection.optionalPassword")
                     : "••••••••"
               }
-              className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+              className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
             />
           </FormField>
         </div>

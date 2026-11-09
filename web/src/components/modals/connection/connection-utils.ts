@@ -70,13 +70,13 @@ export const testAlertVariants = cva("text-xs", {
 });
 
 export const driverSelectTriggerVariants = cva(
-  "focus:border-primary/70 focus:ring-primary/20 border-border/90 bg-card/60 h-13 min-h-13 w-full justify-between rounded-xl border px-3 py-2 text-left shadow-2xs transition-all focus:ring-2 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible",
+  "focus:border-primary/70 focus:ring-primary/20 border-border/90 bg-card/60 dark:bg-card/60 h-13 min-h-13 w-full justify-between rounded-xl border px-3 py-2 text-left shadow-2xs transition-all focus:ring-2 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible",
   {
     variants: {
       disabled: {
         true: "opacity-60 cursor-not-allowed",
         false:
-          "hover:border-border hover:bg-muted/70 dark:border-border dark:hover:bg-muted cursor-pointer",
+          "hover:border-border hover:bg-muted/70 dark:border-border dark:hover:border-border dark:hover:bg-muted cursor-pointer",
       },
     },
     defaultVariants: {

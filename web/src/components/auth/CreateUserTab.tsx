@@ -78,7 +78,7 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
               placeholder="e.g. dev_analyst"
               required
               minLength={2}
-              className="border-border bg-card text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 dark:border-border/60 dark:bg-card/70 h-9 py-2 pl-8.5 text-sm"
+              className="border-border bg-card text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20 dark:border-border/60 dark:bg-card/70 dark:text-foreground dark:placeholder:text-muted-foreground h-9 py-2 pl-8.5 text-sm"
             />
           </div>
         </div>
@@ -104,7 +104,7 @@ export function CreateUserTab({ onUserCreated }: CreateUserTabProps) {
               }
             }}
           >
-            <SelectTrigger className="border-border bg-card text-foreground focus:ring-primary dark:border-border/60 dark:bg-card/70 h-9 w-full cursor-pointer font-sans text-xs">
+            <SelectTrigger className="border-border bg-card text-foreground focus:ring-primary dark:border-border/60 dark:bg-card/70 dark:text-foreground h-9 w-full cursor-pointer font-sans text-xs">
               <SelectValue placeholder={t("auth.role")} />
             </SelectTrigger>
             <SelectContent

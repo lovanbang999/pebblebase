@@ -279,7 +279,7 @@ export function SchemaInspector({
                     variant="outline"
                     size="sm"
                     onClick={() => setIsSeedModalOpen(true)}
-                    className="border-primary/30 text-success hover:bg-success/10 dark:hover:bg-success/40 h-8 cursor-pointer gap-1.5 px-2.5 font-mono text-xs"
+                    className="border-primary/30 text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/40 h-8 cursor-pointer gap-1.5 px-2.5 font-mono text-xs"
                   >
                     <Sparkles className="text-success h-3.5 w-3.5" />
                     <span>{t("seed.title")}</span>
@@ -437,7 +437,7 @@ export function SchemaInspector({
                             {col.is_primary_key ? (
                               <Badge
                                 variant="outline"
-                                className="border-warning/30 bg-warning/10 text-warning text-[10px] font-bold uppercase"
+                                className="border-warning/30 bg-warning/10 text-warning dark:text-warning text-[10px] font-bold uppercase"
                               >
                                 {t("schema.primary")}
                               </Badge>
@@ -568,14 +568,14 @@ export function SchemaInspector({
                             {idx.primary ? (
                               <Badge
                                 variant="outline"
-                                className="border-warning/30 bg-warning/10 text-warning text-[10px] font-bold uppercase"
+                                className="border-warning/30 bg-warning/10 text-warning dark:text-warning text-[10px] font-bold uppercase"
                               >
                                 {t("schema.primary")}
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="border-border bg-muted text-muted-foreground text-[10px]"
+                                className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground text-[10px]"
                               >
                                 {t("schema.secondary")}
                               </Badge>
@@ -598,7 +598,7 @@ export function SchemaInspector({
                             {idx.unique ? (
                               <Badge
                                 variant="outline"
-                                className="border-primary/30 bg-success/10 text-success text-[10px] font-bold uppercase"
+                                className="border-primary/30 bg-success/10 text-success dark:text-success text-[10px] font-bold uppercase"
                               >
                                 {t("schema.unique")}
                               </Badge>
@@ -659,7 +659,7 @@ export function SchemaInspector({
                     size="sm"
                     onClick={handleCopy}
                     disabled={!data?.ddl}
-                    className="text-muted-foreground hover:text-foreground h-6 gap-1 px-2 font-mono text-xs"
+                    className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground h-6 gap-1 px-2 font-mono text-xs"
                   >
                     {copied ? (
                       <>

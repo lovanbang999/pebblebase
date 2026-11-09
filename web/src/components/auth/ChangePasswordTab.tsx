@@ -107,7 +107,7 @@ export function ChangePasswordTab({
                 }
               }}
             >
-              <SelectTrigger className="border-border bg-card text-foreground focus:ring-primary dark:border-border/60 dark:bg-card/70 h-9 w-full cursor-pointer font-sans text-xs">
+              <SelectTrigger className="border-border bg-card text-foreground focus:ring-primary dark:border-border/60 dark:bg-card/70 dark:text-foreground h-9 w-full cursor-pointer font-sans text-xs">
                 <SelectValue placeholder={t("auth.selectTargetAccount")}>
                   {(val) => {
                     if (!val || val === "self") {

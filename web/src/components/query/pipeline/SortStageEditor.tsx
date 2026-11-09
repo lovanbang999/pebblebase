@@ -90,7 +90,7 @@ export function SortStageEditor({ config, onChange }: SortStageEditorProps) {
         variant="ghost"
         size="sm"
         onClick={handleAddField}
-        className="text-success hover:bg-success/10 dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
+        className="text-success hover:bg-success/10 dark:text-success dark:hover:bg-success/20 h-6 px-2 font-mono text-[11px]"
       >
         <Plus className="mr-1 size-3" />
         <span>{t("pipeline.add_sort_field")}</span>

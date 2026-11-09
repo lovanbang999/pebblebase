@@ -83,7 +83,7 @@ export function QueryHistoryTab({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("savedQuery.history.searchPlaceholder")}
-            className="focus-visible:border-primary focus-visible:ring-primary/30 border-border bg-background text-foreground placeholder:text-muted-foreground dark:bg-card/90 h-7.5 rounded-md pl-8 text-xs shadow-2xs transition-all focus-visible:ring-1"
+            className="focus-visible:border-primary focus-visible:ring-primary/30 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card/90 dark:text-foreground dark:placeholder:text-muted-foreground h-7.5 rounded-md pl-8 text-xs shadow-2xs transition-all focus-visible:ring-1"
           />
           {search && (
             <button

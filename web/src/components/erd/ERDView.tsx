@@ -710,7 +710,7 @@ function ERDCanvas({
                 variant="ghost"
                 size="xs"
                 onClick={handleCopyError}
-                className="text-muted-foreground hover:text-foreground h-6 gap-1 px-2 font-mono text-[10px]"
+                className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground h-6 gap-1 px-2 font-mono text-[10px]"
               >
                 {isCopiedError ? (
                   <>
@@ -738,7 +738,7 @@ function ERDCanvas({
               type="button"
               onClick={() => loadData()}
               disabled={loading}
-              className="bg-primary hover:bg-primary/90 cursor-pointer gap-2 px-4 py-2 font-mono text-xs font-semibold text-white shadow-xs transition-all active:scale-95 disabled:opacity-50"
+              className="bg-primary hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 cursor-pointer gap-2 px-4 py-2 font-mono text-xs font-semibold text-white shadow-xs transition-all active:scale-95 disabled:opacity-50"
             >
               <RefreshCw
                 className={cn("size-3.5", loading && "animate-spin")}
