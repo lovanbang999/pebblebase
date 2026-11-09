@@ -413,3 +413,48 @@ func TestApplyUpdate_ReadOnlyTargetPreflight(t *testing.T) {
 		t.Fatalf("expected permission denied pre-flight error, got: %v", err)
 	}
 }
+
+func TestDisableUpdateCheckEnvVar(t *testing.T) {
+	// (a) With the variable set, CheckForUpdate returns HasUpdate=false without outbound requests,
+	// and GetSettings().CheckOnStartup returns false.
+	t.Run("with variable set", func(t *testing.T) {
+		t.Setenv("PEBBLEBASE_DISABLE_UPDATE_CHECK", "true")
+
+		// Create a mock server that fails if any request reaches it
+		serverReached := false
+		mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			serverReached = true
+			t.Errorf("expected no outbound request when PEBBLEBASE_DISABLE_UPDATE_CHECK is set, but got request to %s", r.URL.Path)
+			http.Error(w, "should not be reached", http.StatusInternalServerError)
+		}))
+		defer mockServer.Close()
+
+		svc := NewService("1.0.0", t.TempDir(), WithAPIBase(mockServer.URL))
+		settings := svc.GetSettings()
+		if settings.CheckOnStartup {
+			t.Errorf("expected GetSettings().CheckOnStartup to be false when PEBBLEBASE_DISABLE_UPDATE_CHECK is set, got true")
+		}
+
+		info, err := svc.CheckForUpdate(context.Background(), true)
+		if err != nil {
+			t.Fatalf("unexpected error from CheckForUpdate: %v", err)
+		}
+		if info.HasUpdate {
+			t.Errorf("expected HasUpdate to be false, got true")
+		}
+		if serverReached {
+			t.Errorf("mock server was reached despite update check being disabled")
+		}
+	})
+
+	// (b) With the variable unset, existing behavior is unchanged.
+	t.Run("with variable unset", func(t *testing.T) {
+		t.Setenv("PEBBLEBASE_DISABLE_UPDATE_CHECK", "")
+
+		svc := NewService("1.0.0", t.TempDir())
+		settings := svc.GetSettings()
+		if !settings.CheckOnStartup {
+			t.Errorf("expected default CheckOnStartup to be true when unset, got false")
+		}
+	})
+}
