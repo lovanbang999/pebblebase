@@ -787,17 +787,16 @@ describe("ImportModal Component Characterization", () => {
       expect(screen.getByText(/Data Preview · 1 rows/i)).toBeInTheDocument();
     });
 
-    it("disables primary button during pending export or import and ignores subsequent clicks", async () => {
+    it("disables download button during pending export and ignores duplicate clicks", async () => {
       const user = userEvent.setup();
 
-      // Test pending export
       let resolveExport: (blob: Blob) => void;
       const exportPromise = new Promise<Blob>((resolve) => {
         resolveExport = resolve;
       });
       vi.mocked(api.exportTableData).mockReturnValue(exportPromise);
 
-      const { unmount } = renderWithProviders(
+      renderWithProviders(
         <ImportModal {...defaultProps} initialMode="export" />,
       );
 
@@ -814,9 +813,11 @@ describe("ImportModal Component Characterization", () => {
       expect(api.exportTableData).toHaveBeenCalledTimes(1);
 
       resolveExport!(new Blob(["ok"], { type: "text/csv" }));
-      unmount();
+    });
 
-      // Test pending import
+    it("disables import button during pending import and ignores duplicate clicks", async () => {
+      const user = userEvent.setup();
+
       let resolveImport: (val: any) => void;
       const importPromise = new Promise<{
         inserted_count: number;
@@ -902,7 +903,7 @@ describe("ImportModal Component Characterization", () => {
       });
     });
 
-    it("resets file state when closed and clears error banner when switching tabs", async () => {
+    it("resets file and preview state when modal closes and clears error banner on tab switch", async () => {
       const user = userEvent.setup();
       let open = true;
       const handleClose = vi.fn(() => {
