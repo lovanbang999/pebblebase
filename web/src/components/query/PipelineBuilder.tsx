@@ -302,7 +302,7 @@ export function PipelineBuilder({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="border-primary/40 hover:bg-primary/10 text-success h-7 cursor-pointer gap-1.5 text-xs font-semibold"
+                  className="border-primary/40 hover:bg-primary/10 text-success dark:text-success h-7 cursor-pointer gap-1.5 text-xs font-semibold"
                 >
                   <Plus className="size-3.5" />
                   <span>{t("pipeline.stage.add")}</span>
@@ -379,7 +379,7 @@ export function PipelineBuilder({
             variant="ghost"
             size="sm"
             onClick={handleLoadCheckpointSample}
-            className="text-muted-foreground hover:text-foreground h-7 gap-1.5 font-mono text-xs"
+            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-7 gap-1.5 font-mono text-xs"
             title={t("pipeline.load_sample")}
           >
             <Sparkles className="text-warning size-3.5" />
@@ -409,7 +409,7 @@ export function PipelineBuilder({
             variant="outline"
             size="sm"
             onClick={() => setIsPreviewOpen(true)}
-            className="border-border text-foreground h-7 cursor-pointer gap-1.5 font-mono text-xs"
+            className="border-border text-foreground dark:border-border dark:text-foreground h-7 cursor-pointer gap-1.5 font-mono text-xs"
           >
             <Eye className="text-primary size-3.5" />
             <span>{t("pipeline.preview_json")}</span>

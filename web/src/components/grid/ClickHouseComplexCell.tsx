@@ -88,7 +88,7 @@ export function ClickHouseComplexCell({
       >
         <Badge
           variant="outline"
-          className="border-primary/30 bg-success/10 text-success dark:bg-success/15 h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
+          className="border-primary/30 dark:border-primary/30 bg-success/10 text-success dark:bg-success/15 dark:text-success h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
         >
           <span className="font-bold tracking-tighter">[&thinsp;]</span>
           <span>{count}</span>
@@ -157,7 +157,7 @@ export function ClickHouseComplexCell({
       >
         <Badge
           variant="outline"
-          className="border-primary/30 bg-primary/10 text-primary dark:bg-primary/15 h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
+          className="border-primary/30 bg-primary/10 text-primary dark:border-primary/30 dark:bg-primary/15 dark:text-primary h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
         >
           <span className="font-bold tracking-tighter">
             &#123;&thinsp;&#125;
@@ -231,7 +231,7 @@ export function ClickHouseComplexCell({
     >
       <Badge
         variant="outline"
-        className="border-warning/30 bg-warning/10 text-warning dark:bg-warning/15 h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
+        className="border-warning/30 bg-warning/10 text-warning dark:border-warning/30 dark:bg-warning/15 dark:text-warning h-4.5 shrink-0 px-1.5 py-0 font-mono text-[10px] font-semibold"
       >
         <span className="font-bold tracking-tighter">(&thinsp;)</span>
         <span>{count}</span>

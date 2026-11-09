@@ -308,7 +308,7 @@ export default function UpdateDialog({
                   </span>
                   <Badge
                     variant="outline"
-                    className="border-border bg-background text-foreground dark:bg-muted dark:text-muted-foreground px-2 py-0.5 font-mono text-xs"
+                    className="border-border bg-background text-foreground dark:border-border dark:bg-muted dark:text-muted-foreground px-2 py-0.5 font-mono text-xs"
                   >
                     v{updateInfo?.currentVersion || packageJson.version}
                   </Badge>
@@ -330,14 +330,14 @@ export default function UpdateDialog({
               </div>
 
               {hasUpdate ? (
-                <Badge className="border-primary/30 bg-success/15 text-success shrink-0 gap-1 border px-2.5 py-0.5 text-[11px] font-medium">
+                <Badge className="border-primary/30 bg-success/15 text-success dark:text-success shrink-0 gap-1 border px-2.5 py-0.5 text-[11px] font-medium">
                   <Sparkles className="text-success h-3 w-3" />
                   {t("updates.updateAvailable", "Update Ready")}
                 </Badge>
               ) : (
                 <Badge
                   variant="secondary"
-                  className="border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/40 shrink-0 gap-1 border px-2.5 py-0.5 text-[11px]"
+                  className="border-success/30 bg-success/10 text-success dark:border-success/60 dark:bg-success/40 dark:text-success shrink-0 gap-1 border px-2.5 py-0.5 text-[11px]"
                 >
                   <CheckCircle2 className="h-3 w-3" />
                   {t("updates.upToDate", "Up to Date")}
@@ -550,7 +550,7 @@ export default function UpdateDialog({
             size="sm"
             onClick={onRefresh}
             disabled={isLoading || isUpdating}
-            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted h-8.5 cursor-pointer gap-1.5 px-2.5 text-xs font-medium"
+            className="text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground h-8.5 cursor-pointer gap-1.5 px-2.5 text-xs font-medium"
           >
             <RefreshCw
               className={cn("h-3.5 w-3.5", isLoading && "animate-spin")}
@@ -566,7 +566,7 @@ export default function UpdateDialog({
               size="sm"
               onClick={onClose}
               disabled={isUpdating}
-              className="text-foreground hover:bg-muted dark:border-border dark:text-muted-foreground h-8.5 cursor-pointer px-3.5 text-xs font-medium"
+              className="text-foreground hover:bg-muted dark:border-border dark:text-muted-foreground dark:hover:bg-muted h-8.5 cursor-pointer px-3.5 text-xs font-medium"
             >
               {hasUpdate
                 ? t("updates.remindLater", "Remind Me Later")

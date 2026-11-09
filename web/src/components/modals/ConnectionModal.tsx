@@ -124,7 +124,7 @@ export function ConnectionModal({
                 {(cloneData || editData) && (
                   <Badge
                     variant="outline"
-                    className="border-primary/40 bg-success/10 text-success dark:bg-success/15 h-4 px-1.5 py-0 font-mono text-[10px] uppercase"
+                    className="border-primary/40 bg-success/10 text-success dark:bg-success/15 dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] uppercase"
                   >
                     {editData
                       ? t("connection.editTitle", "Editing")
@@ -171,7 +171,7 @@ export function ConnectionModal({
                 }
                 className="w-full"
               >
-                <TabsList className="border-border bg-muted/60 grid h-10 w-full grid-cols-4 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
+                <TabsList className="border-border bg-muted/60 dark:border-border grid h-10 w-full grid-cols-4 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
                   {DATABASE_ENVIRONMENTS.map((env) => (
                     <TabsTrigger
                       key={env.key}
@@ -199,7 +199,7 @@ export function ConnectionModal({
                     variant="ghost"
                     size="sm"
                     onClick={handleResetAutoName}
-                    className="text-success hover:bg-success/10 dark:hover:bg-success/40 h-5 px-1.5 font-mono text-[10px]"
+                    className="text-success hover:bg-success/10 hover:text-success dark:text-success dark:hover:bg-success/40 dark:hover:text-success h-5 px-1.5 font-mono text-[10px]"
                   >
                     {t("connection.resetAutoName")}
                   </Button>
@@ -215,7 +215,7 @@ export function ConnectionModal({
                 }}
                 placeholder="e.g. Analytics DB (PostgreSQL - staging)"
                 required
-                className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+                className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
               />
             </FormField>
 
@@ -225,7 +225,7 @@ export function ConnectionModal({
               onValueChange={(val) => setMode(val as "form" | "url")}
               className="w-full"
             >
-              <TabsList className="border-border bg-muted/60 grid h-10 w-full grid-cols-2 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
+              <TabsList className="border-border bg-muted/60 dark:border-border grid h-10 w-full grid-cols-2 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
                 <TabsTrigger
                   value="form"
                   className="data-active:border-border dark:data-active:border-border/80 data-active:bg-background dark:data-active:bg-card/90 data-active:text-foreground gap-2 border-transparent py-0.5 text-xs font-medium transition-all data-active:shadow-xs"
@@ -295,7 +295,7 @@ export function ConnectionModal({
                       </span>
                       <Badge
                         variant="outline"
-                        className="border-primary/40 bg-success/10 text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                        className="border-primary/40 bg-success/10 text-success dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                       >
                         AES-256
                       </Badge>
@@ -311,7 +311,7 @@ export function ConnectionModal({
                   onCheckedChange={(checked) =>
                     setSavePassword(Boolean(checked))
                   }
-                  className="data-checked:border-primary data-checked:bg-primary dark:data-checked:bg-success mt-0.5"
+                  className="data-checked:border-primary data-checked:bg-primary dark:data-checked:border-primary dark:data-checked:bg-success mt-0.5"
                 />
               </div>
             )}
@@ -332,7 +332,7 @@ export function ConnectionModal({
                     </span>
                     <Badge
                       variant="outline"
-                      className="border-warning/40 bg-warning/10 text-warning h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                      className="border-warning/40 bg-warning/10 text-warning dark:text-warning h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                     >
                       {t("connection.readOnlyBadge")}
                     </Badge>
@@ -346,7 +346,7 @@ export function ConnectionModal({
                 id="readOnlyMode"
                 checked={readOnly}
                 onCheckedChange={(checked) => setReadOnly(Boolean(checked))}
-                className="data-checked:border-warning data-checked:bg-warning mt-0.5"
+                className="data-checked:border-warning data-checked:bg-warning dark:data-checked:border-warning dark:data-checked:bg-warning mt-0.5"
               />
             </div>
 
@@ -365,7 +365,7 @@ export function ConnectionModal({
               size="sm"
               onClick={handleTest}
               disabled={testing || submitting}
-              className="border-border bg-background text-foreground hover:bg-muted dark:bg-card/60 dark:text-muted-foreground gap-1.5 text-xs font-medium"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card/60 dark:text-muted-foreground dark:hover:bg-muted gap-1.5 text-xs font-medium"
             >
               {testing ? (
                 <>
@@ -387,7 +387,7 @@ export function ConnectionModal({
                 size="sm"
                 onClick={onClose}
                 disabled={submitting}
-                className="text-muted-foreground hover:text-foreground text-xs"
+                className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground text-xs"
               >
                 {t("rowModal.cancel")}
               </Button>

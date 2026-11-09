@@ -134,7 +134,7 @@ export function AdminPanel({
               <TabsList className="border-border bg-muted dark:border-border/80 dark:bg-card/90 h-9.5 gap-1 rounded-lg border p-1 group-data-horizontal/tabs:h-9.5 sm:h-10.5 sm:gap-1.5 sm:group-data-horizontal/tabs:h-10.5">
                 <TabsTrigger
                   value="users"
-                  className="text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-active:bg-muted dark:data-[state=active]:bg-muted h-full cursor-pointer gap-2 px-3.5 text-xs font-medium transition-colors data-active:shadow-xs data-[state=active]:shadow-xs"
+                  className="text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:text-muted-foreground dark:hover:text-foreground dark:data-active:bg-muted dark:data-active:text-foreground dark:data-[state=active]:bg-muted dark:data-[state=active]:text-foreground h-full cursor-pointer gap-2 px-3.5 text-xs font-medium transition-colors data-active:shadow-xs data-[state=active]:shadow-xs"
                 >
                   <Users className="size-3.5" />
                   {t("auth.userManagement")}
@@ -144,21 +144,21 @@ export function AdminPanel({
                 </TabsTrigger>
                 <TabsTrigger
                   value="create"
-                  className="text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-active:bg-muted dark:data-[state=active]:bg-muted h-full cursor-pointer gap-2 px-3.5 text-xs font-medium transition-colors data-active:shadow-xs data-[state=active]:shadow-xs"
+                  className="text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:text-muted-foreground dark:hover:text-foreground dark:data-active:bg-muted dark:data-active:text-foreground dark:data-[state=active]:bg-muted dark:data-[state=active]:text-foreground h-full cursor-pointer gap-2 px-3.5 text-xs font-medium transition-colors data-active:shadow-xs data-[state=active]:shadow-xs"
                 >
                   <UserPlus className="size-3.5" />
                   {t("auth.createUser")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="password"
-                  className="text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-active:bg-muted dark:data-[state=active]:bg-muted h-full cursor-pointer gap-2 px-3.5 text-xs font-medium transition-colors data-active:shadow-xs data-[state=active]:shadow-xs"
+                  className="text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:text-muted-foreground dark:hover:text-foreground dark:data-active:bg-muted dark:data-active:text-foreground dark:data-[state=active]:bg-muted dark:data-[state=active]:text-foreground h-full cursor-pointer gap-2 px-3.5 text-xs font-medium transition-colors data-active:shadow-xs data-[state=active]:shadow-xs"
                 >
                   <KeyRound className="size-3.5" />
                   {t("auth.changePassword")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="audit"
-                  className="text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:data-active:bg-muted dark:data-[state=active]:bg-muted h-full cursor-pointer gap-2 px-3.5 text-xs font-medium transition-colors data-active:shadow-xs data-[state=active]:shadow-xs"
+                  className="text-muted-foreground hover:text-foreground data-active:bg-background data-active:text-foreground data-[state=active]:bg-background data-[state=active]:text-foreground dark:text-muted-foreground dark:hover:text-foreground dark:data-active:bg-muted dark:data-active:text-foreground dark:data-[state=active]:bg-muted dark:data-[state=active]:text-foreground h-full cursor-pointer gap-2 px-3.5 text-xs font-medium transition-colors data-active:shadow-xs data-[state=active]:shadow-xs"
                 >
                   <ScrollText className="size-3.5" />
                   {t("auth.auditLog")}

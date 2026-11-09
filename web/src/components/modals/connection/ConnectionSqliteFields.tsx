@@ -31,7 +31,7 @@ export function ConnectionSqliteFields({
           onChange={(e) => onFilepathChange(e.target.value)}
           required
           placeholder="/absolute/path/to/database.db or ./app.db"
-          className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+          className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
         />
       </FormField>
     </div>

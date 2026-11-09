@@ -136,7 +136,7 @@ export function HashValueEditor({
           <Button
             size="sm"
             onClick={() => setIsAdding(true)}
-            className="bg-primary hover:bg-primary h-7 text-xs text-white"
+            className="bg-primary hover:bg-primary dark:bg-primary dark:hover:bg-primary h-7 text-xs text-white"
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
             {t("redis.hashEditor.addField")}
@@ -271,7 +271,7 @@ export function HashValueEditor({
                           size="sm"
                           variant="ghost"
                           onClick={() => handleStartEdit(f, v)}
-                          className="text-muted-foreground hover:text-foreground h-6 w-6 p-0"
+                          className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-6 w-6 p-0"
                         >
                           <Edit2 className="h-3 w-3" />
                         </Button>

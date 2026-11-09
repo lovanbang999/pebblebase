@@ -71,7 +71,7 @@ export function ConnectionDriverSelect({
                       </span>
                       <Badge
                         variant="outline"
-                        className="border-border/90 bg-muted text-muted-foreground dark:border-border h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                        className="border-border/90 bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                       >
                         {currentEngine.tag}
                       </Badge>
@@ -135,7 +135,7 @@ export function ConnectionDriverSelect({
                       <div className="flex shrink-0 items-center gap-2">
                         <Badge
                           variant="outline"
-                          className="border-border/90 bg-muted text-muted-foreground dark:border-border h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                          className="border-border/90 bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                         >
                           {engine.tag}
                         </Badge>

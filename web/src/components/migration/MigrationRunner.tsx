@@ -356,7 +356,7 @@ export function MigrationRunner({
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="border-border bg-background dark:bg-muted h-8 gap-1.5 font-mono text-xs"
+                    className="border-border bg-background dark:border-border dark:bg-muted h-8 gap-1.5 font-mono text-xs"
                   >
                     <Sparkles className="text-warning h-3.5 w-3.5" />
                     <span>{t("migration.templates")}</span>
@@ -403,7 +403,7 @@ export function MigrationRunner({
               size="sm"
               onClick={() => dryRunMutation.mutate(ddl)}
               disabled={!ddl.trim() || isExecuting}
-              className="border-border bg-background text-foreground hover:bg-muted dark:bg-muted h-8 gap-1.5 px-3 font-mono text-xs font-semibold"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-muted dark:text-foreground dark:hover:bg-muted h-8 gap-1.5 px-3 font-mono text-xs font-semibold"
             >
               <ShieldCheck
                 className={cn(
@@ -516,8 +516,8 @@ export function MigrationRunner({
                 lastResult.dry_run
                   ? "border-sky-400/40 bg-sky-500/10 text-sky-700 dark:text-sky-300"
                   : lastResult.success
-                    ? "border-primary/40 bg-success/10 text-success"
-                    : "border-destructive/40 bg-destructive/10 text-destructive",
+                    ? "border-primary/40 bg-success/10 text-success dark:text-success"
+                    : "border-destructive/40 bg-destructive/10 text-destructive dark:text-destructive",
               )}
             >
               {lastResult.dry_run
@@ -560,7 +560,7 @@ export function MigrationRunner({
                     <div className="flex items-center gap-2 overflow-hidden">
                       <Badge
                         variant="secondary"
-                        className="bg-muted shrink-0 text-[10px] font-bold uppercase"
+                        className="bg-muted dark:bg-muted shrink-0 text-[10px] font-bold uppercase"
                       >
                         {op.action}
                       </Badge>
@@ -593,7 +593,7 @@ export function MigrationRunner({
                   variant="ghost"
                   size="sm"
                   onClick={handleCopyRollback}
-                  className="text-muted-foreground hover:text-foreground h-7 gap-1 px-2 font-mono text-[11px] dark:hover:text-white"
+                  className="text-muted-foreground hover:text-foreground dark:text-muted-foreground h-7 gap-1 px-2 font-mono text-[11px] dark:hover:text-white"
                 >
                   {copiedRollback ? (
                     <>
@@ -637,7 +637,7 @@ export function MigrationRunner({
             size="sm"
             onClick={() => refetchHistory()}
             disabled={isHistoryLoading || isHistoryRefetching}
-            className="text-muted-foreground hover:text-foreground h-7 gap-1 px-2 font-mono text-xs"
+            className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-7 gap-1 px-2 font-mono text-xs"
           >
             <RefreshCw
               className={cn(
@@ -675,8 +675,8 @@ export function MigrationRunner({
                         className={cn(
                           "font-mono text-[10px] font-bold uppercase",
                           record.success
-                            ? "border-primary/30 bg-success/10 text-success"
-                            : "border-destructive/30 bg-destructive/10 text-destructive",
+                            ? "border-primary/30 bg-success/10 text-success dark:text-success"
+                            : "border-destructive/30 bg-destructive/10 text-destructive dark:text-destructive",
                         )}
                       >
                         {record.success
@@ -710,7 +710,7 @@ export function MigrationRunner({
                           size="sm"
                           onClick={() => setConfirmRollbackRecord(record)}
                           disabled={isReadOnly || isExecuting}
-                          className="border-warning/30 bg-warning/5 text-warning hover:bg-warning/15 h-7 gap-1 px-2 font-mono text-[11px]"
+                          className="border-warning/30 bg-warning/5 text-warning hover:bg-warning/15 dark:text-warning h-7 gap-1 px-2 font-mono text-[11px]"
                         >
                           <RotateCcw className="h-3 w-3" />
                           <span>{t("migration.applyRollback")}</span>

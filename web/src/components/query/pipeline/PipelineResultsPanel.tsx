@@ -100,7 +100,7 @@ export function PipelineResultsPanel({
                 variant="ghost"
                 size="sm"
                 onClick={handleExport}
-                className="text-muted-foreground hover:text-foreground h-6 px-1.5 font-mono text-[11px]"
+                className="text-muted-foreground hover:text-foreground dark:hover:text-foreground h-6 px-1.5 font-mono text-[11px]"
                 title="Export to CSV"
               >
                 <Download className="size-3" />

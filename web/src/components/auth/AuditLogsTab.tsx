@@ -35,7 +35,7 @@ export function AuditLogsTab({
           size="sm"
           onClick={onRefresh}
           disabled={loading}
-          className="border-border text-foreground hover:bg-muted dark:text-muted-foreground h-8 cursor-pointer gap-1.5 text-xs"
+          className="border-border text-foreground hover:bg-muted dark:border-border dark:text-muted-foreground dark:hover:bg-muted h-8 cursor-pointer gap-1.5 text-xs"
         >
           <RefreshCw
             className={`size-3.5 ${loading ? "text-primary dark:text-primary animate-spin" : ""}`}

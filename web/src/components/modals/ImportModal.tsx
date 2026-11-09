@@ -484,7 +484,7 @@ export function ImportModal({
                       setExportDestination("file");
                   }}
                 >
-                  <SelectTrigger className="border-border bg-card dark:bg-card/50 h-11 w-full font-mono text-xs">
+                  <SelectTrigger className="border-border bg-card dark:border-border dark:bg-card/50 h-11 w-full font-mono text-xs">
                     <SelectValue
                       placeholder={t("export.selectFormat", {
                         defaultValue: "Select format",
@@ -831,7 +831,7 @@ export function ImportModal({
                             {targetCol?.is_primary_key && (
                               <Badge
                                 variant="outline"
-                                className="border-warning/30 text-warning shrink-0 px-1.5 py-0 font-mono text-[10px]"
+                                className="border-warning/30 text-warning dark:text-warning shrink-0 px-1.5 py-0 font-mono text-[10px]"
                               >
                                 PK
                               </Badge>

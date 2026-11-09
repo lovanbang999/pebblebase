@@ -259,7 +259,7 @@ export function AddKeyModal({
               type="submit"
               size="sm"
               disabled={loading}
-              className="bg-destructive hover:bg-destructive text-white"
+              className="bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive text-white"
             >
               {loading ? (
                 <>

@@ -116,7 +116,7 @@ export function UsersTab({
                           {isSelf && (
                             <Badge
                               variant="outline"
-                              className="border-primary/30 bg-primary/10 text-primary px-1.5 py-0 text-[10px]"
+                              className="border-primary/30 bg-primary/10 text-primary dark:text-primary px-1.5 py-0 text-[10px]"
                             >
                               {t("auth.you")}
                             </Badge>
@@ -176,7 +176,7 @@ export function UsersTab({
                           size="icon-sm"
                           onClick={() => onSelectResetPasswordUser(u.id)}
                           title={t("auth.resetPassword")}
-                          className="text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+                          className="text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-muted dark:hover:text-foreground cursor-pointer"
                         >
                           <KeyRound className="size-3.5" />
                         </Button>
@@ -193,7 +193,7 @@ export function UsersTab({
                                 ? t("auth.deactivateUser", "Deactivate user")
                                 : t("auth.activateUser", "Activate user")
                             }
-                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+                            className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive dark:hover:text-destructive cursor-pointer"
                           >
                             {u.active ? (
                               <UserX className="size-3.5" />

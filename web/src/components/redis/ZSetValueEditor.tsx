@@ -144,7 +144,7 @@ export function ZSetValueEditor({
             size="sm"
             variant="ghost"
             onClick={() => setSortDesc(!sortDesc)}
-            className="text-muted-foreground h-7 text-xs"
+            className="text-muted-foreground dark:text-muted-foreground h-7 text-xs"
           >
             <ArrowUpDown className="mr-1 h-3 w-3" />
             {sortDesc

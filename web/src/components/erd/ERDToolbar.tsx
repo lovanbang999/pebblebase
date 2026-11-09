@@ -76,7 +76,7 @@ export default function ERDToolbar({
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={t("erd.search")}
-          className="border-border bg-muted/70 text-foreground placeholder:text-muted-foreground dark:bg-muted/60 h-7 pr-7 pl-8 text-xs focus-visible:ring-1 focus-visible:ring-blue-500/60"
+          className="border-border bg-muted/70 text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-muted/60 dark:text-foreground h-7 pr-7 pl-8 text-xs focus-visible:ring-1 focus-visible:ring-blue-500/60"
         />
         {searchQuery ? (
           <button
@@ -106,7 +106,7 @@ export default function ERDToolbar({
                 variant="ghost"
                 size="icon-xs"
                 onClick={onZoomIn}
-                className="text-muted-foreground hover:bg-muted h-7 w-7"
+                className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted h-7 w-7"
               >
                 <ZoomIn className="h-3.5 w-3.5" />
               </Button>
@@ -122,7 +122,7 @@ export default function ERDToolbar({
                 variant="ghost"
                 size="icon-xs"
                 onClick={onZoomOut}
-                className="text-muted-foreground hover:bg-muted h-7 w-7"
+                className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted h-7 w-7"
               >
                 <ZoomOut className="h-3.5 w-3.5" />
               </Button>
@@ -138,7 +138,7 @@ export default function ERDToolbar({
                 variant="ghost"
                 size="icon-xs"
                 onClick={onFitView}
-                className="text-muted-foreground hover:bg-muted h-7 w-7"
+                className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted h-7 w-7"
               >
                 <Maximize2 className="h-3.5 w-3.5" />
               </Button>
@@ -155,7 +155,7 @@ export default function ERDToolbar({
                   variant="ghost"
                   size="icon-xs"
                   onClick={onResetLayout}
-                  className="text-muted-foreground hover:bg-muted h-7 w-7"
+                  className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted h-7 w-7"
                 >
                   <LayoutGrid className="text-muted-foreground h-3.5 w-3.5" />
                 </Button>
@@ -181,8 +181,8 @@ export default function ERDToolbar({
               className={cn(
                 "h-7 gap-1 px-2 font-mono text-xs transition-colors",
                 compactMode
-                  ? "border-warning/80 bg-warning/10 text-warning dark:border-warning/60 dark:bg-warning/40 border"
-                  : "text-muted-foreground hover:bg-muted",
+                  ? "border-warning/80 bg-warning/10 text-warning dark:border-warning/60 dark:bg-warning/40 dark:text-warning border"
+                  : "text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted",
               )}
             >
               <Key className="text-warning h-3 w-3" />
@@ -203,7 +203,7 @@ export default function ERDToolbar({
               variant="ghost"
               size="sm"
               onClick={onToggleDirection}
-              className="text-muted-foreground hover:bg-muted h-7 gap-1 px-2 font-mono text-xs"
+              className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted h-7 gap-1 px-2 font-mono text-xs"
             >
               {direction === "LR" ? (
                 <>
@@ -234,7 +234,7 @@ export default function ERDToolbar({
                 "h-7 w-7 transition-colors",
                 showMinimap
                   ? "border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800/60 dark:bg-blue-950/40 dark:text-blue-400"
-                  : "text-muted-foreground hover:bg-muted",
+                  : "text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted",
               )}
             >
               <Map className="h-3.5 w-3.5" />
@@ -254,7 +254,7 @@ export default function ERDToolbar({
               variant="ghost"
               size="sm"
               onClick={onCopyMermaid}
-              className="text-muted-foreground hover:bg-muted h-7 gap-1.5 px-2 font-mono text-xs transition-all"
+              className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted h-7 gap-1.5 px-2 font-mono text-xs transition-all"
             >
               {isMermaidCopied ? (
                 <>
@@ -281,7 +281,7 @@ export default function ERDToolbar({
         disabled={isExporting}
         className={cn(
           "h-7 cursor-pointer gap-1.5 rounded-md px-2.5 text-xs font-medium shadow-2xs transition-colors",
-          "bg-blue-600 text-white hover:bg-blue-500 hover:text-white active:bg-blue-700",
+          "bg-blue-600 text-white hover:bg-blue-500 hover:text-white active:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 dark:active:bg-blue-700",
           isExporting && "cursor-wait opacity-75",
         )}
       >

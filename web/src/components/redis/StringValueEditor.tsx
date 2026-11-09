@@ -126,7 +126,7 @@ export function StringValueEditor({
               size="sm"
               onClick={handleSave}
               disabled={saving}
-              className="bg-primary hover:bg-success h-7 text-xs text-white"
+              className="bg-primary dark:bg-primary hover:bg-success dark:hover:bg-success h-7 text-xs text-white"
             >
               {saving ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />

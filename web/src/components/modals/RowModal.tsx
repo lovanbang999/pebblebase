@@ -318,7 +318,7 @@ export function RowModal({
             </span>
             <Badge
               variant="secondary"
-              className="text-success font-mono text-xs"
+              className="text-success dark:text-success font-mono text-xs"
             >
               {table.name}
             </Badge>
@@ -486,7 +486,7 @@ export function RowModal({
                         {key}
                         <Badge
                           variant="outline"
-                          className="text-warning h-4 px-1 py-0 font-mono text-[9px] font-normal"
+                          className="text-warning dark:text-warning h-4 px-1 py-0 font-mono text-[9px] font-normal"
                         >
                           {t("datagrid.dynamicBadge")}
                         </Badge>
@@ -496,7 +496,7 @@ export function RowModal({
                         variant="ghost"
                         size="icon-xs"
                         onClick={() => handleRemoveDynamicField(key)}
-                        className="text-muted-foreground hover:text-destructive h-5 w-5"
+                        className="text-muted-foreground hover:text-destructive dark:hover:text-destructive h-5 w-5"
                         title={t("rowModal.removeFieldTooltip")}
                       >
                         <Trash2 className="h-3 w-3" />
@@ -536,7 +536,7 @@ export function RowModal({
                     variant="ghost"
                     size="icon-xs"
                     onClick={() => setShowAddField(false)}
-                    className="text-muted-foreground hover:text-muted-foreground h-5 w-5"
+                    className="text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground h-5 w-5"
                   >
                     <Plus className="h-3 w-3 rotate-45" />
                   </Button>
@@ -584,7 +584,7 @@ export function RowModal({
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowAddField(true)}
-                className="text-success hover:text-success flex h-auto items-center gap-1.5 p-0 font-mono text-xs"
+                className="text-success hover:text-success dark:text-success dark:hover:text-success flex h-auto items-center gap-1.5 p-0 font-mono text-xs"
               >
                 <Plus className="h-3.5 w-3.5" />
                 {t("rowModal.addDynamicField")}
@@ -716,7 +716,7 @@ export function RowModal({
                 <span>{t("row.diff.title")}</span>
                 <Badge
                   variant="outline"
-                  className="border-warning/30 bg-warning/10 text-warning px-2 py-0.5 font-mono text-[11px] font-normal"
+                  className="border-warning/30 bg-warning/10 text-warning dark:text-warning px-2 py-0.5 font-mono text-[11px] font-normal"
                 >
                   {t(
                     pendingDiffs.length === 1
@@ -728,7 +728,7 @@ export function RowModal({
               </AlertDialogTitle>
               <Badge
                 variant="secondary"
-                className="text-success shrink-0 font-mono text-xs"
+                className="text-success dark:text-success shrink-0 font-mono text-xs"
               >
                 {table.name}
               </Badge>

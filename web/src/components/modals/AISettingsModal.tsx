@@ -298,7 +298,7 @@ export function AISettingsModal({
                 </DialogTitle>
                 <Badge
                   variant="outline"
-                  className="border-primary/40 bg-primary/10 text-primary h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                  className="border-primary/40 bg-primary/10 text-primary dark:text-primary h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                 >
                   {t("ai.byoKeyBadge")}
                 </Badge>
@@ -349,14 +349,14 @@ export function AISettingsModal({
                             {p.id === "ollama" ? (
                               <Badge
                                 variant="outline"
-                                className="border-primary/40 bg-success/10 text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
+                                className="border-primary/40 bg-success/10 text-success dark:text-success h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
                               >
                                 {t("ai.offlineBadge")}
                               </Badge>
                             ) : (
                               <Badge
                                 variant="outline"
-                                className="border-border bg-muted text-muted-foreground h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
+                                className="border-border bg-muted text-muted-foreground dark:border-border dark:bg-muted dark:text-muted-foreground h-3.5 px-1 py-0 font-mono text-[9px] font-medium uppercase"
                               >
                                 {t("ai.cloudBadge")}
                               </Badge>
@@ -395,14 +395,14 @@ export function AISettingsModal({
                       onChange={(e) => setModel(e.target.value)}
                       placeholder={t("ai.modelPlaceholder")}
                       required
-                      className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+                      className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                     />
                   ) : (
                     <Select
                       value={model}
                       onValueChange={(val) => setModel(val ?? "")}
                     >
-                      <SelectTrigger className="border-border bg-background text-foreground dark:bg-card/60 h-9 w-full rounded-lg border px-3 font-mono text-xs shadow-2xs">
+                      <SelectTrigger className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground h-9 w-full rounded-lg border px-3 font-mono text-xs shadow-2xs">
                         <SelectValue placeholder={t("ai.modelPlaceholder")} />
                       </SelectTrigger>
                       <SelectContent className="border-border bg-background dark:bg-card z-50 rounded-lg border p-1 shadow-lg">
@@ -443,7 +443,7 @@ export function AISettingsModal({
                     onChange={(e) => setBaseURL(e.target.value)}
                     placeholder={t("ai.endpointUrlPlaceholder")}
                     required
-                    className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
+                    className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground font-mono text-xs"
                   />
                   {provider === "ollama" && (
                     <p className="text-muted-foreground mt-1 text-[11px] leading-normal">
@@ -462,7 +462,7 @@ export function AISettingsModal({
                         </label>
                         <Badge
                           variant="outline"
-                          className="border-primary/40 bg-success/10 text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
+                          className="border-primary/40 bg-success/10 text-success dark:text-success h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
                         >
                           {t("ai.keyEncryptedBadge")}
                         </Badge>
@@ -488,7 +488,7 @@ export function AISettingsModal({
                             ? t("ai.keySavedMasked", { mask: keyMask })
                             : t("ai.apiKeyPlaceholder")
                         }
-                        className="border-border bg-background text-foreground dark:bg-card/60 pr-9 font-mono text-xs"
+                        className="border-border bg-background text-foreground dark:border-border dark:bg-card/60 dark:text-foreground pr-9 font-mono text-xs"
                       />
                       <button
                         type="button"
@@ -601,7 +601,7 @@ export function AISettingsModal({
               size="sm"
               onClick={handleTest}
               disabled={testing || saving || loading}
-              className="border-border bg-background text-foreground hover:bg-muted dark:bg-card/60 dark:text-muted-foreground gap-1.5 text-xs font-medium"
+              className="border-border bg-background text-foreground hover:bg-muted dark:border-border dark:bg-card/60 dark:text-muted-foreground dark:hover:bg-muted gap-1.5 text-xs font-medium"
             >
               {testing ? (
                 <>
@@ -623,7 +623,7 @@ export function AISettingsModal({
                 size="sm"
                 onClick={onClose}
                 disabled={saving}
-                className="text-muted-foreground hover:text-foreground text-xs"
+                className="text-muted-foreground hover:text-foreground dark:text-muted-foreground dark:hover:text-foreground text-xs"
               >
                 {t("rowModal.cancel")}
               </Button>
@@ -631,7 +631,7 @@ export function AISettingsModal({
                 type="submit"
                 size="sm"
                 disabled={saving || testing || loading}
-                className="bg-primary hover:bg-primary gap-1.5 text-xs font-medium text-white"
+                className="bg-primary hover:bg-primary dark:bg-primary dark:hover:bg-primary gap-1.5 text-xs font-medium text-white"
               >
                 {saving ? (
                   <>

@@ -170,7 +170,7 @@ export function OfflineRecoveryBanner({
           data-testid="reconnect-network-btn"
           onClick={handleReconnect}
           disabled={isReconnecting}
-          className="border-warning/40 text-warning hover:bg-warning/20 h-7 cursor-pointer gap-1.5 text-xs font-semibold shadow-xs"
+          className="border-warning/40 text-warning hover:bg-warning/20 dark:text-warning h-7 cursor-pointer gap-1.5 text-xs font-semibold shadow-xs"
         >
           <RefreshCw
             className={`h-3 w-3 ${isReconnecting ? "animate-spin" : ""}`}

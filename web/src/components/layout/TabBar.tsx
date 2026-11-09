@@ -397,7 +397,7 @@ export function TabBar({
                 size="icon-xs"
                 onClick={onNewQueryTab}
                 aria-label={t("tabs.newQueryTab")}
-                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 h-7 w-7 shrink-0 rounded-md"
+                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 dark:hover:text-foreground h-7 w-7 shrink-0 rounded-md"
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -430,7 +430,7 @@ export function TabBar({
                     e.stopPropagation();
                     handleScrollBy("left");
                   }}
-                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:bg-muted/95 dark:text-foreground relative z-10 ml-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
+                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:border-border dark:bg-muted/95 dark:text-foreground dark:hover:text-foreground relative z-10 ml-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
                   style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -562,7 +562,7 @@ export function TabBar({
                 draggable={false}
                 onDragStart={(e) => e.stopPropagation()}
                 onClick={() => onNewQueryTab()}
-                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 ml-1 h-7 w-7 shrink-0 cursor-pointer rounded-md"
+                className="wails-no-drag text-muted-foreground hover:bg-muted/60 hover:text-foreground dark:hover:bg-muted/50 dark:hover:text-foreground ml-1 h-7 w-7 shrink-0 cursor-pointer rounded-md"
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
               >
                 <Plus className="h-3.5 w-3.5" />
@@ -588,7 +588,7 @@ export function TabBar({
                     e.stopPropagation();
                     handleScrollBy("right");
                   }}
-                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:bg-muted/95 dark:text-foreground relative z-10 mr-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
+                  className="wails-no-drag border-border bg-background/95 text-muted-foreground hover:text-foreground dark:border-border dark:bg-muted/95 dark:text-foreground dark:hover:text-foreground relative z-10 mr-1 h-6 w-5 shrink-0 cursor-pointer rounded border shadow-xs"
                   style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 >
                   <ChevronRight className="h-3.5 w-3.5" />

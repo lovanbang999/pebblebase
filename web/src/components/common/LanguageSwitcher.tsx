@@ -37,7 +37,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
                   type="button"
                   variant="ghost"
                   size={compact ? "icon-xs" : "xs"}
-                  className="text-muted-foreground hover:text-foreground flex h-6 items-center justify-center gap-1 px-1.5 font-mono text-[10px] font-semibold tracking-wider"
+                  className="text-muted-foreground hover:text-foreground dark:hover:text-foreground flex h-6 items-center justify-center gap-1 px-1.5 font-mono text-[10px] font-semibold tracking-wider"
                 >
                   <Globe className="text-success size-3.5" />
                   {!compact && <span className="uppercase">{currentLang}</span>}
@@ -57,7 +57,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
           onClick={() => handleLanguageChange("vi")}
           className={`flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs ${
             currentLang === "vi"
-              ? "bg-success/10 text-success font-semibold"
+              ? "bg-success/10 text-success dark:text-success font-semibold"
               : ""
           }`}
         >
@@ -72,7 +72,7 @@ export function LanguageSwitcher({ compact = false }: LanguageSwitcherProps) {
           onClick={() => handleLanguageChange("en")}
           className={`flex cursor-pointer items-center justify-between rounded-md px-2 py-1.5 font-mono text-xs ${
             currentLang === "en"
-              ? "bg-success/10 text-success font-semibold"
+              ? "bg-success/10 text-success dark:text-success font-semibold"
               : ""
           }`}
         >

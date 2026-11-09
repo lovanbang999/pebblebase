@@ -324,7 +324,7 @@ export function RedisKeyBrowser({
             <Button
               size="sm"
               onClick={() => setIsAddKeyOpen(true)}
-              className="bg-destructive hover:bg-destructive h-7 text-xs text-white"
+              className="bg-destructive hover:bg-destructive dark:bg-destructive dark:hover:bg-destructive h-7 text-xs text-white"
             >
               <Plus className="mr-1 h-3.5 w-3.5" />
               {t("redis.newKey")}

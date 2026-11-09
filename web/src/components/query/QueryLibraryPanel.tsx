@@ -484,7 +484,7 @@ export function QueryLibraryPanel({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={t("savedQuery.search")}
-                className="focus-visible:border-primary focus-visible:ring-primary/30 border-border bg-background text-foreground placeholder:text-muted-foreground dark:bg-card/90 h-7.5 rounded-md pl-8 text-xs shadow-2xs transition-all focus-visible:ring-1"
+                className="focus-visible:border-primary focus-visible:ring-primary/30 border-border bg-background text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-card/90 dark:text-foreground dark:placeholder:text-muted-foreground h-7.5 rounded-md pl-8 text-xs shadow-2xs transition-all focus-visible:ring-1"
               />
               {searchTerm && (
                 <button
@@ -783,7 +783,7 @@ export function QueryLibraryPanel({
               variant="ghost"
               size="sm"
               onClick={() => setDeleteTarget(null)}
-              className="text-muted-foreground hover:bg-muted text-xs"
+              className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted text-xs"
             >
               {t("savedQuery.cancel")}
             </Button>
@@ -821,7 +821,7 @@ export function QueryLibraryPanel({
               <Input
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
-                className="focus-visible:ring-primary/50 border-border bg-card text-foreground dark:bg-background/60 text-sm focus-visible:ring-1"
+                className="focus-visible:ring-primary/50 border-border bg-card text-foreground dark:border-border dark:bg-background/60 dark:text-foreground text-sm focus-visible:ring-1"
                 onKeyDown={(e) => e.key === "Enter" && saveEdit()}
               />
             </div>
@@ -835,7 +835,7 @@ export function QueryLibraryPanel({
                 value={editFolder}
                 onChange={(e) => setEditFolder(e.target.value)}
                 placeholder={t("savedQuery.folderPlaceholder")}
-                className="focus-visible:ring-primary/50 border-border bg-card text-foreground placeholder:text-muted-foreground dark:bg-background/60 font-mono text-sm focus-visible:ring-1"
+                className="focus-visible:ring-primary/50 border-border bg-card text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-background/60 dark:text-foreground dark:placeholder:text-muted-foreground font-mono text-sm focus-visible:ring-1"
               />
             </div>
 
@@ -848,7 +848,7 @@ export function QueryLibraryPanel({
                 value={editTags}
                 onChange={(e) => setEditTags(e.target.value)}
                 placeholder={t("savedQuery.tagsPlaceholder")}
-                className="focus-visible:ring-primary/50 border-border bg-card text-foreground placeholder:text-muted-foreground dark:bg-background/60 font-mono text-sm focus-visible:ring-1"
+                className="focus-visible:ring-primary/50 border-border bg-card text-foreground placeholder:text-muted-foreground dark:border-border dark:bg-background/60 dark:text-foreground dark:placeholder:text-muted-foreground font-mono text-sm focus-visible:ring-1"
               />
               <p className="text-muted-foreground text-[9px]">
                 Separate tags with commas
@@ -895,7 +895,7 @@ export function QueryLibraryPanel({
               variant="ghost"
               size="sm"
               onClick={() => setEditTarget(null)}
-              className="text-muted-foreground hover:bg-muted text-xs"
+              className="text-muted-foreground hover:bg-muted dark:text-muted-foreground dark:hover:bg-muted text-xs"
             >
               {t("savedQuery.cancel")}
             </Button>
