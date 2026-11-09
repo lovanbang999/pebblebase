@@ -38,7 +38,7 @@ export function ImportModalFooter({
 }: ImportModalFooterProps) {
   const { t } = useTranslation();
 
-  if (isSuccess) {
+  if (isSuccess && activeTab !== "export") {
     return (
       <div className="border-border bg-card/50 dark:bg-card/30 flex shrink-0 items-center justify-end gap-3 border-t px-6 py-5">
         <Button

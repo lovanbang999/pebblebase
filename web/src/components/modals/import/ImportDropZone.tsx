@@ -32,7 +32,7 @@ export function ImportDropZone({
   };
 
   return (
-    <div className="space-y-4">
+    <>
       <div
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
@@ -86,6 +86,6 @@ export function ImportDropZone({
           </AlertDescription>
         </Alert>
       )}
-    </div>
+    </>
   );
 }

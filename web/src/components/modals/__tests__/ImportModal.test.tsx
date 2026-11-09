@@ -784,7 +784,9 @@ describe("ImportModal Component Characterization", () => {
       });
 
       expect(await screen.findByText("dragged.csv")).toBeInTheDocument();
-      expect(screen.getByText(/Data Preview · 1 rows/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Data Preview · 1 rows/i),
+      ).toBeInTheDocument();
     });
 
     it("disables download button during pending export and ignores duplicate clicks", async () => {
