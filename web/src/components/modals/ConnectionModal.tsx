@@ -1,8 +1,5 @@
-import { useState, type FormEvent } from "react";
 import {
   Database,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
   Lock,
   Radio,
@@ -11,21 +8,12 @@ import {
   Copy,
   Shield,
 } from "lucide-react";
-import type {
-  DatabaseType,
-  EnvironmentType,
-  Connection,
-  ConnectionInput,
-} from "@/lib/types";
+import type { Connection, ConnectionInput, EnvironmentType } from "@/lib/types";
 import { useTranslation } from "react-i18next";
-import { testConnection } from "@/lib/api";
-import { emitOperationEvent } from "@/lib/operationEvents";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -34,35 +22,25 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DatabaseEngineIcon } from "@/components/icons";
+import { FormField } from "@/components/common/FormField";
+import { DATABASE_ENVIRONMENTS } from "@/constants";
 import {
-  DATABASE_ENGINES,
-  DATABASE_ENVIRONMENTS,
-  ENGINE_CATEGORIES,
-  getDefaultPort,
-} from "@/constants";
+  useConnectionForm,
+  ConnectionDriverSelect,
+  ConnectionFormFields,
+  ConnectionSqliteFields,
+  ConnectionUrlFields,
+  ConnectionTestAlert,
+} from "./connection";
 
-interface ConnectionModalProps {
+export interface ConnectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (input: ConnectionInput) => Promise<unknown>;
   cloneData?: Connection | null;
   editData?: Connection | null;
 }
-
-const ENVIRONMENTS = DATABASE_ENVIRONMENTS;
-const ENGINES = DATABASE_ENGINES;
 
 export function ConnectionModal({
   isOpen,
@@ -72,244 +50,51 @@ export function ConnectionModal({
   editData,
 }: ConnectionModalProps) {
   const { t } = useTranslation();
-  const [dbType, setDbType] = useState<DatabaseType>(
-    editData?.type || cloneData?.type || "postgres",
-  );
-  const [mode, setMode] = useState<"form" | "url">(editData?.mode || "form");
-  const [environment, setEnvironment] = useState<EnvironmentType>(
-    editData?.environment || cloneData?.environment || "local",
-  );
 
-  // Form fields
-  const [name, setName] = useState(
-    cloneData
-      ? `${cloneData.name} (${t("connection.copySuffix")})`
-      : editData?.name || "Local Postgres",
-  );
-  const [isNameCustom, setIsNameCustom] = useState(
-    Boolean(cloneData || editData),
-  );
-  const [filepath, setFilepath] = useState(
-    editData?.filepath || cloneData?.filepath || "",
-  );
-  const [host, setHost] = useState(
-    editData?.host || cloneData?.host || "localhost",
-  );
-  const [port, setPort] = useState(
-    editData?.port ||
-      cloneData?.port ||
-      getDefaultPort(editData?.type || cloneData?.type || "postgres"),
-  );
-  const [dbName, setDbName] = useState(
-    editData?.db_name ||
-      cloneData?.db_name ||
-      ((editData?.type || cloneData?.type) === "redis" ? "0" : "pebble_test"),
-  );
-  const [user, setUser] = useState(
-    editData?.user || cloneData?.user || "pebble",
-  );
-  const [password, setPassword] = useState("");
-  const [rawURL, setRawURL] = useState("");
-  const [savePassword, setSavePassword] = useState(
-    editData?.save_password ?? true,
-  );
-  const [readOnly, setReadOnly] = useState(
-    editData?.read_only ?? cloneData?.read_only ?? false,
-  );
-  const [windowsAuth, setWindowsAuth] = useState(false);
-
-  // Statuses
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{
-    ok: boolean;
-    message: string;
-    latency?: number;
-  } | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const generateDefaultName = (
-    targetDbType: DatabaseType,
-    targetDbName: string,
-    targetEnv: EnvironmentType,
-    targetFilepath?: string,
-  ) => {
-    const engineLabel =
-      targetDbType === "postgres"
-        ? "PostgreSQL"
-        : targetDbType === "mysql"
-          ? "MySQL"
-          : targetDbType === "mongodb"
-            ? "MongoDB"
-            : targetDbType === "redis"
-              ? "Redis"
-              : targetDbType === "mssql"
-                ? "SQL Server"
-                : targetDbType === "clickhouse"
-                  ? "ClickHouse"
-                  : "SQLite";
-    const envLabel = targetEnv !== "local" ? ` - ${targetEnv}` : "";
-    let prefix = "Local";
-
-    if (targetDbType === "sqlite") {
-      const p = targetFilepath !== undefined ? targetFilepath : filepath;
-      if (p.trim()) {
-        const parts = p.trim().split(/[/\\]/);
-        prefix = parts[parts.length - 1] || p.trim();
-      } else {
-        prefix = "Local SQLite";
-      }
-    } else if (targetDbName.trim()) {
-      prefix = targetDbName.trim();
-    }
-    return `${prefix} (${engineLabel}${envLabel})`;
-  };
-
-  const handleDbTypeChange = (type: DatabaseType) => {
-    setDbType(type);
-    setTestResult(null);
-    const defaultPort = getDefaultPort(type);
-    setPort(defaultPort);
-    if (type === "redis") {
-      setDbName("0");
-    } else if (type === "mssql" && (dbName === "pebble_test" || !dbName)) {
-      setDbName("master");
-      setUser("sa");
-    } else if (type === "clickhouse" && (dbName === "pebble_test" || !dbName)) {
-      setDbName("default");
-      setUser("default");
-    }
-
-    if (!isNameCustom) {
-      setName(
-        generateDefaultName(
-          type,
-          type === "redis" ? "0" : dbName,
-          environment,
-          filepath,
-        ),
-      );
-    }
-  };
-
-  const safeErrorMessage = (error: unknown, fallback: string) => {
-    const message = error instanceof Error ? error.message : fallback;
-    return (
-      password ? message.replaceAll(password, "[redacted]") : message
-    ).replace(/(\w+:\/\/)[^/@\s]+@/g, "$1[redacted]@");
-  };
-
-  const handleFilepathChange = (val: string) => {
-    setFilepath(val);
-    if (!isNameCustom) {
-      setName(generateDefaultName(dbType, dbName, environment, val));
-    }
-  };
-
-  const handleEnvironmentChange = (env: EnvironmentType) => {
-    setEnvironment(env);
-    if (env === "production") {
-      setReadOnly(true);
-    }
-    if (!isNameCustom) {
-      setName(generateDefaultName(dbType, dbName, env, filepath));
-    }
-  };
-
-  const handleDbNameChange = (val: string) => {
-    setDbName(val);
-    if (!isNameCustom) {
-      setName(generateDefaultName(dbType, val, environment, filepath));
-    }
-  };
-
-  const getPayload = (): ConnectionInput => {
-    const isSqlite = dbType === "sqlite";
-    return {
-      name: name.trim() || `${dbType.toUpperCase()} Connection`,
-      type: dbType,
-      mode,
-      connection_id: editData?.id,
-      preserve_existing_dsn: Boolean(
-        editData?.save_password && mode === "url" && !rawURL.trim(),
-      ),
-      environment,
-      read_only: readOnly,
-      filepath: isSqlite && mode === "form" ? filepath.trim() : undefined,
-      host: !isSqlite && mode === "form" ? host : undefined,
-      port: !isSqlite && mode === "form" ? port : undefined,
-      db_name: !isSqlite && mode === "form" ? dbName : undefined,
-      user: !isSqlite && mode === "form" && !windowsAuth ? user : undefined,
-      password:
-        !isSqlite && mode === "form" && !windowsAuth
-          ? password || undefined
-          : undefined,
-      raw_url: mode === "url" ? rawURL : undefined,
-      save_password: isSqlite || windowsAuth ? true : savePassword,
-      ssl_mode: dbType === "mssql" ? "disable" : undefined,
-      windows_auth: dbType === "mssql" ? windowsAuth : undefined,
-    };
-  };
-
-  const handleTest = async () => {
-    setTesting(true);
-    setTestResult(null);
-    setSubmitError(null);
-    const start = performance.now();
-    try {
-      await testConnection(getPayload());
-      const elapsed = Math.round(performance.now() - start);
-      setTestResult({
-        ok: true,
-        message: t("connection.connectionSuccess", { elapsed }),
-        latency: elapsed,
-      });
-      emitOperationEvent({
-        kind: "connection-test",
-        severity: "success",
-        title: t(
-          "operations.connectionTestSucceeded",
-          "Connection test succeeded",
-        ),
-        message:
-          getPayload().name || t("connection.newConnection", "Connection"),
-        connectionName: getPayload().name,
-      });
-    } catch (err: any) {
-      setTestResult({
-        ok: false,
-        message: safeErrorMessage(err, t("connection.connectionFailed")),
-      });
-      emitOperationEvent({
-        kind: "connection-test",
-        severity: "error",
-        title: t("operations.connectionTestFailed", "Connection test failed"),
-        message: t(
-          "operations.genericFailure",
-          "The operation could not be completed.",
-        ),
-        connectionName: getPayload().name,
-      });
-    } finally {
-      setTesting(false);
-    }
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setSubmitError(null);
-    try {
-      await onSubmit(getPayload());
-      onClose();
-    } catch (err: any) {
-      setSubmitError(safeErrorMessage(err, t("connection.saveFailed")));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const currentEngine = ENGINES.find((e) => e.type === dbType) || ENGINES[0];
+  const {
+    dbType,
+    mode,
+    setMode,
+    environment,
+    name,
+    setName,
+    isNameCustom,
+    setIsNameCustom,
+    filepath,
+    host,
+    setHost,
+    port,
+    setPort,
+    dbName,
+    user,
+    setUser,
+    password,
+    setPassword,
+    rawURL,
+    setRawURL,
+    savePassword,
+    setSavePassword,
+    readOnly,
+    setReadOnly,
+    windowsAuth,
+    setWindowsAuth,
+    testing,
+    testResult,
+    submitting,
+    submitError,
+    handleDbTypeChange,
+    handleFilepathChange,
+    handleEnvironmentChange,
+    handleDbNameChange,
+    handleResetAutoName,
+    handleTest,
+    handleSubmit,
+  } = useConnectionForm({
+    editData,
+    cloneData,
+    onSubmit,
+    onClose,
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -321,9 +106,7 @@ export function ConnectionModal({
           {/* Header */}
           <DialogHeader className="border-border/80 bg-card/70 dark:bg-card/50 flex shrink-0 flex-row items-center gap-3 space-y-0 border-b px-5 py-4">
             <div className="border-primary/30 bg-success/10 text-success dark:bg-success/15 shrink-0 rounded-lg border p-2">
-              {editData ? (
-                <Database className="h-4 w-4" />
-              ) : cloneData ? (
+              {cloneData ? (
                 <Copy className="h-4 w-4" />
               ) : (
                 <Database className="h-4 w-4" />
@@ -365,128 +148,11 @@ export function ConnectionModal({
           {/* Scrollable Form Body */}
           <div className="custom-scrollbar flex-1 space-y-4 overflow-x-hidden overflow-y-auto p-5">
             {/* Step 1: Database Engine Selector */}
-            <div>
-              <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-                  {t("connection.driver")}
-                </label>
-                <span className="text-muted-foreground font-mono text-[11px]">
-                  {t("connection.selectDriverHelp")}
-                </span>
-              </div>
-
-              <Select
-                value={dbType}
-                onValueChange={(val) => {
-                  if (val && typeof val === "string") {
-                    handleDbTypeChange(val as DatabaseType);
-                  }
-                }}
-              >
-                <SelectTrigger
-                  disabled={Boolean(editData)}
-                  className="focus:border-primary/70 focus:ring-primary/20 border-border/90 bg-card/60 hover:border-border hover:bg-muted/70 dark:border-border dark:hover:bg-muted h-13 min-h-13 w-full cursor-pointer justify-between rounded-xl border px-3 py-2 text-left shadow-2xs transition-all focus:ring-2 *:data-[slot=select-value]:flex *:data-[slot=select-value]:w-full *:data-[slot=select-value]:items-center *:data-[slot=select-value]:overflow-visible"
-                >
-                  <SelectValue className="flex w-full min-w-0 flex-1 items-center overflow-visible">
-                    {() => (
-                      <div className="mr-2 flex w-full items-center justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <div className="border-border/80 bg-muted flex size-8.5 shrink-0 items-center justify-center rounded-lg border p-1 shadow-2xs">
-                            <DatabaseEngineIcon
-                              type={currentEngine.type}
-                              className="size-5"
-                            />
-                          </div>
-                          <div className="flex flex-col text-left">
-                            <div className="flex items-center gap-2">
-                              <span className="text-foreground text-sm font-semibold">
-                                {currentEngine.name}
-                              </span>
-                              <Badge
-                                variant="outline"
-                                className="border-border/90 bg-muted text-muted-foreground dark:border-border h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
-                              >
-                                {currentEngine.tag}
-                              </Badge>
-                            </div>
-                            <span className="text-muted-foreground text-xs">
-                              {currentEngine.category}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-1.5">
-                          <span className="text-muted-foreground font-mono text-xs font-medium">
-                            :{currentEngine.defaultPort}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </SelectValue>
-                </SelectTrigger>
-
-                <SelectContent
-                  side="bottom"
-                  align="start"
-                  className="border-border bg-background dark:bg-card z-50 max-h-80 w-(--anchor-width) min-w-90 rounded-xl border p-1.5 shadow-xl"
-                >
-                  {ENGINE_CATEGORIES.filter((c) => c.key !== "all").map(
-                    (cat, idx) => {
-                      const engines = ENGINES.filter(
-                        (e) => e.categoryKey === cat.key,
-                      );
-                      if (engines.length === 0) return null;
-                      return (
-                        <SelectGroup key={cat.key}>
-                          {idx > 0 && (
-                            <SelectSeparator className="border-border dark:border-border/60 my-1" />
-                          )}
-                          <SelectLabel className="text-muted-foreground px-2.5 pt-2 pb-1 font-mono text-[10px] font-semibold tracking-wider uppercase">
-                            {t(cat.labelKey, cat.fallbackLabel)}
-                          </SelectLabel>
-                          {engines.map((engine) => (
-                            <SelectItem
-                              key={engine.type}
-                              value={engine.type}
-                              className="data-highlighted:bg-muted/90 dark:data-highlighted:bg-muted/80 cursor-pointer rounded-lg py-2 pr-8 pl-2.5 font-sans transition-colors **:data-[slot=select-item-text]:block **:data-[slot=select-item-text]:w-full"
-                            >
-                              <div className="flex w-full items-center justify-between gap-3">
-                                <div className="flex min-w-0 items-center gap-2.5">
-                                  <div className="border-border/80 bg-muted flex size-8 shrink-0 items-center justify-center rounded-lg border p-1 shadow-2xs">
-                                    <DatabaseEngineIcon
-                                      type={engine.type}
-                                      className="size-4.5"
-                                    />
-                                  </div>
-                                  <div className="flex flex-col truncate text-left">
-                                    <span className="text-foreground text-xs font-semibold">
-                                      {engine.name}
-                                    </span>
-                                    <span className="text-muted-foreground truncate text-[11px]">
-                                      {engine.category}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div className="flex shrink-0 items-center gap-2">
-                                  <Badge
-                                    variant="outline"
-                                    className="border-border/90 bg-muted text-muted-foreground dark:border-border h-4 px-1.5 py-0 font-mono text-[10px] font-semibold uppercase"
-                                  >
-                                    {engine.tag}
-                                  </Badge>
-                                  <span className="text-muted-foreground font-mono text-xs font-medium">
-                                    :{engine.defaultPort}
-                                  </span>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      );
-                    },
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            <ConnectionDriverSelect
+              dbType={dbType}
+              onDbTypeChange={handleDbTypeChange}
+              disabled={Boolean(editData)}
+            />
 
             {/* Environment Picker */}
             <div>
@@ -506,7 +172,7 @@ export function ConnectionModal({
                 className="w-full"
               >
                 <TabsList className="border-border bg-muted/60 grid h-10 w-full grid-cols-4 gap-1 rounded-lg border p-1 shadow-2xs dark:bg-black/20">
-                  {ENVIRONMENTS.map((env) => (
+                  {DATABASE_ENVIRONMENTS.map((env) => (
                     <TabsTrigger
                       key={env.key}
                       value={env.key}
@@ -523,38 +189,24 @@ export function ConnectionModal({
             </div>
 
             {/* Connection Name */}
-            <div>
-              <div className="mb-1 flex items-center justify-between">
-                <label
-                  htmlFor="connection-name"
-                  className="text-foreground dark:text-muted-foreground text-xs font-medium"
-                >
-                  {t("connection.displayName")}
-                </label>
-                {isNameCustom && (
+            <FormField
+              id="connection-name"
+              label={t("connection.displayName")}
+              helpAction={
+                isNameCustom ? (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      setIsNameCustom(false);
-                      setName(
-                        generateDefaultName(
-                          dbType,
-                          dbName,
-                          environment,
-                          filepath,
-                        ),
-                      );
-                    }}
-                    className="text-success hover:bg-success/10 hover:text-success dark:hover:bg-success/40 h-5 px-1.5 font-mono text-[10px]"
+                    onClick={handleResetAutoName}
+                    className="text-success hover:bg-success/10 dark:hover:bg-success/40 h-5 px-1.5 font-mono text-[10px]"
                   >
                     {t("connection.resetAutoName")}
                   </Button>
-                )}
-              </div>
+                ) : null
+              }
+            >
               <Input
-                id="connection-name"
                 type="text"
                 value={name}
                 onChange={(e) => {
@@ -565,7 +217,7 @@ export function ConnectionModal({
                 required
                 className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
               />
-            </div>
+            </FormField>
 
             {/* Mode Switcher (Form Parameters vs Connection URL) */}
             <Tabs
@@ -593,213 +245,37 @@ export function ConnectionModal({
 
             {mode === "form" ? (
               dbType === "sqlite" ? (
-                <div className="space-y-3">
-                  <div>
-                    <div className="mb-1 flex items-center justify-between">
-                      <label
-                        htmlFor="connection-filepath"
-                        className="text-foreground dark:text-muted-foreground text-xs font-medium"
-                      >
-                        {t("connection.filepath")}
-                      </label>
-                      <span className="text-muted-foreground font-mono text-[10px]">
-                        .db / .sqlite / .sqlite3
-                      </span>
-                    </div>
-                    <Input
-                      id="connection-filepath"
-                      type="text"
-                      value={filepath}
-                      onChange={(e) => handleFilepathChange(e.target.value)}
-                      required
-                      placeholder="/absolute/path/to/database.db or ./app.db"
-                      className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
-                    />
-                    <p className="text-muted-foreground mt-1.5 text-[11px] leading-normal">
-                      {t("connection.sqliteFilePathHelp")}
-                    </p>
-                  </div>
-                </div>
+                <ConnectionSqliteFields
+                  filepath={filepath}
+                  onFilepathChange={handleFilepathChange}
+                />
               ) : (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2">
-                      <label
-                        htmlFor="connection-host"
-                        className="text-muted-foreground mb-1 block text-xs"
-                      >
-                        {t("connection.hostAddress")}
-                      </label>
-                      <Input
-                        id="connection-host"
-                        type="text"
-                        value={host}
-                        onChange={(e) => setHost(e.target.value)}
-                        required
-                        placeholder="localhost"
-                        className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="connection-port"
-                        className="text-muted-foreground mb-1 block text-xs"
-                      >
-                        {t("connection.port")}
-                      </label>
-                      <Input
-                        id="connection-port"
-                        type="text"
-                        value={port}
-                        onChange={(e) => setPort(e.target.value)}
-                        required
-                        placeholder="5432"
-                        className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
-                      />
-                    </div>
-                  </div>
-
-                  {dbType !== "redis" && (
-                    <div>
-                      <div className="mb-1 flex items-center justify-between">
-                        <label
-                          htmlFor="connection-database"
-                          className="text-muted-foreground text-xs"
-                        >
-                          {t("connection.database")}
-                        </label>
-                        <span className="text-muted-foreground font-mono text-[10px]">
-                          {t("connection.targetSchema")}
-                        </span>
-                      </div>
-                      <Input
-                        id="connection-database"
-                        type="text"
-                        value={dbName}
-                        onChange={(e) => handleDbNameChange(e.target.value)}
-                        required
-                        placeholder="database_name"
-                        className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
-                      />
-                    </div>
-                  )}
-
-                  {dbType === "mssql" && (
-                    <div className="flex items-center gap-2 py-0.5">
-                      <input
-                        type="checkbox"
-                        id="windowsAuth"
-                        checked={windowsAuth}
-                        onChange={(e) => setWindowsAuth(e.target.checked)}
-                        className="border-border rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      <label
-                        htmlFor="windowsAuth"
-                        className="text-muted-foreground cursor-pointer text-xs select-none"
-                      >
-                        {t(
-                          "connection.windowsAuth",
-                          "Windows Authentication (Trusted Connection)",
-                        )}
-                      </label>
-                    </div>
-                  )}
-
-                  {!windowsAuth && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label
-                          htmlFor="connection-user"
-                          className="text-muted-foreground mb-1 block text-xs"
-                        >
-                          {t("connection.user")}
-                        </label>
-                        <Input
-                          id="connection-user"
-                          type="text"
-                          value={user}
-                          onChange={(e) => setUser(e.target.value)}
-                          placeholder={
-                            dbType === "redis"
-                              ? t("connection.redisUserPlaceholder")
-                              : dbType === "mssql"
-                                ? "sa"
-                                : dbType === "clickhouse"
-                                  ? "default"
-                                  : "username"
-                          }
-                          className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
-                        />
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="connection-password"
-                          className="text-muted-foreground mb-1 block text-xs"
-                        >
-                          {t("connection.password")}
-                        </label>
-                        <Input
-                          id="connection-password"
-                          type="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder={
-                            editData
-                              ? t(
-                                  "connection.keepPasswordPlaceholder",
-                                  "Leave blank to keep saved password",
-                                )
-                              : dbType === "redis"
-                                ? t("connection.optionalPassword")
-                                : "••••••••"
-                          }
-                          className="border-border bg-background text-foreground dark:bg-card/60 font-mono text-xs"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <ConnectionFormFields
+                  dbType={dbType}
+                  host={host}
+                  setHost={setHost}
+                  port={port}
+                  setPort={setPort}
+                  dbName={dbName}
+                  onDbNameChange={handleDbNameChange}
+                  windowsAuth={windowsAuth}
+                  setWindowsAuth={setWindowsAuth}
+                  user={user}
+                  setUser={setUser}
+                  password={password}
+                  setPassword={setPassword}
+                  isEditing={Boolean(editData)}
+                />
               )
             ) : (
-              <div>
-                <label
-                  htmlFor="connection-rawURL"
-                  className="text-muted-foreground mb-1 block text-xs"
-                >
-                  {t("connection.rawUrl")}
-                </label>
-                <Textarea
-                  id="connection-rawURL"
-                  value={rawURL}
-                  onChange={(e) => setRawURL(e.target.value)}
-                  rows={3}
-                  required={!(editData?.save_password && !rawURL.trim())}
-                  placeholder={
-                    dbType === "postgres"
-                      ? "postgres://pebble:pebble@localhost:5432/pebble_test?sslmode=disable"
-                      : dbType === "mysql"
-                        ? "mysql://root:secret@tcp(127.0.0.1:3306)/mydb"
-                        : dbType === "mongodb"
-                          ? "mongodb://pebble:pebble@localhost:27017/pebble_test?authSource=admin"
-                          : dbType === "redis"
-                            ? "redis://:secret@localhost:6379/0"
-                            : dbType === "mssql"
-                              ? "sqlserver://sa:secret@localhost:1433?database=master&encrypt=disable"
-                              : dbType === "clickhouse"
-                                ? "clickhouse://default:password@localhost:9000/default"
-                                : "file:/path/to/database.db"
-                  }
-                  className="border-border bg-background text-foreground dark:bg-card/60 resize-none font-mono text-xs"
-                />
-                {editData && mode === "url" && !rawURL && (
-                  <p className="text-muted-foreground mt-1 text-[11px]">
-                    {t(
-                      "connection.savedUrlPreserved",
-                      "Saved URL and authentication options are kept private. Leave this blank to keep them, or enter a replacement URL.",
-                    )}
-                  </p>
+              <ConnectionUrlFields
+                dbType={dbType}
+                rawURL={rawURL}
+                setRawURL={setRawURL}
+                isEditingSavedPassword={Boolean(
+                  editData?.save_password && mode === "url",
                 )}
-              </div>
+              />
             )}
 
             {/* Save password option */}
@@ -875,37 +351,10 @@ export function ConnectionModal({
             </div>
 
             {/* Test Status feedback */}
-            {testResult && (
-              <Alert
-                className={`text-xs ${
-                  testResult.ok
-                    ? "border-success/30 bg-success/10 text-success dark:border-success/50 dark:bg-success/30"
-                    : "border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30"
-                }`}
-                variant={testResult.ok ? "default" : "destructive"}
-              >
-                {testResult.ok ? (
-                  <CheckCircle2 className="text-success h-4 w-4 shrink-0" />
-                ) : (
-                  <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
-                )}
-                <AlertDescription className="font-mono text-xs break-all">
-                  {testResult.message}
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {submitError && (
-              <Alert
-                variant="destructive"
-                className="border-destructive/30 bg-destructive/10 text-destructive dark:border-destructive/50 dark:bg-destructive/30 text-xs"
-              >
-                <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
-                <AlertDescription className="font-mono text-xs break-all">
-                  {submitError}
-                </AlertDescription>
-              </Alert>
-            )}
+            <ConnectionTestAlert
+              testResult={testResult}
+              submitError={submitError}
+            />
           </div>
 
           {/* Actions */}
