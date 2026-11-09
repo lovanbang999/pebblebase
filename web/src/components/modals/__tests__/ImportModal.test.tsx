@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ImportModal } from "../ImportModal";
 import { renderWithProviders } from "@/test/test-utils";
@@ -602,6 +602,366 @@ describe("ImportModal Component Characterization", () => {
           connectionId: "conn-123",
         }),
       );
+    });
+  });
+
+  describe("Extended Characterization (Gap Coverage)", () => {
+    it("switches export format across supported types, updates estimated size and toggles header row visibility", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(
+        <ImportModal
+          {...defaultProps}
+          initialMode="export"
+          tableStats={{
+            total_rows: 2500,
+            size_bytes: 1024 * 1024,
+          }}
+        />,
+      );
+
+      // Default CSV: 921.6 KB, checkbox present
+      expect(screen.getByText("921.6 KB")).toBeInTheDocument();
+      expect(
+        screen.getByRole("checkbox", { name: /Include header row/i }),
+      ).toBeInTheDocument();
+
+      const selectTrigger = screen.getByRole("combobox");
+
+      // Switch to JSON (1.3 multiplier -> 1.3 MB)
+      await user.click(selectTrigger);
+      const jsonOption = await screen.findByRole("option", {
+        name: /JSON \(\.json\)/i,
+      });
+      await user.click(jsonOption);
+      expect(screen.getByText("1.3 MB")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("checkbox", { name: /Include header row/i }),
+      ).not.toBeInTheDocument();
+
+      // Switch to SQL (1.0 multiplier -> 1.0 MB)
+      await user.click(selectTrigger);
+      const sqlOption = await screen.findByRole("option", {
+        name: /SQL INSERT/i,
+      });
+      await user.click(sqlOption);
+      expect(screen.getByText("1.0 MB")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("checkbox", { name: /Include header row/i }),
+      ).not.toBeInTheDocument();
+
+      // Switch to JSONL (1.1 multiplier -> 1.1 MB)
+      await user.click(selectTrigger);
+      const jsonlOption = await screen.findByRole("option", { name: /JSONL/i });
+      await user.click(jsonlOption);
+      expect(screen.getByText("1.1 MB")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("checkbox", { name: /Include header row/i }),
+      ).not.toBeInTheDocument();
+
+      // Switch to Excel XLSX (0.4 multiplier -> 409.6 KB)
+      await user.click(selectTrigger);
+      const xlsxOption = await screen.findByRole("option", { name: /Excel/i });
+      await user.click(xlsxOption);
+      expect(screen.getByText("409.6 KB")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("checkbox", { name: /Include header row/i }),
+      ).not.toBeInTheDocument();
+
+      // Switch to Parquet (0.25 multiplier -> 256.0 KB)
+      await user.click(selectTrigger);
+      const parquetOption = await screen.findByRole("option", {
+        name: /Parquet/i,
+      });
+      await user.click(parquetOption);
+      expect(screen.getByText("256.0 KB")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("checkbox", { name: /Include header row/i }),
+      ).not.toBeInTheDocument();
+
+      // Switch back to CSV: checkbox reappears
+      await user.click(selectTrigger);
+      const csvOption = await screen.findByRole("option", {
+        name: /CSV \(\.csv\)/i,
+      });
+      await user.click(csvOption);
+      expect(screen.getByText("921.6 KB")).toBeInTheDocument();
+      expect(
+        screen.getByRole("checkbox", { name: /Include header row/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("passes distinct pagination/limit parameters for All filtered vs Current page export scopes", async () => {
+      const user = userEvent.setup();
+      const mockBlob = new Blob(["id\n1"], { type: "text/csv" });
+      vi.mocked(api.exportTableData).mockResolvedValue(mockBlob);
+
+      const filters = [
+        { column: "status", operator: "eq" as const, value: "active" },
+      ];
+
+      renderWithProviders(
+        <ImportModal
+          {...defaultProps}
+          initialMode="export"
+          page={2}
+          pageSize={25}
+          sortBy="created_at"
+          sortDesc={true}
+          filters={filters}
+        />,
+      );
+
+      // Default is "page": limit = 25, offset = 50
+      const downloadBtn = screen.getByRole("button", {
+        name: /Download Export/i,
+      });
+      await user.click(downloadBtn);
+
+      await waitFor(() => {
+        expect(api.exportTableData).toHaveBeenCalledWith(
+          "conn-123",
+          "users",
+          "csv",
+          {
+            limit: 25,
+            offset: 50,
+            sort_by: "created_at",
+            sort_desc: true,
+            filters,
+            include_header: true,
+          },
+        );
+      });
+
+      // Switch to "All filtered"
+      const allFilteredBtn = screen.getByRole("button", {
+        name: /All filtered/i,
+      });
+      await user.click(allFilteredBtn);
+      await user.click(downloadBtn);
+
+      await waitFor(() => {
+        expect(api.exportTableData).toHaveBeenCalledWith(
+          "conn-123",
+          "users",
+          "csv",
+          {
+            limit: undefined,
+            offset: undefined,
+            sort_by: "created_at",
+            sort_desc: true,
+            filters,
+            include_header: true,
+          },
+        );
+      });
+    });
+
+    it("supports drag and drop of CSV file onto the drop zone with dragover styling", async () => {
+      renderWithProviders(<ImportModal {...defaultProps} />);
+
+      const dropZone = screen
+        .getByText(/Choose a CSV file or drag & drop here/i)
+        .closest("div.cursor-pointer")!;
+      expect(dropZone).toBeInTheDocument();
+
+      // Trigger dragover
+      fireEvent.dragOver(dropZone);
+      expect(dropZone).toHaveClass("border-primary");
+
+      // Trigger dragleave
+      fireEvent.dragLeave(dropZone);
+      expect(dropZone).not.toHaveClass("border-primary");
+
+      // Trigger drop
+      const validCsv = new File(["id,name\n1,Alice"], "dragged.csv", {
+        type: "text/csv",
+      });
+      fireEvent.drop(dropZone, {
+        dataTransfer: {
+          files: [validCsv],
+        },
+      });
+
+      expect(await screen.findByText("dragged.csv")).toBeInTheDocument();
+      expect(
+        await screen.findByText(/Data Preview · 1 rows/i),
+      ).toBeInTheDocument();
+    });
+
+    it("disables download button during pending export and ignores duplicate clicks", async () => {
+      const user = userEvent.setup();
+
+      let resolveExport: (blob: Blob) => void;
+      const exportPromise = new Promise<Blob>((resolve) => {
+        resolveExport = resolve;
+      });
+      vi.mocked(api.exportTableData).mockReturnValue(exportPromise);
+
+      renderWithProviders(
+        <ImportModal {...defaultProps} initialMode="export" />,
+      );
+
+      const exportBtn = screen.getByRole("button", {
+        name: /Download Export/i,
+      });
+      await user.click(exportBtn);
+
+      expect(exportBtn).toBeDisabled();
+      expect(screen.getByText(/Exporting\.\.\./i)).toBeInTheDocument();
+
+      // Second click while pending should not trigger export again
+      await user.click(exportBtn);
+      expect(api.exportTableData).toHaveBeenCalledTimes(1);
+
+      resolveExport!(new Blob(["ok"], { type: "text/csv" }));
+    });
+
+    it("disables import button during pending import and ignores duplicate clicks", async () => {
+      const user = userEvent.setup();
+
+      let resolveImport: (val: any) => void;
+      const importPromise = new Promise<{
+        inserted_count: number;
+        duration_ms: number;
+      }>((resolve) => {
+        resolveImport = resolve;
+      });
+      vi.mocked(api.importTableCSV).mockReturnValue(importPromise);
+
+      renderWithProviders(
+        <ImportModal {...defaultProps} initialMode="import" />,
+      );
+
+      const fileInput = document.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const csv = new File(["id,name\n1,Alice"], "users.csv", {
+        type: "text/csv",
+      });
+      await user.upload(fileInput, csv);
+      expect(await screen.findByText("users.csv")).toBeInTheDocument();
+
+      const importBtn = screen.getByRole("button", { name: /Import Records/i });
+      await user.click(importBtn);
+
+      expect(importBtn).toBeDisabled();
+      expect(screen.getByText(/Importing\.\.\./i)).toBeInTheDocument();
+
+      await user.click(importBtn);
+      expect(api.importTableCSV).toHaveBeenCalledTimes(1);
+
+      resolveImport!({ inserted_count: 1, duration_ms: 50 });
+    });
+
+    it("excludes skipped columns when submitting partial column mappings", async () => {
+      const user = userEvent.setup();
+      vi.mocked(api.importTableCSV).mockResolvedValue({
+        inserted_count: 5,
+        duration_ms: 30,
+      });
+
+      renderWithProviders(<ImportModal {...defaultProps} />);
+
+      const fileInput = document.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const csv = new File(
+        ["id,name,email\n1,Alice,alice@example.com"],
+        "users.csv",
+        { type: "text/csv" },
+      );
+
+      await user.upload(fileInput, csv);
+      expect(await screen.findByText("users.csv")).toBeInTheDocument();
+      expect(screen.getByText("3 of 3 mapped")).toBeInTheDocument();
+
+      // Find comboboxes for column mappings
+      const triggers = screen.getAllByRole("combobox");
+      expect(triggers.length).toBe(3);
+
+      // Skip the third column (email)
+      await user.click(triggers[2]);
+      const skipOption = await screen.findByRole("option", {
+        name: /\(Skip column\)/i,
+      });
+      await user.click(skipOption);
+
+      expect(screen.getByText("2 of 3 mapped")).toBeInTheDocument();
+
+      const importBtn = screen.getByRole("button", { name: /Import Records/i });
+      await user.click(importBtn);
+
+      await waitFor(() => {
+        expect(api.importTableCSV).toHaveBeenCalledWith(
+          "conn-123",
+          "users",
+          csv,
+          {
+            id: "id",
+            name: "name",
+          },
+        );
+      });
+    });
+
+    it("resets file and preview state when modal closes and clears error banner on tab switch", async () => {
+      const user = userEvent.setup();
+      let open = true;
+      const handleClose = vi.fn(() => {
+        open = false;
+      });
+
+      const { rerender } = renderWithProviders(
+        <ImportModal {...defaultProps} isOpen={open} onClose={handleClose} />,
+      );
+
+      // Upload file in import mode
+      const fileInput = document.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      const csv = new File(["id,name\n1,Alice"], "users.csv", {
+        type: "text/csv",
+      });
+      await user.upload(fileInput, csv);
+      expect(await screen.findByText("users.csv")).toBeInTheDocument();
+
+      // Cancel closes and resets modal state
+      const cancelBtn = screen.getByRole("button", { name: /Cancel/i });
+      await user.click(cancelBtn);
+      expect(handleClose).toHaveBeenCalled();
+
+      // Reopen modal: state is clean, drop zone is back
+      rerender(
+        <ImportModal {...defaultProps} isOpen={false} onClose={handleClose} />,
+      );
+      rerender(
+        <ImportModal {...defaultProps} isOpen={true} onClose={handleClose} />,
+      );
+
+      expect(screen.queryByText("users.csv")).not.toBeInTheDocument();
+      expect(
+        screen.getByText(/Choose a CSV file or drag & drop here/i),
+      ).toBeInTheDocument();
+
+      // Test tab switching clears error banner
+      const invalidFile = new File(['{"bad": true}'], "data.json", {
+        type: "application/json",
+      });
+      const fileInput2 = document.querySelector(
+        'input[type="file"]',
+      ) as HTMLInputElement;
+      await user.upload(fileInput2, invalidFile);
+      expect(
+        await screen.findByText(/Standard CSV file \(UTF-8 encoded\)/i),
+      ).toBeInTheDocument();
+
+      // Switch to export tab: error is cleared
+      const exportTab = screen.getByRole("button", { name: /Export Data/i });
+      await user.click(exportTab);
+      expect(
+        screen.queryByText(/Standard CSV file \(UTF-8 encoded\)/i),
+      ).not.toBeInTheDocument();
     });
   });
 });
