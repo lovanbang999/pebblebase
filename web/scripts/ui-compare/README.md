@@ -19,7 +19,7 @@ This tool builds the actual frontend, spins up an isolated Pebblebase backend on
 From `pebblebase/web/`:
 
 ```bash
-yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>]
+yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>] [--strict-screenshots]
 ```
 
 ### Direct Bash Invocation
@@ -27,7 +27,7 @@ yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark] 
 From anywhere in the repository:
 
 ```bash
-bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>]
+bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>] [--strict-screenshots]
 ```
 
 ### Examples
@@ -51,6 +51,10 @@ bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filte
 - **Target a single theme**:
   ```bash
   yarn ui:compare main working-tree --themes dark
+  ```
+- **Require byte-identical screenshots only (disallow anti-aliasing noise)**:
+  ```bash
+  yarn ui:compare main main --states row-modal --strict-screenshots
   ```
 
 ### Performance & Approximate Runtime
@@ -90,9 +94,13 @@ bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filte
    - Keys elements by hierarchical stable DOM paths (`data-slot`, `role`, tag, nth-of-type).
    - Counts path-unmatched elements per state and runs a fallback matcher (`data-slot` + visible text/label + occurrence order) so wrapper changes do not hide moved elements.
    - Compares all 9 color/visual properties, 16 layout/typography properties, and bounding box geometry with a `1px` tolerance.
-   - Compares clipped dialog PNGs byte-for-byte via `sha256`. On any mismatch, uses `pngjs` and Playwright's built-in PNG comparator to report exact differing pixel counts, dialog-relative diff bounding box coordinates, and exports padded before/after/diff crop PNGs to `/tmp/pb_ui_cmp_dialog_diffs_*` (outside the cleaned temp dir).
+   - Classifies every clipped dialog PNG into one of three buckets:
+     - `(a) byte-identical`: matching `sha256` digests.
+     - `(b) within anti-aliasing tolerance`: same dimensions, differing RGBA pixels `<= 64`, max per-channel delta `<= 4` (out of 255), and differing region bounding box `<= 40x40` px.
+     - `(c) different`: anything outside the tolerance bounds or with mismatched image dimensions.
+   - Only `(c)` (or missing clips) fails default runs; `(b)` cases still print state, pixel count, max delta, and region so rasterization noise remains visible and export padded before/after/diff crop PNGs via `pngjs` and Playwright's built-in PNG comparator to `/tmp/pb_ui_cmp_dialog_diffs_*` (or `--screenshot-diff-dir`). Pass `--strict-screenshots` to require `(a)` only and fail on `(b)`.
    - Groups differences by category (`colorVisual`, `layout`, `bbox`), state, and component type.
-   - Exits with `0` if clean; exits `1` if visual/layout regressions or dialog screenshot mismatches are found or remaining unmatched elements exceed `--unmatched-threshold` (default `0`, overridable via `--allow-unmatched`).
+   - Exits with `0` if clean; exits `1` if visual/layout regressions or `(c)` / missing dialog screenshot mismatches are found (or `(b)` when `--strict-screenshots` is passed) or remaining unmatched elements exceed `--unmatched-threshold` (default `0`, overridable via `--allow-unmatched`).
 
 5. **Self-Cleaning Lifecycle**:
    - Traps `EXIT`, `INT`, and `TERM` signals to ensure background server processes, worktrees, and temporary directories in `/tmp` are removed automatically.
@@ -177,6 +185,6 @@ The following specialized surfaces require live third-party services or interact
 Default runs stay strict (failing with exit code `1` on any unmatched element or property change). Do not weaken the default thresholds when refactoring components onto shared primitives (for example wrapping fields in `FormField`, which introduces a `helpAction` wrapper `<div>` or normalizes header flex `gap` without moving pixels):
 
 1. Run the strict default comparison (`yarn ui:compare main working-tree`) first to surface every unmatched element and property diff.
-2. Verify that `Differences by category` shows `colorVisual: 0` and `bbox: 0`, and that all clipped dialog screenshots pass `sha256` equivalence (or isolate any anti-aliasing noise to unrelated subpixel border corners).
+2. Verify that `Differences by category` shows `colorVisual: 0` and `bbox: 0`, and that all clipped dialog screenshots classify as `(a) byte-identical` or `(b) within anti-aliasing tolerance` (unrelated subpixel border corners) with `(c) different = 0`.
 3. Run with `--allow-unmatched` (for example `yarn ui:compare main working-tree --states row-modal --allow-unmatched`) to confirm no unmatched elements fail the threshold check, and inspect any remaining `layout` diffs to verify they come only from expected structural wrappers (inherited `fontSize`/`lineHeight` or `gap` on the wrapper/header `<div>`; note `totalDifferences > 0` still exits `1`).
 4. Record both the strict and `--allow-unmatched` summary lines alongside the list of accepted DOM-structure differences in the PR description before merging.
