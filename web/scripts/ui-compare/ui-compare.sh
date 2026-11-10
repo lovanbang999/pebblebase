@@ -136,6 +136,28 @@ conn.execute('''
 INSERT OR IGNORE INTO sample_records (id, title, age, rating, is_active, metadata, created_at)
 VALUES (1, 'Sample Title', 25, 4.5, 1, '{\"status\": \"ok\", \"tags\": [\"test\"]}', '2026-01-01 12:00:00')
 ''')
+conn.execute('''
+CREATE TABLE IF NOT EXISTS fk_parent_stub (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE
+)
+''')
+conn.execute('''
+INSERT OR IGNORE INTO fk_parent_stub (id, code)
+VALUES (1, 'PARENT_01')
+''')
+conn.execute('''
+CREATE TABLE IF NOT EXISTS fk_long_labels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_account_user_reference_id INTEGER REFERENCES fk_parent_stub(id),
+    primary_organization_billing_parent_account_reference_identifier INTEGER REFERENCES fk_parent_stub(id),
+    secondary_contact_email TEXT REFERENCES fk_parent_stub(code)
+)
+''')
+conn.execute('''
+INSERT OR IGNORE INTO fk_long_labels (id, organization_account_user_reference_id, primary_organization_billing_parent_account_reference_identifier, secondary_contact_email)
+VALUES (1, 1, 1, 'PARENT_01')
+''')
 conn.commit()
 conn.close()
 "
@@ -246,6 +268,8 @@ fi
 if [ -n "$UNMATCHED_THRESHOLD" ]; then
   DIFF_ARGS+=("--unmatched-threshold" "$UNMATCHED_THRESHOLD")
 fi
+SCREENSHOT_DIFF_DIR="/tmp/pb_ui_cmp_dialog_diffs_${TIMESTAMP}_$$"
+DIFF_ARGS+=("--screenshot-diff-dir" "$SCREENSHOT_DIFF_DIR")
 
 DIFF_STATUS=0
 node "$SCRIPT_DIR/diff-styles.cjs" \

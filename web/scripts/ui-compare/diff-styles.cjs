@@ -7,14 +7,20 @@
  * elements exceed the threshold (unless --allow-unmatched is passed).
  */
 
+const crypto = require("crypto");
 const fs = require("fs");
+const path = require("path");
+const { PNG } = require("playwright-core/lib/utilsBundle");
+const { utils: pwCoreUtils } = require("playwright-core/lib/coreBundle");
 
 const BBOX_TOLERANCE_PX = 1;
+const CROP_PADDING_PX = 24;
 
 const args = process.argv.slice(2);
 const positional = [];
 let allowUnmatched = false;
 let unmatchedThreshold = 0;
+let screenshotDiffDir = "";
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -27,6 +33,8 @@ for (let i = 0; i < args.length; i++) {
       process.exit(2);
     }
     unmatchedThreshold = parsed;
+  } else if (arg === "--screenshot-diff-dir" && args[i + 1] !== undefined) {
+    screenshotDiffDir = args[++i];
   } else if (arg.startsWith("-")) {
     console.error(`Unknown option: ${arg}`);
     process.exit(2);
@@ -40,9 +48,13 @@ const file2 = positional[1];
 
 if (!file1 || !file2) {
   console.error(
-    "Usage: node diff-styles.cjs <file1.json> <file2.json> [--allow-unmatched] [--unmatched-threshold <n>]",
+    "Usage: node diff-styles.cjs <file1.json> <file2.json> [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>]",
   );
   process.exit(2);
+}
+
+if (!screenshotDiffDir) {
+  screenshotDiffDir = `/tmp/pb_ui_cmp_dialog_diffs_${Date.now()}_${process.pid}`;
 }
 
 const data1 = JSON.parse(fs.readFileSync(file1, "utf8"));
@@ -303,10 +315,228 @@ for (const state of missingInAStates) {
   console.warn(`State missing in first run: ${state}`);
 }
 
+// 5. Clipped dialog screenshot comparison (sha256 + pixel/bbox diff + crop export)
+function isExpectedDialogState(stateName) {
+  return (
+    stateName === "row_modal_light" ||
+    stateName === "row_modal_dark" ||
+    stateName.startsWith("row_modal_")
+  );
+}
+
+function readJsonIfExists(jsonPath) {
+  if (!fs.existsSync(jsonPath)) return null;
+  return JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+}
+
+function cropPngToRegion(srcPng, cropX, cropY, cropW, cropH) {
+  const out = new PNG({ width: cropW, height: cropH });
+  const copyW = Math.max(0, Math.min(srcPng.width, cropX + cropW) - cropX);
+  const copyH = Math.max(0, Math.min(srcPng.height, cropY + cropH) - cropY);
+  if (copyW > 0 && copyH > 0) {
+    PNG.bitblt(srcPng, out, cropX, cropY, copyW, copyH, 0, 0);
+  }
+  return out;
+}
+
+const dir1 = path.dirname(path.resolve(file1));
+const dir2 = path.dirname(path.resolve(file2));
+const clips1 = readJsonIfExists(path.join(dir1, "dialog_clips.json"));
+const clips2 = readJsonIfExists(path.join(dir2, "dialog_clips.json"));
+
+const expectedDialogStates = Array.from(
+  new Set([
+    ...states1.filter(isExpectedDialogState),
+    ...states2.filter(isExpectedDialogState),
+    ...Object.keys(clips1 || {}),
+    ...Object.keys(clips2 || {}),
+  ]),
+);
+
+const pngComparator = pwCoreUtils.getComparator("image/png");
+let dialogClipsCompared = 0;
+let dialogClipsIdentical = 0;
+const dialogClipDiffs = [];
+const dialogClipMissing = [];
+
+if (clips1 || clips2 || expectedDialogStates.length > 0) {
+  for (const state of expectedDialogStates) {
+    const entry1 = clips1 && clips1[state];
+    const entry2 = clips2 && clips2[state];
+    const imgPath1 = entry1 ? path.join(dir1, entry1.file) : null;
+    const imgPath2 = entry2 ? path.join(dir2, entry2.file) : null;
+
+    if (
+      !entry1 ||
+      !entry2 ||
+      !imgPath1 ||
+      !imgPath2 ||
+      !fs.existsSync(imgPath1) ||
+      !fs.existsSync(imgPath2)
+    ) {
+      dialogClipMissing.push({
+        state,
+        hasA: Boolean(entry1 && imgPath1 && fs.existsSync(imgPath1)),
+        hasB: Boolean(entry2 && imgPath2 && fs.existsSync(imgPath2)),
+      });
+      continue;
+    }
+
+    dialogClipsCompared++;
+    const bufA = fs.readFileSync(imgPath1);
+    const bufB = fs.readFileSync(imgPath2);
+    const shaA = crypto.createHash("sha256").update(bufA).digest("hex");
+    const shaB = crypto.createHash("sha256").update(bufB).digest("hex");
+
+    if (shaA === shaB) {
+      dialogClipsIdentical++;
+      continue;
+    }
+
+    const imgA = PNG.sync.read(bufA);
+    const imgB = PNG.sync.read(bufB);
+    const maxW = Math.max(imgA.width, imgB.width);
+    const maxH = Math.max(imgA.height, imgB.height);
+
+    let diffPixels = 0;
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -1;
+    let maxY = -1;
+    const rawDiffImg = new PNG({ width: maxW, height: maxH });
+
+    for (let y = 0; y < maxH; y++) {
+      for (let x = 0; x < maxW; x++) {
+        const outIdx = (y * maxW + x) * 4;
+        const inA = x < imgA.width && y < imgA.height;
+        const inB = x < imgB.width && y < imgB.height;
+
+        if (!inA || !inB) {
+          diffPixels++;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+          rawDiffImg.data[outIdx] = 255;
+          rawDiffImg.data[outIdx + 1] = 0;
+          rawDiffImg.data[outIdx + 2] = 255;
+          rawDiffImg.data[outIdx + 3] = 255;
+          continue;
+        }
+
+        const idxA = (y * imgA.width + x) * 4;
+        const idxB = (y * imgB.width + x) * 4;
+        const rA = imgA.data[idxA];
+        const gA = imgA.data[idxA + 1];
+        const bA = imgA.data[idxA + 2];
+        const aA = imgA.data[idxA + 3];
+        const rB = imgB.data[idxB];
+        const gB = imgB.data[idxB + 1];
+        const bB = imgB.data[idxB + 2];
+        const aB = imgB.data[idxB + 3];
+
+        if (rA !== rB || gA !== gB || bA !== bB || aA !== aB) {
+          diffPixels++;
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+          rawDiffImg.data[outIdx] = 255;
+          rawDiffImg.data[outIdx + 1] = 0;
+          rawDiffImg.data[outIdx + 2] = 0;
+          rawDiffImg.data[outIdx + 3] = 255;
+        } else {
+          rawDiffImg.data[outIdx] = Math.round(rA * 0.35);
+          rawDiffImg.data[outIdx + 1] = Math.round(gA * 0.35);
+          rawDiffImg.data[outIdx + 2] = Math.round(bA * 0.35);
+          rawDiffImg.data[outIdx + 3] = 255;
+        }
+      }
+    }
+
+    const pwResult = pngComparator(bufA, bufB, {
+      threshold: 0,
+      maxDiffPixels: 0,
+    });
+    const diffSourceImg =
+      pwResult && pwResult.diff ? PNG.sync.read(pwResult.diff) : rawDiffImg;
+
+    const diffBbox =
+      diffPixels > 0
+        ? {
+            x: minX,
+            y: minY,
+            width: maxX - minX + 1,
+            height: maxY - minY + 1,
+          }
+        : null;
+
+    const cropX = diffBbox ? Math.max(0, diffBbox.x - CROP_PADDING_PX) : 0;
+    const cropY = diffBbox ? Math.max(0, diffBbox.y - CROP_PADDING_PX) : 0;
+    const cropRight = diffBbox
+      ? Math.min(maxW, diffBbox.x + diffBbox.width + CROP_PADDING_PX)
+      : maxW;
+    const cropBottom = diffBbox
+      ? Math.min(maxH, diffBbox.y + diffBbox.height + CROP_PADDING_PX)
+      : maxH;
+    const cropW = Math.max(1, cropRight - cropX);
+    const cropH = Math.max(1, cropBottom - cropY);
+
+    fs.mkdirSync(screenshotDiffDir, { recursive: true });
+    const safeState = state.replace(/[^a-zA-Z0-9_-]/g, "_");
+    const beforeCropPath = path.join(
+      screenshotDiffDir,
+      `${safeState}_before_crop.png`,
+    );
+    const afterCropPath = path.join(
+      screenshotDiffDir,
+      `${safeState}_after_crop.png`,
+    );
+    const diffCropPath = path.join(
+      screenshotDiffDir,
+      `${safeState}_diff_crop.png`,
+    );
+
+    fs.writeFileSync(
+      beforeCropPath,
+      PNG.sync.write(cropPngToRegion(imgA, cropX, cropY, cropW, cropH)),
+    );
+    fs.writeFileSync(
+      afterCropPath,
+      PNG.sync.write(cropPngToRegion(imgB, cropX, cropY, cropW, cropH)),
+    );
+    fs.writeFileSync(
+      diffCropPath,
+      PNG.sync.write(
+        cropPngToRegion(diffSourceImg, cropX, cropY, cropW, cropH),
+      ),
+    );
+
+    dialogClipDiffs.push({
+      state,
+      shaA,
+      shaB,
+      clipA: entry1.clip,
+      clipB: entry2.clip,
+      sizeA: `${imgA.width}x${imgA.height}`,
+      sizeB: `${imgB.width}x${imgB.height}`,
+      diffPixels,
+      diffBbox,
+      cropRect: { x: cropX, y: cropY, width: cropW, height: cropH },
+      playwrightMessage: pwResult ? pwResult.errorMessage : null,
+      beforeCropPath,
+      afterCropPath,
+      diffCropPath,
+    });
+  }
+}
+
 const totalRemainingUnmatched =
   totalRemainingUnmatchedA + totalRemainingUnmatchedB;
 const unmatchedExceeded =
   !allowUnmatched && totalRemainingUnmatched > unmatchedThreshold;
+const hasScreenshotFailures =
+  dialogClipDiffs.length > 0 || dialogClipMissing.length > 0;
 
 console.log("\n=======================================================");
 console.log("COMPUTED STYLE & LAYOUT COMPARISON RESULT:");
@@ -325,7 +555,55 @@ console.log(
 console.log(`Total element differences found: ${totalDifferences}`);
 console.log("Differences by category:", diffsByCategory);
 console.log("Differences by component:", diffsByComponent);
+if (expectedDialogStates.length === 0) {
+  console.log(
+    "Dialog screenshot equivalence (sha256): 0 dialog states in this run",
+  );
+} else if (!hasScreenshotFailures) {
+  console.log(
+    `Dialog screenshot equivalence (sha256): ALL ${dialogClipsCompared} dialog screenshots byte-for-byte identical`,
+  );
+} else {
+  console.log(
+    `Dialog screenshot equivalence (sha256): ${dialogClipsIdentical}/${dialogClipsCompared} identical, ${dialogClipDiffs.length} differing, ${dialogClipMissing.length} missing`,
+  );
+}
 console.log("=======================================================\n");
+
+if (dialogClipMissing.length > 0) {
+  console.log("--- MISSING DIALOG SCREENSHOT CLIPS ---");
+  for (const m of dialogClipMissing) {
+    console.log(`  [${m.state}] hasA=${m.hasA}, hasB=${m.hasB}`);
+  }
+  console.log("");
+}
+
+if (dialogClipDiffs.length > 0) {
+  console.log(`--- DIALOG SCREENSHOT DIFFS (${dialogClipDiffs.length}) ---`);
+  for (const d of dialogClipDiffs) {
+    console.log(`  [${d.state}]`);
+    console.log(`    sha256 A: ${d.shaA}`);
+    console.log(`    sha256 B: ${d.shaB}`);
+    console.log(`    Image size: A=${d.sizeA}, B=${d.sizeB}`);
+    console.log(
+      `    Clip rect: A=${JSON.stringify(d.clipA)}, B=${JSON.stringify(d.clipB)}`,
+    );
+    console.log(`    Differing pixels (RGBA): ${d.diffPixels}`);
+    if (d.playwrightMessage) {
+      console.log(`    Playwright comparator: ${d.playwrightMessage.trim()}`);
+    }
+    if (d.diffBbox) {
+      console.log(
+        `    Diff bounding box (dialog-relative): x=${d.diffBbox.x}, y=${d.diffBbox.y}, width=${d.diffBbox.width}, height=${d.diffBbox.height}`,
+      );
+    }
+    console.log(`    Crop region: ${JSON.stringify(d.cropRect)}`);
+    console.log(`    Before crop: ${d.beforeCropPath}`);
+    console.log(`    After crop:  ${d.afterCropPath}`);
+    console.log(`    Diff crop:   ${d.diffCropPath}`);
+  }
+  console.log("");
+}
 
 if (Object.keys(unmatchedSummaryByState).length > 0) {
   console.log("--- UNMATCHED ELEMENTS SUMMARY BY STATE ---");
@@ -384,12 +662,18 @@ if (totalDifferences > 0) {
 if (
   totalDifferences > 0 ||
   unmatchedExceeded ||
+  hasScreenshotFailures ||
   missingInAStates.length > 0 ||
   missingInBStates.length > 0
 ) {
   if (unmatchedExceeded) {
     console.error(
       `\nFAIL: Remaining unmatched elements (${totalRemainingUnmatched}) exceed threshold (${unmatchedThreshold}). Pass --allow-unmatched to ignore unmatched element count.`,
+    );
+  }
+  if (hasScreenshotFailures) {
+    console.error(
+      `\nFAIL: Dialog screenshot verification failed (${dialogClipDiffs.length} differing, ${dialogClipMissing.length} missing).`,
     );
   }
   process.exit(1);
