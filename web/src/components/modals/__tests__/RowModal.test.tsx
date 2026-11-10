@@ -827,4 +827,682 @@ describe("RowModal Characterization Tests", () => {
       expect(usernameInput2.value).toBe("second_user");
     });
   });
+
+  // ===========================================================================
+  // EXTENDED CHARACTERIZATION TESTS (BATCH 2)
+  // Queries strictly use accessible roles, label text, and placeholders.
+  // ===========================================================================
+
+  function getControlForColumn(columnName: string) {
+    const label = screen.getByText(columnName, { selector: "label" });
+    const container = label.parentElement?.parentElement;
+    if (!container)
+      throw new Error(`Container for column '${columnName}' not found`);
+    const input = container.querySelector(
+      "input, textarea, button[data-slot='select-trigger'], button[role='combobox']",
+    );
+    if (!input) throw new Error(`Control for column '${columnName}' not found`);
+    return input as HTMLElement;
+  }
+
+  // ===========================================================================
+  // 13. Per-Type Value Handling (Extended Types & Fallback to Default Branch)
+  // ===========================================================================
+  describe("Extended per-type value handling", () => {
+    const allTypesTable: TableSchema = {
+      name: "all_types_table",
+      columns: [
+        {
+          name: "id",
+          type: "int",
+          nullable: false,
+          is_primary_key: true,
+          is_foreign_key: false,
+        },
+        {
+          name: "uuid_col",
+          type: "uuid",
+          nullable: true,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+        {
+          name: "date_col",
+          type: "date",
+          nullable: true,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+        {
+          name: "timestamp_col",
+          type: "timestamp",
+          nullable: true,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+        {
+          name: "bigint_col",
+          type: "bigint",
+          nullable: true,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+        {
+          name: "decimal_col",
+          type: "decimal",
+          nullable: true,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+        {
+          name: "tags_col",
+          type: "text[]",
+          nullable: true,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+      ],
+      relations: [],
+    };
+
+    it("prefills extended types (uuid, date, timestamp, bigint, decimal, array) into text inputs", () => {
+      const initialRow = {
+        id: 1,
+        uuid_col: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+        date_col: "2026-11-10",
+        timestamp_col: "2026-11-10T12:00:00Z",
+        bigint_col: "9223372036854775807",
+        decimal_col: "9999.99",
+        tags_col: "tag1, tag2",
+      };
+
+      renderWithProviders(
+        <RowModal
+          {...defaultProps}
+          table={allTypesTable}
+          initialRow={initialRow}
+        />,
+      );
+
+      expect((getControlForColumn("uuid_col") as HTMLInputElement).value).toBe(
+        "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      );
+      expect((getControlForColumn("date_col") as HTMLInputElement).value).toBe(
+        "2026-11-10",
+      );
+      expect(
+        (getControlForColumn("timestamp_col") as HTMLInputElement).value,
+      ).toBe("2026-11-10T12:00:00Z");
+      expect(
+        (getControlForColumn("bigint_col") as HTMLInputElement).value,
+      ).toBe("9223372036854775807");
+      expect(
+        (getControlForColumn("decimal_col") as HTMLInputElement).value,
+      ).toBe("9999.99");
+      expect((getControlForColumn("tags_col") as HTMLInputElement).value).toBe(
+        "tag1, tag2",
+      );
+    });
+
+    it("submits extended types through the default branch as string values", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(
+        <RowModal {...defaultProps} table={allTypesTable} onSave={onSave} />,
+      );
+
+      await user.type(getControlForColumn("id"), "1");
+      await user.type(
+        getControlForColumn("uuid_col"),
+        "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      );
+      await user.type(getControlForColumn("date_col"), "2026-11-10");
+      await user.type(
+        getControlForColumn("timestamp_col"),
+        "2026-11-10T12:00:00Z",
+      );
+      await user.type(getControlForColumn("bigint_col"), "9223372036854775807");
+      await user.type(getControlForColumn("decimal_col"), "9999.99");
+      await user.type(getControlForColumn("tags_col"), "alpha, beta");
+
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledWith({
+          id: 1,
+          uuid_col: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+          date_col: "2026-11-10",
+          timestamp_col: "2026-11-10T12:00:00Z",
+          bigint_col: "9223372036854775807",
+          decimal_col: "9999.99",
+          tags_col: "alpha, beta",
+        });
+      });
+    });
+
+    it("handles zero, negative numbers, false booleans, and empty json objects", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(<RowModal {...defaultProps} onSave={onSave} />);
+
+      await user.type(getControlForColumn("id"), "0");
+      await user.type(getControlForColumn("username"), "zero_user");
+      await user.type(getControlForColumn("age"), "-5");
+      await user.type(getControlForColumn("score"), "0.0");
+
+      // Set boolean to false
+      await user.click(getControlForColumn("is_active"));
+      await user.click(await screen.findByRole("option", { name: "false" }));
+
+      // Set JSON to empty object
+      fireEvent.change(getControlForColumn("preferences"), {
+        target: { value: "{}" },
+      });
+
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 0,
+            username: "zero_user",
+            age: -5,
+            score: 0,
+            is_active: false,
+            preferences: {},
+          }),
+        );
+      });
+    });
+  });
+
+  // ===========================================================================
+  // 14. Document / Mongo-style Behavior
+  // ===========================================================================
+  describe("Document / Mongo-style behavior", () => {
+    it("renders auto-generated ObjectId placeholder for _id primary key in insert mode", () => {
+      const mongoTable: TableSchema = {
+        name: "documents",
+        columns: [
+          {
+            name: "_id",
+            type: "string",
+            nullable: false,
+            is_primary_key: true,
+            is_foreign_key: false,
+          },
+          {
+            name: "title",
+            type: "string",
+            nullable: false,
+            is_primary_key: false,
+            is_foreign_key: false,
+          },
+        ],
+        relations: [],
+      };
+
+      renderWithProviders(<RowModal {...defaultProps} table={mongoTable} />);
+
+      const idInput = screen.getByPlaceholderText(
+        "(auto-generated ObjectId if blank)",
+      );
+      expect(idInput).toBeInTheDocument();
+      expect((idInput as HTMLInputElement).disabled).toBe(false);
+
+      const titleInput = getControlForColumn("title");
+      expect(titleInput).toBeInTheDocument();
+    });
+
+    it("supports schemaless tables with no fixed columns by adding dynamic fields", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      const schemalessTable: TableSchema = {
+        name: "events",
+        columns: [],
+        relations: [],
+      };
+
+      renderWithProviders(
+        <RowModal {...defaultProps} table={schemalessTable} onSave={onSave} />,
+      );
+
+      // No schema columns rendered
+      expect(screen.queryByText("Nullable")).not.toBeInTheDocument();
+
+      // Click Add Dynamic Field
+      const addDynamicBtn = screen.getByRole("button", {
+        name: "Add dynamic field to document",
+      });
+      await user.click(addDynamicBtn);
+
+      const nameInput = screen.getByPlaceholderText("Field name (e.g. sku)");
+      const valInput = screen.getByPlaceholderText("Value (or JSON)");
+      const confirmAddBtn = screen.getByRole("button", { name: "Add" });
+
+      await user.type(nameInput, "event_type");
+      await user.type(valInput, "user_signup");
+      await user.click(confirmAddBtn);
+
+      expect(screen.getByText("event_type")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledWith({
+          event_type: "user_signup",
+        });
+      });
+    });
+
+    it("parses nested JSON objects inside dynamic document fields", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(<RowModal {...defaultProps} onSave={onSave} />);
+
+      await user.type(getControlForColumn("id"), "1");
+      await user.type(getControlForColumn("username"), "doc_user");
+
+      const addDynamicBtn = screen.getByRole("button", {
+        name: "Add dynamic field to document",
+      });
+      await user.click(addDynamicBtn);
+
+      const nameInput = screen.getByPlaceholderText("Field name (e.g. sku)");
+      const valInput = screen.getByPlaceholderText("Value (or JSON)");
+      const confirmAddBtn = screen.getByRole("button", { name: "Add" });
+
+      await user.type(nameInput, "nested_profile");
+      fireEvent.change(valInput, {
+        target: {
+          value:
+            '{"address": {"city": "Hanoi", "country": "Vietnam"}, "tags": ["admin", "dev"]}',
+        },
+      });
+      await user.click(confirmAddBtn);
+
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 1,
+            username: "doc_user",
+            nested_profile: {
+              address: { city: "Hanoi", country: "Vietnam" },
+              tags: ["admin", "dev"],
+            },
+          }),
+        );
+      });
+    });
+
+    it("overwrites existing value when adding a dynamic field with duplicate key", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(<RowModal {...defaultProps} onSave={onSave} />);
+
+      await user.type(getControlForColumn("id"), "1");
+      await user.type(getControlForColumn("username"), "dedup_user");
+
+      const addDynamicBtn = screen.getByRole("button", {
+        name: "Add dynamic field to document",
+      });
+
+      // Add dynamic field "duplicate_key" with value "first_val"
+      await user.click(addDynamicBtn);
+      await user.type(
+        screen.getByPlaceholderText("Field name (e.g. sku)"),
+        "duplicate_key",
+      );
+      await user.type(
+        screen.getByPlaceholderText("Value (or JSON)"),
+        "first_val",
+      );
+      await user.click(screen.getByRole("button", { name: "Add" }));
+
+      // Add dynamic field "duplicate_key" with value "second_val"
+      await user.click(
+        screen.getByRole("button", {
+          name: "Add dynamic field to document",
+        }),
+      );
+      await user.type(
+        screen.getByPlaceholderText("Field name (e.g. sku)"),
+        "duplicate_key",
+      );
+      await user.type(
+        screen.getByPlaceholderText("Value (or JSON)"),
+        "second_val",
+      );
+      await user.click(screen.getByRole("button", { name: "Add" }));
+
+      // Ensure only one dynamic field row is displayed with updated value
+      const dynamicLabels = screen.getAllByText("duplicate_key");
+      expect(dynamicLabels.length).toBe(1);
+
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            duplicate_key: "second_val",
+          }),
+        );
+      });
+    });
+  });
+
+  // ===========================================================================
+  // 15. Required Field, Empty String vs Null, and Whitespace Handling
+  // ===========================================================================
+  describe("Required fields, empty strings vs null, and whitespace", () => {
+    const nullableCheckTable: TableSchema = {
+      name: "validation_table",
+      columns: [
+        {
+          name: "id",
+          type: "int",
+          nullable: false,
+          is_primary_key: true,
+          is_foreign_key: false,
+        },
+        {
+          name: "required_text",
+          type: "string",
+          nullable: false,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+        {
+          name: "nullable_text",
+          type: "string",
+          nullable: true,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+        {
+          name: "whitespace_text",
+          type: "string",
+          nullable: true,
+          is_primary_key: false,
+          is_foreign_key: false,
+        },
+      ],
+      relations: [],
+    };
+
+    it("omits empty required fields from payload without blocking client submit", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(
+        <RowModal
+          {...defaultProps}
+          table={nullableCheckTable}
+          onSave={onSave}
+        />,
+      );
+
+      await user.type(getControlForColumn("id"), "1");
+      // required_text is left empty
+      // nullable_text is left empty
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledTimes(1);
+      });
+
+      const payload = onSave.mock.calls[0][0];
+      expect(payload.id).toBe(1);
+      expect("required_text" in payload).toBe(false);
+      expect(payload.nullable_text).toBeNull();
+    });
+
+    it("preserves raw whitespace instead of trimming or converting to null", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(
+        <RowModal
+          {...defaultProps}
+          table={nullableCheckTable}
+          onSave={onSave}
+        />,
+      );
+
+      await user.type(getControlForColumn("id"), "1");
+      await user.type(getControlForColumn("required_text"), "   ");
+      await user.type(getControlForColumn("whitespace_text"), "   ");
+
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledWith({
+          id: 1,
+          required_text: "   ",
+          nullable_text: null,
+          whitespace_text: "   ",
+        });
+      });
+    });
+  });
+
+  // ===========================================================================
+  // 16. Invalid JSON Handling
+  // ===========================================================================
+  describe("Invalid JSON handling in json column", () => {
+    it("does not block client submit and passes raw invalid JSON string to onSave", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(<RowModal {...defaultProps} onSave={onSave} />);
+
+      await user.type(getControlForColumn("id"), "1");
+      await user.type(getControlForColumn("username"), "json_user");
+
+      fireEvent.change(getControlForColumn("preferences"), {
+        target: { value: "{bad_json: missing_quotes" },
+      });
+
+      // Does not block submit on client
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledWith(
+          expect.objectContaining({
+            id: 1,
+            username: "json_user",
+            preferences: "{bad_json: missing_quotes",
+          }),
+        );
+      });
+    });
+
+    it("renders server error alert when backend rejects invalid JSON payload", async () => {
+      const user = userEvent.setup();
+      const onSave = vi
+        .fn()
+        .mockRejectedValue(
+          new Error("Database error: invalid JSON syntax at character 1"),
+        );
+      renderWithProviders(<RowModal {...defaultProps} onSave={onSave} />);
+
+      await user.type(getControlForColumn("id"), "1");
+      await user.type(getControlForColumn("username"), "json_user");
+      fireEvent.change(getControlForColumn("preferences"), {
+        target: { value: "invalid" },
+      });
+
+      await user.click(screen.getByRole("button", { name: "Insert Record" }));
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent(
+        "Database error: invalid JSON syntax at character 1",
+      );
+    });
+  });
+
+  // ===========================================================================
+  // 17. Keyboard and Focus Behavior
+  // ===========================================================================
+  describe("Keyboard and focus behavior", () => {
+    it("submits the form when Enter is pressed inside an input field", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      renderWithProviders(<RowModal {...defaultProps} onSave={onSave} />);
+
+      const usernameInput = getControlForColumn("username");
+      await user.type(getControlForColumn("id"), "1");
+      await user.type(usernameInput, "enter_user{Enter}");
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledTimes(1);
+      });
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 1,
+          username: "enter_user",
+        }),
+      );
+    });
+
+    it("closes the dialog when Escape key is pressed", async () => {
+      const user = userEvent.setup();
+      const onClose = vi.fn();
+      renderWithProviders(<RowModal {...defaultProps} onClose={onClose} />);
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      await user.keyboard("{Escape}");
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+    });
+
+    it("moves focus inside the dialog when opened", async () => {
+      renderWithProviders(<RowModal {...defaultProps} />);
+      const dialog = await screen.findByRole("dialog");
+
+      await waitFor(() => {
+        expect(dialog.contains(document.activeElement)).toBe(true);
+      });
+    });
+
+    it("returns focus back inside main dialog after diff confirmation dialog closes", async () => {
+      const user = userEvent.setup();
+      const initialRow = {
+        id: 1,
+        username: "initial_user",
+      };
+      renderWithProviders(
+        <RowModal {...defaultProps} initialRow={initialRow} />,
+      );
+
+      const usernameInput = getControlForColumn("username");
+      await user.clear(usernameInput);
+      await user.type(usernameInput, "edited_user");
+
+      const saveChangesBtn = screen.getByRole("button", {
+        name: "Save Changes",
+      });
+      await user.click(saveChangesBtn);
+
+      const diffDialog = await screen.findByRole("alertdialog");
+      expect(diffDialog).toBeInTheDocument();
+
+      const cancelDiffBtn = within(diffDialog).getByRole("button", {
+        name: "Cancel",
+      });
+      await user.click(cancelDiffBtn);
+
+      await waitFor(() => {
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      });
+
+      const mainDialog = screen.getByRole("dialog");
+      await waitFor(() => {
+        expect(mainDialog.contains(document.activeElement)).toBe(true);
+      });
+    });
+  });
+
+  // ===========================================================================
+  // 18. Diff Dialog with Multiple Fields Changed & Removed Dynamic Field
+  // ===========================================================================
+  describe("Diff dialog with multiple fields and removed dynamic field", () => {
+    it("renders changed fields plural badge and lists modifications including dynamic removal", async () => {
+      const user = userEvent.setup();
+      const onSave = vi.fn().mockResolvedValue(undefined);
+      const initialRow = {
+        id: 10,
+        username: "alice",
+        age: 25,
+        bio: "original bio",
+        temporary_prop: "value_to_drop",
+      };
+
+      renderWithProviders(
+        <RowModal {...defaultProps} initialRow={initialRow} onSave={onSave} />,
+      );
+
+      // Modify username
+      const usernameInput = getControlForColumn("username");
+      await user.clear(usernameInput);
+      await user.type(usernameInput, "alice_updated");
+
+      // Modify age
+      const ageInput = getControlForColumn("age");
+      await user.clear(ageInput);
+      await user.type(ageInput, "26");
+
+      // Remove dynamic field temporary_prop
+      expect(screen.getByText("temporary_prop")).toBeInTheDocument();
+      const removeBtn = screen.getByTitle("Remove field");
+      await user.click(removeBtn);
+      expect(screen.queryByText("temporary_prop")).not.toBeInTheDocument();
+
+      // Trigger Save Changes
+      await user.click(screen.getByRole("button", { name: "Save Changes" }));
+
+      // Review Changes AlertDialog appears
+      const diffDialog = await screen.findByRole("alertdialog");
+      expect(diffDialog).toBeInTheDocument();
+
+      const diffWithin = within(diffDialog);
+      expect(diffWithin.getByText("Review Changes")).toBeInTheDocument();
+      expect(diffWithin.getByText("3 fields changed")).toBeInTheDocument();
+
+      // Check username row
+      expect(diffWithin.getByText("username")).toBeInTheDocument();
+      expect(diffWithin.getByText("alice")).toBeInTheDocument();
+      expect(diffWithin.getByText("alice_updated")).toBeInTheDocument();
+
+      // Check age row
+      expect(diffWithin.getByText("age")).toBeInTheDocument();
+      expect(diffWithin.getByText("25")).toBeInTheDocument();
+      expect(diffWithin.getByText("26")).toBeInTheDocument();
+
+      // Check temporary_prop row (shows NULL after value)
+      expect(diffWithin.getByText("temporary_prop")).toBeInTheDocument();
+      expect(diffWithin.getByText("value_to_drop")).toBeInTheDocument();
+      expect(diffWithin.getByText("NULL")).toBeInTheDocument();
+
+      // Confirm & Save
+      const confirmBtn = diffWithin.getByRole("button", {
+        name: "Confirm & Save",
+      });
+      await user.click(confirmBtn);
+
+      await waitFor(() => {
+        expect(onSave).toHaveBeenCalledTimes(1);
+      });
+
+      const savedPayload = onSave.mock.calls[0][0];
+      expect(savedPayload).toEqual(
+        expect.objectContaining({
+          id: 10,
+          username: "alice_updated",
+          age: 26,
+          bio: "original bio",
+        }),
+      );
+      expect("temporary_prop" in savedPayload).toBe(false);
+    });
+  });
 });
