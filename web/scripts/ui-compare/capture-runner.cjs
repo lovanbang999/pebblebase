@@ -90,12 +90,45 @@ async function dumpDomStyles(page) {
       const p = getStablePath(el);
       if (!p) continue;
 
+      const dialogEl = el.closest('[role="dialog"], [role="alertdialog"]');
+      const originRect = dialogEl
+        ? dialogEl.getBoundingClientRect()
+        : { left: 0, top: 0 };
+      const round2 = (n) => Math.round(n * 100) / 100;
+
+      const ariaLabelledBy = el.getAttribute("aria-labelledby");
+      let labelledByText = "";
+      if (ariaLabelledBy) {
+        labelledByText = ariaLabelledBy
+          .split(/\s+/)
+          .map((id) => document.getElementById(id)?.textContent || "")
+          .join(" ")
+          .trim()
+          .replace(/\s+/g, " ");
+      }
+      const rawLabel =
+        el.getAttribute("aria-label") ||
+        labelledByText ||
+        el.getAttribute("placeholder") ||
+        el.getAttribute("title") ||
+        el.getAttribute("name") ||
+        "";
+      const label = rawLabel.trim().replace(/\s+/g, " ").slice(0, 60) || null;
+
       result[p] = {
         tag,
-        text: (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 30),
+        text: (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 60),
+        label,
         dataSlot: el.getAttribute("data-slot") || null,
         role: el.getAttribute("role") || null,
-        className: el.className ? String(el.className) : "",
+        className: el.getAttribute("class") || "",
+        inDialog: Boolean(dialogEl),
+        bbox: {
+          x: round2(rect.left - originRect.left),
+          y: round2(rect.top - originRect.top),
+          width: round2(rect.width),
+          height: round2(rect.height),
+        },
         color: cs.color,
         backgroundColor: cs.backgroundColor,
         borderTopColor: cs.borderTopColor,
@@ -105,6 +138,22 @@ async function dumpDomStyles(page) {
         outlineColor: cs.outlineColor,
         boxShadow: cs.boxShadow,
         opacity: cs.opacity,
+        width: cs.width,
+        height: cs.height,
+        marginTop: cs.marginTop,
+        marginRight: cs.marginRight,
+        marginBottom: cs.marginBottom,
+        marginLeft: cs.marginLeft,
+        paddingTop: cs.paddingTop,
+        paddingRight: cs.paddingRight,
+        paddingBottom: cs.paddingBottom,
+        paddingLeft: cs.paddingLeft,
+        gap: cs.gap,
+        rowGap: cs.rowGap,
+        columnGap: cs.columnGap,
+        fontSize: cs.fontSize,
+        fontWeight: cs.fontWeight,
+        lineHeight: cs.lineHeight,
       };
     }
     return result;
@@ -149,6 +198,8 @@ async function captureHoverDualTheme(page, locator, stateName, results) {
       results[key] = await dumpDomStyles(page);
     }
   }
+  await page.mouse.move(0, 0).catch(() => {});
+  await page.waitForTimeout(50);
 }
 
 function shouldRunGroup(groupName) {
@@ -339,6 +390,31 @@ async function run() {
 
     await page.goto(`${serverUrl}/`);
     await page.waitForLoadState("networkidle");
+
+    // Stabilize server query execution timing so the status footer does not jitter across runs
+    await page.route(
+      /\/api\/connections\/[^/]+\/tables\/[^/]+\/rows(\?|$)/,
+      async (route) => {
+        const response = await route.fetch();
+        const contentType = response.headers()["content-type"] || "";
+        if (!contentType.includes("application/json")) {
+          await route.fulfill({ response });
+          return;
+        }
+        try {
+          const json = await response.json();
+          if (json && typeof json.query_time_ms === "number") {
+            json.query_time_ms = 1.0;
+          }
+          if (json && typeof json.execution_time_ms === "number") {
+            json.execution_time_ms = 1.0;
+          }
+          await route.fulfill({ response, json });
+        } catch {
+          await route.fulfill({ response });
+        }
+      },
+    );
 
     try {
       const exploreBtn = page.getByRole("button", {
@@ -1231,7 +1307,13 @@ async function run() {
       // 2. RowModal in Edit Mode (fields populated, read-only/disabled PK, delete button)
       console.log("  - RowModal Edit Mode...");
       const editOpened = await page.evaluate(() => {
-        const el = document.querySelector("[data-table-workspace]");
+        const el =
+          Array.from(document.querySelectorAll("[data-table-workspace]")).find(
+            (node) => {
+              const r = node.getBoundingClientRect();
+              return r.width > 0 && r.height > 0;
+            },
+          ) || document.querySelector("[data-table-workspace]");
         if (!el) return false;
         const key = Object.keys(el).find(
           (k) =>
@@ -1283,6 +1365,119 @@ async function run() {
             "row_modal_delete_btn",
             results,
           );
+
+          // 3. RowDeleteDialog (edit mode -> click Delete)
+          await deleteBtn.click();
+          const deleteAlertDialog = page.locator('[role="alertdialog"]');
+          await deleteAlertDialog
+            .waitFor({ state: "visible", timeout: 5000 })
+            .catch(() => {});
+          await page.waitForTimeout(300);
+
+          const isDeleteVisible = await deleteAlertDialog.isVisible();
+          console.log(`  - RowDeleteDialog (visible=${isDeleteVisible})...`);
+          if (isDeleteVisible) {
+            await captureDualTheme(page, "row_modal_delete_dialog", results);
+
+            const delCancelBtn = deleteAlertDialog
+              .getByRole("button", { name: /Cancel|Hủy/i })
+              .first();
+            if (await delCancelBtn.isVisible()) {
+              await captureHoverDualTheme(
+                page,
+                delCancelBtn,
+                "row_modal_delete_dialog_cancel_btn",
+                results,
+              );
+            }
+
+            const delConfirmBtn = deleteAlertDialog
+              .getByRole("button", { name: /Delete Record|Xóa bản ghi/i })
+              .first();
+            if (await delConfirmBtn.isVisible()) {
+              await captureHoverDualTheme(
+                page,
+                delConfirmBtn,
+                "row_modal_delete_dialog_confirm_btn",
+                results,
+              );
+            }
+
+            if (await delCancelBtn.isVisible()) {
+              await delCancelBtn.click();
+              await deleteAlertDialog
+                .waitFor({ state: "hidden", timeout: 3000 })
+                .catch(() => {});
+              await page.waitForTimeout(300);
+            } else {
+              await page.keyboard.press("Escape");
+              await page.waitForTimeout(300);
+            }
+          }
+        }
+
+        // 4. RowDiffDialog (edit mode -> change a value -> click Save Changes)
+        console.log("  - RowDiffDialog...");
+        const titleInput = page
+          .locator('[role="dialog"] input[type="text"]')
+          .first();
+        if (await titleInput.isVisible()) {
+          await titleInput.fill("Sample Title Updated");
+          await page.waitForTimeout(150);
+
+          const editSaveBtn = page
+            .locator('[role="dialog"]')
+            .getByRole("button", { name: /Save Changes|Lưu thay đổi|Save/i })
+            .first();
+          if (await editSaveBtn.isVisible()) {
+            await editSaveBtn.click();
+            const diffAlertDialog = page.locator('[role="alertdialog"]');
+            await diffAlertDialog
+              .waitFor({ state: "visible", timeout: 5000 })
+              .catch(() => {});
+            await page.waitForTimeout(300);
+
+            const isDiffVisible = await diffAlertDialog.isVisible();
+            console.log(`  - RowDiffDialog (visible=${isDiffVisible})...`);
+            if (isDiffVisible) {
+              await captureDualTheme(page, "row_modal_diff_dialog", results);
+
+              const diffCancelBtn = diffAlertDialog
+                .getByRole("button", { name: /Cancel|Hủy/i })
+                .first();
+              if (await diffCancelBtn.isVisible()) {
+                await captureHoverDualTheme(
+                  page,
+                  diffCancelBtn,
+                  "row_modal_diff_dialog_cancel_btn",
+                  results,
+                );
+              }
+
+              const diffConfirmBtn = diffAlertDialog
+                .getByRole("button", { name: /Confirm & Save|Xác nhận & Lưu/i })
+                .first();
+              if (await diffConfirmBtn.isVisible()) {
+                await captureHoverDualTheme(
+                  page,
+                  diffConfirmBtn,
+                  "row_modal_diff_dialog_confirm_btn",
+                  results,
+                );
+              }
+
+              if (await diffCancelBtn.isVisible()) {
+                await diffCancelBtn.click();
+                await diffAlertDialog
+                  .waitFor({ state: "hidden", timeout: 3000 })
+                  .catch(() => {});
+                await page.waitForTimeout(300);
+              } else {
+                await page.keyboard.press("Escape");
+                await page.waitForTimeout(300);
+              }
+            }
+          }
         }
 
         await page.keyboard.press("Escape");

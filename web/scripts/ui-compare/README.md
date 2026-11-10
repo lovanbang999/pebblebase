@@ -19,7 +19,7 @@ This tool builds the actual frontend, spins up an isolated Pebblebase backend on
 From `pebblebase/web/`:
 
 ```bash
-yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark]
+yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>]
 ```
 
 ### Direct Bash Invocation
@@ -27,7 +27,7 @@ yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark]
 From anywhere in the repository:
 
 ```bash
-bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filter>] [--themes light,dark]
+bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>]
 ```
 
 ### Examples
@@ -81,19 +81,17 @@ bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filte
    - Authenticates and saves auth state.
    - Iterates through registered UI states in both `light` and `dark` themes.
    - Extracts computed properties for all visible elements:
-     - `color`
-     - `backgroundColor`
-     - `borderTopColor`, `borderRightColor`, `borderBottomColor`, `borderLeftColor`
-     - `outlineColor`
-     - `boxShadow`
-     - `opacity`
+     - Color & visual: `color`, `backgroundColor`, `borderTopColor`, `borderRightColor`, `borderBottomColor`, `borderLeftColor`, `outlineColor`, `boxShadow`, `opacity`
+     - Layout & typography: `width`, `height`, `marginTop`, `marginRight`, `marginBottom`, `marginLeft`, `paddingTop`, `paddingRight`, `paddingBottom`, `paddingLeft`, `gap`, `rowGap`, `columnGap`, `fontSize`, `fontWeight`, `lineHeight`
+     - Dialog-relative bounding box (`bbox.x`, `bbox.y`, `bbox.width`, `bbox.height` relative to enclosing `[role="dialog"]` / `[role="alertdialog"]`, or viewport outside dialogs)
    - Generates reference screenshots in the temporary output directory.
 
 4. **Style Differ (`diff-styles.cjs`)**:
    - Keys elements by hierarchical stable DOM paths (`data-slot`, `role`, tag, nth-of-type).
-   - Compares all 9 style properties.
-   - Groups differences by state and component type.
-   - Exits with `0` if clean, `1` if visual regressions are found.
+   - Counts path-unmatched elements per state and runs a fallback matcher (`data-slot` + visible text/label + occurrence order) so wrapper changes do not hide moved elements.
+   - Compares all 9 color/visual properties, 16 layout/typography properties, and bounding box geometry with a `1px` tolerance.
+   - Groups differences by category (`colorVisual`, `layout`, `bbox`), state, and component type.
+   - Exits with `0` if clean; exits `1` if visual/layout regressions are found or remaining unmatched elements exceed `--unmatched-threshold` (default `0`, overridable via `--allow-unmatched`).
 
 5. **Self-Cleaning Lifecycle**:
    - Traps `EXIT`, `INT`, and `TERM` signals to ensure background server processes, worktrees, and temporary directories in `/tmp` are removed automatically.
@@ -118,13 +116,15 @@ The harness includes states covering:
   - Import Modal (empty drop zone, drag-over state, file loaded with preview table, column mapping dropdown open, mapping item hover, validation warnings, success view, error alert).
   - Export Modal (JSON format, CSV format, SQL format, scope toggles for all filtered vs current page, destination toggles for clipboard copy vs file download, success alerts, download triggers).
   - Read-only connection restrictions and action button hovers (Export, Close/X, Tabs).
-- **Row Modal (16 states)**:
+- **Row Modal (28 states across dual themes)**:
   - Insert Mode with empty default fields across all schema types (`int`, `float`, `string`, `bool`, `json`, `datetime`).
   - Boolean `Select` dropdown trigger and open popup.
   - Hover on select item option.
   - Textarea JSON input.
   - Validation error alert (`Alert variant="destructive"`) on duplicate primary key submission.
   - Edit Mode with populated fields, read-only/disabled primary key, and delete button visible.
+  - `RowDeleteDialog` (delete confirmation AlertDialog open, Cancel and Delete Record button hovers).
+  - `RowDiffDialog` (modify field in edit mode, click Save Changes to open diff review AlertDialog, Cancel and Confirm & Save button hovers).
   - Hover states on Save, Cancel, and Delete buttons.
 
 ### Adding New States
@@ -141,6 +141,7 @@ To add a new state, edit `web/scripts/ui-compare/capture-runner.cjs`:
 ## Limitations
 
 - **RowModal Simulation**: The `RowModal` validation-error state is simulated by making `window.dispatchEvent` throw when `pb:stage-row-draft` is dispatched, and edit mode is opened by invoking the `onEditRow` handler directly. Consequently, these states measure styling and visual layout only, not data persistence or backend save logic.
+- **Query Timing Stabilization**: `/api/connections/*/tables/*/rows*` responses normalize `query_time_ms` (and `execution_time_ms`) to `1.0` so the proportional-width `"Server query {{time}} ms"` footer text does not cause run-to-run layout jitter.
 
 ---
 

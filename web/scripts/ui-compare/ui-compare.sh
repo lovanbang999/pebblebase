@@ -12,20 +12,23 @@ WEB_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 REPO_ROOT="$(cd "${WEB_DIR}/.." && pwd)"
 
 usage() {
-  echo "Usage: $0 <commit_a> <commit_b> [--states <filter>] [--themes light,dark]"
+  echo "Usage: $0 <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>]"
   echo ""
   echo "Arguments:"
   echo "  commit_a    Git revision, branch, or 'working-tree' / '.'"
   echo "  commit_b    Git revision, branch, or 'working-tree' / '.'"
   echo ""
   echo "Options:"
-  echo "  --states    Filter state group regex: 'all', 'general', 'import', 'row-modal', etc. (default: all)"
-  echo "  --themes    Comma-separated themes: 'light,dark', 'light', or 'dark' (default: light,dark)"
+  echo "  --states               Filter state group regex: 'all', 'general', 'import', 'row-modal', etc. (default: all)"
+  echo "  --themes               Comma-separated themes: 'light,dark', 'light', or 'dark' (default: light,dark)"
+  echo "  --allow-unmatched      Do not fail when unmatched elements exceed threshold"
+  echo "  --unmatched-threshold  Maximum allowed remaining unmatched elements after fallback (default: 0)"
   echo ""
   echo "Examples:"
   echo "  $0 main HEAD"
   echo "  $0 dec7546^ dec7546 --states row-modal"
   echo "  $0 main working-tree --themes dark"
+  echo "  $0 main working-tree --states row-modal --allow-unmatched"
   exit 2
 }
 
@@ -39,6 +42,8 @@ shift 2
 
 STATES="all"
 THEMES="light,dark"
+ALLOW_UNMATCHED=""
+UNMATCHED_THRESHOLD=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -48,6 +53,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --themes)
       THEMES="$2"
+      shift 2
+      ;;
+    --allow-unmatched)
+      ALLOW_UNMATCHED="--allow-unmatched"
+      shift 1
+      ;;
+    --unmatched-threshold)
+      UNMATCHED_THRESHOLD="$2"
       shift 2
       ;;
     -h|--help)
@@ -226,10 +239,19 @@ echo "================================================================"
 echo "DIFFING COMPUTED STYLES: ${COMMIT_A} vs ${COMMIT_B}"
 echo "================================================================"
 
+DIFF_ARGS=()
+if [ -n "$ALLOW_UNMATCHED" ]; then
+  DIFF_ARGS+=("$ALLOW_UNMATCHED")
+fi
+if [ -n "$UNMATCHED_THRESHOLD" ]; then
+  DIFF_ARGS+=("--unmatched-threshold" "$UNMATCHED_THRESHOLD")
+fi
+
 DIFF_STATUS=0
 node "$SCRIPT_DIR/diff-styles.cjs" \
   "${CAPTURE_DIR_A}/computed_styles.json" \
-  "${CAPTURE_DIR_B}/computed_styles.json" || DIFF_STATUS=$?
+  "${CAPTURE_DIR_B}/computed_styles.json" \
+  "${DIFF_ARGS[@]}" || DIFF_STATUS=$?
 
 if [ $DIFF_STATUS -eq 0 ]; then
   echo ""
