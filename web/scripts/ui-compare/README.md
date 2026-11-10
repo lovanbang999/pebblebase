@@ -55,7 +55,7 @@ bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filte
 
 ### Performance & Approximate Runtime
 
-- **Full Suite (116 states across dual themes)**: ~2.5 minutes total (includes 2 independent frontend builds, 2 Go server binary compilations, and 116 Playwright dual-theme captures).
+- **Full Suite (128 states across dual themes)**: ~2.5 minutes total (includes 2 independent frontend builds, 2 Go server binary compilations, and 128 Playwright dual-theme captures).
 - **Targeted Subsets (via `--states`)**:
   - `--states row-modal`: ~20–25 seconds.
   - `--states import`: ~25–30 seconds.
@@ -113,7 +113,7 @@ The harness includes states covering:
   - Schema View tab.
   - Query Console (editor, Run Query button hover).
   - ERD View (schema visualizer toggle).
-- **Import / Export Modal (36 states)**:
+- **Import / Export Modal (40 states)**:
   - Import Modal (empty drop zone, drag-over state, file loaded with preview table, column mapping dropdown open, mapping item hover, validation warnings, success view, error alert).
   - Export Modal (JSON format, CSV format, SQL format, scope toggles for all filtered vs current page, destination toggles for clipboard copy vs file download, success alerts, download triggers).
   - Read-only connection restrictions and action button hovers (Export, Close/X, Tabs).
@@ -171,3 +171,12 @@ The following specialized surfaces require live third-party services or interact
 > ```
 >
 > The check must exit with code `0` (Zero visual differences). Any detected difference must be verified and confirmed intentional before proceeding.
+
+### Handling Accepted Structural Differences
+
+Default runs stay strict (failing with exit code `1` on any unmatched element or property change). Do not weaken the default thresholds when refactoring components onto shared primitives (for example wrapping fields in `FormField`, which introduces a `helpAction` wrapper `<div>` or normalizes header flex `gap` without moving pixels):
+
+1. Run the strict default comparison (`yarn ui:compare main working-tree`) first to surface every unmatched element and property diff.
+2. Verify that `Differences by category` shows `colorVisual: 0` and `bbox: 0`, and that all clipped dialog screenshots pass `sha256` equivalence (or isolate any anti-aliasing noise to unrelated subpixel border corners).
+3. Run with `--allow-unmatched` (for example `yarn ui:compare main working-tree --states row-modal --allow-unmatched`) to confirm no unmatched elements fail the threshold check, and inspect any remaining `layout` diffs to verify they come only from expected structural wrappers (inherited `fontSize`/`lineHeight` or `gap` on the wrapper/header `<div>`; note `totalDifferences > 0` still exits `1`).
+4. Record both the strict and `--allow-unmatched` summary lines alongside the list of accepted DOM-structure differences in the PR description before merging.
