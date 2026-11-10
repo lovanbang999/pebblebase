@@ -12,20 +12,23 @@ WEB_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 REPO_ROOT="$(cd "${WEB_DIR}/.." && pwd)"
 
 usage() {
-  echo "Usage: $0 <commit_a> <commit_b> [--states <filter>] [--themes light,dark]"
+  echo "Usage: $0 <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>]"
   echo ""
   echo "Arguments:"
   echo "  commit_a    Git revision, branch, or 'working-tree' / '.'"
   echo "  commit_b    Git revision, branch, or 'working-tree' / '.'"
   echo ""
   echo "Options:"
-  echo "  --states    Filter state group regex: 'all', 'general', 'import', 'row-modal', etc. (default: all)"
-  echo "  --themes    Comma-separated themes: 'light,dark', 'light', or 'dark' (default: light,dark)"
+  echo "  --states               Filter state group regex: 'all', 'general', 'import', 'row-modal', etc. (default: all)"
+  echo "  --themes               Comma-separated themes: 'light,dark', 'light', or 'dark' (default: light,dark)"
+  echo "  --allow-unmatched      Do not fail when unmatched elements exceed threshold"
+  echo "  --unmatched-threshold  Maximum allowed remaining unmatched elements after fallback (default: 0)"
   echo ""
   echo "Examples:"
   echo "  $0 main HEAD"
   echo "  $0 dec7546^ dec7546 --states row-modal"
   echo "  $0 main working-tree --themes dark"
+  echo "  $0 main working-tree --states row-modal --allow-unmatched"
   exit 2
 }
 
@@ -39,6 +42,8 @@ shift 2
 
 STATES="all"
 THEMES="light,dark"
+ALLOW_UNMATCHED=""
+UNMATCHED_THRESHOLD=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -48,6 +53,14 @@ while [[ $# -gt 0 ]]; do
       ;;
     --themes)
       THEMES="$2"
+      shift 2
+      ;;
+    --allow-unmatched)
+      ALLOW_UNMATCHED="--allow-unmatched"
+      shift 1
+      ;;
+    --unmatched-threshold)
+      UNMATCHED_THRESHOLD="$2"
       shift 2
       ;;
     -h|--help)
@@ -122,6 +135,28 @@ CREATE TABLE IF NOT EXISTS sample_records (
 conn.execute('''
 INSERT OR IGNORE INTO sample_records (id, title, age, rating, is_active, metadata, created_at)
 VALUES (1, 'Sample Title', 25, 4.5, 1, '{\"status\": \"ok\", \"tags\": [\"test\"]}', '2026-01-01 12:00:00')
+''')
+conn.execute('''
+CREATE TABLE IF NOT EXISTS fk_parent_stub (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE
+)
+''')
+conn.execute('''
+INSERT OR IGNORE INTO fk_parent_stub (id, code)
+VALUES (1, 'PARENT_01')
+''')
+conn.execute('''
+CREATE TABLE IF NOT EXISTS fk_long_labels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    organization_account_user_reference_id INTEGER REFERENCES fk_parent_stub(id),
+    primary_organization_billing_parent_account_reference_identifier INTEGER REFERENCES fk_parent_stub(id),
+    secondary_contact_email TEXT REFERENCES fk_parent_stub(code)
+)
+''')
+conn.execute('''
+INSERT OR IGNORE INTO fk_long_labels (id, organization_account_user_reference_id, primary_organization_billing_parent_account_reference_identifier, secondary_contact_email)
+VALUES (1, 1, 1, 'PARENT_01')
 ''')
 conn.commit()
 conn.close()
@@ -226,10 +261,21 @@ echo "================================================================"
 echo "DIFFING COMPUTED STYLES: ${COMMIT_A} vs ${COMMIT_B}"
 echo "================================================================"
 
+DIFF_ARGS=()
+if [ -n "$ALLOW_UNMATCHED" ]; then
+  DIFF_ARGS+=("$ALLOW_UNMATCHED")
+fi
+if [ -n "$UNMATCHED_THRESHOLD" ]; then
+  DIFF_ARGS+=("--unmatched-threshold" "$UNMATCHED_THRESHOLD")
+fi
+SCREENSHOT_DIFF_DIR="/tmp/pb_ui_cmp_dialog_diffs_${TIMESTAMP}_$$"
+DIFF_ARGS+=("--screenshot-diff-dir" "$SCREENSHOT_DIFF_DIR")
+
 DIFF_STATUS=0
 node "$SCRIPT_DIR/diff-styles.cjs" \
   "${CAPTURE_DIR_A}/computed_styles.json" \
-  "${CAPTURE_DIR_B}/computed_styles.json" || DIFF_STATUS=$?
+  "${CAPTURE_DIR_B}/computed_styles.json" \
+  "${DIFF_ARGS[@]}" || DIFF_STATUS=$?
 
 if [ $DIFF_STATUS -eq 0 ]; then
   echo ""

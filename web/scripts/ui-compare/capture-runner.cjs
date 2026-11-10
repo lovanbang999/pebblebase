@@ -6,6 +6,7 @@
  */
 
 const { chromium } = require("playwright");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -90,12 +91,45 @@ async function dumpDomStyles(page) {
       const p = getStablePath(el);
       if (!p) continue;
 
+      const dialogEl = el.closest('[role="dialog"], [role="alertdialog"]');
+      const originRect = dialogEl
+        ? dialogEl.getBoundingClientRect()
+        : { left: 0, top: 0 };
+      const round2 = (n) => Math.round(n * 100) / 100;
+
+      const ariaLabelledBy = el.getAttribute("aria-labelledby");
+      let labelledByText = "";
+      if (ariaLabelledBy) {
+        labelledByText = ariaLabelledBy
+          .split(/\s+/)
+          .map((id) => document.getElementById(id)?.textContent || "")
+          .join(" ")
+          .trim()
+          .replace(/\s+/g, " ");
+      }
+      const rawLabel =
+        el.getAttribute("aria-label") ||
+        labelledByText ||
+        el.getAttribute("placeholder") ||
+        el.getAttribute("title") ||
+        el.getAttribute("name") ||
+        "";
+      const label = rawLabel.trim().replace(/\s+/g, " ").slice(0, 60) || null;
+
       result[p] = {
         tag,
-        text: (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 30),
+        text: (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 60),
+        label,
         dataSlot: el.getAttribute("data-slot") || null,
         role: el.getAttribute("role") || null,
-        className: el.className ? String(el.className) : "",
+        className: el.getAttribute("class") || "",
+        inDialog: Boolean(dialogEl),
+        bbox: {
+          x: round2(rect.left - originRect.left),
+          y: round2(rect.top - originRect.top),
+          width: round2(rect.width),
+          height: round2(rect.height),
+        },
         color: cs.color,
         backgroundColor: cs.backgroundColor,
         borderTopColor: cs.borderTopColor,
@@ -105,6 +139,22 @@ async function dumpDomStyles(page) {
         outlineColor: cs.outlineColor,
         boxShadow: cs.boxShadow,
         opacity: cs.opacity,
+        width: cs.width,
+        height: cs.height,
+        marginTop: cs.marginTop,
+        marginRight: cs.marginRight,
+        marginBottom: cs.marginBottom,
+        marginLeft: cs.marginLeft,
+        paddingTop: cs.paddingTop,
+        paddingRight: cs.paddingRight,
+        paddingBottom: cs.paddingBottom,
+        paddingLeft: cs.paddingLeft,
+        gap: cs.gap,
+        rowGap: cs.rowGap,
+        columnGap: cs.columnGap,
+        fontSize: cs.fontSize,
+        fontWeight: cs.fontWeight,
+        lineHeight: cs.lineHeight,
       };
     }
     return result;
@@ -112,29 +162,102 @@ async function dumpDomStyles(page) {
 }
 
 async function setPageTheme(page, theme) {
-  await page.evaluate((th) => {
+  await page.evaluate(async (th) => {
     localStorage.setItem("pb_theme", th);
     if (th === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
+    if (document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+    await new Promise((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    );
   }, theme);
   await page.waitForTimeout(100);
 }
 
-async function captureDualTheme(page, stateName, results) {
+function shouldCaptureDialogClip(stateName) {
+  return stateName === "row_modal" || stateName.startsWith("row_modal_");
+}
+
+async function computeDialogClipBox(page) {
+  return await page.evaluate(() => {
+    const nodes = Array.from(
+      document.querySelectorAll(
+        '[role="dialog"], [role="alertdialog"], [data-slot="select-content"]',
+      ),
+    );
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+    for (const el of nodes) {
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) continue;
+      if (rect.left < minX) minX = rect.left;
+      if (rect.top < minY) minY = rect.top;
+      if (rect.right > maxX) maxX = rect.right;
+      if (rect.bottom > maxY) maxY = rect.bottom;
+    }
+    if (!Number.isFinite(minX)) return null;
+    const x = Math.max(0, Math.floor(minX));
+    const y = Math.max(0, Math.floor(minY));
+    const right = Math.min(window.innerWidth, Math.ceil(maxX));
+    const bottom = Math.min(window.innerHeight, Math.ceil(maxY));
+    if (right <= x || bottom <= y) return null;
+    return { x, y, width: right - x, height: bottom - y };
+  });
+}
+
+async function maybeCaptureDialogClip(page, stateName, key, dialogClips) {
+  if (!dialogClips || !shouldCaptureDialogClip(stateName)) return;
+  const clip = await computeDialogClipBox(page);
+  if (!clip) {
+    console.warn(
+      `WARNING: Expected dialog clip for "${key}", but no visible dialog/select-content found.`,
+    );
+    return;
+  }
+  const clipDir = path.join(outDir, "dialog_clips");
+  fs.mkdirSync(clipDir, { recursive: true });
+  const relPath = path.join("dialog_clips", `${key}.png`);
+  const absPath = path.join(outDir, relPath);
+  const buf = await page.screenshot({
+    path: absPath,
+    clip,
+    animations: "disabled",
+    caret: "hide",
+  });
+  const sha256 = crypto.createHash("sha256").update(buf).digest("hex");
+  dialogClips[key] = { file: relPath, clip, sha256 };
+}
+
+async function captureDualTheme(page, stateName, results, dialogClips) {
   for (const th of activeThemes) {
     await setPageTheme(page, th);
     const key = `${stateName}_${th}`;
     results[key] = await dumpDomStyles(page);
     try {
-      await page.screenshot({ path: path.join(outDir, `${key}.png`) });
+      await page.screenshot({
+        path: path.join(outDir, `${key}.png`),
+        animations: "disabled",
+        caret: "hide",
+      });
+      await maybeCaptureDialogClip(page, stateName, key, dialogClips);
     } catch {}
   }
 }
 
-async function captureHoverDualTheme(page, locator, stateName, results) {
+async function captureHoverDualTheme(
+  page,
+  locator,
+  stateName,
+  results,
+  dialogClips,
+) {
   for (const th of activeThemes) {
     await setPageTheme(page, th);
     const key = `${stateName}_hover_${th}`;
@@ -143,12 +266,20 @@ async function captureHoverDualTheme(page, locator, stateName, results) {
       await locator.hover({ force: true, timeout: 2500 });
       await page.waitForTimeout(120);
       results[key] = await dumpDomStyles(page);
-      await page.screenshot({ path: path.join(outDir, `${key}.png`) });
+      await page.screenshot({
+        path: path.join(outDir, `${key}.png`),
+        animations: "disabled",
+        caret: "hide",
+      });
+      await maybeCaptureDialogClip(page, stateName, key, dialogClips);
     } catch {
       // Fallback if hover fails
       results[key] = await dumpDomStyles(page);
+      await maybeCaptureDialogClip(page, stateName, key, dialogClips);
     }
   }
+  await page.mouse.move(0, 0).catch(() => {});
+  await page.waitForTimeout(50);
 }
 
 function shouldRunGroup(groupName) {
@@ -219,10 +350,17 @@ async function run() {
 
   const browser = await chromium.launch({
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+      "--force-device-scale-factor=1",
+    ],
   });
 
   const results = {};
+  const dialogClips = {};
 
   try {
     // ==========================================
@@ -339,6 +477,31 @@ async function run() {
 
     await page.goto(`${serverUrl}/`);
     await page.waitForLoadState("networkidle");
+
+    // Stabilize server query execution timing so the status footer does not jitter across runs
+    await page.route(
+      /\/api\/connections\/[^/]+\/tables\/[^/]+\/rows(\?|$)/,
+      async (route) => {
+        const response = await route.fetch();
+        const contentType = response.headers()["content-type"] || "";
+        if (!contentType.includes("application/json")) {
+          await route.fulfill({ response });
+          return;
+        }
+        try {
+          const json = await response.json();
+          if (json && typeof json.query_time_ms === "number") {
+            json.query_time_ms = 1.0;
+          }
+          if (json && typeof json.execution_time_ms === "number") {
+            json.execution_time_ms = 1.0;
+          }
+          await route.fulfill({ response, json });
+        } catch {
+          await route.fulfill({ response });
+        }
+      },
+    );
 
     try {
       const exploreBtn = page.getByRole("button", {
@@ -635,7 +798,7 @@ async function run() {
       if (await addRowBtn.isVisible()) {
         await addRowBtn.click();
         await page.waitForTimeout(500);
-        await captureDualTheme(page, "row_modal", results);
+        await captureDualTheme(page, "row_modal", results, dialogClips);
         await page.keyboard.press("Escape");
         await page.waitForTimeout(400);
       }
@@ -1137,7 +1300,7 @@ async function run() {
           .catch(() => {});
         await page.waitForTimeout(500);
 
-        await captureDualTheme(page, "row_modal_insert", results);
+        await captureDualTheme(page, "row_modal_insert", results, dialogClips);
 
         // Boolean Select Trigger & Open state
         const boolSelectTrigger = page
@@ -1146,7 +1309,12 @@ async function run() {
         if (await boolSelectTrigger.isVisible()) {
           await boolSelectTrigger.click();
           await page.waitForTimeout(300);
-          await captureDualTheme(page, "row_modal_select_open", results);
+          await captureDualTheme(
+            page,
+            "row_modal_select_open",
+            results,
+            dialogClips,
+          );
 
           const selectOption = page.locator('[data-slot="select-item"]').nth(1);
           if (await selectOption.isVisible()) {
@@ -1155,10 +1323,75 @@ async function run() {
               selectOption,
               "row_modal_select_item",
               results,
+              dialogClips,
             );
           }
           await page.keyboard.press("Escape");
           await page.waitForTimeout(200);
+        }
+
+        // Dynamic Fields (open inline creator, add field, hover remove button)
+        console.log("  - RowModal Dynamic Fields...");
+        const addDynFieldBtn = page
+          .locator('[role="dialog"]')
+          .getByRole("button", { name: /Add dynamic field/i })
+          .first();
+        if (await addDynFieldBtn.isVisible()) {
+          await addDynFieldBtn.click();
+          await page.waitForTimeout(200);
+          await captureDualTheme(
+            page,
+            "row_modal_dynamic_add_open",
+            results,
+            dialogClips,
+          );
+
+          const dynNameInput = page
+            .locator('[role="dialog"] input[placeholder*="Field name"]')
+            .first();
+          const dynValueInput = page
+            .locator('[role="dialog"] input[placeholder*="Value"]')
+            .first();
+          if (
+            (await dynNameInput.isVisible()) &&
+            (await dynValueInput.isVisible())
+          ) {
+            await dynNameInput.fill("custom_note");
+            await dynValueInput.fill("hello world");
+            await page.waitForTimeout(100);
+
+            const addConfirmBtn = page
+              .locator('[role="dialog"]')
+              .getByRole("button", { name: /^Add$/i })
+              .first();
+            if (await addConfirmBtn.isVisible()) {
+              await addConfirmBtn.click();
+              await page.waitForTimeout(250);
+              await captureDualTheme(
+                page,
+                "row_modal_dynamic_field_added",
+                results,
+                dialogClips,
+              );
+
+              const removeDynBtn = page
+                .locator(
+                  '[role="dialog"] button[title="Remove field"], [role="dialog"] button[title*="Remove"]',
+                )
+                .first();
+              if (await removeDynBtn.isVisible()) {
+                await captureHoverDualTheme(
+                  page,
+                  removeDynBtn,
+                  "row_modal_dynamic_remove_btn",
+                  results,
+                  dialogClips,
+                );
+                await removeDynBtn.click();
+                await page.waitForTimeout(200);
+              }
+            }
+          }
         }
 
         // Validation Error: Fill id=1, invalid json, hook dispatchEvent to reject draft, and click save
@@ -1184,6 +1417,7 @@ async function run() {
             saveBtn,
             "row_modal_save_btn",
             results,
+            dialogClips,
           );
 
           await page.evaluate(() => {
@@ -1202,7 +1436,12 @@ async function run() {
           await page.waitForTimeout(500);
 
           // Validation alert shown inside open dialog
-          await captureDualTheme(page, "row_modal_validation_error", results);
+          await captureDualTheme(
+            page,
+            "row_modal_validation_error",
+            results,
+            dialogClips,
+          );
 
           await page.evaluate(() => {
             if (window.__origDispatch) {
@@ -1221,6 +1460,7 @@ async function run() {
             cancelBtn,
             "row_modal_cancel_btn",
             results,
+            dialogClips,
           );
         }
 
@@ -1231,7 +1471,13 @@ async function run() {
       // 2. RowModal in Edit Mode (fields populated, read-only/disabled PK, delete button)
       console.log("  - RowModal Edit Mode...");
       const editOpened = await page.evaluate(() => {
-        const el = document.querySelector("[data-table-workspace]");
+        const el =
+          Array.from(document.querySelectorAll("[data-table-workspace]")).find(
+            (node) => {
+              const r = node.getBoundingClientRect();
+              return r.width > 0 && r.height > 0;
+            },
+          ) || document.querySelector("[data-table-workspace]");
         if (!el) return false;
         const key = Object.keys(el).find(
           (k) =>
@@ -1270,7 +1516,7 @@ async function run() {
           .catch(() => {});
         await page.waitForTimeout(500);
 
-        await captureDualTheme(page, "row_modal_edit", results);
+        await captureDualTheme(page, "row_modal_edit", results, dialogClips);
 
         const deleteBtn = page
           .locator('[role="dialog"]')
@@ -1282,11 +1528,173 @@ async function run() {
             deleteBtn,
             "row_modal_delete_btn",
             results,
+            dialogClips,
           );
+
+          // 3. RowDeleteDialog (edit mode -> click Delete)
+          await deleteBtn.click();
+          const deleteAlertDialog = page.locator('[role="alertdialog"]');
+          await deleteAlertDialog
+            .waitFor({ state: "visible", timeout: 5000 })
+            .catch(() => {});
+          await page.waitForTimeout(300);
+
+          const isDeleteVisible = await deleteAlertDialog.isVisible();
+          console.log(`  - RowDeleteDialog (visible=${isDeleteVisible})...`);
+          if (isDeleteVisible) {
+            await captureDualTheme(
+              page,
+              "row_modal_delete_dialog",
+              results,
+              dialogClips,
+            );
+
+            const delCancelBtn = deleteAlertDialog
+              .getByRole("button", { name: /Cancel|Hủy/i })
+              .first();
+            if (await delCancelBtn.isVisible()) {
+              await captureHoverDualTheme(
+                page,
+                delCancelBtn,
+                "row_modal_delete_dialog_cancel_btn",
+                results,
+                dialogClips,
+              );
+            }
+
+            const delConfirmBtn = deleteAlertDialog
+              .getByRole("button", { name: /Delete Record|Xóa bản ghi/i })
+              .first();
+            if (await delConfirmBtn.isVisible()) {
+              await captureHoverDualTheme(
+                page,
+                delConfirmBtn,
+                "row_modal_delete_dialog_confirm_btn",
+                results,
+                dialogClips,
+              );
+            }
+
+            if (await delCancelBtn.isVisible()) {
+              await delCancelBtn.click();
+              await deleteAlertDialog
+                .waitFor({ state: "hidden", timeout: 3000 })
+                .catch(() => {});
+              await page.waitForTimeout(300);
+            } else {
+              await page.keyboard.press("Escape");
+              await page.waitForTimeout(300);
+            }
+          }
+        }
+
+        // 4. RowDiffDialog (edit mode -> change a value -> click Save Changes)
+        console.log("  - RowDiffDialog...");
+        const titleInput = page
+          .locator('[role="dialog"] input[type="text"]')
+          .first();
+        if (await titleInput.isVisible()) {
+          await titleInput.fill("Sample Title Updated");
+          await page.waitForTimeout(150);
+
+          const editSaveBtn = page
+            .locator('[role="dialog"]')
+            .getByRole("button", { name: /Save Changes|Lưu thay đổi|Save/i })
+            .first();
+          if (await editSaveBtn.isVisible()) {
+            await editSaveBtn.click();
+            const diffAlertDialog = page.locator('[role="alertdialog"]');
+            await diffAlertDialog
+              .waitFor({ state: "visible", timeout: 5000 })
+              .catch(() => {});
+            await page.waitForTimeout(300);
+
+            const isDiffVisible = await diffAlertDialog.isVisible();
+            console.log(`  - RowDiffDialog (visible=${isDiffVisible})...`);
+            if (isDiffVisible) {
+              await captureDualTheme(
+                page,
+                "row_modal_diff_dialog",
+                results,
+                dialogClips,
+              );
+
+              const diffCancelBtn = diffAlertDialog
+                .getByRole("button", { name: /Cancel|Hủy/i })
+                .first();
+              if (await diffCancelBtn.isVisible()) {
+                await captureHoverDualTheme(
+                  page,
+                  diffCancelBtn,
+                  "row_modal_diff_dialog_cancel_btn",
+                  results,
+                  dialogClips,
+                );
+              }
+
+              const diffConfirmBtn = diffAlertDialog
+                .getByRole("button", { name: /Confirm & Save|Xác nhận & Lưu/i })
+                .first();
+              if (await diffConfirmBtn.isVisible()) {
+                await captureHoverDualTheme(
+                  page,
+                  diffConfirmBtn,
+                  "row_modal_diff_dialog_confirm_btn",
+                  results,
+                  dialogClips,
+                );
+              }
+
+              if (await diffCancelBtn.isVisible()) {
+                await diffCancelBtn.click();
+                await diffAlertDialog
+                  .waitFor({ state: "hidden", timeout: 3000 })
+                  .catch(() => {});
+                await page.waitForTimeout(300);
+              } else {
+                await page.keyboard.press("Escape");
+                await page.waitForTimeout(300);
+              }
+            }
+          }
         }
 
         await page.keyboard.press("Escape");
         await page.waitForTimeout(400);
+      }
+
+      // 5. RowModal Long Label + FK + Nullable badges (fk_long_labels fixture)
+      console.log("  - RowModal Long Label / FK + Nullable Badges...");
+      const fkNode = page.getByRole("treeitem", { name: /fk_long_labels/i });
+      await fkNode.waitFor({ state: "visible", timeout: 5000 }).catch(() => {});
+      if (await fkNode.isVisible()) {
+        await fkNode.scrollIntoViewIfNeeded().catch(() => {});
+        await fkNode.click();
+        await page.waitForTimeout(1000);
+
+        const addRowBtnFk = page
+          .getByRole("button", { name: /Add row|Thêm hàng|Insert/i })
+          .first();
+        await addRowBtnFk
+          .waitFor({ state: "visible", timeout: 8000 })
+          .catch(() => {});
+        if (await addRowBtnFk.isVisible()) {
+          await addRowBtnFk.click();
+          await page
+            .locator('[role="dialog"]')
+            .waitFor({ state: "visible", timeout: 5000 })
+            .catch(() => {});
+          await page.waitForTimeout(500);
+
+          await captureDualTheme(
+            page,
+            "row_modal_fk_long_label",
+            results,
+            dialogClips,
+          );
+          await page.keyboard.press("Escape");
+          await page.waitForTimeout(400);
+        }
       }
     }
 
@@ -1294,8 +1702,12 @@ async function run() {
       path.join(outDir, "computed_styles.json"),
       JSON.stringify(results, null, 2),
     );
+    fs.writeFileSync(
+      path.join(outDir, "dialog_clips.json"),
+      JSON.stringify(dialogClips, null, 2),
+    );
     console.log(
-      `\nSUCCESS: Capture finished! Saved ${Object.keys(results).length} states into ${outDir}`,
+      `\nSUCCESS: Capture finished! Saved ${Object.keys(results).length} states (${Object.keys(dialogClips).length} dialog clips) into ${outDir}`,
     );
 
     await browser.close();
