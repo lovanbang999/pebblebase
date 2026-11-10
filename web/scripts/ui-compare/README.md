@@ -44,9 +44,10 @@ bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filte
   ```bash
   yarn ui:compare dec7546^ dec7546
   ```
-- **Filter specific state group (e.g. RowModal only)**:
+- **Filter specific state group (e.g. RowModal or ColumnAnalyticsDrawer only)**:
   ```bash
   yarn ui:compare main working-tree --states row-modal
+  yarn ui:compare working-tree working-tree --states analytics
   ```
 - **Target a single theme**:
   ```bash
@@ -59,11 +60,12 @@ bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filte
 
 ### Performance & Approximate Runtime
 
-- **Full Suite (128 states across dual themes)**: ~2.5 minutes total (includes 2 independent frontend builds, 2 Go server binary compilations, and 128 Playwright dual-theme captures).
+- **Full Suite (148 states across dual themes)**: ~4 minutes total (includes 2 independent frontend builds, 2 Go server binary compilations, and 148 Playwright dual-theme captures).
 - **Targeted Subsets (via `--states`)**:
   - `--states row-modal`: ~20–25 seconds.
   - `--states import`: ~25–30 seconds.
   - `--states general`: ~40–50 seconds.
+  - `--states analytics`: ~1.5 minutes (waits for Recharts SVG charts to settle across dual themes).
 
 ---
 
@@ -137,6 +139,12 @@ The harness includes states covering:
   - `RowDiffDialog` (modify field in edit mode, click Save Changes to open diff review AlertDialog, Cancel and Confirm & Save button hovers).
   - Long column label with `nullable` + `FK` badge row (`fk_long_labels` fixture).
   - Hover states on Save, Cancel, and Delete buttons.
+- **Column Analytics Drawer (`analytics`, 20 states across dual themes)**:
+  - Held loading state (`analytics_loading`, `/aggregate` requests held pending until `"Computing metrics for age"` is rendered).
+  - Loaded numeric column (`age`: `analytics_numeric` with `NullRatioCard`, `NumericStatsCard`, and `DistributionCard` Recharts surfaces).
+  - Column-switcher dropdown open (`analytics_column_switcher_open` via `Switch Column` menu).
+  - Loaded date column (`created_at`: `analytics_date_day`, `analytics_date_week`, and `analytics_date_month` with `TimeSeriesCard` area chart + hover states on `Day`, `Week`, and `Month` bucket toggles).
+  - Empty analytics payload (`analytics_empty`, `"No data available for this column"` rendered from stubbed zero-row aggregate responses).
 
 ### Adding New States
 
@@ -152,6 +160,7 @@ To add a new state, edit `web/scripts/ui-compare/capture-runner.cjs`:
 ## Limitations
 
 - **RowModal Simulation**: The `RowModal` validation-error state is simulated by making `window.dispatchEvent` throw when `pb:stage-row-draft` is dispatched, and edit mode is opened by invoking the `onEditRow` handler directly. Consequently, these states measure styling and visual layout only, not data persistence or backend save logic.
+- **Analytics Aggregate Simulation & SQLite `stats` Fallback**: In the `analytics` state group, `analytics_loading` holds `/api/connections/*/tables/*/aggregate*` requests pending, and `analytics_empty` fulfills them with an explicit empty payload (`labels: []`, `values: []`, zeroed `stats`) to exercise empty states on the seeded table. For live states (`age`, `created_at`), backend `distribution` and `timeseries` responses always pass through untouched; because SQLite's pre-existing `Aggregate` `stats` query scans `MIN`/`MAX` into `sql.NullFloat64` and returns HTTP 500 on non-numeric `DATETIME` columns (`created_at`), `capture-runner.cjs` intercepts HTTP >= 500 `function=stats` responses with a 1-row completeness fallback (`total_rows: 1`, `non_null_count: 1`, `null_count: 0`) strictly so `created_at` date analytics states remain captureable.
 - **Query Timing Stabilization**: `/api/connections/*/tables/*/rows*` responses normalize `query_time_ms` (and `execution_time_ms`) to `1.0` so the proportional-width `"Server query {{time}} ms"` footer text does not cause run-to-run layout jitter.
 
 ---

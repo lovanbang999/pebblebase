@@ -282,6 +282,60 @@ async function captureHoverDualTheme(
   await page.waitForTimeout(50);
 }
 
+async function waitForAnalyticsSettled(page, timeout = 6000) {
+  const drawer = page.locator('[data-testid="column-analytics-drawer"]');
+  await drawer.waitFor({ state: "visible", timeout }).catch(() => {});
+  await drawer
+    .getByText(/Computing metrics for/i)
+    .waitFor({ state: "hidden", timeout })
+    .catch(() => {});
+
+  const deadline = Date.now() + timeout;
+  let lastSnapshot = null;
+  let stableCount = 0;
+
+  while (Date.now() < deadline) {
+    const snapshot = await page.evaluate(() => {
+      const root = document.querySelector(
+        '[data-testid="column-analytics-drawer"]',
+      );
+      if (!root) return "";
+      const svgs = Array.from(root.querySelectorAll("svg.recharts-surface"));
+      if (svgs.length === 0) return "no-svgs";
+      return svgs
+        .map((svg) => {
+          const r = svg.getBoundingClientRect();
+          const shapes = Array.from(
+            svg.querySelectorAll("path, rect, circle"),
+          ).map((el) => {
+            const b = el.getBoundingClientRect();
+            return [
+              el.tagName,
+              el.getAttribute("d") || "",
+              el.getAttribute("x") || "",
+              el.getAttribute("y") || "",
+              el.getAttribute("width") || "",
+              el.getAttribute("height") || "",
+              Math.round(b.width * 10),
+              Math.round(b.height * 10),
+            ].join(":");
+          });
+          return `${Math.round(r.width)}x${Math.round(r.height)}[${shapes.join("|")}]`;
+        })
+        .join("||");
+    });
+
+    if (snapshot !== "" && snapshot === lastSnapshot) {
+      stableCount++;
+      if (stableCount >= 3) break;
+    } else {
+      lastSnapshot = snapshot;
+      stableCount = 0;
+    }
+    await page.waitForTimeout(200);
+  }
+}
+
 function shouldRunGroup(groupName) {
   if (statesFilter === "all" || !statesFilter) return true;
   const regex = new RegExp(statesFilter, "i");
@@ -1694,6 +1748,278 @@ async function run() {
           );
           await page.keyboard.press("Escape");
           await page.waitForTimeout(400);
+        }
+      }
+    }
+
+    // ==========================================
+    // GROUP: ANALYTICS (ColumnAnalyticsDrawer)
+    // ==========================================
+    if (shouldRunGroup("analytics")) {
+      console.log(
+        "\n[Group: analytics] Capturing ColumnAnalyticsDrawer states...",
+      );
+
+      // Ensure tree is expanded and navigate to sample_records
+      const connNode = page.getByRole("treeitem", { name: /E2E Seed SQLite/i });
+      if (await connNode.isVisible()) {
+        const tablesFolder = page.getByRole("treeitem", { name: /Tables/i });
+        if (!(await tablesFolder.isVisible())) {
+          await connNode.click();
+          await page.waitForTimeout(300);
+        }
+        if (await tablesFolder.isVisible()) {
+          const sampleNode = page.getByRole("treeitem", {
+            name: /sample_records/i,
+          });
+          if (!(await sampleNode.isVisible())) {
+            await tablesFolder.click();
+            await page.waitForTimeout(300);
+          }
+        }
+      }
+
+      const sampleRecordsNode = page.getByRole("treeitem", {
+        name: /sample_records/i,
+      });
+      await sampleRecordsNode
+        .waitFor({ state: "visible", timeout: 5000 })
+        .catch(() => {});
+      if (await sampleRecordsNode.isVisible()) {
+        await sampleRecordsNode.click();
+        await page.waitForTimeout(1000);
+      }
+
+      const ageHeader = page
+        .locator('[data-tour="datagrid-view"] th:visible')
+        .filter({ has: page.locator("span", { hasText: /^age$/ }) })
+        .first();
+      await ageHeader.waitFor({ state: "visible", timeout: 8000 });
+
+      {
+        let aggregateMode = "normal"; // "normal" | "hold" | "empty"
+        const heldAggregateRoutes = [];
+        let aggregateSettledResponses = 0;
+
+        const aggregateRoutePattern =
+          "**/api/connections/*/tables/*/aggregate*";
+        await page.route(aggregateRoutePattern, async (route) => {
+          if (aggregateMode === "hold") {
+            heldAggregateRoutes.push(route);
+            return;
+          }
+          if (aggregateMode === "empty") {
+            aggregateSettledResponses++;
+            await route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify({
+                labels: [],
+                values: [],
+                stats: {
+                  total_rows: 0,
+                  non_null_count: 0,
+                  null_count: 0,
+                },
+              }),
+            });
+            return;
+          }
+          try {
+            const response = await route.fetch();
+            const reqUrl = new URL(route.request().url());
+            if (
+              response.status() >= 500 &&
+              reqUrl.searchParams.get("function") === "stats"
+            ) {
+              // SQLite adapter scans MIN/MAX into sql.NullFloat64 on stats calls for non-numeric columns (e.g. DATETIME),
+              // returning 500 even when distribution and timeseries succeed. Fallback strictly keeps real distribution/timeseries intact.
+              await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                  labels: ["Non-Null", "Null"],
+                  values: [1, 0],
+                  stats: {
+                    total_rows: 1,
+                    non_null_count: 1,
+                    null_count: 0,
+                  },
+                }),
+              });
+            } else {
+              await route.fulfill({ response });
+            }
+          } catch {
+            await route.continue().catch(() => {});
+          } finally {
+            aggregateSettledResponses++;
+          }
+        });
+
+        const waitForAggregateBatch = async (
+          prevCount,
+          expected = 3,
+          timeout = 8000,
+        ) => {
+          const deadline = Date.now() + timeout;
+          while (Date.now() < deadline) {
+            if (aggregateSettledResponses >= prevCount + expected) return;
+            await page.waitForTimeout(50);
+          }
+        };
+
+        try {
+          // 1. Open Column Analytics on numeric column `age` in held-loading state
+          console.log("  - Analytics Loading State...");
+          aggregateMode = "hold";
+          await ageHeader.scrollIntoViewIfNeeded().catch(() => {});
+          await ageHeader.hover({ force: true });
+          await page.waitForTimeout(150);
+
+          const colOptionsBtn = ageHeader.locator(
+            'button[title="Column Options"]',
+          );
+          await colOptionsBtn.click({ force: true });
+
+          const openAnalyticsItem = page
+            .locator('[role="menuitem"]')
+            .filter({ hasText: /Column Analytics/i })
+            .first();
+          await openAnalyticsItem.waitFor({ state: "visible", timeout: 5000 });
+          await openAnalyticsItem.click();
+          await page.mouse.move(0, 0).catch(() => {});
+
+          const drawer = page.locator(
+            '[data-testid="column-analytics-drawer"]',
+          );
+          await drawer
+            .getByText(/Computing metrics for age/i)
+            .waitFor({ state: "visible", timeout: 10000 });
+          await page.waitForTimeout(200);
+          await captureDualTheme(page, "analytics_loading", results);
+
+          // 2. Release aggregate requests and capture loaded numeric column (`age`)
+          console.log("  - Analytics Numeric Column (age)...");
+          const beforeNumeric = aggregateSettledResponses;
+          aggregateMode = "normal";
+          while (heldAggregateRoutes.length > 0) {
+            const held = heldAggregateRoutes.shift();
+            try {
+              const response = await held.fetch();
+              await held.fulfill({ response });
+            } catch {
+              await held.continue().catch(() => {});
+            } finally {
+              aggregateSettledResponses++;
+            }
+          }
+          await waitForAggregateBatch(beforeNumeric, 2);
+          await drawer
+            .getByText(/Numeric Summary Statistics/i)
+            .waitFor({ state: "visible", timeout: 8000 });
+          await waitForAnalyticsSettled(page);
+          await captureDualTheme(page, "analytics_numeric", results);
+
+          // 3. Column-switcher dropdown open
+          console.log("  - Analytics Column Switcher Dropdown...");
+          const switchColBtn = drawer.locator('button[title="Switch Column"]');
+          await switchColBtn.waitFor({ state: "visible", timeout: 5000 });
+          await switchColBtn.click();
+          const createdAtMenuItem = page
+            .locator('[role="menuitem"]')
+            .filter({
+              has: page.locator("span", { hasText: /^created_at$/ }),
+            })
+            .first();
+          await createdAtMenuItem.waitFor({ state: "visible", timeout: 5000 });
+          await page.mouse.move(0, 0).catch(() => {});
+          await page.waitForTimeout(200);
+          await captureDualTheme(
+            page,
+            "analytics_column_switcher_open",
+            results,
+          );
+
+          // 4. Switch to date column (`created_at`) -> Day bucket + toggle hovers
+          console.log("  - Analytics Date Column (created_at) & Toggles...");
+          const beforeDate = aggregateSettledResponses;
+          await createdAtMenuItem.click();
+          await page.mouse.move(0, 0).catch(() => {});
+          await waitForAggregateBatch(beforeDate, 3);
+          await drawer
+            .getByText(/Time-Series Trend/i)
+            .waitFor({ state: "visible", timeout: 8000 });
+          await waitForAnalyticsSettled(page);
+          await captureDualTheme(page, "analytics_date_day", results);
+
+          const dayBtn = drawer.getByRole("button", { name: /^Day$/i });
+          const weekBtn = drawer.getByRole("button", { name: /^Week$/i });
+          const monthBtn = drawer.getByRole("button", {
+            name: /^Month$/i,
+          });
+
+          await dayBtn.waitFor({ state: "visible", timeout: 5000 });
+          await weekBtn.waitFor({ state: "visible", timeout: 5000 });
+          await monthBtn.waitFor({ state: "visible", timeout: 5000 });
+
+          await captureHoverDualTheme(
+            page,
+            dayBtn,
+            "analytics_toggle_day_btn",
+            results,
+          );
+          await captureHoverDualTheme(
+            page,
+            weekBtn,
+            "analytics_toggle_week_btn",
+            results,
+          );
+          await captureHoverDualTheme(
+            page,
+            monthBtn,
+            "analytics_toggle_month_btn",
+            results,
+          );
+
+          // 5. Week toggle
+          const beforeWeek = aggregateSettledResponses;
+          await weekBtn.click();
+          await page.mouse.move(0, 0).catch(() => {});
+          await waitForAggregateBatch(beforeWeek, 3);
+          await waitForAnalyticsSettled(page);
+          await captureDualTheme(page, "analytics_date_week", results);
+
+          // 6. Month toggle
+          const beforeMonth = aggregateSettledResponses;
+          await monthBtn.click();
+          await page.mouse.move(0, 0).catch(() => {});
+          await waitForAggregateBatch(beforeMonth, 3);
+          await waitForAnalyticsSettled(page);
+          await captureDualTheme(page, "analytics_date_month", results);
+
+          // 7. Empty state (intercept /aggregate on bucket switch back to Day)
+          console.log("  - Analytics Empty State...");
+          aggregateMode = "empty";
+          const beforeEmpty = aggregateSettledResponses;
+          await dayBtn.click();
+          await page.mouse.move(0, 0).catch(() => {});
+          await waitForAggregateBatch(beforeEmpty, 3);
+          await drawer
+            .getByText(/No data available for this column/i)
+            .first()
+            .waitFor({ state: "visible", timeout: 5000 });
+          await waitForAnalyticsSettled(page);
+          await captureDualTheme(page, "analytics_empty", results);
+        } finally {
+          aggregateMode = "normal";
+          await page.unroute(aggregateRoutePattern).catch(() => {});
+          await page.keyboard.press("Escape").catch(() => {});
+          await page
+            .locator('[data-testid="column-analytics-drawer"]')
+            .waitFor({ state: "hidden", timeout: 3000 })
+            .catch(() => {});
+          await page.waitForTimeout(200);
         }
       }
     }
