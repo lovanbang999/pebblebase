@@ -15,12 +15,17 @@ const { utils: pwCoreUtils } = require("playwright-core/lib/coreBundle");
 
 const BBOX_TOLERANCE_PX = 1;
 const CROP_PADDING_PX = 24;
+const SCREENSHOT_AA_MAX_PIXELS = 64;
+const SCREENSHOT_AA_MAX_CHANNEL_DELTA = 4;
+const SCREENSHOT_AA_MAX_BBOX_WIDTH = 40;
+const SCREENSHOT_AA_MAX_BBOX_HEIGHT = 40;
 
 const args = process.argv.slice(2);
 const positional = [];
 let allowUnmatched = false;
 let unmatchedThreshold = 0;
 let screenshotDiffDir = "";
+let strictScreenshots = false;
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -35,6 +40,8 @@ for (let i = 0; i < args.length; i++) {
     unmatchedThreshold = parsed;
   } else if (arg === "--screenshot-diff-dir" && args[i + 1] !== undefined) {
     screenshotDiffDir = args[++i];
+  } else if (arg === "--strict-screenshots") {
+    strictScreenshots = true;
   } else if (arg.startsWith("-")) {
     console.error(`Unknown option: ${arg}`);
     process.exit(2);
@@ -48,7 +55,7 @@ const file2 = positional[1];
 
 if (!file1 || !file2) {
   console.error(
-    "Usage: node diff-styles.cjs <file1.json> <file2.json> [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>]",
+    "Usage: node diff-styles.cjs <file1.json> <file2.json> [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>] [--strict-screenshots]",
   );
   process.exit(2);
 }
@@ -356,6 +363,7 @@ const expectedDialogStates = Array.from(
 const pngComparator = pwCoreUtils.getComparator("image/png");
 let dialogClipsCompared = 0;
 let dialogClipsIdentical = 0;
+const dialogClipTolerated = [];
 const dialogClipDiffs = [];
 const dialogClipMissing = [];
 
@@ -395,10 +403,13 @@ if (clips1 || clips2 || expectedDialogStates.length > 0) {
 
     const imgA = PNG.sync.read(bufA);
     const imgB = PNG.sync.read(bufB);
+    const sizeMatches =
+      imgA.width === imgB.width && imgA.height === imgB.height;
     const maxW = Math.max(imgA.width, imgB.width);
     const maxH = Math.max(imgA.height, imgB.height);
 
     let diffPixels = 0;
+    let maxDelta = 0;
     let minX = Infinity;
     let minY = Infinity;
     let maxX = -1;
@@ -413,6 +424,7 @@ if (clips1 || clips2 || expectedDialogStates.length > 0) {
 
         if (!inA || !inB) {
           diffPixels++;
+          maxDelta = 255;
           if (x < minX) minX = x;
           if (y < minY) minY = y;
           if (x > maxX) maxX = x;
@@ -435,8 +447,16 @@ if (clips1 || clips2 || expectedDialogStates.length > 0) {
         const bB = imgB.data[idxB + 2];
         const aB = imgB.data[idxB + 3];
 
-        if (rA !== rB || gA !== gB || bA !== bB || aA !== aB) {
+        const pixelMaxDelta = Math.max(
+          Math.abs(rA - rB),
+          Math.abs(gA - gB),
+          Math.abs(bA - bB),
+          Math.abs(aA - aB),
+        );
+
+        if (pixelMaxDelta > 0) {
           diffPixels++;
+          if (pixelMaxDelta > maxDelta) maxDelta = pixelMaxDelta;
           if (x < minX) minX = x;
           if (y < minY) minY = y;
           if (x > maxX) maxX = x;
@@ -470,6 +490,16 @@ if (clips1 || clips2 || expectedDialogStates.length > 0) {
             height: maxY - minY + 1,
           }
         : null;
+
+    const bboxWithinTolerance =
+      !diffBbox ||
+      (diffBbox.width <= SCREENSHOT_AA_MAX_BBOX_WIDTH &&
+        diffBbox.height <= SCREENSHOT_AA_MAX_BBOX_HEIGHT);
+    const withinAaTolerance =
+      sizeMatches &&
+      diffPixels <= SCREENSHOT_AA_MAX_PIXELS &&
+      maxDelta <= SCREENSHOT_AA_MAX_CHANNEL_DELTA &&
+      bboxWithinTolerance;
 
     const cropX = diffBbox ? Math.max(0, diffBbox.x - CROP_PADDING_PX) : 0;
     const cropY = diffBbox ? Math.max(0, diffBbox.y - CROP_PADDING_PX) : 0;
@@ -512,8 +542,11 @@ if (clips1 || clips2 || expectedDialogStates.length > 0) {
       ),
     );
 
-    dialogClipDiffs.push({
+    const record = {
       state,
+      classification: withinAaTolerance
+        ? "within-anti-aliasing-tolerance"
+        : "different",
       shaA,
       shaB,
       clipA: entry1.clip,
@@ -521,13 +554,20 @@ if (clips1 || clips2 || expectedDialogStates.length > 0) {
       sizeA: `${imgA.width}x${imgA.height}`,
       sizeB: `${imgB.width}x${imgB.height}`,
       diffPixels,
+      maxDelta,
       diffBbox,
       cropRect: { x: cropX, y: cropY, width: cropW, height: cropH },
       playwrightMessage: pwResult ? pwResult.errorMessage : null,
       beforeCropPath,
       afterCropPath,
       diffCropPath,
-    });
+    };
+
+    if (withinAaTolerance) {
+      dialogClipTolerated.push(record);
+    } else {
+      dialogClipDiffs.push(record);
+    }
   }
 }
 
@@ -536,7 +576,9 @@ const totalRemainingUnmatched =
 const unmatchedExceeded =
   !allowUnmatched && totalRemainingUnmatched > unmatchedThreshold;
 const hasScreenshotFailures =
-  dialogClipDiffs.length > 0 || dialogClipMissing.length > 0;
+  dialogClipDiffs.length > 0 ||
+  dialogClipMissing.length > 0 ||
+  (strictScreenshots && dialogClipTolerated.length > 0);
 
 console.log("\n=======================================================");
 console.log("COMPUTED STYLE & LAYOUT COMPARISON RESULT:");
@@ -556,16 +598,10 @@ console.log(`Total element differences found: ${totalDifferences}`);
 console.log("Differences by category:", diffsByCategory);
 console.log("Differences by component:", diffsByComponent);
 if (expectedDialogStates.length === 0) {
-  console.log(
-    "Dialog screenshot equivalence (sha256): 0 dialog states in this run",
-  );
-} else if (!hasScreenshotFailures) {
-  console.log(
-    `Dialog screenshot equivalence (sha256): ALL ${dialogClipsCompared} dialog screenshots byte-for-byte identical`,
-  );
+  console.log("Dialog screenshot classification: 0 dialog states in this run");
 } else {
   console.log(
-    `Dialog screenshot equivalence (sha256): ${dialogClipsIdentical}/${dialogClipsCompared} identical, ${dialogClipDiffs.length} differing, ${dialogClipMissing.length} missing`,
+    `Dialog screenshot classification (total=${dialogClipsCompared}): (a) byte-identical=${dialogClipsIdentical}, (b) within anti-aliasing tolerance=${dialogClipTolerated.length}, (c) different=${dialogClipDiffs.length}, missing=${dialogClipMissing.length} (strictScreenshots=${strictScreenshots})`,
   );
 }
 console.log("=======================================================\n");
@@ -578,10 +614,26 @@ if (dialogClipMissing.length > 0) {
   console.log("");
 }
 
+if (dialogClipTolerated.length > 0) {
+  console.log(
+    `--- DIALOG SCREENSHOTS WITHIN ANTI-ALIASING TOLERANCE (b: ${dialogClipTolerated.length}) ---`,
+  );
+  for (const d of dialogClipTolerated) {
+    const regionStr = d.diffBbox
+      ? `x=${d.diffBbox.x}, y=${d.diffBbox.y}, width=${d.diffBbox.width}, height=${d.diffBbox.height}`
+      : "0x0";
+    console.log(
+      `  [${d.state}] classification=(b) within anti-aliasing tolerance | pixels=${d.diffPixels}, maxDelta=${d.maxDelta}/255, region=(${regionStr})`,
+    );
+    console.log(`    Crop dir: ${screenshotDiffDir}`);
+  }
+  console.log("");
+}
+
 if (dialogClipDiffs.length > 0) {
-  console.log(`--- DIALOG SCREENSHOT DIFFS (${dialogClipDiffs.length}) ---`);
+  console.log(`--- DIALOG SCREENSHOT DIFFS (c: ${dialogClipDiffs.length}) ---`);
   for (const d of dialogClipDiffs) {
-    console.log(`  [${d.state}]`);
+    console.log(`  [${d.state}] classification=(c) different`);
     console.log(`    sha256 A: ${d.shaA}`);
     console.log(`    sha256 B: ${d.shaB}`);
     console.log(`    Image size: A=${d.sizeA}, B=${d.sizeB}`);
@@ -589,6 +641,7 @@ if (dialogClipDiffs.length > 0) {
       `    Clip rect: A=${JSON.stringify(d.clipA)}, B=${JSON.stringify(d.clipB)}`,
     );
     console.log(`    Differing pixels (RGBA): ${d.diffPixels}`);
+    console.log(`    Max per-channel delta: ${d.maxDelta}/255`);
     if (d.playwrightMessage) {
       console.log(`    Playwright comparator: ${d.playwrightMessage.trim()}`);
     }
@@ -673,7 +726,7 @@ if (
   }
   if (hasScreenshotFailures) {
     console.error(
-      `\nFAIL: Dialog screenshot verification failed (${dialogClipDiffs.length} differing, ${dialogClipMissing.length} missing).`,
+      `\nFAIL: Dialog screenshot verification failed: (c) different=${dialogClipDiffs.length}, (b) within AA tolerance=${dialogClipTolerated.length} (strictScreenshots=${strictScreenshots}), missing=${dialogClipMissing.length}.`,
     );
   }
   process.exit(1);

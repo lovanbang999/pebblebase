@@ -12,7 +12,7 @@ WEB_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 REPO_ROOT="$(cd "${WEB_DIR}/.." && pwd)"
 
 usage() {
-  echo "Usage: $0 <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>]"
+  echo "Usage: $0 <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>] [--strict-screenshots]"
   echo ""
   echo "Arguments:"
   echo "  commit_a    Git revision, branch, or 'working-tree' / '.'"
@@ -23,12 +23,15 @@ usage() {
   echo "  --themes               Comma-separated themes: 'light,dark', 'light', or 'dark' (default: light,dark)"
   echo "  --allow-unmatched      Do not fail when unmatched elements exceed threshold"
   echo "  --unmatched-threshold  Maximum allowed remaining unmatched elements after fallback (default: 0)"
+  echo "  --screenshot-diff-dir  Directory to write dialog screenshot before/after/diff crops"
+  echo "  --strict-screenshots   Require byte-identical dialog screenshots only (disables anti-aliasing tolerance)"
   echo ""
   echo "Examples:"
   echo "  $0 main HEAD"
   echo "  $0 dec7546^ dec7546 --states row-modal"
   echo "  $0 main working-tree --themes dark"
   echo "  $0 main working-tree --states row-modal --allow-unmatched"
+  echo "  $0 main main --states row-modal --strict-screenshots"
   exit 2
 }
 
@@ -44,6 +47,8 @@ STATES="all"
 THEMES="light,dark"
 ALLOW_UNMATCHED=""
 UNMATCHED_THRESHOLD=""
+SCREENSHOT_DIFF_DIR=""
+STRICT_SCREENSHOTS=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -62,6 +67,14 @@ while [[ $# -gt 0 ]]; do
     --unmatched-threshold)
       UNMATCHED_THRESHOLD="$2"
       shift 2
+      ;;
+    --screenshot-diff-dir)
+      SCREENSHOT_DIFF_DIR="$2"
+      shift 2
+      ;;
+    --strict-screenshots)
+      STRICT_SCREENSHOTS="--strict-screenshots"
+      shift 1
       ;;
     -h|--help)
       usage
@@ -268,8 +281,13 @@ fi
 if [ -n "$UNMATCHED_THRESHOLD" ]; then
   DIFF_ARGS+=("--unmatched-threshold" "$UNMATCHED_THRESHOLD")
 fi
-SCREENSHOT_DIFF_DIR="/tmp/pb_ui_cmp_dialog_diffs_${TIMESTAMP}_$$"
+if [ -z "$SCREENSHOT_DIFF_DIR" ]; then
+  SCREENSHOT_DIFF_DIR="/tmp/pb_ui_cmp_dialog_diffs_${TIMESTAMP}_$$"
+fi
 DIFF_ARGS+=("--screenshot-diff-dir" "$SCREENSHOT_DIFF_DIR")
+if [ -n "$STRICT_SCREENSHOTS" ]; then
+  DIFF_ARGS+=("$STRICT_SCREENSHOTS")
+fi
 
 DIFF_STATUS=0
 node "$SCRIPT_DIR/diff-styles.cjs" \

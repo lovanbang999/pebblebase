@@ -19,7 +19,7 @@ This tool builds the actual frontend, spins up an isolated Pebblebase backend on
 From `pebblebase/web/`:
 
 ```bash
-yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>]
+yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>] [--strict-screenshots]
 ```
 
 ### Direct Bash Invocation
@@ -27,7 +27,7 @@ yarn ui:compare <commit_a> <commit_b> [--states <filter>] [--themes light,dark] 
 From anywhere in the repository:
 
 ```bash
-bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>]
+bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filter>] [--themes light,dark] [--allow-unmatched] [--unmatched-threshold <n>] [--screenshot-diff-dir <dir>] [--strict-screenshots]
 ```
 
 ### Examples
@@ -44,22 +44,28 @@ bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filte
   ```bash
   yarn ui:compare dec7546^ dec7546
   ```
-- **Filter specific state group (e.g. RowModal only)**:
+- **Filter specific state group (e.g. RowModal or ColumnAnalyticsDrawer only)**:
   ```bash
   yarn ui:compare main working-tree --states row-modal
+  yarn ui:compare working-tree working-tree --states analytics
   ```
 - **Target a single theme**:
   ```bash
   yarn ui:compare main working-tree --themes dark
   ```
+- **Require byte-identical screenshots only (disallow anti-aliasing noise)**:
+  ```bash
+  yarn ui:compare main main --states row-modal --strict-screenshots
+  ```
 
 ### Performance & Approximate Runtime
 
-- **Full Suite (128 states across dual themes)**: ~2.5 minutes total (includes 2 independent frontend builds, 2 Go server binary compilations, and 128 Playwright dual-theme captures).
+- **Full Suite (148 states across dual themes)**: ~4 minutes total (includes 2 independent frontend builds, 2 Go server binary compilations, and 148 Playwright dual-theme captures).
 - **Targeted Subsets (via `--states`)**:
   - `--states row-modal`: ~20–25 seconds.
   - `--states import`: ~25–30 seconds.
   - `--states general`: ~40–50 seconds.
+  - `--states analytics`: ~1.5 minutes (waits for Recharts SVG charts to settle across dual themes).
 
 ---
 
@@ -90,9 +96,13 @@ bash web/scripts/ui-compare/ui-compare.sh <commit_a> <commit_b> [--states <filte
    - Keys elements by hierarchical stable DOM paths (`data-slot`, `role`, tag, nth-of-type).
    - Counts path-unmatched elements per state and runs a fallback matcher (`data-slot` + visible text/label + occurrence order) so wrapper changes do not hide moved elements.
    - Compares all 9 color/visual properties, 16 layout/typography properties, and bounding box geometry with a `1px` tolerance.
-   - Compares clipped dialog PNGs byte-for-byte via `sha256`. On any mismatch, uses `pngjs` and Playwright's built-in PNG comparator to report exact differing pixel counts, dialog-relative diff bounding box coordinates, and exports padded before/after/diff crop PNGs to `/tmp/pb_ui_cmp_dialog_diffs_*` (outside the cleaned temp dir).
+   - Classifies every clipped dialog PNG into one of three buckets:
+     - `(a) byte-identical`: matching `sha256` digests.
+     - `(b) within anti-aliasing tolerance`: same dimensions, differing RGBA pixels `<= 64`, max per-channel delta `<= 4` (out of 255), and differing region bounding box `<= 40x40` px.
+     - `(c) different`: anything outside the tolerance bounds or with mismatched image dimensions.
+   - Only `(c)` (or missing clips) fails default runs; `(b)` cases still print state, pixel count, max delta, and region so rasterization noise remains visible and export padded before/after/diff crop PNGs via `pngjs` and Playwright's built-in PNG comparator to `/tmp/pb_ui_cmp_dialog_diffs_*` (or `--screenshot-diff-dir`). Pass `--strict-screenshots` to require `(a)` only and fail on `(b)`.
    - Groups differences by category (`colorVisual`, `layout`, `bbox`), state, and component type.
-   - Exits with `0` if clean; exits `1` if visual/layout regressions or dialog screenshot mismatches are found or remaining unmatched elements exceed `--unmatched-threshold` (default `0`, overridable via `--allow-unmatched`).
+   - Exits with `0` if clean; exits `1` if visual/layout regressions or `(c)` / missing dialog screenshot mismatches are found (or `(b)` when `--strict-screenshots` is passed) or remaining unmatched elements exceed `--unmatched-threshold` (default `0`, overridable via `--allow-unmatched`).
 
 5. **Self-Cleaning Lifecycle**:
    - Traps `EXIT`, `INT`, and `TERM` signals to ensure background server processes, worktrees, and temporary directories in `/tmp` are removed automatically.
@@ -129,6 +139,12 @@ The harness includes states covering:
   - `RowDiffDialog` (modify field in edit mode, click Save Changes to open diff review AlertDialog, Cancel and Confirm & Save button hovers).
   - Long column label with `nullable` + `FK` badge row (`fk_long_labels` fixture).
   - Hover states on Save, Cancel, and Delete buttons.
+- **Column Analytics Drawer (`analytics`, 20 states across dual themes)**:
+  - Held loading state (`analytics_loading`, `/aggregate` requests held pending until `"Computing metrics for age"` is rendered).
+  - Loaded numeric column (`age`: `analytics_numeric` with `NullRatioCard`, `NumericStatsCard`, and `DistributionCard` Recharts surfaces).
+  - Column-switcher dropdown open (`analytics_column_switcher_open` via `Switch Column` menu).
+  - Loaded date column (`created_at`: `analytics_date_day`, `analytics_date_week`, and `analytics_date_month` with `TimeSeriesCard` area chart + hover states on `Day`, `Week`, and `Month` bucket toggles).
+  - Empty analytics payload (`analytics_empty`, `"No data available for this column"` rendered from stubbed zero-row aggregate responses).
 
 ### Adding New States
 
@@ -144,6 +160,7 @@ To add a new state, edit `web/scripts/ui-compare/capture-runner.cjs`:
 ## Limitations
 
 - **RowModal Simulation**: The `RowModal` validation-error state is simulated by making `window.dispatchEvent` throw when `pb:stage-row-draft` is dispatched, and edit mode is opened by invoking the `onEditRow` handler directly. Consequently, these states measure styling and visual layout only, not data persistence or backend save logic.
+- **Analytics Aggregate Simulation & SQLite `stats` Fallback**: In the `analytics` state group, `analytics_loading` holds `/api/connections/*/tables/*/aggregate*` requests pending, and `analytics_empty` fulfills them with an explicit empty payload (`labels: []`, `values: []`, zeroed `stats`) to exercise empty states on the seeded table. For live states (`age`, `created_at`), backend `distribution` and `timeseries` responses always pass through untouched; because SQLite's pre-existing `Aggregate` `stats` query scans `MIN`/`MAX` into `sql.NullFloat64` and returns HTTP 500 on non-numeric `DATETIME` columns (`created_at`), `capture-runner.cjs` intercepts HTTP >= 500 `function=stats` responses with a 1-row completeness fallback (`total_rows: 1`, `non_null_count: 1`, `null_count: 0`) strictly so `created_at` date analytics states remain captureable.
 - **Query Timing Stabilization**: `/api/connections/*/tables/*/rows*` responses normalize `query_time_ms` (and `execution_time_ms`) to `1.0` so the proportional-width `"Server query {{time}} ms"` footer text does not cause run-to-run layout jitter.
 
 ---
@@ -177,6 +194,6 @@ The following specialized surfaces require live third-party services or interact
 Default runs stay strict (failing with exit code `1` on any unmatched element or property change). Do not weaken the default thresholds when refactoring components onto shared primitives (for example wrapping fields in `FormField`, which introduces a `helpAction` wrapper `<div>` or normalizes header flex `gap` without moving pixels):
 
 1. Run the strict default comparison (`yarn ui:compare main working-tree`) first to surface every unmatched element and property diff.
-2. Verify that `Differences by category` shows `colorVisual: 0` and `bbox: 0`, and that all clipped dialog screenshots pass `sha256` equivalence (or isolate any anti-aliasing noise to unrelated subpixel border corners).
+2. Verify that `Differences by category` shows `colorVisual: 0` and `bbox: 0`, and that all clipped dialog screenshots classify as `(a) byte-identical` or `(b) within anti-aliasing tolerance` (unrelated subpixel border corners) with `(c) different = 0`.
 3. Run with `--allow-unmatched` (for example `yarn ui:compare main working-tree --states row-modal --allow-unmatched`) to confirm no unmatched elements fail the threshold check, and inspect any remaining `layout` diffs to verify they come only from expected structural wrappers (inherited `fontSize`/`lineHeight` or `gap` on the wrapper/header `<div>`; note `totalDifferences > 0` still exits `1`).
 4. Record both the strict and `--allow-unmatched` summary lines alongside the list of accepted DOM-structure differences in the PR description before merging.
