@@ -18,6 +18,7 @@ type UpdateInfo struct {
 	AssetFound     bool      `json:"assetFound"`
 	CanAutoUpdate  bool      `json:"canAutoUpdate"`
 	UpdateNotice   string    `json:"updateNotice,omitempty"`
+	UpdateMode     string    `json:"updateMode,omitempty"`
 }
 
 // GitHubRelease represents the GitHub Releases API response structure.

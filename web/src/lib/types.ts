@@ -452,6 +452,7 @@ export interface UpdateInfo {
   assetFound: boolean;
   canAutoUpdate?: boolean;
   updateNotice?: string;
+  updateMode?: string;
 }
 
 export interface UpdateSettings {

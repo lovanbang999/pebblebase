@@ -27,7 +27,12 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { restartDesktopApp, openExternalUrl } from "@/lib/platform";
+import {
+  restartDesktopApp,
+  openExternalUrl,
+  isLinux,
+  isPermissionDeniedError,
+} from "@/lib/platform";
 import {
   applyAppUpdate,
   fetchUpdateSettings,
@@ -196,12 +201,14 @@ export default function UpdateDialog({
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [applyPhase, setApplyPhase] = useState<ApplyPhase>("idle");
   const [applyError, setApplyError] = useState<string | null>(null);
+  const [requiresManualInstall, setRequiresManualInstall] = useState(false);
 
   // Reset apply phase when dialog closes
   useEffect(() => {
     if (!isOpen) {
       setApplyPhase("idle");
       setApplyError(null);
+      setRequiresManualInstall(false);
     }
   }, [isOpen]);
 
@@ -235,12 +242,14 @@ export default function UpdateDialog({
     if (!updateInfo) return;
     setApplyPhase("downloading");
     setApplyError(null);
+    setRequiresManualInstall(false);
     try {
       await applyAppUpdate(updateInfo);
       setApplyPhase("ready_to_restart");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setApplyError(msg);
+      setRequiresManualInstall(isPermissionDeniedError(err));
       setApplyPhase("error");
     }
   };
@@ -376,25 +385,36 @@ export default function UpdateDialog({
           </div>
 
           {/* System Package Notice if binary is in non-writable system directory */}
-          {hasUpdate && updateInfo?.canAutoUpdate === false && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-300">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-              <div className="flex-1 space-y-1">
-                <p className="font-medium">
-                  {updateInfo?.updateNotice ||
-                    t(
-                      "updates.systemPackageNotice",
-                      "Installed in system directory (/usr/bin). Manual package update is required.",
-                    )}
-                </p>
-                <div className="flex items-center gap-2 pt-0.5 font-mono text-[11px] opacity-90">
-                  <code className="rounded bg-black/10 px-1.5 py-0.5 dark:bg-white/10">
-                    sudo dpkg -i pebblebase_{updateInfo.latestVersion}_amd64.deb
-                  </code>
+          {hasUpdate &&
+            (updateInfo?.canAutoUpdate === false ||
+              updateInfo?.updateNotice ||
+              updateInfo?.updateMode === "per-user") && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-300">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                <div className="flex-1 space-y-1">
+                  <p className="font-medium">
+                    {updateInfo?.updateMode === "per-user"
+                      ? t(
+                          "updates.perUserUpdateNotice",
+                          "This system installation will update to a copy in your user account. The system package will remain unchanged.",
+                        )
+                      : updateInfo?.updateNotice ||
+                        t(
+                          "updates.systemPackageNotice",
+                          "Installed in system directory (/usr/bin). Manual package update is required.",
+                        )}
+                  </p>
+                  {updateInfo?.canAutoUpdate === false && (
+                    <div className="flex items-center gap-2 pt-0.5 font-mono text-[11px] opacity-90">
+                      <code className="rounded bg-black/10 px-1.5 py-0.5 dark:bg-white/10">
+                        sudo dpkg -i pebblebase_{updateInfo.latestVersion}
+                        _amd64.deb
+                      </code>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Release Notes section */}
           {hasUpdate && updateInfo?.releaseNotes && (
@@ -480,8 +500,29 @@ export default function UpdateDialog({
                 <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
                 <span className="font-semibold">
                   {t("updates.installFailedTitle", "Failed to apply update")}
+                  {requiresManualInstall &&
+                    ` — ${t("updates.manualInstallRequired", "manual installation required")}`}
                 </span>
               </div>
+              {requiresManualInstall && (
+                <div className="space-y-1 pl-6 text-[11px]">
+                  <p>
+                    {t(
+                      "updates.permissionHelp",
+                      "Pebblebase cannot replace the installed app because this location requires administrator permission. Download the release package and install it manually.",
+                    )}
+                  </p>
+                  {isLinux && (
+                    <code className="block rounded bg-black/5 px-2 py-1 break-all dark:bg-white/5">
+                      {t(
+                        "updates.debianInstallCommand",
+                        "sudo apt install ./pebblebase_{{version}}_amd64.deb",
+                        { version: updateInfo?.latestVersion },
+                      )}
+                    </code>
+                  )}
+                </div>
+              )}
               <p className="pl-6 font-mono text-[11px] break-all text-red-600/90 dark:text-red-400/90">
                 {applyError}
               </p>
@@ -502,14 +543,16 @@ export default function UpdateDialog({
                     )}
                     <ExternalLink className="h-3 w-3" />
                   </button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUpdateNow}
-                    className="h-7 cursor-pointer text-xs"
-                  >
-                    {t("updates.retry", "Retry")}
-                  </Button>
+                  {!requiresManualInstall && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUpdateNow}
+                      className="h-7 cursor-pointer text-xs"
+                    >
+                      {t("updates.retry", "Retry")}
+                    </Button>
+                  )}
                 </div>
               )}
             </div>

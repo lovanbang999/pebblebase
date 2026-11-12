@@ -9,9 +9,11 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"pebblebase/internal/app"
+	"pebblebase/internal/autoupdate"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -142,6 +144,9 @@ func NewApp() *App {
 		log.Fatalf("error: bootstrap pebblebase desktop core: %v", err)
 	}
 	a.inst = inst
+	if inst.UpdateSvc != nil {
+		inst.UpdateSvc.EnableUserInstallFallback()
+	}
 
 	return a
 }
@@ -241,10 +246,21 @@ func (a *App) Quit() {
 	}
 }
 
-// RestartApp quits the running process so the updated binary (already written
-// to disk by /api/update/apply) launches fresh on the next open.
+// RestartApp starts the updated executable, then closes the current process.
 func (a *App) RestartApp() {
 	if a.ctx != nil {
+		executable, err := autoupdate.UserInstalledExecutable()
+		if err != nil {
+			executable, err = os.Executable()
+		}
+		if err != nil {
+			log.Printf("cannot restart Pebblebase: resolve executable: %v", err)
+			return
+		}
+		if err := exec.Command(executable, os.Args[1:]...).Start(); err != nil {
+			log.Printf("cannot restart Pebblebase from %s: %v", executable, err)
+			return
+		}
 		runtime.Quit(a.ctx)
 	}
 }

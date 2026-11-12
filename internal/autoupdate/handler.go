@@ -83,23 +83,31 @@ func (h *Handler) handleApply(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req UpdateInfo
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// The browser's update metadata is untrusted. Fetch the release again on the
+	// server and apply only the asset selected from the configured GitHub repo.
+	var clientInfo UpdateInfo
+	if err := json.NewDecoder(r.Body).Decode(&clientInfo); err != nil {
 		http.Error(w, "invalid json payload", http.StatusBadRequest)
 		return
 	}
-
-	if strings.TrimSpace(req.AssetURL) == "" {
+	info, err := h.service.CheckForUpdate(r.Context(), true)
+	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusBadGateway)
+		_ = json.NewEncoder(w).Encode(map[string]any{"error": err.Error(), "success": false})
+		return
+	}
+	if !info.HasUpdate || !info.AssetFound || strings.TrimSpace(info.AssetURL) == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusConflict)
 		_ = json.NewEncoder(w).Encode(map[string]any{
-			"error":   "assetUrl is required",
+			"error":   "no applicable official update is available",
 			"success": false,
 		})
 		return
 	}
 
-	if err := h.service.ApplyUpdate(r.Context(), "", &req); err != nil {
+	if err := h.service.ApplyUpdate(r.Context(), "", info); err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]any{
