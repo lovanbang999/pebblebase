@@ -1,0 +1,104 @@
+# yaml-language-server: $schema=https://www.coderabbit.ai/integrations/schema.v2.json
+language: en-US
+reviews:
+  profile: chill
+  auto_approvals:
+    enabled: false
+  high_level_summary: true
+  high_level_summary_in_walkthrough: true
+  review_info: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    base_branches: ["^main$"]
+  path_filters:
+    - "!web/dist/**"
+    - "!docs-site/dist/**"
+    - "!web/node_modules/**"
+    - "!docs-site/node_modules/**"
+    - "!build/bin/**"
+    - "!cmd/desktop/build/bin/**"
+    - "!web/playwright-report/**"
+    - "!web/test-results/**"
+  path_instructions:
+    - path: "**/*"
+      instructions: >-
+        Review changed behavior using source evidence. Prioritize correctness,
+        security, data loss and regressions. Distinguish existing defects from
+        introduced defects. Follow AGENTS.md; avoid formatting-only comments
+        already covered by repository tools. Do not infer capabilities from
+        dependencies, interface names or documentation alone.
+    - path: "**/*.go"
+      instructions: >-
+        Check context cancellation, bounded work, resource cleanup, error paths,
+        concurrent access and shutdown. Keep API JSON contracts compatible with
+        web/src/lib/types.ts and api.ts. Request focused regression coverage;
+        distinguish skipped integration tests from passing live database tests.
+    - path: "internal/adapter/**/*.go"
+      instructions: >-
+        Preserve Adapter and optional capability contracts; verify actual support.
+        For generated SQL, parameterize values and quote validated identifiers
+        using the target dialect. Raw console execution is intentional; check its
+        authorization and safety guards. Check NULL, numeric precision, time,
+        binary/BSON values, pagination, row counts and partial batch failures.
+        Respect PostgreSQL/MySQL session semantics, SQL Server dialect and auth,
+        SQLite file modes, ClickHouse mutation semantics, MongoDB Goja cancellation
+        and BSON conversion, and Redis SCAN, TTL, cluster and Pub/Sub behavior.
+        Do not assume transactional DDL or SQL semantics across all engines.
+    - path: "internal/api/**/*.go"
+      instructions: >-
+        Trace authentication, current roles, connection read-only flags and
+        production-write confirmation through every execution path. Check
+        console-session ownership, expiry and rollback; import/export limits;
+        stream cancellation; secret redaction; and cache invalidation.
+        API composition currently imports concrete adapters; do not demand an
+        unrelated factory refactor.
+    - path: "internal/{auth,storage,app,ai,autoupdate}/**/*.go"
+      instructions: >-
+        Check cryptographic randomness, JWT validation, encrypted-secret lifecycle,
+        file permissions and persistence failure recovery. Verify route protection
+        at registration. Check AI context disclosure and configurable outbound URLs.
+        For updates, check trusted artifact origin, redirects, signature enforcement,
+        archive handling and platform-specific binary replacement. Do not assume
+        loopback binding, encryption at rest or HTTPS alone supplies authorization.
+    - path: "cmd/desktop/**"
+      instructions: >-
+        Preserve Wails v2 lifecycle, AssetServer API handling, loopback fallback,
+        native window state and cleanup. Check Linux build tags and purego calls,
+        macOS behavior and Windows WebView2 behavior. Browser tests do not verify
+        native webviews. Treat build resources and installer sources as authored code.
+    - path: "web/src/**/*.{ts,tsx}"
+      instructions: >-
+        Preserve React hook ordering, effect cleanup, request cancellation,
+        TanStack Query cache scoping and Zustand persistence boundaries. Keep
+        types aligned with Go responses; validate unknown external data.
+        Check stale responses across connections/tabs, virtualized row identity,
+        staged edits, unsafe HTML/Markdown rendering, keyboard/focus behavior,
+        English/Vietnamese strings and browser/Wails fallbacks. Use existing
+        Vitest and Testing Library patterns for changed behavior.
+    - path: "{scripts/**,build/**,wails.json,Dockerfile,.github/workflows/**}"
+      instructions: >-
+        Check shell quoting, destructive cleanup scope, workflow permissions,
+        untrusted interpolation, reproducible dependencies and Go/Wails version
+        alignment. Preserve Linux amd64, Windows amd64 and macOS universal packaging,
+        asset paths and update artifact naming. Distinguish compilation from
+        runtime verification; do not assume Linux shell commands work on Windows.
+    - path: "**/*.md"
+      instructions: >-
+        Verify commands, paths, environment variables and security claims against
+        source. Extend existing documentation rather than duplicate it. Check
+        corresponding English/Vietnamese docs when product behavior changes.
+  tools:
+    oxc:
+      enabled: true
+    eslint:
+      enabled: false
+    biome:
+      enabled: false
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "AGENTS.md"
