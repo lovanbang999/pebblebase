@@ -39,9 +39,12 @@ func canWriteDirectory(dir string) error {
 }
 
 func userInstallAvailable() (string, error) {
-	_, executable, applicationsDir, err := userInstallPaths()
+	dataDir, executable, applicationsDir, err := userInstallPaths()
 	if err != nil {
 		return "", err
+	}
+	if err := canWriteDirectory(dataDir); err != nil {
+		return "", fmt.Errorf("user update directory is not writable: %w", err)
 	}
 	if err := canWriteDirectory(filepath.Dir(executable)); err != nil {
 		return "", fmt.Errorf("user binary directory is not writable: %w", err)
@@ -71,8 +74,18 @@ func installUserLauncher(target string) error {
 	}
 
 	launcherPath := filepath.Join(applicationsDir, "pebblebase.desktop")
-	if existing, err := os.ReadFile(launcherPath); err == nil && !strings.Contains(string(existing), "X-Pebblebase-Managed=per-user-update") {
-		return fmt.Errorf("user launcher already exists at %s; leaving it unchanged", launcherPath)
+	var previousLauncher []byte
+	var previousLauncherMode os.FileMode
+	if existing, err := os.ReadFile(launcherPath); err == nil {
+		if !strings.Contains(string(existing), "X-Pebblebase-Managed=per-user-update") {
+			return fmt.Errorf("user launcher already exists at %s; leaving it unchanged", launcherPath)
+		}
+		info, err := os.Stat(launcherPath)
+		if err != nil {
+			return fmt.Errorf("inspect user launcher permissions: %w", err)
+		}
+		previousLauncher = existing
+		previousLauncherMode = info.Mode().Perm()
 	} else if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("inspect user launcher: %w", err)
 	}
@@ -88,6 +101,18 @@ func installUserLauncher(target string) error {
 		return fmt.Errorf("install user desktop launcher: %w", err)
 	}
 	if err := atomicWriteFile(filepath.Join(dataDir, userInstallMarker), []byte(expectedTarget+"\n"), 0600); err != nil {
+		var restoreErr error
+		if previousLauncher != nil {
+			restoreErr = atomicWriteFile(launcherPath, previousLauncher, previousLauncherMode)
+		} else {
+			restoreErr = os.Remove(launcherPath)
+			if os.IsNotExist(restoreErr) {
+				restoreErr = nil
+			}
+		}
+		if restoreErr != nil {
+			return fmt.Errorf("save user update launch path: %w; restore previous launcher failed: %v", err, restoreErr)
+		}
 		return fmt.Errorf("save user update launch path: %w", err)
 	}
 	return nil
@@ -98,10 +123,11 @@ func desktopExecArg(value string) (string, error) {
 		return "", fmt.Errorf("executable path contains a newline")
 	}
 	value = strings.NewReplacer(
-		"\\", "\\\\",
-		"\"", "\\\"",
-		"`", "\\`",
-		"$", "\\$",
+		"\\", "\\\\\\\\",
+		"\"", "\\\\\"",
+		"`", "\\\\`",
+		"$", "\\\\$",
+		"%", "%%",
 	).Replace(value)
 	return "\"" + value + "\"", nil
 }

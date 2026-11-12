@@ -493,6 +493,7 @@ func (s *Service) ApplyUpdate(ctx context.Context, targetBinaryPath string, info
 
 	// Resolve the current executable and choose a writable per-user target for
 	// Linux desktop installs that were originally installed system-wide.
+	explicitTarget := targetBinaryPath != ""
 	resolvedTarget := targetBinaryPath
 	if resolvedTarget == "" {
 		if exe, err := os.Executable(); err == nil {
@@ -591,7 +592,7 @@ func (s *Service) ApplyUpdate(ctx context.Context, targetBinaryPath string, info
 		s.mu.RLock()
 		allowFallback := s.allowUserInstallFallback
 		s.mu.RUnlock()
-		if targetBinaryPath == resolvedTarget && !usingUserInstall && runtime.GOOS == "linux" && allowFallback && os.IsPermission(err) {
+		if !explicitTarget && !usingUserInstall && runtime.GOOS == "linux" && allowFallback && os.IsPermission(err) {
 			userTarget, pathErr := userInstallAvailable()
 			if pathErr == nil {
 				if userErr := replaceBinary(binaryFile, userTarget); userErr == nil {
@@ -653,11 +654,15 @@ func replaceBinary(sourcePath, targetPath string) error {
 		// new binary has been moved into place so a failed update is recoverable.
 		oldPath := targetPath + fmt.Sprintf(".old-%d", time.Now().UnixNano())
 		if errOld := os.Rename(targetPath, oldPath); errOld == nil {
-			if errNew := os.Rename(stagingPath, targetPath); errNew == nil {
+			errNew := os.Rename(stagingPath, targetPath)
+			if errNew == nil {
 				_ = os.Remove(oldPath)
 				return nil
 			}
-			_ = os.Rename(oldPath, targetPath)
+			if errRestore := os.Rename(oldPath, targetPath); errRestore != nil {
+				return fmt.Errorf("failed to replace binary: %w; fallback replacement failed: %v; restoring original from %s failed: %v; backup remains at %s", err, errNew, oldPath, errRestore, oldPath)
+			}
+			return fmt.Errorf("failed to replace binary: %w; fallback replacement failed: %v (original restored)", err, errNew)
 		}
 		return err
 	}
