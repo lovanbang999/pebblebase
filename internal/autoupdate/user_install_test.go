@@ -1,11 +1,13 @@
 package autoupdate
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestInstallUserLauncher(t *testing.T) {
@@ -73,7 +75,10 @@ func TestInstallUserLauncherEscapesExecPath(t *testing.T) {
 		t.Fatalf("launcher Exec field = %q; want %q", launcher, wantExec)
 	}
 	if validator, err := exec.LookPath("desktop-file-validate"); err == nil {
-		if output, err := exec.Command(validator, filepath.Join(applicationsDir, "pebblebase.desktop")).CombinedOutput(); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		cmd := exec.CommandContext(ctx, validator, filepath.Join(applicationsDir, "pebblebase.desktop"))
+		if output, err := cmd.CombinedOutput(); err != nil {
 			t.Fatalf("desktop-file-validate failed: %v\n%s", err, output)
 		}
 	}
