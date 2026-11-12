@@ -46,6 +46,22 @@ export const isMac =
       )
     : false;
 
+export const isLinux =
+  typeof window !== "undefined" &&
+  /Linux|Ubuntu|Debian/i.test(
+    navigator.userAgentData?.platform ||
+      navigator.platform ||
+      navigator.userAgent ||
+      "",
+  );
+
+export function isPermissionDeniedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /\b(permission denied|operation not permitted|access is denied)\b/i.test(
+    message,
+  );
+}
+
 export const isDesktop =
   typeof window !== "undefined" &&
   Boolean(window.runtime || window.go || window.wails);

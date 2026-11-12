@@ -31,16 +31,25 @@ const (
 
 // Service manages update checks, settings, and signature verification.
 type Service struct {
-	mu                sync.RWMutex
-	currentVersion    string
-	repoOwner         string
-	repoName          string
-	apiBaseURL        string
-	publicKey         ed25519.PublicKey
-	settingsPath      string
-	settings          UpdateSettings
-	httpClient        *http.Client
-	allowInsecureHTTP bool
+	mu                       sync.RWMutex
+	currentVersion           string
+	repoOwner                string
+	repoName                 string
+	apiBaseURL               string
+	publicKey                ed25519.PublicKey
+	settingsPath             string
+	settings                 UpdateSettings
+	httpClient               *http.Client
+	allowInsecureHTTP        bool
+	allowUserInstallFallback bool
+}
+
+// EnableUserInstallFallback allows Linux desktop builds to move updates from a
+// protected system path into the current user's data directory.
+func (s *Service) EnableUserInstallFallback() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.allowUserInstallFallback = true
 }
 
 // Option configures Service.
@@ -262,18 +271,25 @@ func (s *Service) CheckForUpdate(ctx context.Context, force bool) (*UpdateInfo, 
 		}
 	}
 
-	// Check if current running executable directory has write permissions
+	// Check whether the running binary can be replaced. Linux desktop builds can
+	// migrate to a user-owned copy when the package installed it system-wide.
 	if exe, err := os.Executable(); err == nil {
 		targetDir := filepath.Dir(exe)
-		probeFile := filepath.Join(targetDir, fmt.Sprintf(".pb_check_probe_%d_%d", os.Getpid(), time.Now().UnixNano()))
-		if probe, err := os.OpenFile(probeFile, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600); err != nil {
-			if os.IsPermission(err) {
+		if err := canWriteDirectory(targetDir); err != nil {
+			s.mu.RLock()
+			allowFallback := s.allowUserInstallFallback
+			s.mu.RUnlock()
+			if runtime.GOOS == "linux" && allowFallback {
+				if _, fallbackErr := userInstallAvailable(); fallbackErr == nil {
+					info.UpdateMode = "per-user"
+				} else {
+					info.CanAutoUpdate = false
+					info.UpdateNotice = "The installed application cannot be replaced and a per-user launcher cannot be installed."
+				}
+			} else {
 				info.CanAutoUpdate = false
-				info.UpdateNotice = fmt.Sprintf("Pebblebase is installed in a system directory (%s). Auto-update requires manual installation or package manager update.", targetDir)
+				info.UpdateNotice = fmt.Sprintf("Pebblebase is installed in a protected directory (%s).", targetDir)
 			}
-		} else {
-			_ = probe.Close()
-			_ = os.Remove(probeFile)
 		}
 	}
 
@@ -475,24 +491,34 @@ func (s *Service) ApplyUpdate(ctx context.Context, targetBinaryPath string, info
 		}
 	}
 
-	// Pre-flight check: verify write permission to target location before downloading
+	// Resolve the current executable and choose a writable per-user target for
+	// Linux desktop installs that were originally installed system-wide.
+	explicitTarget := targetBinaryPath != ""
 	resolvedTarget := targetBinaryPath
 	if resolvedTarget == "" {
 		if exe, err := os.Executable(); err == nil {
 			resolvedTarget = exe
 		}
 	}
+	usingUserInstall := false
 	if resolvedTarget != "" {
-		targetDir := filepath.Dir(resolvedTarget)
-		probeFile := filepath.Join(targetDir, fmt.Sprintf(".pb_write_probe_%d_%d", os.Getpid(), time.Now().UnixNano()))
-		if probe, err := os.OpenFile(probeFile, os.O_CREATE|os.O_WRONLY|os.O_EXCL, 0600); err != nil {
-			if os.IsPermission(err) {
-				return fmt.Errorf("permission denied writing to %s: Pebblebase is installed in a system directory. Please update using 'sudo dpkg -i <file>.deb' or download the release manually", targetDir)
+		if err := canWriteDirectory(filepath.Dir(resolvedTarget)); err != nil {
+			s.mu.RLock()
+			allowFallback := s.allowUserInstallFallback
+			s.mu.RUnlock()
+			if targetBinaryPath != "" || runtime.GOOS != "linux" || !allowFallback {
+				return fmt.Errorf("cannot update executable in %s: %w", filepath.Dir(resolvedTarget), err)
 			}
-		} else {
-			_ = probe.Close()
-			_ = os.Remove(probeFile)
+			userTarget, pathErr := userInstallAvailable()
+			if pathErr != nil {
+				return fmt.Errorf("system install is protected and per-user update is unavailable: %w", pathErr)
+			}
+			resolvedTarget = userTarget
+			usingUserInstall = true
 		}
+	}
+	if resolvedTarget == "" {
+		return errors.New("failed to resolve current executable path")
 	}
 
 	// 4. Download asset to temporary file with secure 0600 permissions
@@ -560,59 +586,86 @@ func (s *Service) ApplyUpdate(ctx context.Context, targetBinaryPath string, info
 		return fmt.Errorf("failed to set executable permissions: %w", err)
 	}
 
-	if targetBinaryPath == "" {
-		exe, err := os.Executable()
-		if err != nil {
-			return fmt.Errorf("failed to resolve current executable path: %w", err)
+	targetBinaryPath = resolvedTarget
+
+	if err := replaceBinary(binaryFile, targetBinaryPath); err != nil {
+		s.mu.RLock()
+		allowFallback := s.allowUserInstallFallback
+		s.mu.RUnlock()
+		if !explicitTarget && !usingUserInstall && runtime.GOOS == "linux" && allowFallback && os.IsPermission(err) {
+			userTarget, pathErr := userInstallAvailable()
+			if pathErr == nil {
+				if userErr := replaceBinary(binaryFile, userTarget); userErr == nil {
+					targetBinaryPath = userTarget
+					usingUserInstall = true
+				} else {
+					return fmt.Errorf("system update was denied and per-user update failed: %w", userErr)
+				}
+			} else {
+				return pathErr
+			}
+		} else {
+			return fmt.Errorf("failed to replace binary: %w", err)
 		}
-		targetBinaryPath = exe
+	}
+	if usingUserInstall {
+		if err := installUserLauncher(targetBinaryPath); err != nil {
+			return fmt.Errorf("update was written to %s but its per-user launcher could not be installed: %w", targetBinaryPath, err)
+		}
 	}
 
-	targetDir := filepath.Dir(targetBinaryPath)
+	return nil
+}
+
+func replaceBinary(sourcePath, targetPath string) error {
+	targetDir := filepath.Dir(targetPath)
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
-		return fmt.Errorf("failed to create target binary parent directory: %w", err)
+		return fmt.Errorf("create target directory %s: %w", targetDir, err)
 	}
-
-	// Create staging binary in targetDir (same filesystem) for safe atomic rename
-	stagingPath := filepath.Join(targetDir, fmt.Sprintf(".pebblebase-update-%d.tmp", time.Now().UnixNano()))
-
-	in, err := os.Open(binaryFile)
+	in, err := os.Open(sourcePath)
 	if err != nil {
-		return fmt.Errorf("failed to open extracted binary: %w", err)
+		return fmt.Errorf("open update binary: %w", err)
 	}
 	defer in.Close()
 
-	out, err := os.OpenFile(stagingPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+	out, err := os.CreateTemp(targetDir, ".pebblebase-update-*.tmp")
 	if err != nil {
-		if os.IsPermission(err) {
-			return fmt.Errorf("permission denied writing to %s: Pebblebase is installed in a system directory. Please update using 'sudo dpkg -i' or download the release manually", targetDir)
-		}
-		return fmt.Errorf("failed to create update staging binary: %w", err)
+		return fmt.Errorf("create staging binary in %s: %w", targetDir, err)
+	}
+	stagingPath := out.Name()
+	defer os.Remove(stagingPath)
+	if err := out.Chmod(0755); err != nil {
+		_ = out.Close()
+		return fmt.Errorf("set staging binary permissions: %w", err)
 	}
 	if _, err := io.Copy(out, in); err != nil {
-		out.Close()
-		_ = os.Remove(stagingPath)
-		return fmt.Errorf("failed to write update staging binary: %w", err)
+		_ = out.Close()
+		return fmt.Errorf("write staging binary: %w", err)
 	}
-	out.Close()
-
-	_ = os.Chmod(stagingPath, 0755)
-
-	// Atomically rename stagingPath over targetBinaryPath.
-	// On Linux/Unix, replacing a running binary via rename works cleanly without ETXTBSY.
-	if err := os.Rename(stagingPath, targetBinaryPath); err != nil {
-		// Fallback for Windows where a running binary cannot be overwritten directly:
-		oldPath := targetBinaryPath + fmt.Sprintf(".old-%d", time.Now().UnixNano())
-		if errOld := os.Rename(targetBinaryPath, oldPath); errOld == nil {
-			if errRenameNew := os.Rename(stagingPath, targetBinaryPath); errRenameNew == nil {
+	if err := out.Sync(); err != nil {
+		_ = out.Close()
+		return fmt.Errorf("sync staging binary: %w", err)
+	}
+	if err := out.Close(); err != nil {
+		return fmt.Errorf("close staging binary: %w", err)
+	}
+	if err := os.Rename(stagingPath, targetPath); err != nil {
+		// Windows cannot replace a running executable. Keep a backup until the
+		// new binary has been moved into place so a failed update is recoverable.
+		oldPath := targetPath + fmt.Sprintf(".old-%d", time.Now().UnixNano())
+		if errOld := os.Rename(targetPath, oldPath); errOld == nil {
+			errNew := os.Rename(stagingPath, targetPath)
+			if errNew == nil {
 				_ = os.Remove(oldPath)
 				return nil
 			}
+			if errRestore := os.Rename(oldPath, targetPath); errRestore != nil {
+				return fmt.Errorf("failed to replace binary: %w; fallback replacement failed: %v; restoring original from %s failed: %v; backup remains at %s", err, errNew, oldPath, errRestore, oldPath)
+			}
+			return fmt.Errorf("failed to replace binary: %w; fallback replacement failed: %v (original restored)", err, errNew)
 		}
-		_ = os.Remove(stagingPath)
-		return fmt.Errorf("failed to replace binary: %w", err)
+		return err
 	}
-
 	return nil
 }
 

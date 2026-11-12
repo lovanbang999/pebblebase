@@ -197,6 +197,34 @@ func TestHandlerEndpoints(t *testing.T) {
 	}
 }
 
+func TestApplyEndpointUsesOfficialReleaseMetadata(t *testing.T) {
+	var releaseRequests int
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		releaseRequests++
+		if r.URL.Path != "/repos/lovanbang999/pebblebase/releases/latest" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(GitHubRelease{TagName: "v1.0.0"})
+	}))
+	defer mockServer.Close()
+
+	svc := NewService("1.0.0", t.TempDir(), WithAPIBase(mockServer.URL), WithAllowInsecureHTTP(true))
+	mux := http.NewServeMux()
+	NewHandler(svc).RegisterRoutes(mux)
+	body := `{"latestVersion":"99.0.0","assetUrl":"https://attacker.invalid/pebblebase"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/update/apply", strings.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusConflict {
+		t.Fatalf("apply status = %d; want %d; body: %s", rr.Code, http.StatusConflict, rr.Body.String())
+	}
+	if releaseRequests != 1 {
+		t.Fatalf("official release requests = %d; want 1", releaseRequests)
+	}
+}
+
 func TestArchiveExtraction(t *testing.T) {
 	tempDir := t.TempDir()
 	binContent := []byte("#!/bin/sh\necho test binary\n")

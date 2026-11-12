@@ -1,5 +1,19 @@
 import { describe, it, expect } from "vitest";
-import { evaluateDesktopShortcut } from "../platform";
+import { evaluateDesktopShortcut, isPermissionDeniedError } from "../platform";
+
+describe("isPermissionDeniedError", () => {
+  it("recognizes permission failures from the updater", () => {
+    expect(
+      isPermissionDeniedError(
+        new Error(
+          "failed to replace binary: open /usr/bin/pebblebase: permission denied",
+        ),
+      ),
+    ).toBe(true);
+    expect(isPermissionDeniedError("operation not permitted")).toBe(true);
+    expect(isPermissionDeniedError("network timeout")).toBe(false);
+  });
+});
 
 describe("evaluateDesktopShortcut", () => {
   it("returns 'closeTab' when Ctrl+W is pressed and an active tab is open", () => {
